@@ -1,0 +1,25 @@
+{
+  "name": "reviewinbox",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.5.3",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "format": "oxfmt --write \"**/*.{js,jsx,ts,tsx}\"",
+    "format:check": "oxfmt --check \"**/*.{js,jsx,ts,tsx}\"",
+    "lint": "oxlint .",
+    "lint:fix": "oxlint . --fix",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test"
+  },
+  "devDependencies": {
+    "@types/node": "25.9.3",
+    "oxfmt": "0.54.0",
+    "oxlint": "1.69.0",
+    "turbo": "2.9.18",
+    "typescript": "6.0.3",
+    "vitest": "4.1.8"
+  }
+}

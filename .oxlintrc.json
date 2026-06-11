@@ -1,0 +1,16 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "categories": {
+    "correctness": "error",
+    "perf": "warn",
+    "suspicious": "warn"
+  },
+  "ignorePatterns": [
+    "dist/**",
+    ".output/**",
+    ".astro/**",
+    "apps/*/.astro/**",
+    ".turbo/**",
+    "node_modules/**"
+  ]
+}

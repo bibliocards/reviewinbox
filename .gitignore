@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.output/
+.turbo/
+.astro/
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
