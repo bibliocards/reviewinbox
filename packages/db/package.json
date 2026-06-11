@@ -8,6 +8,9 @@
   },
   "scripts": {
     "build": "tsc --outDir dist --noEmit false",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -6,6 +6,9 @@
   "packageManager": "pnpm@11.5.3",
   "scripts": {
     "build": "turbo run build",
+    "db:generate": "pnpm --filter @reviewinbox/db db:generate",
+    "db:migrate": "pnpm --filter @reviewinbox/db db:migrate",
+    "db:studio": "pnpm --filter @reviewinbox/db db:studio",
     "dev": "turbo run dev",
     "format": "oxfmt --write \"**/*.{js,jsx,ts,tsx}\"",
     "format:check": "oxfmt --check \"**/*.{js,jsx,ts,tsx}\"",

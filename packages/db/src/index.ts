@@ -1,1 +1,1 @@
-export const databasePackage = "@reviewinbox/db";
+export * from "./schema/index.js";
