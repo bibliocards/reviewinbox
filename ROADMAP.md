@@ -43,6 +43,7 @@
 
 - Build the Review Inbox UI.
 - List pending, drafted, failed, ignored, and published reviews.
+- Cover empty, loading, failed, drafted, ignored, and published UX states.
 - Edit reply drafts.
 - Ignore reviews.
 - Publish replies to Apple App Store and Google Play.
