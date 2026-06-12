@@ -5,11 +5,14 @@ import type { FormEvent } from "react"
 
 import { isOrganizationAccessFailureStatus } from "../../../auth/organization-access.js"
 import { ProtectedRouteMessage } from "../../../auth/protected-route-message.js"
+import { canManageStoreCredential } from "../../../store-credentials/store-credential-policy.js"
 import { canCreateStoreConnection } from "../../../store-connections/store-connection-policy.js"
 import {
   createStoreConnection,
   listStoreConnections,
+  saveStoreCredential,
   type CreateStoreConnectionResult,
+  type SaveStoreCredentialResult,
 } from "../../../store-connections/store-connection-server-functions.js"
 
 export const Route = createFileRoute("/apps/$appId/store-connections")({
@@ -22,8 +25,12 @@ function StoreConnectionsPage() {
   const initialResult = Route.useLoaderData()
   const router = useRouter()
   const createStoreConnectionFn = useServerFn(createStoreConnection)
+  const saveStoreCredentialFn = useServerFn(saveStoreCredential)
   const [result, setResult] = useState<CreateStoreConnectionResult | null>(null)
+  const [storeCredentialResult, setStoreCredentialResult] =
+    useState<SaveStoreCredentialResult | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [savingStoreConnectionId, setSavingStoreConnectionId] = useState<string | null>(null)
 
   if (initialResult.status !== "ok") {
     if (isOrganizationAccessFailureStatus(initialResult.status)) {
@@ -64,6 +71,35 @@ function StoreConnectionsPage() {
       }
     })
   }
+
+  async function onStoreCredentialSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const form = event.currentTarget
+    const formData = new FormData(form)
+    const storeConnectionId = String(formData.get("storeConnectionId") ?? "")
+
+    setSavingStoreConnectionId(storeConnectionId)
+    startTransition(async () => {
+      const nextResult = await saveStoreCredentialFn({
+        data: {
+          appId,
+          storeConnectionId,
+          credentialMaterial: formData.get("credentialMaterial"),
+        },
+      })
+      setStoreCredentialResult(nextResult)
+      setSavingStoreConnectionId(null)
+
+      if (nextResult.status === "saved") {
+        form.reset()
+        await router.invalidate()
+      }
+    })
+  }
+
+  const canManageCredentials = canManageStoreCredential({
+    memberRole: initialResult.organization.memberRole,
+  })
 
   return (
     <main>
@@ -139,10 +175,56 @@ function StoreConnectionsPage() {
                 <strong>{formatStore(storeConnection.store)}</strong> · External App ID:{" "}
                 {storeConnection.externalAppId} · Sync: {storeConnection.syncEnabled ? "on" : "off"}
                 {storeConnection.displayName ? ` · ${storeConnection.displayName}` : null}
+                <br />
+                Store Credential: {formatStoreCredentialStatus(storeConnection.storeCredential)}
+                {canManageCredentials ? (
+                  <form onSubmit={onStoreCredentialSubmit}>
+                    <input type="hidden" name="storeConnectionId" value={storeConnection.id} />
+                    <p>
+                      <label>
+                        Store Credential
+                        <br />
+                        <textarea
+                          name="credentialMaterial"
+                          required
+                          rows={4}
+                          cols={60}
+                          maxLength={20_000}
+                          autoComplete="off"
+                          spellCheck={false}
+                          placeholder={credentialPlaceholder(storeConnection.store)}
+                        />
+                      </label>
+                    </p>
+                    <button type="submit" disabled={isPending}>
+                      {savingStoreConnectionId === storeConnection.id
+                        ? "Saving Store Credential..."
+                        : storeConnection.storeCredential.configured
+                          ? "Update Store Credential"
+                          : "Save Store Credential"}
+                    </button>
+                  </form>
+                ) : (
+                  <p>Only Owners and admins can create or update Store Credentials.</p>
+                )}
               </li>
             ))}
           </ul>
         )}
+        {storeCredentialResult?.status === "validation-error" ? (
+          <p role="alert">{storeCredentialResult.message}</p>
+        ) : null}
+        {storeCredentialResult?.status === "configuration-error" ? (
+          <p role="alert">{storeCredentialResult.message}</p>
+        ) : null}
+        {storeCredentialResult?.status === "saved" ? <p>Saved Store Credential.</p> : null}
+        {storeCredentialResult?.status === "not-found" ? (
+          <p role="alert">Store Connection not found for this App.</p>
+        ) : null}
+        {storeCredentialResult &&
+        isOrganizationAccessFailureStatus(storeCredentialResult.status) ? (
+          <p role="alert">Your Organization access changed. Refresh and try again.</p>
+        ) : null}
       </section>
     </main>
   )
@@ -158,4 +240,33 @@ function formatStore(store: string): string {
   }
 
   return store
+}
+
+function formatStoreCredentialStatus(storeCredential: {
+  configured: boolean
+  updatedAt?: string
+  encryptionAlgorithm?: string
+  keyId?: string | null
+  keyVersion?: number
+}): string {
+  if (!storeCredential.configured) {
+    return "not configured"
+  }
+
+  const keyLabel = storeCredential.keyId
+    ? `key ${storeCredential.keyId}`
+    : `key v${storeCredential.keyVersion}`
+  return `configured, updated ${new Date(storeCredential.updatedAt ?? "").toLocaleString()} (${storeCredential.encryptionAlgorithm}, ${keyLabel})`
+}
+
+function credentialPlaceholder(store: string): string {
+  if (store === "apple_app_store") {
+    return "Paste Apple App Store credential JSON or text"
+  }
+
+  if (store === "google_play") {
+    return "Paste Google Play credential JSON or text"
+  }
+
+  return "Paste Store Credential JSON or text"
 }

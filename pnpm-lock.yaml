@@ -48,6 +48,9 @@ importers:
       '@reviewinbox/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@reviewinbox/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@reviewinbox/db':
         specifier: workspace:*
         version: link:../../packages/db
