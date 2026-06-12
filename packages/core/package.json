@@ -8,9 +8,12 @@
   },
   "scripts": {
     "build": "tsc --outDir dist --noEmit false",
+    "test": "vitest run src",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "typescript": "6.0.3"
+    "@types/node": "25.9.3",
+    "typescript": "6.0.3",
+    "vitest": "4.1.8"
   }
 }

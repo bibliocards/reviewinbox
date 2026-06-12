@@ -9,13 +9,16 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@better-auth/drizzle-adapter": "1.6.16",
     "@reviewinbox/config": "workspace:*",
+    "@reviewinbox/db": "workspace:*",
     "@tanstack/react-router": "1.170.15",
     "@tanstack/react-start": "1.168.25",
     "@vitejs/plugin-react": "6.0.2",
-    "vite": "8.0.16",
+    "better-auth": "1.6.16",
     "react": "19.2.7",
-    "react-dom": "19.2.7"
+    "react-dom": "19.2.7",
+    "vite": "8.0.16"
   },
   "devDependencies": {
     "@types/react": "19.2.17",

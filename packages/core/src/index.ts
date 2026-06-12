@@ -6,3 +6,5 @@ export type ReplyLanguagePolicy = {
   defaultLanguage: string;
   mappedLanguages: readonly string[];
 };
+
+export * from "./store-credential-vault.js";

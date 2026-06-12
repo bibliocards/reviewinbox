@@ -22,6 +22,7 @@ export const storeCredential = pgTable(
     ciphertext: text("ciphertext").notNull(),
     encryptionAlgorithm: text("encryption_algorithm").notNull(),
     nonce: text("nonce").notNull(),
+    authTag: text("auth_tag").notNull(),
     keyId: text("key_id"),
     keyVersion: integer("key_version").notNull().default(1),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
