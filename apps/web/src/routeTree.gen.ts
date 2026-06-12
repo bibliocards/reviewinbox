@@ -11,7 +11,9 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppsRouteImport } from './routes/apps'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppsIndexRouteImport } from './routes/apps/index'
 import { Route as OnboardingFirstOwnerRouteImport } from './routes/onboarding/first-owner'
+import { Route as AppsAppIdStoreConnectionsRouteImport } from './routes/apps/$appId/store-connections'
 import { Route as ApiOnboardingFirstOwnerRouteImport } from './routes/api/onboarding/first-owner'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
@@ -25,11 +27,22 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppsIndexRoute = AppsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppsRoute,
+} as any)
 const OnboardingFirstOwnerRoute = OnboardingFirstOwnerRouteImport.update({
   id: '/onboarding/first-owner',
   path: '/onboarding/first-owner',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppsAppIdStoreConnectionsRoute =
+  AppsAppIdStoreConnectionsRouteImport.update({
+    id: '/$appId/store-connections',
+    path: '/$appId/store-connections',
+    getParentRoute: () => AppsRoute,
+  } as any)
 const ApiOnboardingFirstOwnerRoute = ApiOnboardingFirstOwnerRouteImport.update({
   id: '/api/onboarding/first-owner',
   path: '/api/onboarding/first-owner',
@@ -43,25 +56,30 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/apps': typeof AppsRoute
+  '/apps': typeof AppsRouteWithChildren
   '/onboarding/first-owner': typeof OnboardingFirstOwnerRoute
+  '/apps/': typeof AppsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/onboarding/first-owner': typeof ApiOnboardingFirstOwnerRoute
+  '/apps/$appId/store-connections': typeof AppsAppIdStoreConnectionsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/apps': typeof AppsRoute
   '/onboarding/first-owner': typeof OnboardingFirstOwnerRoute
+  '/apps': typeof AppsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/onboarding/first-owner': typeof ApiOnboardingFirstOwnerRoute
+  '/apps/$appId/store-connections': typeof AppsAppIdStoreConnectionsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/apps': typeof AppsRoute
+  '/apps': typeof AppsRouteWithChildren
   '/onboarding/first-owner': typeof OnboardingFirstOwnerRoute
+  '/apps/': typeof AppsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/onboarding/first-owner': typeof ApiOnboardingFirstOwnerRoute
+  '/apps/$appId/store-connections': typeof AppsAppIdStoreConnectionsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -69,27 +87,32 @@ export interface FileRouteTypes {
     | '/'
     | '/apps'
     | '/onboarding/first-owner'
+    | '/apps/'
     | '/api/auth/$'
     | '/api/onboarding/first-owner'
+    | '/apps/$appId/store-connections'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/apps'
     | '/onboarding/first-owner'
+    | '/apps'
     | '/api/auth/$'
     | '/api/onboarding/first-owner'
+    | '/apps/$appId/store-connections'
   id:
     | '__root__'
     | '/'
     | '/apps'
     | '/onboarding/first-owner'
+    | '/apps/'
     | '/api/auth/$'
     | '/api/onboarding/first-owner'
+    | '/apps/$appId/store-connections'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AppsRoute: typeof AppsRoute
+  AppsRoute: typeof AppsRouteWithChildren
   OnboardingFirstOwnerRoute: typeof OnboardingFirstOwnerRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiOnboardingFirstOwnerRoute: typeof ApiOnboardingFirstOwnerRoute
@@ -111,12 +134,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/apps/': {
+      id: '/apps/'
+      path: '/'
+      fullPath: '/apps/'
+      preLoaderRoute: typeof AppsIndexRouteImport
+      parentRoute: typeof AppsRoute
+    }
     '/onboarding/first-owner': {
       id: '/onboarding/first-owner'
       path: '/onboarding/first-owner'
       fullPath: '/onboarding/first-owner'
       preLoaderRoute: typeof OnboardingFirstOwnerRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/apps/$appId/store-connections': {
+      id: '/apps/$appId/store-connections'
+      path: '/$appId/store-connections'
+      fullPath: '/apps/$appId/store-connections'
+      preLoaderRoute: typeof AppsAppIdStoreConnectionsRouteImport
+      parentRoute: typeof AppsRoute
     }
     '/api/onboarding/first-owner': {
       id: '/api/onboarding/first-owner'
@@ -135,9 +172,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppsRouteChildren {
+  AppsIndexRoute: typeof AppsIndexRoute
+  AppsAppIdStoreConnectionsRoute: typeof AppsAppIdStoreConnectionsRoute
+}
+
+const AppsRouteChildren: AppsRouteChildren = {
+  AppsIndexRoute: AppsIndexRoute,
+  AppsAppIdStoreConnectionsRoute: AppsAppIdStoreConnectionsRoute,
+}
+
+const AppsRouteWithChildren = AppsRoute._addFileChildren(AppsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AppsRoute: AppsRoute,
+  AppsRoute: AppsRouteWithChildren,
   OnboardingFirstOwnerRoute: OnboardingFirstOwnerRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiOnboardingFirstOwnerRoute: ApiOnboardingFirstOwnerRoute,
