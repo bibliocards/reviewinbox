@@ -1,15 +1,15 @@
-export type DeploymentMode = "self-hosted" | "cloud";
+export type DeploymentMode = "self-hosted" | "cloud"
 
 export type DeploymentCapabilities = {
-  mode: DeploymentMode;
-  publicSignup: boolean;
-  firstUserCreatesDefaultOrganization: boolean;
-  managedAi: boolean;
-  hostedEmailDelivery: boolean;
-  hostedBackups: boolean;
-  billing: boolean;
-  scheduledJobs: boolean;
-};
+  mode: DeploymentMode
+  publicSignup: boolean
+  firstUserCreatesDefaultOrganization: boolean
+  managedAi: boolean
+  hostedEmailDelivery: boolean
+  hostedBackups: boolean
+  billing: boolean
+  scheduledJobs: boolean
+}
 
 const SELF_HOSTED_CAPABILITIES = {
   mode: "self-hosted",
@@ -20,7 +20,7 @@ const SELF_HOSTED_CAPABILITIES = {
   hostedBackups: false,
   billing: false,
   scheduledJobs: false,
-} as const satisfies DeploymentCapabilities;
+} as const satisfies DeploymentCapabilities
 
 const CLOUD_CAPABILITIES = {
   mode: "cloud",
@@ -31,25 +31,31 @@ const CLOUD_CAPABILITIES = {
   hostedBackups: true,
   billing: true,
   scheduledJobs: true,
-} as const satisfies DeploymentCapabilities;
+} as const satisfies DeploymentCapabilities
 
 export function parseDeploymentMode(value: string | undefined): DeploymentMode {
   if (value === undefined || value === "") {
-    return "self-hosted";
+    return "self-hosted"
   }
 
   if (value === "self-hosted" || value === "cloud") {
-    return value;
+    return value
   }
 
-  throw new Error(`Unknown ReviewInbox deployment mode: ${value}`);
+  throw new Error(`Unknown ReviewInbox deployment mode: ${value}`)
+}
+
+export function parseDeploymentModeFromEnvironment(
+  env: Partial<Record<"REVIEWINBOX_DEPLOYMENT_MODE", string>>,
+): DeploymentMode {
+  return parseDeploymentMode(env.REVIEWINBOX_DEPLOYMENT_MODE)
 }
 
 export function deploymentCapabilitiesFor(mode: DeploymentMode): DeploymentCapabilities {
   switch (mode) {
     case "self-hosted":
-      return SELF_HOSTED_CAPABILITIES;
+      return SELF_HOSTED_CAPABILITIES
     case "cloud":
-      return CLOUD_CAPABILITIES;
+      return CLOUD_CAPABILITIES
   }
 }

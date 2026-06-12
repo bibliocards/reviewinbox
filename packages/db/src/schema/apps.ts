@@ -1,4 +1,4 @@
-import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
+import type { InferInsertModel, InferSelectModel } from "drizzle-orm"
 import {
   boolean,
   index,
@@ -8,9 +8,9 @@ import {
   timestamp,
   uniqueIndex,
   uuid,
-} from "drizzle-orm/pg-core";
+} from "drizzle-orm/pg-core"
 
-import { organization } from "./auth.js";
+import { organization } from "./auth.js"
 
 export const app = pgTable(
   "app",
@@ -31,7 +31,7 @@ export const app = pgTable(
     uniqueIndex("app_id_organization_id_unique").on(table.id, table.organizationId),
     index("app_organization_id_idx").on(table.organizationId),
   ],
-);
+)
 
-export type App = InferSelectModel<typeof app>;
-export type NewApp = InferInsertModel<typeof app>;
+export type App = InferSelectModel<typeof app>
+export type NewApp = InferInsertModel<typeof app>

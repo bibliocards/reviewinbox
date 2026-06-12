@@ -1,8 +1,8 @@
-import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
-import { foreignKey, index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import type { InferInsertModel, InferSelectModel } from "drizzle-orm"
+import { foreignKey, index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
 
-import { syncRunStatus } from "./enums.js";
-import { storeConnection } from "./store-connections.js";
+import { syncRunStatus } from "./enums.js"
+import { storeConnection } from "./store-connections.js"
 
 export const syncRun = pgTable(
   "sync_run",
@@ -31,7 +31,7 @@ export const syncRun = pgTable(
       table.startedAt,
     ),
   ],
-);
+)
 
-export type SyncRun = InferSelectModel<typeof syncRun>;
-export type NewSyncRun = InferInsertModel<typeof syncRun>;
+export type SyncRun = InferSelectModel<typeof syncRun>
+export type NewSyncRun = InferInsertModel<typeof syncRun>

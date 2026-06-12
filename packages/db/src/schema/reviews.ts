@@ -1,4 +1,4 @@
-import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
+import type { InferInsertModel, InferSelectModel } from "drizzle-orm"
 import {
   foreignKey,
   index,
@@ -8,10 +8,10 @@ import {
   timestamp,
   uniqueIndex,
   uuid,
-} from "drizzle-orm/pg-core";
+} from "drizzle-orm/pg-core"
 
-import { replyWorkflowStatus } from "./enums.js";
-import { storeConnection } from "./store-connections.js";
+import { replyWorkflowStatus } from "./enums.js"
+import { storeConnection } from "./store-connections.js"
 
 export const review = pgTable(
   "review",
@@ -58,7 +58,7 @@ export const review = pgTable(
       table.importedAt,
     ),
   ],
-);
+)
 
-export type Review = InferSelectModel<typeof review>;
-export type NewReview = InferInsertModel<typeof review>;
+export type Review = InferSelectModel<typeof review>
+export type NewReview = InferInsertModel<typeof review>

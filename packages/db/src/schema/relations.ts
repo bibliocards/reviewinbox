@@ -1,18 +1,18 @@
-import { relations } from "drizzle-orm";
+import { relations } from "drizzle-orm"
 
-import { app } from "./apps.js";
-import { organization } from "./auth.js";
-import { review } from "./reviews.js";
-import { storeConnection } from "./store-connections.js";
-import { storeCredential } from "./store-credentials.js";
-import { syncRun } from "./sync-runs.js";
+import { app } from "./apps.js"
+import { organization } from "./auth.js"
+import { review } from "./reviews.js"
+import { storeConnection } from "./store-connections.js"
+import { storeCredential } from "./store-credentials.js"
+import { syncRun } from "./sync-runs.js"
 
 export const organizationRelations = relations(organization, ({ many }) => ({
   apps: many(app),
   storeConnections: many(storeConnection),
   reviews: many(review),
   syncRuns: many(syncRun),
-}));
+}))
 
 export const appRelations = relations(app, ({ one, many }) => ({
   organization: one(organization, {
@@ -22,7 +22,7 @@ export const appRelations = relations(app, ({ one, many }) => ({
   storeConnections: many(storeConnection),
   reviews: many(review),
   syncRuns: many(syncRun),
-}));
+}))
 
 export const storeConnectionRelations = relations(storeConnection, ({ one, many }) => ({
   organization: one(organization, {
@@ -36,7 +36,7 @@ export const storeConnectionRelations = relations(storeConnection, ({ one, many 
   credentials: many(storeCredential),
   reviews: many(review),
   syncRuns: many(syncRun),
-}));
+}))
 
 export const storeCredentialRelations = relations(storeCredential, ({ one }) => ({
   organization: one(organization, {
@@ -51,7 +51,7 @@ export const storeCredentialRelations = relations(storeCredential, ({ one }) => 
     fields: [storeCredential.storeConnectionId],
     references: [storeConnection.id],
   }),
-}));
+}))
 
 export const reviewRelations = relations(review, ({ one }) => ({
   organization: one(organization, {
@@ -66,7 +66,7 @@ export const reviewRelations = relations(review, ({ one }) => ({
     fields: [review.storeConnectionId],
     references: [storeConnection.id],
   }),
-}));
+}))
 
 export const syncRunRelations = relations(syncRun, ({ one }) => ({
   organization: one(organization, {
@@ -81,4 +81,4 @@ export const syncRunRelations = relations(syncRun, ({ one }) => ({
     fields: [syncRun.storeConnectionId],
     references: [storeConnection.id],
   }),
-}));
+}))

@@ -1,4 +1,4 @@
-import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
+import type { InferInsertModel, InferSelectModel } from "drizzle-orm"
 import {
   foreignKey,
   index,
@@ -8,9 +8,9 @@ import {
   timestamp,
   uniqueIndex,
   uuid,
-} from "drizzle-orm/pg-core";
+} from "drizzle-orm/pg-core"
 
-import { storeConnection } from "./store-connections.js";
+import { storeConnection } from "./store-connections.js"
 
 export const storeCredential = pgTable(
   "store_credential",
@@ -37,7 +37,7 @@ export const storeCredential = pgTable(
     uniqueIndex("store_credential_store_connection_id_unique").on(table.storeConnectionId),
     index("store_credential_organization_id_idx").on(table.organizationId),
   ],
-);
+)
 
-export type StoreCredential = InferSelectModel<typeof storeCredential>;
-export type NewStoreCredential = InferInsertModel<typeof storeCredential>;
+export type StoreCredential = InferSelectModel<typeof storeCredential>
+export type NewStoreCredential = InferInsertModel<typeof storeCredential>

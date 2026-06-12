@@ -1,5 +1,5 @@
-import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
-import { boolean, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import type { InferInsertModel, InferSelectModel } from "drizzle-orm"
+import { boolean, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
 
 // Matches better-auth's core schema and organization plugin table and field names.
 export const user = pgTable(
@@ -14,7 +14,7 @@ export const user = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [uniqueIndex("user_email_unique").on(table.email)],
-);
+)
 
 export const organization = pgTable(
   "organization",
@@ -27,7 +27,7 @@ export const organization = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [uniqueIndex("organization_slug_unique").on(table.slug)],
-);
+)
 
 export const session = pgTable(
   "session",
@@ -48,7 +48,7 @@ export const session = pgTable(
     activeTeamId: text("active_team_id"),
   },
   (table) => [uniqueIndex("session_token_unique").on(table.token)],
-);
+)
 
 export const account = pgTable("account", {
   id: text("id").primaryKey(),
@@ -66,7 +66,7 @@ export const account = pgTable("account", {
   password: text("password"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+})
 
 export const verification = pgTable("verification", {
   id: text("id").primaryKey(),
@@ -75,7 +75,7 @@ export const verification = pgTable("verification", {
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+})
 
 export const member = pgTable(
   "member",
@@ -93,7 +93,7 @@ export const member = pgTable(
   (table) => [
     uniqueIndex("member_organization_id_user_id_unique").on(table.organizationId, table.userId),
   ],
-);
+)
 
 export const invitation = pgTable("invitation", {
   id: text("id").primaryKey(),
@@ -108,20 +108,20 @@ export const invitation = pgTable("invitation", {
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+})
 
-export type User = InferSelectModel<typeof user>;
-export type NewUser = InferInsertModel<typeof user>;
-export type Session = InferSelectModel<typeof session>;
-export type NewSession = InferInsertModel<typeof session>;
-export type Account = InferSelectModel<typeof account>;
-export type NewAccount = InferInsertModel<typeof account>;
-export type Verification = InferSelectModel<typeof verification>;
-export type NewVerification = InferInsertModel<typeof verification>;
+export type User = InferSelectModel<typeof user>
+export type NewUser = InferInsertModel<typeof user>
+export type Session = InferSelectModel<typeof session>
+export type NewSession = InferInsertModel<typeof session>
+export type Account = InferSelectModel<typeof account>
+export type NewAccount = InferInsertModel<typeof account>
+export type Verification = InferSelectModel<typeof verification>
+export type NewVerification = InferInsertModel<typeof verification>
 
-export type Organization = InferSelectModel<typeof organization>;
-export type NewOrganization = InferInsertModel<typeof organization>;
-export type Member = InferSelectModel<typeof member>;
-export type NewMember = InferInsertModel<typeof member>;
-export type Invitation = InferSelectModel<typeof invitation>;
-export type NewInvitation = InferInsertModel<typeof invitation>;
+export type Organization = InferSelectModel<typeof organization>
+export type NewOrganization = InferInsertModel<typeof organization>
+export type Member = InferSelectModel<typeof member>
+export type NewMember = InferInsertModel<typeof member>
+export type Invitation = InferSelectModel<typeof invitation>
+export type NewInvitation = InferInsertModel<typeof invitation>

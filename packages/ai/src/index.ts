@@ -1,1 +1,1 @@
-export type AiGenerationKind = "reply-draft" | "weekly-digest";
+export type AiGenerationKind = "reply-draft" | "weekly-digest"

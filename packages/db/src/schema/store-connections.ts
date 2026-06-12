@@ -1,4 +1,4 @@
-import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
+import type { InferInsertModel, InferSelectModel } from "drizzle-orm"
 import {
   boolean,
   foreignKey,
@@ -8,10 +8,10 @@ import {
   timestamp,
   uniqueIndex,
   uuid,
-} from "drizzle-orm/pg-core";
+} from "drizzle-orm/pg-core"
 
-import { app } from "./apps.js";
-import { storeKind } from "./enums.js";
+import { app } from "./apps.js"
+import { storeKind } from "./enums.js"
 
 export const storeConnection = pgTable(
   "store_connection",
@@ -41,7 +41,7 @@ export const storeConnection = pgTable(
     index("store_connection_organization_id_idx").on(table.organizationId),
     index("store_connection_app_id_idx").on(table.appId),
   ],
-);
+)
 
-export type StoreConnection = InferSelectModel<typeof storeConnection>;
-export type NewStoreConnection = InferInsertModel<typeof storeConnection>;
+export type StoreConnection = InferSelectModel<typeof storeConnection>
+export type NewStoreConnection = InferInsertModel<typeof storeConnection>

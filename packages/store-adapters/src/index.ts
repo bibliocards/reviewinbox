@@ -1,3 +1,3 @@
-import type { ReviewSource } from "@reviewinbox/core";
+import type { ReviewSource } from "@reviewinbox/core"
 
-export type StoreAdapterKind = ReviewSource;
+export type StoreAdapterKind = ReviewSource
