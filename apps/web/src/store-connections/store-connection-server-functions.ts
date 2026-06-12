@@ -1,5 +1,8 @@
+import { StoreCredentialVault, StoreCredentialVaultError } from "@reviewinbox/core"
+import { and, createDatabase, desc, eq, schema, sql } from "@reviewinbox/db"
 import { createCsrfMiddleware, createServerFn } from "@tanstack/react-start"
 
+import { requireActiveOrganizationMember } from "../auth/organization-context.server.js"
 import type { OrganizationAccessFailureStatus } from "../auth/organization-access.js"
 import {
   canManageStoreCredential,
@@ -38,6 +41,8 @@ type StoreCredentialStatus =
       keyVersion: number
     }
 
+type Database = ReturnType<typeof createDatabase>
+
 export type ListStoreConnectionsResult =
   | {
       status: "ok"
@@ -70,12 +75,6 @@ export const listStoreConnections = createServerFn({ method: "GET" })
     return { appId: String((data as { appId?: unknown }).appId ?? "") }
   })
   .handler(async ({ data }): Promise<ListStoreConnectionsResult> => {
-    const [{ and, createDatabase, desc, eq, schema }, { requireActiveOrganizationMember }] =
-      await Promise.all([
-        import("@reviewinbox/db"),
-        import("../auth/organization-context.server.js"),
-      ])
-
     const db = createDatabase()
     const organizationContext = await requireActiveOrganizationMember()
     if (!organizationContext.ok) {
@@ -84,9 +83,6 @@ export const listStoreConnections = createServerFn({ method: "GET" })
 
     const app = await findOrganizationApp({
       db,
-      schema,
-      and,
-      eq,
       appId: data.appId,
       organizationId: organizationContext.context.organizationId,
     })
@@ -157,12 +153,6 @@ export const createStoreConnection = createServerFn({ method: "POST" })
     }
   })
   .handler(async ({ data }): Promise<CreateStoreConnectionResult> => {
-    const [{ and, createDatabase, eq, schema }, { requireActiveOrganizationMember }] =
-      await Promise.all([
-        import("@reviewinbox/db"),
-        import("../auth/organization-context.server.js"),
-      ])
-
     const db = createDatabase()
     const storeConnectionInput = validateStoreConnectionInput(data)
     if (!storeConnectionInput.ok) {
@@ -180,9 +170,6 @@ export const createStoreConnection = createServerFn({ method: "POST" })
 
     const app = await findOrganizationApp({
       db,
-      schema,
-      and,
-      eq,
       appId: data.appId,
       organizationId: organizationContext.context.organizationId,
     })
@@ -254,22 +241,12 @@ export const saveStoreCredential = createServerFn({ method: "POST" })
     }
   })
   .handler(async ({ data }): Promise<SaveStoreCredentialResult> => {
-    const [
-      { StoreCredentialVault, StoreCredentialVaultError },
-      { and, createDatabase, eq, schema, sql },
-      { requireActiveOrganizationMember },
-    ] = await Promise.all([
-      import("@reviewinbox/core"),
-      import("@reviewinbox/db"),
-      import("../auth/organization-context.server.js"),
-    ])
-
+    const db = createDatabase()
     const storeCredentialInput = validateStoreCredentialInput(data)
     if (!storeCredentialInput.ok) {
       return { status: "validation-error", message: storeCredentialInput.message }
     }
 
-    const db = createDatabase()
     const organizationContext = await requireActiveOrganizationMember()
     if (!organizationContext.ok) {
       return { status: organizationContext.reason }
@@ -281,9 +258,6 @@ export const saveStoreCredential = createServerFn({ method: "POST" })
 
     const app = await findOrganizationApp({
       db,
-      schema,
-      and,
-      eq,
       appId: data.appId,
       organizationId: organizationContext.context.organizationId,
     })
@@ -293,9 +267,6 @@ export const saveStoreCredential = createServerFn({ method: "POST" })
 
     const storeConnection = await findOrganizationStoreConnection({
       db,
-      schema,
-      and,
-      eq,
       appId: app.id,
       organizationId: organizationContext.context.organizationId,
       storeConnectionId: data.storeConnectionId,
@@ -365,44 +336,33 @@ export const saveStoreCredential = createServerFn({ method: "POST" })
   })
 
 async function findOrganizationApp(input: {
-  db: ReturnType<typeof import("@reviewinbox/db").createDatabase>
-  schema: typeof import("@reviewinbox/db").schema
-  and: typeof import("@reviewinbox/db").and
-  eq: typeof import("@reviewinbox/db").eq
+  db: Database
   appId: string
   organizationId: string
 }): Promise<StoreConnectionApp | null> {
   const [app] = await input.db
-    .select({ id: input.schema.app.id, name: input.schema.app.name })
-    .from(input.schema.app)
-    .where(
-      input.and(
-        input.eq(input.schema.app.id, input.appId),
-        input.eq(input.schema.app.organizationId, input.organizationId),
-      ),
-    )
+    .select({ id: schema.app.id, name: schema.app.name })
+    .from(schema.app)
+    .where(and(eq(schema.app.id, input.appId), eq(schema.app.organizationId, input.organizationId)))
     .limit(1)
 
   return app ?? null
 }
 
 async function findOrganizationStoreConnection(input: {
-  db: ReturnType<typeof import("@reviewinbox/db").createDatabase>
-  schema: typeof import("@reviewinbox/db").schema
-  and: typeof import("@reviewinbox/db").and
-  eq: typeof import("@reviewinbox/db").eq
+  db: Database
   appId: string
   organizationId: string
   storeConnectionId: string
 }): Promise<{ id: string } | null> {
   const [storeConnection] = await input.db
-    .select({ id: input.schema.storeConnection.id })
-    .from(input.schema.storeConnection)
+    .select({ id: schema.storeConnection.id })
+    .from(schema.storeConnection)
     .where(
-      input.and(
-        input.eq(input.schema.storeConnection.id, input.storeConnectionId),
-        input.eq(input.schema.storeConnection.appId, input.appId),
-        input.eq(input.schema.storeConnection.organizationId, input.organizationId),
+      and(
+        eq(schema.storeConnection.id, input.storeConnectionId),
+        eq(schema.storeConnection.appId, input.appId),
+        eq(schema.storeConnection.organizationId, input.organizationId),
       ),
     )
     .limit(1)

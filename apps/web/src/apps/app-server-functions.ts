@@ -1,5 +1,7 @@
+import { createDatabase, desc, eq, schema } from "@reviewinbox/db"
 import { createCsrfMiddleware, createServerFn } from "@tanstack/react-start"
 
+import { requireActiveOrganizationMember } from "../auth/organization-context.server.js"
 import type { OrganizationAccessFailureStatus } from "../auth/organization-access.js"
 import { canCreateApp, validateAppName } from "./app-policy.js"
 
@@ -28,12 +30,6 @@ export type CreateAppResult =
 
 export const listApps = createServerFn({ method: "GET" }).handler(
   async (): Promise<ListAppsResult> => {
-    const [{ createDatabase, desc, eq, schema }, { requireActiveOrganizationMember }] =
-      await Promise.all([
-        import("@reviewinbox/db"),
-        import("../auth/organization-context.server.js"),
-      ])
-
     const db = createDatabase()
     const organizationContext = await requireActiveOrganizationMember()
     if (!organizationContext.ok) {
@@ -74,11 +70,6 @@ export const createApp = createServerFn({ method: "POST" })
     return { name: (data as { name?: unknown }).name }
   })
   .handler(async ({ data }): Promise<CreateAppResult> => {
-    const [{ createDatabase, schema }, { requireActiveOrganizationMember }] = await Promise.all([
-      import("@reviewinbox/db"),
-      import("../auth/organization-context.server.js"),
-    ])
-
     const db = createDatabase()
     const appName = validateAppName(data.name)
     if (!appName.ok) {

@@ -1,3 +1,4 @@
+import { and, createDatabase, eq, schema } from "@reviewinbox/db"
 import { getRequestHeaders } from "@tanstack/react-start/server"
 
 import { hasVerifiedOrganizationMembership } from "../apps/app-policy.js"
@@ -16,7 +17,6 @@ export type ActiveOrganizationContextResult =
   | { ok: false; reason: OrganizationAccessFailureStatus }
 
 export async function requireActiveOrganizationMember(): Promise<ActiveOrganizationContextResult> {
-  const { and, createDatabase, eq, schema } = await import("@reviewinbox/db")
   const db = createDatabase()
   const session = await auth.api.getSession({
     headers: getRequestHeaders(),
