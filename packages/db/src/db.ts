@@ -25,4 +25,4 @@ export function createDatabase(databaseUrl = getDatabaseUrl()) {
 }
 
 export { schema }
-export { count, eq, sql } from "drizzle-orm"
+export { and, count, desc, eq, sql } from "drizzle-orm"

@@ -9,11 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AppsRouteImport } from './routes/apps'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OnboardingFirstOwnerRouteImport } from './routes/onboarding/first-owner'
 import { Route as ApiOnboardingFirstOwnerRouteImport } from './routes/api/onboarding/first-owner'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
+const AppsRoute = AppsRouteImport.update({
+  id: '/apps',
+  path: '/apps',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -37,12 +43,14 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/apps': typeof AppsRoute
   '/onboarding/first-owner': typeof OnboardingFirstOwnerRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/onboarding/first-owner': typeof ApiOnboardingFirstOwnerRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/apps': typeof AppsRoute
   '/onboarding/first-owner': typeof OnboardingFirstOwnerRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/onboarding/first-owner': typeof ApiOnboardingFirstOwnerRoute
@@ -50,6 +58,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/apps': typeof AppsRoute
   '/onboarding/first-owner': typeof OnboardingFirstOwnerRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/onboarding/first-owner': typeof ApiOnboardingFirstOwnerRoute
@@ -58,18 +67,21 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/apps'
     | '/onboarding/first-owner'
     | '/api/auth/$'
     | '/api/onboarding/first-owner'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/apps'
     | '/onboarding/first-owner'
     | '/api/auth/$'
     | '/api/onboarding/first-owner'
   id:
     | '__root__'
     | '/'
+    | '/apps'
     | '/onboarding/first-owner'
     | '/api/auth/$'
     | '/api/onboarding/first-owner'
@@ -77,6 +89,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppsRoute: typeof AppsRoute
   OnboardingFirstOwnerRoute: typeof OnboardingFirstOwnerRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiOnboardingFirstOwnerRoute: typeof ApiOnboardingFirstOwnerRoute
@@ -84,6 +97,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/apps': {
+      id: '/apps'
+      path: '/apps'
+      fullPath: '/apps'
+      preLoaderRoute: typeof AppsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -117,6 +137,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppsRoute: AppsRoute,
   OnboardingFirstOwnerRoute: OnboardingFirstOwnerRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiOnboardingFirstOwnerRoute: ApiOnboardingFirstOwnerRoute,

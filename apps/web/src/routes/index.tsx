@@ -15,6 +15,9 @@ function Home() {
       <p>
         <Link to="/onboarding/first-owner">Create the first Owner</Link>
       </p>
+      <p>
+        <Link to="/apps">Manage Apps</Link>
+      </p>
     </main>
   )
 }
