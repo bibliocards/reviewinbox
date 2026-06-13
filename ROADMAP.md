@@ -42,6 +42,7 @@
 ## M4: Reply Inbox And Publishing
 
 - Build the Review Inbox UI.
+- Implement the feedback and accessibility states from `docs/adr/0014-reply-inbox-feedback-and-accessibility.md`.
 - List pending, drafted, failed, ignored, and published reviews.
 - Edit reply drafts.
 - Ignore reviews.
