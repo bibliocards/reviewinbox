@@ -26,6 +26,7 @@
 - Add `APP_ENCRYPTION_KEY` validation.
 - Implement Apple App Store review sync.
 - Implement Google Play review sync.
+- Keep sync incremental and idempotent as defined in `docs/adr/0014-sync-and-drafting-throughput.md`.
 - Record sync runs.
 - Store normalized reviews with organization, app, and store connection ownership.
 
@@ -37,6 +38,7 @@
 - Add app-level reply context as Markdown.
 - Add app-level reply language policy with `defaultLanguage` and `mappedLanguages`.
 - Generate reply drafts automatically for new reviews by default.
+- Queue draft generation outside the store sync hot path with bounded concurrency.
 - Store detected review language and chosen reply language.
 
 ## M4: Reply Inbox And Publishing
