@@ -37,17 +37,9 @@ Both self-hosted and cloud deployments use the same codebase, with behavior sele
 - AI: Vercel AI SDK behind a ReviewInbox-owned package boundary
 - Deployment: Docker Compose on a VPS
 
-## Core Concepts
+## Project Context
 
-- Organization: tenant boundary for users, apps, store connections, reviews, and usage.
-- App: a mobile product tracked by ReviewInbox.
-- Store Connection: an App Store or Google Play connection for an app.
-- Review: a store review imported for a specific app and store connection.
-- Reply Draft: an AI-generated or manually edited proposed reply.
-- Published Reply: a reply successfully published back to the store.
-- Weekly Digest: a Markdown or email summary of recurring product pain.
-
-See `CONTEXT.md` for the project glossary and `docs/adr/` for architectural decisions.
+See `CONTEXT.md` for the canonical project glossary and `docs/adr/` for architectural decisions.
 
 ## Status
 
