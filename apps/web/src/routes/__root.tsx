@@ -1,5 +1,7 @@
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router"
 
+import "@reviewinbox/ui/styles.css"
+
 export const Route = createRootRoute({
   component: Root,
 })

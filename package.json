@@ -10,6 +10,8 @@
     "db:migrate": "pnpm --filter @reviewinbox/db db:migrate",
     "db:studio": "pnpm --filter @reviewinbox/db db:studio",
     "dev": "turbo run dev",
+    "dev:app": "pnpm --filter @reviewinbox/web dev",
+    "dev:marketing": "pnpm --filter @reviewinbox/marketing dev",
     "format": "oxfmt --write \"**/*.{js,jsx,ts,tsx}\"",
     "format:check": "oxfmt --check \"**/*.{js,jsx,ts,tsx}\"",
     "lint": "oxlint .",

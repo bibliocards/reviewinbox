@@ -5,7 +5,8 @@ dist/
 .tanstack/
 .astro/
 .env
-.env.*
-!.env.example
+apps/web/.env.example
+!apps/web/.env.example
 *.tsbuildinfo
 .idea/
+volumes/

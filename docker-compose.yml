@@ -6,14 +6,6 @@ services:
       POSTGRES_USER: reviewinbox
       POSTGRES_PASSWORD: reviewinbox
     ports:
-      - "127.0.0.1:5432:5432"
+      - "5432:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U reviewinbox -d reviewinbox"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-volumes:
-  postgres-data:
+      - ./volumes/data:/var/lib/postgresql

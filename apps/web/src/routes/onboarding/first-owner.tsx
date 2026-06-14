@@ -1,3 +1,4 @@
+import { Button } from "@reviewinbox/ui/button"
 import { createFileRoute } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/onboarding/first-owner")({
@@ -34,7 +35,9 @@ function FirstOwnerOnboarding() {
             <input name="password" type="password" autoComplete="new-password" required />
           </label>
         </p>
-        <button type="submit">Create Owner</button>
+        <Button type="submit">
+          Create Owner
+        </Button>
       </form>
     </main>
   )

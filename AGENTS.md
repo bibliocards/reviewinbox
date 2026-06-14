@@ -11,7 +11,7 @@
 ## Local Runtime
 
 - Copy `.env.example` to `.env`, then generate `APP_ENCRYPTION_KEY` and `BETTER_AUTH_SECRET` with `openssl rand -base64 32`.
-- Local Postgres is `docker compose up -d postgres`; it binds `127.0.0.1:5432` and matches the default `DATABASE_URL`.
+- Local Postgres is `docker compose up -d postgres`; it exposes port `5432` and persists data under ignored `volumes/data`, matching the default `DATABASE_URL` host and port.
 - Run migrations with `pnpm db:migrate` before using the web app against a fresh database.
 - Start the product app with `pnpm --filter @reviewinbox/web dev`; first self-hosted setup is at `/onboarding/first-owner`.
 
@@ -30,6 +30,10 @@
 - `apps/web/src/routeTree.gen.ts` is TanStack Router generated output; do not edit it by hand. If it changes during checks, run `pnpm format` before committing.
 - Drizzle schema changes require `pnpm db:generate`; commit the generated migration in `packages/db/migrations` with the schema change.
 - `packages/db/drizzle.config.ts` defaults to the local Postgres URL when `DATABASE_URL` is unset.
+
+## UI Direction
+
+- Use `DESIGN.md` as the visual direction source when implementing UI; the intended component stack is Base UI primitives with shadcn/ui-style composition.
 
 ## Domain And Security Constraints
 

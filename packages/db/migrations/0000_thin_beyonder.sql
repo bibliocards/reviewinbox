@@ -155,7 +155,9 @@ ALTER TABLE "member" ADD CONSTRAINT "member_organization_id_organization_id_fk" 
 ALTER TABLE "member" ADD CONSTRAINT "member_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "session" ADD CONSTRAINT "session_active_organization_id_organization_id_fk" FOREIGN KEY ("active_organization_id") REFERENCES "public"."organization"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "app_id_organization_id_unique" ON "app" USING btree ("id","organization_id");--> statement-breakpoint
 ALTER TABLE "app" ADD CONSTRAINT "app_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "store_connection_id_app_id_organization_id_unique" ON "store_connection" USING btree ("id","app_id","organization_id");--> statement-breakpoint
 ALTER TABLE "review" ADD CONSTRAINT "review_store_connection_ownership_fk" FOREIGN KEY ("store_connection_id","app_id","organization_id") REFERENCES "public"."store_connection"("id","app_id","organization_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "store_connection" ADD CONSTRAINT "store_connection_app_organization_fk" FOREIGN KEY ("app_id","organization_id") REFERENCES "public"."app"("id","organization_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "store_credential" ADD CONSTRAINT "store_credential_store_connection_ownership_fk" FOREIGN KEY ("store_connection_id","app_id","organization_id") REFERENCES "public"."store_connection"("id","app_id","organization_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -164,13 +166,11 @@ CREATE UNIQUE INDEX "member_organization_id_user_id_unique" ON "member" USING bt
 CREATE UNIQUE INDEX "organization_slug_unique" ON "organization" USING btree ("slug");--> statement-breakpoint
 CREATE UNIQUE INDEX "session_token_unique" ON "session" USING btree ("token");--> statement-breakpoint
 CREATE UNIQUE INDEX "user_email_unique" ON "user" USING btree ("email");--> statement-breakpoint
-CREATE UNIQUE INDEX "app_id_organization_id_unique" ON "app" USING btree ("id","organization_id");--> statement-breakpoint
 CREATE INDEX "app_organization_id_idx" ON "app" USING btree ("organization_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "review_store_connection_id_external_review_id_unique" ON "review" USING btree ("store_connection_id","external_review_id");--> statement-breakpoint
 CREATE INDEX "review_organization_id_reply_status_imported_at_idx" ON "review" USING btree ("organization_id","reply_status","imported_at");--> statement-breakpoint
 CREATE INDEX "review_app_id_reply_status_imported_at_idx" ON "review" USING btree ("app_id","reply_status","imported_at");--> statement-breakpoint
 CREATE INDEX "review_store_connection_id_imported_at_idx" ON "review" USING btree ("store_connection_id","imported_at");--> statement-breakpoint
-CREATE UNIQUE INDEX "store_connection_id_app_id_organization_id_unique" ON "store_connection" USING btree ("id","app_id","organization_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "store_connection_app_id_store_unique" ON "store_connection" USING btree ("app_id","store");--> statement-breakpoint
 CREATE INDEX "store_connection_organization_id_idx" ON "store_connection" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "store_connection_app_id_idx" ON "store_connection" USING btree ("app_id");--> statement-breakpoint
