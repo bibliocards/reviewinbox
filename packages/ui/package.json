@@ -5,8 +5,17 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./alert": "./src/components/alert.tsx",
+    "./badge": "./src/components/badge.tsx",
     "./button": "./src/components/button.tsx",
-    "./styles.css": "./src/styles.css"
+    "./card": "./src/components/card.tsx",
+    "./checkbox": "./src/components/checkbox.tsx",
+    "./field": "./src/components/field.tsx",
+    "./input": "./src/components/input.tsx",
+    "./progress": "./src/components/progress.tsx",
+    "./separator": "./src/components/separator.tsx",
+    "./styles.css": "./src/styles.css",
+    "./textarea": "./src/components/textarea.tsx"
   },
   "scripts": {
     "build": "tsc --outDir dist --noEmit false",

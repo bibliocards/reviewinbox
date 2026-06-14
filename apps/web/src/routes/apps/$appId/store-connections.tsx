@@ -5,6 +5,17 @@ import type { FormEvent } from "react"
 
 import { isOrganizationAccessFailureStatus } from "../../../auth/organization-access.js"
 import { ProtectedRouteMessage } from "../../../auth/protected-route-message.js"
+import {
+  AppPage,
+  AppShell,
+  Button,
+  EmptyState,
+  Field,
+  Panel,
+  StatusPill,
+  fieldControlClassName,
+  textareaControlClassName,
+} from "../../../components/app-shell.js"
 import { canManageStoreCredential } from "../../../store-credentials/store-credential-policy.js"
 import { canCreateStoreConnection } from "../../../store-connections/store-connection-policy.js"
 import {
@@ -101,133 +112,252 @@ function StoreConnectionsPage() {
     memberRole: initialResult.organization.memberRole,
   })
 
-  return (
-    <main>
-      <p>
-        <Link to="/apps">Apps</Link>
-      </p>
-      <h1>Store Connections for {initialResult.app.name}</h1>
-      <p>
-        Organization: {initialResult.organization.name} ({initialResult.organization.memberRole})
-      </p>
+  const canCreateConnection = canCreateStoreConnection({
+    memberRole: initialResult.organization.memberRole,
+  })
 
-      {canCreateStoreConnection({ memberRole: initialResult.organization.memberRole }) ? (
-        <section>
-          <h2>Create Store Connection</h2>
-          <form onSubmit={onSubmit}>
-            <p>
-              <label>
-                Store
-                <br />
-                <select name="store" required defaultValue="">
+  return (
+    <AppShell organization={initialResult.organization} activeApp={initialResult.app}>
+      <AppPage
+        eyebrow="App workflow"
+        title="Store Connections"
+        description={`Connect ${initialResult.app.name} to Apple App Store, Google Play, or both. Store Credentials stay encrypted per Store Connection.`}
+        detail={
+          <Panel
+            title="Connection health"
+            description="This panel becomes the operational summary for the active App."
+          >
+            <dl className="space-y-4 text-sm">
+              <div>
+                <dt className="text-muted">App</dt>
+                <dd className="mt-1 font-medium">{initialResult.app.name}</dd>
+              </div>
+              <div>
+                <dt className="text-muted">Store Connections</dt>
+                <dd className="mt-1 font-medium">{initialResult.storeConnections.length}</dd>
+              </div>
+              <div>
+                <dt className="text-muted">Configured Store Credentials</dt>
+                <dd className="mt-1 font-medium">
+                  {
+                    initialResult.storeConnections.filter(
+                      (storeConnection) => storeConnection.storeCredential.configured,
+                    ).length
+                  }
+                </dd>
+              </div>
+            </dl>
+          </Panel>
+        }
+      >
+        {canCreateConnection ? (
+          <Panel
+            title="Create Store Connection"
+            description="One App can have one Apple App Store connection and one Google Play connection."
+          >
+            <form className="grid gap-4 lg:grid-cols-2" onSubmit={onSubmit}>
+              <Field label="Store">
+                <select className={fieldControlClassName} name="store" required defaultValue="">
                   <option value="" disabled>
                     Select a store
                   </option>
                   <option value="apple_app_store">Apple App Store</option>
                   <option value="google_play">Google Play</option>
                 </select>
+              </Field>
+              <Field label="External App ID">
+                <input
+                  className={fieldControlClassName}
+                  name="externalAppId"
+                  required
+                  maxLength={200}
+                />
+              </Field>
+              <Field label="Display name" hint="Optional label for humans.">
+                <input className={fieldControlClassName} name="displayName" maxLength={100} />
+              </Field>
+              <label className="flex items-center gap-3 self-end rounded-lg border border-border bg-background px-3 py-2 text-sm">
+                <input name="syncEnabled" type="checkbox" defaultChecked />
+                Sync enabled
               </label>
-            </p>
-            <p>
-              <label>
-                External App ID
-                <br />
-                <input name="externalAppId" required maxLength={200} />
-              </label>
-            </p>
-            <p>
-              <label>
-                Display name
-                <br />
-                <input name="displayName" maxLength={100} />
-              </label>
-            </p>
-            <p>
-              <label>
-                <input name="syncEnabled" type="checkbox" defaultChecked /> Sync enabled
-              </label>
-            </p>
-            <button type="submit" disabled={isPending}>
-              {isPending ? "Creating..." : "Create Store Connection"}
-            </button>
-          </form>
-          {result?.status === "validation-error" ? <p role="alert">{result.message}</p> : null}
-          {result?.status === "created" ? <p>Created Store Connection.</p> : null}
-          {result?.status === "not-found" ? (
-            <p role="alert">App not found for this Organization.</p>
-          ) : null}
-          {result && isOrganizationAccessFailureStatus(result.status) ? (
-            <p role="alert">Your Organization access changed. Refresh and try again.</p>
-          ) : null}
-        </section>
-      ) : (
-        <p>Only Owners and admins can create Store Connections for this App.</p>
-      )}
-
-      <section>
-        <h2>Store Connections</h2>
-        {initialResult.storeConnections.length === 0 ? (
-          <p>No Store Connections yet.</p>
+              <div className="lg:col-span-2">
+                <Button type="submit" disabled={isPending}>
+                  {isPending ? "Creating…" : "Create Store Connection"}
+                </Button>
+              </div>
+            </form>
+            <CreateConnectionMessage result={result} />
+          </Panel>
         ) : (
-          <ul>
-            {initialResult.storeConnections.map((storeConnection) => (
-              <li key={storeConnection.id}>
-                <strong>{formatStore(storeConnection.store)}</strong> · External App ID:{" "}
-                {storeConnection.externalAppId} · Sync: {storeConnection.syncEnabled ? "on" : "off"}
-                {storeConnection.displayName ? ` · ${storeConnection.displayName}` : null}
-                <br />
-                Store Credential: {formatStoreCredentialStatus(storeConnection.storeCredential)}
-                {canManageCredentials ? (
-                  <form onSubmit={onStoreCredentialSubmit}>
-                    <input type="hidden" name="storeConnectionId" value={storeConnection.id} />
-                    <p>
-                      <label>
-                        Store Credential
-                        <br />
+          <Panel>
+            <p className="text-sm text-muted-foreground">
+              Only Owners and admins can create Store Connections for this App.
+            </p>
+          </Panel>
+        )}
+
+        <Panel
+          title="Store Connections"
+          description="Add Store Credentials after creating each connection."
+        >
+          {initialResult.storeConnections.length === 0 ? (
+            <EmptyState
+              title="No Store Connections yet"
+              description="Create a Store Connection so ReviewInbox can sync Reviews for this App."
+            />
+          ) : (
+            <div className="space-y-4">
+              {initialResult.storeConnections.map((storeConnection) => (
+                <article
+                  key={storeConnection.id}
+                  className="rounded-xl border border-border bg-background/50 p-4"
+                >
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-base font-semibold tracking-[-0.02em]">
+                          {formatStore(storeConnection.store)}
+                        </h3>
+                        <StatusPill tone={storeConnection.syncEnabled ? "success" : "neutral"}>
+                          Sync {storeConnection.syncEnabled ? "on" : "off"}
+                        </StatusPill>
+                        <StatusPill
+                          tone={storeConnection.storeCredential.configured ? "primary" : "neutral"}
+                        >
+                          Store Credential{" "}
+                          {storeConnection.storeCredential.configured ? "configured" : "missing"}
+                        </StatusPill>
+                      </div>
+                      <p className="mt-1 break-words text-sm text-muted-foreground">
+                        External App ID: {storeConnection.externalAppId}
+                        {storeConnection.displayName ? ` · ${storeConnection.displayName}` : null}
+                      </p>
+                      <p className="mt-1 text-xs text-muted">
+                        {formatStoreCredentialStatus(storeConnection.storeCredential)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {canManageCredentials ? (
+                    <form className="mt-4 space-y-3" onSubmit={onStoreCredentialSubmit}>
+                      <input type="hidden" name="storeConnectionId" value={storeConnection.id} />
+                      <Field
+                        label="Store Credential"
+                        hint="Plaintext is encrypted before it is stored."
+                      >
                         <textarea
+                          className={textareaControlClassName}
                           name="credentialMaterial"
                           required
                           rows={4}
-                          cols={60}
                           maxLength={20_000}
                           autoComplete="off"
                           spellCheck={false}
                           placeholder={credentialPlaceholder(storeConnection.store)}
                         />
-                      </label>
+                      </Field>
+                      <Button type="submit" disabled={isPending} size="sm">
+                        {savingStoreConnectionId === storeConnection.id
+                          ? "Saving Store Credential…"
+                          : storeConnection.storeCredential.configured
+                            ? "Update Store Credential"
+                            : "Save Store Credential"}
+                      </Button>
+                    </form>
+                  ) : (
+                    <p className="mt-4 text-sm text-muted-foreground">
+                      Only Owners and admins can create or update Store Credentials.
                     </p>
-                    <button type="submit" disabled={isPending}>
-                      {savingStoreConnectionId === storeConnection.id
-                        ? "Saving Store Credential..."
-                        : storeConnection.storeCredential.configured
-                          ? "Update Store Credential"
-                          : "Save Store Credential"}
-                    </button>
-                  </form>
-                ) : (
-                  <p>Only Owners and admins can create or update Store Credentials.</p>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-        {storeCredentialResult?.status === "validation-error" ? (
-          <p role="alert">{storeCredentialResult.message}</p>
-        ) : null}
-        {storeCredentialResult?.status === "configuration-error" ? (
-          <p role="alert">{storeCredentialResult.message}</p>
-        ) : null}
-        {storeCredentialResult?.status === "saved" ? <p>Saved Store Credential.</p> : null}
-        {storeCredentialResult?.status === "not-found" ? (
-          <p role="alert">Store Connection not found for this App.</p>
-        ) : null}
-        {storeCredentialResult &&
-        isOrganizationAccessFailureStatus(storeCredentialResult.status) ? (
-          <p role="alert">Your Organization access changed. Refresh and try again.</p>
-        ) : null}
-      </section>
-    </main>
+                  )}
+                </article>
+              ))}
+            </div>
+          )}
+          <StoreCredentialMessage result={storeCredentialResult} />
+        </Panel>
+      </AppPage>
+    </AppShell>
   )
+}
+
+function CreateConnectionMessage({ result }: { result: CreateStoreConnectionResult | null }) {
+  if (!result) {
+    return null
+  }
+
+  if (result.status === "validation-error") {
+    return (
+      <p className="mt-3 text-sm text-destructive-foreground" role="alert">
+        {result.message}
+      </p>
+    )
+  }
+
+  if (result.status === "created") {
+    return (
+      <p className="mt-3 text-sm text-muted-foreground" role="status">
+        Created Store Connection.
+      </p>
+    )
+  }
+
+  if (result.status === "not-found") {
+    return (
+      <p className="mt-3 text-sm text-destructive-foreground" role="alert">
+        App not found for this Organization.
+      </p>
+    )
+  }
+
+  if (isOrganizationAccessFailureStatus(result.status)) {
+    return (
+      <p className="mt-3 text-sm text-destructive-foreground" role="alert">
+        Your Organization access changed. Refresh and try again.
+      </p>
+    )
+  }
+
+  return null
+}
+
+function StoreCredentialMessage({ result }: { result: SaveStoreCredentialResult | null }) {
+  if (!result) {
+    return null
+  }
+
+  if (result.status === "validation-error" || result.status === "configuration-error") {
+    return (
+      <p className="mt-3 text-sm text-destructive-foreground" role="alert">
+        {result.message}
+      </p>
+    )
+  }
+
+  if (result.status === "saved") {
+    return (
+      <p className="mt-3 text-sm text-muted-foreground" role="status">
+        Saved Store Credential.
+      </p>
+    )
+  }
+
+  if (result.status === "not-found") {
+    return (
+      <p className="mt-3 text-sm text-destructive-foreground" role="alert">
+        Store Connection not found for this App.
+      </p>
+    )
+  }
+
+  if (isOrganizationAccessFailureStatus(result.status)) {
+    return (
+      <p className="mt-3 text-sm text-destructive-foreground" role="alert">
+        Your Organization access changed. Refresh and try again.
+      </p>
+    )
+  }
+
+  return null
 }
 
 function formatStore(store: string): string {

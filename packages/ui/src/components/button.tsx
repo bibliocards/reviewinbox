@@ -26,22 +26,21 @@ export const buttonVariants = cva(
         "icon-sm": "size-8",
         "icon-lg": "size-10",
       },
+      fluid: {
+        default: "",
+        long: "w-full",
+      },
     },
     defaultVariants: {
       variant: "default",
       size: "default",
+      fluid: "default",
     },
   },
 )
 
-export type ButtonProps = ComponentProps<typeof BaseButton> &
-  VariantProps<typeof buttonVariants>
+export type ButtonProps = ComponentProps<typeof BaseButton> & VariantProps<typeof buttonVariants>
 
 export function Button({ className, variant, size, ...props }: ButtonProps) {
-  return (
-    <BaseButton
-      className={cn(buttonVariants({ variant, size }), className)}
-      {...props}
-    />
-  )
+  return <BaseButton className={cn(buttonVariants({ variant, size }), className)} {...props} />
 }

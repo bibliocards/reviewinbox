@@ -35,9 +35,7 @@ function FirstOwnerOnboarding() {
             <input name="password" type="password" autoComplete="new-password" required />
           </label>
         </p>
-        <Button type="submit">
-          Create Owner
-        </Button>
+        <Button type="submit">Create Owner</Button>
       </form>
     </main>
   )
