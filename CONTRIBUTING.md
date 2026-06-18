@@ -18,9 +18,9 @@ Set local secrets in `.env`:
 
 ```bash
 APP_ENCRYPTION_KEY=$(openssl rand -base64 32)
-BETTER_AUTH_SECRET=$(openssl rand -base64 32)
-BETTER_AUTH_URL=http://localhost:5173
 ```
+
+Better Auth is not part of the first executable slice; add its secret and routes in the M1 auth slice.
 
 Start Postgres:
 
@@ -40,7 +40,7 @@ Start the product app stack:
 pnpm nx run-many -t serve -p api web
 ```
 
-Open `http://localhost:5173` and create the first Owner from `/onboarding/first-owner`.
+Open `http://localhost:4200`. The Angular dev server proxies `/api` and reserved `/auth` paths to Hono on `http://127.0.0.1:3000`.
 
 ## Checks
 
@@ -56,6 +56,7 @@ pnpm build
 ```
 
 Nx owns task orchestration for the monorepo. Prefer `pnpm nx affected -t <target>` for focused checks once the workspace is initialized.
+Biome owns formatting and linting for the repo. Do not add separate oxfmt or oxlint configuration.
 
 ## Database
 

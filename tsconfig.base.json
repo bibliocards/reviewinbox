@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "strict": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "@reviewinbox/config": ["packages/config/src/index.ts"],
+      "@reviewinbox/contracts": ["packages/contracts/src/index.ts"],
+      "@reviewinbox/core": ["packages/core/src/index.ts"],
+      "@reviewinbox/db": ["packages/db/src/index.ts"]
+    }
+  }
+}

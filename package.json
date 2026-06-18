@@ -1,0 +1,47 @@
+{
+  "name": "reviewinbox",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.5.3",
+  "scripts": {
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "lint": "biome lint .",
+    "typecheck": "nx run-many -t typecheck",
+    "test": "nx run-many -t test",
+    "build": "nx run-many -t build",
+    "db:generate": "drizzle-kit generate --config packages/db/drizzle.config.ts",
+    "db:migrate": "drizzle-kit migrate --config packages/db/drizzle.config.ts"
+  },
+  "dependencies": {
+    "@angular/common": "21.2.16",
+    "@angular/compiler": "21.2.16",
+    "@angular/core": "21.2.16",
+    "@angular/forms": "21.2.16",
+    "@angular/platform-browser": "21.2.16",
+    "@hono/node-server": "^1.19.6",
+    "drizzle-orm": "^0.45.1",
+    "hono": "^4.10.7",
+    "pg": "^8.16.3",
+    "rxjs": "^7.8.2",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@angular/build": "21.2.16",
+    "@angular/cli": "21.2.16",
+    "@biomejs/biome": "2.5.0",
+    "@nx/angular": "21.6.11",
+    "@nx/js": "21.6.11",
+    "@swc/cli": "^0.7.9",
+    "@swc/core": "^1.15.3",
+    "@types/node": "^25.0.2",
+    "@types/pg": "^8.15.6",
+    "drizzle-kit": "^0.31.8",
+    "nx": "21.6.11",
+    "tsx": "^4.21.0",
+    "typescript": "~5.9.3",
+    "vite": "^7.3.0",
+    "vitest": "^4.0.15"
+  }
+}
