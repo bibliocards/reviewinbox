@@ -6,8 +6,8 @@ import {
   provideZonelessChangeDetection,
 } from "@angular/core"
 import { provideTransloco } from "@jsverse/transloco"
-import Aura from "@primeuix/themes/aura"
 import { providePrimeNG } from "primeng/config"
+import { reviewInboxTheme } from "./theme"
 import { TranslocoHttpLoader } from "./transloco-loader"
 
 export const appConfig: ApplicationConfig = {
@@ -16,12 +16,12 @@ export const appConfig: ApplicationConfig = {
     provideZonelessChangeDetection(),
     providePrimeNG({
       theme: {
-        preset: Aura,
+        preset: reviewInboxTheme,
         options: {
           darkModeSelector: ".dark",
           cssLayer: {
             name: "primeng",
-            order: "theme, base, primeng",
+            order: "theme, base, primeng, utilities",
           },
         },
       },
