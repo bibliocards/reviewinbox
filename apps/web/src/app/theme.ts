@@ -1,21 +1,31 @@
 import { definePreset } from "@primeuix/themes"
 import Aura from "@primeuix/themes/aura"
 
-const canvas = "#010102"
-const surface1 = "#0d0e12"
-const surface2 = "#14161c"
-const surface3 = "#1a1d24"
-const surface4 = "#20242d"
-const hairline = "#23252a"
-const hairlineStrong = "#343844"
-const ink = "#f7f8f8"
-const inkMuted = "#d0d6e0"
-const inkSubtle = "#8a8f98"
+const darkCanvas = "#010102"
+const darkSurface1 = "#0d0e12"
+const darkSurface2 = "#14161c"
+const darkSurface3 = "#1a1d24"
+const darkSurface4 = "#20242d"
+const darkHairline = "#23252a"
+const darkHairlineStrong = "#343844"
+const darkInk = "#f7f8f8"
+const darkInkMuted = "#d0d6e0"
+const darkInkSubtle = "#8a8f98"
+const lightCanvas = "#f7f7f2"
+const lightSurface1 = "#ffffff"
+const lightSurface2 = "#f0f1f6"
+const lightSurface3 = "#e6e8f0"
+const lightSurface4 = "#d9dce8"
+const lightHairline = "#d9dce8"
+const lightHairlineStrong = "#b8bdcc"
+const lightInk = "#17181c"
+const lightInkMuted = "#4b5160"
+const lightInkSubtle = "#6f7686"
 const primary = "#5e6ad2"
 const primaryHover = "#828fff"
 const primaryFocus = "#5e69d1"
 
-const surfacePalette = {
+const darkSurfacePalette = {
   0: "#ffffff",
   50: "#f7f8f8",
   100: "#d0d6e0",
@@ -23,15 +33,30 @@ const surfacePalette = {
   300: "#8a8f98",
   400: "#62666d",
   500: "#343844",
-  600: hairline,
-  700: surface4,
-  800: surface3,
-  900: surface2,
-  950: canvas,
+  600: darkHairline,
+  700: darkSurface4,
+  800: darkSurface3,
+  900: darkSurface2,
+  950: darkCanvas,
 }
 
-const linearColorScheme = {
-  surface: surfacePalette,
+const lightSurfacePalette = {
+  0: "#ffffff",
+  50: lightCanvas,
+  100: lightSurface2,
+  200: lightSurface3,
+  300: lightSurface4,
+  400: lightHairlineStrong,
+  500: "#8e95a6",
+  600: "#6f7686",
+  700: lightInkMuted,
+  800: "#303440",
+  900: lightInk,
+  950: "#0f1117",
+}
+
+const darkColorScheme = {
+  surface: darkSurfacePalette,
   primary: {
     color: primary,
     contrastColor: "#ffffff",
@@ -41,92 +66,193 @@ const linearColorScheme = {
   highlight: {
     background: "color-mix(in srgb, #5e6ad2 22%, transparent)",
     focusBackground: "color-mix(in srgb, #5e6ad2 28%, transparent)",
-    color: ink,
-    focusColor: ink,
+    color: darkInk,
+    focusColor: darkInk,
   },
   mask: {
     background: "rgba(0, 0, 0, 0.72)",
-    color: ink,
+    color: darkInk,
   },
   formField: {
-    background: surface1,
-    disabledBackground: surface2,
-    filledBackground: surface1,
-    filledHoverBackground: surface2,
-    filledFocusBackground: surface1,
-    borderColor: hairline,
-    hoverBorderColor: hairlineStrong,
+    background: darkSurface1,
+    disabledBackground: darkSurface2,
+    filledBackground: darkSurface1,
+    filledHoverBackground: darkSurface2,
+    filledFocusBackground: darkSurface1,
+    borderColor: darkHairline,
+    hoverBorderColor: darkHairlineStrong,
     focusBorderColor: primaryFocus,
-    color: ink,
+    color: darkInk,
     disabledColor: "#62666d",
-    placeholderColor: inkSubtle,
-    floatLabelColor: inkSubtle,
+    placeholderColor: darkInkSubtle,
+    floatLabelColor: darkInkSubtle,
     floatLabelFocusColor: primaryHover,
-    floatLabelActiveColor: inkMuted,
-    iconColor: inkSubtle,
+    floatLabelActiveColor: darkInkMuted,
+    iconColor: darkInkSubtle,
     shadow: "none",
   },
   text: {
-    color: ink,
-    hoverColor: ink,
-    mutedColor: inkSubtle,
-    hoverMutedColor: inkMuted,
+    color: darkInk,
+    hoverColor: darkInk,
+    mutedColor: darkInkSubtle,
+    hoverMutedColor: darkInkMuted,
   },
   content: {
-    background: surface1,
-    hoverBackground: surface2,
-    borderColor: hairline,
-    color: ink,
-    hoverColor: ink,
+    background: darkSurface1,
+    hoverBackground: darkSurface2,
+    borderColor: darkHairline,
+    color: darkInk,
+    hoverColor: darkInk,
   },
   overlay: {
     select: {
-      background: surface3,
-      borderColor: hairlineStrong,
-      color: ink,
+      background: darkSurface3,
+      borderColor: darkHairlineStrong,
+      color: darkInk,
     },
     popover: {
-      background: surface3,
-      borderColor: hairlineStrong,
-      color: ink,
+      background: darkSurface3,
+      borderColor: darkHairlineStrong,
+      color: darkInk,
     },
     modal: {
-      background: surface2,
-      borderColor: hairlineStrong,
-      color: ink,
+      background: darkSurface2,
+      borderColor: darkHairlineStrong,
+      color: darkInk,
     },
   },
   list: {
     option: {
-      focusBackground: surface2,
+      focusBackground: darkSurface2,
       selectedBackground: "color-mix(in srgb, #5e6ad2 22%, #14161c)",
       selectedFocusBackground: "color-mix(in srgb, #5e6ad2 30%, #14161c)",
-      color: inkMuted,
-      focusColor: ink,
-      selectedColor: ink,
-      selectedFocusColor: ink,
+      color: darkInkMuted,
+      focusColor: darkInk,
+      selectedColor: darkInk,
+      selectedFocusColor: darkInk,
     },
     optionGroup: {
-      background: surface1,
-      color: inkSubtle,
+      background: darkSurface1,
+      color: darkInkSubtle,
     },
   },
   navigation: {
     item: {
-      focusBackground: surface2,
-      activeBackground: surface3,
-      color: inkSubtle,
-      focusColor: ink,
-      activeColor: ink,
+      focusBackground: darkSurface2,
+      activeBackground: darkSurface3,
+      color: darkInkSubtle,
+      focusColor: darkInk,
+      activeColor: darkInk,
     },
     submenuLabel: {
-      background: surface1,
-      color: inkSubtle,
+      background: darkSurface1,
+      color: darkInkSubtle,
     },
     submenuIcon: {
-      color: inkSubtle,
-      focusColor: ink,
-      activeColor: ink,
+      color: darkInkSubtle,
+      focusColor: darkInk,
+      activeColor: darkInk,
+    },
+  },
+}
+
+const lightColorScheme = {
+  surface: lightSurfacePalette,
+  primary: {
+    color: primary,
+    contrastColor: "#ffffff",
+    hoverColor: "#4f5bc7",
+    activeColor: "#444fb3",
+  },
+  highlight: {
+    background: "color-mix(in srgb, #5e6ad2 12%, #ffffff)",
+    focusBackground: "color-mix(in srgb, #5e6ad2 18%, #ffffff)",
+    color: lightInk,
+    focusColor: lightInk,
+  },
+  mask: {
+    background: "rgba(15, 17, 23, 0.42)",
+    color: lightInk,
+  },
+  formField: {
+    background: lightSurface1,
+    disabledBackground: lightSurface2,
+    filledBackground: lightSurface1,
+    filledHoverBackground: lightSurface2,
+    filledFocusBackground: lightSurface1,
+    borderColor: lightHairline,
+    hoverBorderColor: lightHairlineStrong,
+    focusBorderColor: primaryFocus,
+    color: lightInk,
+    disabledColor: "#8e95a6",
+    placeholderColor: lightInkSubtle,
+    floatLabelColor: lightInkSubtle,
+    floatLabelFocusColor: primary,
+    floatLabelActiveColor: lightInkMuted,
+    iconColor: lightInkSubtle,
+    shadow: "none",
+  },
+  text: {
+    color: lightInk,
+    hoverColor: lightInk,
+    mutedColor: lightInkSubtle,
+    hoverMutedColor: lightInkMuted,
+  },
+  content: {
+    background: lightSurface1,
+    hoverBackground: lightSurface2,
+    borderColor: lightHairline,
+    color: lightInk,
+    hoverColor: lightInk,
+  },
+  overlay: {
+    select: {
+      background: lightSurface1,
+      borderColor: lightHairlineStrong,
+      color: lightInk,
+    },
+    popover: {
+      background: lightSurface1,
+      borderColor: lightHairlineStrong,
+      color: lightInk,
+    },
+    modal: {
+      background: lightSurface1,
+      borderColor: lightHairlineStrong,
+      color: lightInk,
+    },
+  },
+  list: {
+    option: {
+      focusBackground: lightSurface2,
+      selectedBackground: "color-mix(in srgb, #5e6ad2 12%, #ffffff)",
+      selectedFocusBackground: "color-mix(in srgb, #5e6ad2 18%, #ffffff)",
+      color: lightInkMuted,
+      focusColor: lightInk,
+      selectedColor: lightInk,
+      selectedFocusColor: lightInk,
+    },
+    optionGroup: {
+      background: lightSurface1,
+      color: lightInkSubtle,
+    },
+  },
+  navigation: {
+    item: {
+      focusBackground: lightSurface2,
+      activeBackground: lightSurface3,
+      color: lightInkSubtle,
+      focusColor: lightInk,
+      activeColor: lightInk,
+    },
+    submenuLabel: {
+      background: lightSurface1,
+      color: lightInkSubtle,
+    },
+    submenuIcon: {
+      color: lightInkSubtle,
+      focusColor: lightInk,
+      activeColor: lightInk,
     },
   },
 }
@@ -196,8 +322,8 @@ export const reviewInboxTheme = definePreset(Aura, {
       },
     },
     colorScheme: {
-      light: linearColorScheme,
-      dark: linearColorScheme,
+      light: lightColorScheme,
+      dark: darkColorScheme,
     },
   },
   components: {
@@ -227,22 +353,22 @@ export const reviewInboxTheme = definePreset(Aura, {
           },
         },
         secondary: {
-          background: surface1,
-          hoverBackground: surface2,
-          activeBackground: surface3,
-          borderColor: hairline,
-          hoverBorderColor: hairlineStrong,
-          activeBorderColor: hairlineStrong,
-          color: ink,
-          hoverColor: ink,
-          activeColor: ink,
+          background: "{content.background}",
+          hoverBackground: "{content.hover.background}",
+          activeBackground: "{surface.800}",
+          borderColor: "{content.border.color}",
+          hoverBorderColor: "{form.field.hover.border.color}",
+          activeBorderColor: "{form.field.hover.border.color}",
+          color: "{text.color}",
+          hoverColor: "{text.hover.color}",
+          activeColor: "{text.hover.color}",
         },
       },
     },
     card: {
       root: {
-        background: surface1,
-        color: ink,
+        background: "{content.background}",
+        color: "{content.color}",
         borderRadius: "12px",
         shadow: "none",
       },

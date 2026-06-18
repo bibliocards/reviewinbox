@@ -11,17 +11,17 @@
     "Inter Variable", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono Variable", "SF Mono", ui-monospace, Menlo, monospace;
 
-  --color-canvas: #010102;
-  --color-surface-1: #0d0e12;
-  --color-surface-2: #14161c;
-  --color-surface-3: #1a1d24;
-  --color-surface-4: #20242d;
-  --color-hairline: #23252a;
-  --color-hairline-strong: #343844;
-  --color-ink: #f7f8f8;
-  --color-ink-muted: #d0d6e0;
-  --color-ink-subtle: #8a8f98;
-  --color-ink-tertiary: #62666d;
+  --color-canvas: #f7f7f2;
+  --color-surface-1: #ffffff;
+  --color-surface-2: #f0f1f6;
+  --color-surface-3: #e6e8f0;
+  --color-surface-4: #d9dce8;
+  --color-hairline: #d9dce8;
+  --color-hairline-strong: #b8bdcc;
+  --color-ink: #17181c;
+  --color-ink-muted: #4b5160;
+  --color-ink-subtle: #6f7686;
+  --color-ink-tertiary: #8e95a6;
   --color-linear-primary: #5e6ad2;
   --color-linear-primary-hover: #828fff;
   --color-linear-primary-focus: #5e69d1;
@@ -47,13 +47,29 @@
 @layer base {
   html {
     min-height: 100%;
-    color-scheme: dark;
+    color-scheme: light;
     background: var(--color-canvas);
+  }
+
+  html.dark {
+    color-scheme: dark;
+    --color-canvas: #010102;
+    --color-surface-1: #0d0e12;
+    --color-surface-2: #14161c;
+    --color-surface-3: #1a1d24;
+    --color-surface-4: #20242d;
+    --color-hairline: #23252a;
+    --color-hairline-strong: #343844;
+    --color-ink: #f7f8f8;
+    --color-ink-muted: #d0d6e0;
+    --color-ink-subtle: #8a8f98;
+    --color-ink-tertiary: #62666d;
   }
 
   body {
     min-height: 100%;
     margin: 0;
+    overflow-x: hidden;
     color: var(--p-text-color);
     background: var(--color-canvas);
     font-family: var(--font-sans);
@@ -66,58 +82,15 @@
     box-sizing: border-box;
   }
 
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
   :focus-visible {
     outline: 2px solid color-mix(in srgb, var(--color-linear-primary-focus) 50%, transparent);
     outline-offset: 2px;
-  }
-}
-
-@layer components {
-  .shell {
-    display: grid;
-    min-height: 100vh;
-    place-items: center;
-    padding: clamp(24px, 6vw, 96px);
-    background: var(--color-canvas);
-  }
-
-  .hero {
-    width: min(100%, 1280px);
-    padding: clamp(32px, 7vw, 96px);
-    border: 1px solid var(--color-hairline);
-    border-radius: var(--radius-xl);
-    background: var(--color-surface-1);
-  }
-
-  .eyebrow {
-    margin: 0 0 16px;
-    color: var(--color-linear-primary-hover);
-    font-size: 13px;
-    font-weight: 500;
-    line-height: 1.3;
-    letter-spacing: 0.4px;
-  }
-
-  h1 {
-    max-width: 920px;
-    margin: 0;
-    color: var(--color-ink);
-    font-size: clamp(40px, 8vw, 80px);
-    font-weight: 600;
-    line-height: 1.05;
-    letter-spacing: clamp(-3px, -0.04em, -1px);
-  }
-
-  .lede {
-    max-width: 560px;
-    margin: 24px 0 32px;
-    color: var(--color-ink-subtle);
-    font-size: clamp(16px, 2vw, 18px);
-    line-height: 1.5;
-    letter-spacing: -0.1px;
-  }
-
-  .health-link {
-    text-decoration: none;
   }
 }

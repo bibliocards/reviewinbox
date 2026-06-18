@@ -5,8 +5,10 @@ import {
   provideBrowserGlobalErrorListeners,
   provideZonelessChangeDetection,
 } from "@angular/core"
+import { provideRouter } from "@angular/router"
 import { provideTransloco } from "@jsverse/transloco"
 import { providePrimeNG } from "primeng/config"
+import { appRoutes } from "./app.routes"
 import { reviewInboxTheme } from "./theme"
 import { TranslocoHttpLoader } from "./transloco-loader"
 
@@ -26,6 +28,7 @@ export const appConfig: ApplicationConfig = {
         },
       },
     }),
+    provideRouter(appRoutes),
     provideHttpClient(),
     provideTransloco({
       config: {
