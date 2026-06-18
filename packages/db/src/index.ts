@@ -4,6 +4,7 @@ import pg from "pg"
 import * as databaseSchema from "./schema"
 
 export { databaseSchema }
+export * from "./schema"
 
 export type Database = ReturnType<typeof createDatabase>
 

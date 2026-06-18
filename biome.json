@@ -7,7 +7,14 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**", "!dist", "!node_modules", "!volumes", "!pnpm-lock.yaml"]
+    "includes": [
+      "**",
+      "!dist",
+      "!node_modules",
+      "!volumes",
+      "!pnpm-lock.yaml",
+      "!packages/db/migrations/meta/*.json"
+    ]
   },
   "formatter": {
     "enabled": true,
