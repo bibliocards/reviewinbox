@@ -1,12 +1,5 @@
-html {
-  min-height: 100%;
-}
+@import "tailwindcss";
+@import "tailwindcss-primeui";
+@import "primeicons/primeicons.css";
 
-body {
-  min-height: 100%;
-  margin: 0;
-}
-
-* {
-  box-sizing: border-box;
-}
+@custom-variant dark (&:where(.dark, .dark *));
