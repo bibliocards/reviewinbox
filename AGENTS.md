@@ -11,13 +11,14 @@
 
 - Copy `.env.example` to `.env`, then generate `APP_ENCRYPTION_KEY` with `openssl rand -base64 32` before work that needs encrypted Store Credentials.
 - Local Postgres is `docker compose up -d postgres`; it exposes port `5432` and persists data under ignored `volumes/data`, matching the default `DATABASE_URL` host and port.
+- Better Auth requires `BETTER_AUTH_SECRET` generated with `openssl rand -base64 32`; local defaults use `BETTER_AUTH_URL=http://127.0.0.1:3000` and trust the Angular dev server origins for the `/auth` proxy.
 - Run migrations with `pnpm db:migrate` before using the web app against a fresh database.
 - Start the product app stack with `pnpm nx run-many -t serve -p api web`. The Angular dev server runs on `http://localhost:4200` and proxies `/api` and reserved `/auth` paths to Hono on `http://127.0.0.1:3000`.
 
 ## Package Boundaries
 
 - `apps/web` is the Angular product app. It contains client UI only, with no server logic.
-- `apps/api` is the Hono HTTP backend. It owns API routes and runtime validation. Better Auth routes, HTTP-only sessions, and production asset serving are later slices.
+- `apps/api` is the Hono HTTP backend. It owns API routes, runtime validation, and Better Auth routes under `/auth/*`. Production asset serving is a later slice.
 - Shared API contracts use Zod schemas with inferred TypeScript types; validate at the Hono boundary.
 - `packages/db` owns Drizzle schema, migrations, and `createDatabase()`.
 - `packages/core` is intentionally almost empty in the first executable slice; add domain utilities there when they appear.

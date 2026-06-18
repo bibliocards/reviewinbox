@@ -1,6 +1,8 @@
 import { healthResponseSchema } from "@reviewinbox/contracts"
 import { Hono } from "hono"
 
+import { auth } from "./auth"
+
 export function createApp() {
   const app = new Hono()
 
@@ -13,6 +15,8 @@ export function createApp() {
 
     return context.json(health)
   })
+
+  app.on(["GET", "POST"], "/auth/*", (context) => auth.handler(context.req.raw))
 
   return app
 }

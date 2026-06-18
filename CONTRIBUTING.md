@@ -18,9 +18,10 @@ Set local secrets in `.env`:
 
 ```bash
 APP_ENCRYPTION_KEY=$(openssl rand -base64 32)
+BETTER_AUTH_SECRET=$(openssl rand -base64 32)
 ```
 
-Better Auth is not part of the first executable slice; add its secret and routes in the M1 auth slice.
+Keep `BETTER_AUTH_URL` aligned with the Hono API origin. For local development it defaults to `http://127.0.0.1:3000`, while `BETTER_AUTH_TRUSTED_ORIGINS` includes the Angular dev server origins used by the `/auth` proxy.
 
 Start Postgres:
 

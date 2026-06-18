@@ -1,1 +1,1 @@
-export const schema = {}
+export * from "./auth-schema"

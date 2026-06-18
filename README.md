@@ -34,7 +34,7 @@ Both self-hosted and cloud deployments use the same codebase, with behavior sele
 - Worker: Node.js service for sync, AI drafts, and digests
 - Shared contracts: Zod schemas with inferred TypeScript types
 - Database: Postgres with Drizzle
-- Auth: better-auth with organizations, HTTP-only session cookies, and ngx-better-auth for Angular
+- Auth: Better Auth under Hono `/auth/*`, with email/password, Organizations, and HTTP-only session cookies
 - Queue: pg-boss
 - AI: Vercel AI SDK behind a ReviewInbox-owned package boundary
 - Deployment: Docker Compose with Postgres, Hono API/static server, and worker services
