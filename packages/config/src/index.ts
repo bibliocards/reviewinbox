@@ -70,6 +70,33 @@ export const serverConfigSchema = z
 
 export type ServerConfig = z.infer<typeof serverConfigSchema>
 
+export const appEncryptionKeySchema = z.string().superRefine((value, context) => {
+  let decoded: Buffer
+
+  try {
+    decoded = Buffer.from(value, "base64")
+  } catch {
+    context.addIssue({
+      code: "custom",
+      message: "APP_ENCRYPTION_KEY must be base64-encoded.",
+    })
+    return
+  }
+
+  if (decoded.length !== 32 || decoded.toString("base64") !== value) {
+    context.addIssue({
+      code: "custom",
+      message: "APP_ENCRYPTION_KEY must decode to exactly 32 bytes for AES-256-GCM.",
+    })
+  }
+})
+
+export const encryptionConfigSchema = z.object({
+  appEncryptionKey: appEncryptionKeySchema,
+})
+
+export type EncryptionConfig = z.infer<typeof encryptionConfigSchema>
+
 export function loadServerConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
   return serverConfigSchema.parse({
     deploymentMode: env["DEPLOYMENT_MODE"],
@@ -79,5 +106,11 @@ export function loadServerConfig(env: NodeJS.ProcessEnv = process.env): ServerCo
     betterAuthSecret: env["BETTER_AUTH_SECRET"],
     betterAuthUrl: env["BETTER_AUTH_URL"],
     betterAuthTrustedOrigins: env["BETTER_AUTH_TRUSTED_ORIGINS"],
+  })
+}
+
+export function loadEncryptionConfig(env: NodeJS.ProcessEnv = process.env): EncryptionConfig {
+  return encryptionConfigSchema.parse({
+    appEncryptionKey: env["APP_ENCRYPTION_KEY"],
   })
 }

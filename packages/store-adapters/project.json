@@ -1,0 +1,34 @@
+{
+  "name": "store-adapters",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "packages/store-adapters/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "swc packages/store-adapters/src -d dist/packages/store-adapters --strip-leading-paths"
+      },
+      "outputs": ["{workspaceRoot}/dist/packages/store-adapters"]
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p packages/store-adapters/tsconfig.lib.json --noEmit"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run packages/store-adapters/src --passWithNoTests"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "biome lint packages/store-adapters"
+      }
+    }
+  },
+  "tags": ["scope:shared", "type:store-adapters"]
+}

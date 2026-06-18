@@ -3,8 +3,8 @@
   "compilerOptions": {
     "composite": true,
     "rootDir": "src",
-    "outDir": "../../dist/packages/core",
-    "types": ["node"]
+    "outDir": "../../dist/packages/store-adapters",
+    "types": []
   },
   "include": ["src/**/*.ts"]
 }

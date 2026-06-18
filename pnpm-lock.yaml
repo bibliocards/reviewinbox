@@ -105,6 +105,8 @@ importers:
 
   packages/db: {}
 
+  packages/store-adapters: {}
+
 packages:
 
   '@algolia/abtesting@1.14.1':

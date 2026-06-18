@@ -8,6 +8,13 @@
       "when": 1781786924153,
       "tag": "0000_chunky_aaron_stack",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1781789096524,
+      "tag": "0001_illegal_nightcrawler",
+      "breakpoints": true
     }
   ]
 }
