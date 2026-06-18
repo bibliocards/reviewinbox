@@ -4,8 +4,7 @@
 
 - Package manager is `pnpm@11.5.3`; install with `pnpm install`.
 - Full checks from `CONTRIBUTING.md`: `pnpm format`, `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
-- Focused package commands use pnpm filters, for example `pnpm --filter @reviewinbox/web test`, `pnpm --filter @reviewinbox/core test`, or `pnpm --filter @reviewinbox/db typecheck`.
-- Root `pnpm test` is `turbo run test`; Turbo makes tests depend on `^build`, so a focused package test is faster when dependency builds are not needed.
+- Nx owns monorepo task orchestration. Prefer `pnpm nx <target> <project>` or `pnpm nx affected -t <target>` once the workspace is initialized.
 - Formatting is `oxfmt --write "**/*.{js,jsx,ts,tsx}"` with no semicolons; linting is `oxlint .`.
 
 ## Local Runtime
@@ -13,13 +12,15 @@
 - Copy `.env.example` to `.env`, then generate `APP_ENCRYPTION_KEY` and `BETTER_AUTH_SECRET` with `openssl rand -base64 32`.
 - Local Postgres is `docker compose up -d postgres`; it exposes port `5432` and persists data under ignored `volumes/data`, matching the default `DATABASE_URL` host and port.
 - Run migrations with `pnpm db:migrate` before using the web app against a fresh database.
-- Start the product app with `pnpm --filter @reviewinbox/web dev`; first self-hosted setup is at `/onboarding/first-owner`.
+- Start the product app stack with `pnpm nx run-many -t serve -p api web`; first self-hosted setup is at `/onboarding/first-owner`.
 
 ## Package Boundaries
 
-- `apps/web` is the TanStack Start product app; routes live under `apps/web/src/routes`.
+- `apps/web` is the Angular product app. It contains client UI only, with no server logic.
+- `apps/api` is the Hono HTTP backend. It owns API routes, Better Auth routes, HTTP-only sessions, runtime validation, and serving the built Angular assets in production.
 - `apps/marketing` is Astro and currently independent from the product app.
 - `apps/worker` is the Node service boundary for sync, AI drafts, and digests; do not fold background jobs into the web app.
+- Shared API contracts use Zod schemas with inferred TypeScript types; validate at the Hono boundary.
 - `packages/db` owns Drizzle schema, migrations, and `createDatabase()`.
 - `packages/core` owns domain utilities such as `StoreCredentialVault`; `packages/store-adapters` depends on core for store-specific integrations.
 - `packages/ai` is the only boundary that should wrap Vercel AI SDK usage; do not expose generic agent/tool authority from it.
@@ -27,13 +28,12 @@
 
 ## Generated And Database Files
 
-- `apps/web/src/routeTree.gen.ts` is TanStack Router generated output; do not edit it by hand. If it changes during checks, run `pnpm format` before committing.
 - Drizzle schema changes require `pnpm db:generate`; commit the generated migration in `packages/db/migrations` with the schema change.
 - `packages/db/drizzle.config.ts` defaults to the local Postgres URL when `DATABASE_URL` is unset.
 
 ## UI Direction
 
-- Use `DESIGN.md` as the visual direction source when implementing UI; the intended component stack is Base UI primitives with shadcn/ui-style composition.
+- Use `DESIGN.md` as the visual direction source when implementing UI; the intended product UI stack is PrimeNG with Tailwind v4.
 
 ## Domain And Security Constraints
 

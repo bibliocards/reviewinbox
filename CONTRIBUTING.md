@@ -34,10 +34,10 @@ Apply database migrations:
 pnpm db:migrate
 ```
 
-Start the web app:
+Start the product app stack:
 
 ```bash
-pnpm --filter @reviewinbox/web dev
+pnpm nx run-many -t serve -p api web
 ```
 
 Open `http://localhost:5173` and create the first Owner from `/onboarding/first-owner`.
@@ -55,7 +55,7 @@ pnpm test
 pnpm build
 ```
 
-TanStack Start generates `apps/web/src/routeTree.gen.ts` from route files. If a check regenerates it, run `pnpm format` before committing.
+Nx owns task orchestration for the monorepo. Prefer `pnpm nx affected -t <target>` for focused checks once the workspace is initialized.
 
 ## Database
 

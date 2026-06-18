@@ -27,15 +27,17 @@ Both self-hosted and cloud deployments use the same codebase, with behavior sele
 
 ## Technical Direction
 
-- Monorepo: pnpm workspaces and Turborepo
-- Product app: TanStack Start, React, shadcn/ui
+- Monorepo: pnpm and Nx
+- Product app: Angular, PrimeNG, Tailwind v4
+- Backend API: Hono as the only HTTP backend boundary
 - Marketing site: Astro
 - Worker: Node.js service for sync, AI drafts, and digests
+- Shared contracts: Zod schemas with inferred TypeScript types
 - Database: Postgres with Drizzle
-- Auth: better-auth with organizations
+- Auth: better-auth with organizations, HTTP-only session cookies, and ngx-better-auth for Angular
 - Queue: pg-boss
 - AI: Vercel AI SDK behind a ReviewInbox-owned package boundary
-- Deployment: Docker Compose on a VPS
+- Deployment: Docker Compose with Postgres, Hono API/static server, and worker services
 
 ## Core Concepts
 

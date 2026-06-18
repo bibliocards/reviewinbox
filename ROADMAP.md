@@ -2,8 +2,9 @@
 
 ## M0: Repo Foundation
 
-- Initialize pnpm workspaces and Turborepo.
-- Create `apps/web` with TanStack Start.
+- Initialize pnpm workspaces with Nx.
+- Create `apps/web` with Angular, PrimeNG, and Tailwind v4.
+- Create `apps/api` with Hono, Better Auth routes, and Zod-validated API routes.
 - Create `apps/marketing` with Astro.
 - Create `apps/worker` for background jobs.
 - Create initial packages: `core`, `db`, `store-adapters`, `ai`, `billing`, and `config`.
@@ -17,7 +18,7 @@
 - Implement first-user self-hosted onboarding.
 - Create the default self-hosted organization.
 - Add app CRUD.
-- Add organization membership and owner/admin permissions.
+- Add organization membership and Owner permissions.
 
 ## M2: Store Connections And Sync
 
