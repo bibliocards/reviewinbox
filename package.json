@@ -5,7 +5,7 @@
   "type": "module",
   "packageManager": "pnpm@11.5.3",
   "scripts": {
-    "serve": "nx run-many -t serve -p api web",
+    "serve": "nx run-many -t serve -p api web --tui=false",
     "serve:api": "nx serve api",
     "serve:web": "nx serve web",
     "format": "biome format --write .",
@@ -15,7 +15,9 @@
     "test": "nx run-many -t test",
     "build": "nx run-many -t build",
     "db:generate": "drizzle-kit generate --config packages/db/drizzle.config.ts",
-    "db:migrate": "drizzle-kit migrate --config packages/db/drizzle.config.ts"
+    "db:migrate": "drizzle-kit migrate --config packages/db/drizzle.config.ts",
+    "db:clear": "docker compose exec -T postgres psql -U reviewinbox -d reviewinbox -c \"DROP SCHEMA IF EXISTS drizzle CASCADE; DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;\"",
+    "db:reset": "pnpm db:clear && pnpm db:migrate"
   },
   "dependencies": {
     "@angular/common": "21.2.16",

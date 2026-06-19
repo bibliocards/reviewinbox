@@ -6,8 +6,15 @@ describe('loadServerConfig', () => {
   it('uses safe local defaults', () => {
     expect(loadServerConfig({})).toMatchObject({
       deploymentMode: 'self-hosted',
+      runDatabaseMigrationsOnStartup: false,
       apiHost: '127.0.0.1',
       apiPort: 3000,
+    })
+  })
+
+  it('enables startup migrations explicitly', () => {
+    expect(loadServerConfig({ RUN_DB_MIGRATIONS_ON_STARTUP: 'true' })).toMatchObject({
+      runDatabaseMigrationsOnStartup: true,
     })
   })
 })

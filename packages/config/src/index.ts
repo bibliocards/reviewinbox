@@ -6,6 +6,11 @@ export type DeploymentMode = z.infer<typeof deploymentModeSchema>
 
 const localOrigins = new Set(['http://localhost', 'http://127.0.0.1'])
 
+const booleanEnvSchema = z
+  .enum(['true', 'false'])
+  .default('false')
+  .transform((value) => value === 'true')
+
 function isLocalHttpOrigin(origin: string) {
   const url = new URL(origin)
   return url.protocol === 'http:' && localOrigins.has(`${url.protocol}//${url.hostname}`)
@@ -29,6 +34,7 @@ export const serverConfigSchema = z
   .object({
     deploymentMode: deploymentModeSchema.default('self-hosted'),
     databaseUrl: z.url().default('postgres://reviewinbox:reviewinbox@localhost:5432/reviewinbox'),
+    runDatabaseMigrationsOnStartup: booleanEnvSchema,
     apiHost: z.string().default('127.0.0.1'),
     apiPort: z.coerce.number().int().min(1).max(65535).default(3000),
     betterAuthSecret: z.string().min(32).optional(),
@@ -101,6 +107,7 @@ export function loadServerConfig(env: NodeJS.ProcessEnv = process.env): ServerCo
   return serverConfigSchema.parse({
     deploymentMode: env['DEPLOYMENT_MODE'],
     databaseUrl: env['DATABASE_URL'],
+    runDatabaseMigrationsOnStartup: env['RUN_DB_MIGRATIONS_ON_STARTUP'],
     apiHost: env['API_HOST'],
     apiPort: env['API_PORT'],
     betterAuthSecret: env['BETTER_AUTH_SECRET'],

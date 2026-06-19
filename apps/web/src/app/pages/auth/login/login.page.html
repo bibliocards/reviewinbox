@@ -9,12 +9,13 @@
 
     <div class="flex items-center gap-3">
       <ri-theme-toggle />
-
+      @if (signUpAvailable()) {
       <p-button
         variant="outlined"
         routerLink="/sign-up">
         Sign up
       </p-button>
+      }
     </div>
   </header>
 
@@ -96,6 +97,7 @@
     </form>
 
     <div class="mt-7 grid gap-2 text-center text-sm text-ink-subtle">
+      @if (signUpAvailable()) {
       <p class="m-0">
         Don't have an account?
         <a
@@ -104,6 +106,7 @@
           >Sign up</a
         >
       </p>
+      }
       <p class="m-0">
         Forgot your
         <a

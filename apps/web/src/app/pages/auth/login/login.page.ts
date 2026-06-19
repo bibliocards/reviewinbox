@@ -1,4 +1,5 @@
-import { Component, computed, inject, signal } from '@angular/core'
+import { Component, computed, effect, inject, signal } from '@angular/core'
+import { toSignal } from '@angular/core/rxjs-interop'
 import { email, FormField, form, required, submit } from '@angular/forms/signals'
 import { Router, RouterLink } from '@angular/router'
 import { AuthService } from 'ngx-better-auth'
@@ -20,6 +21,9 @@ export class LoginPageComponent {
   private readonly router = inject(Router)
 
   protected readonly capabilities = this.authCapabilities.capabilities
+  protected readonly signUpAvailable = toSignal(this.authCapabilities.signUpAvailable(), {
+    initialValue: this.capabilities.deploymentMode === 'cloud',
+  })
   protected readonly errorMessage = signal<string | null>(null)
   protected readonly isSubmitting = signal(false)
   protected readonly canSubmit = computed(() => this.loginForm().valid() && !this.isSubmitting())
@@ -34,6 +38,14 @@ export class LoginPageComponent {
     email(schema.email)
     required(schema.password)
   })
+
+  constructor() {
+    effect(() => {
+      if (this.capabilities.deploymentMode === 'self-hosted' && this.signUpAvailable()) {
+        void this.router.navigateByUrl('/sign-up')
+      }
+    })
+  }
 
   protected signIn(event: Event): void {
     event.preventDefault()

@@ -35,6 +35,8 @@ Apply database migrations:
 pnpm db:migrate
 ```
 
+Alternatively, set `RUN_DB_MIGRATIONS_ON_STARTUP=true` to let the API apply pending migrations before it starts. Keep this disabled for multi-instance deployments unless migrations are run by a single deployment job.
+
 Start the product app stack:
 
 ```bash
@@ -68,3 +70,15 @@ pnpm db:generate
 ```
 
 Migrations live in `packages/db/migrations` and should be committed with schema changes.
+
+Clear the local Docker Postgres database, including Drizzle migration history:
+
+```bash
+pnpm db:clear
+```
+
+Clear it and re-apply migrations:
+
+```bash
+pnpm db:reset
+```
