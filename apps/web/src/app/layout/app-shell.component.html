@@ -2,19 +2,34 @@
   <aside
     class="sidebar"
     aria-label="Primary navigation">
-    <p-button
-      class="brand"
-      routerLink="/"
-      aria-label="ReviewInbox home">
-      <span class="brand-mark">R</span>
-      <span class="brand-name">ReviewInbox</span>
-    </p-button>
+    @let organizationList = organizations() ?? []; @if (organizationList.length > 1) {
+    <div>
+      <p-select
+        [fluid]="true"
+        [options]="organizationList"
+        optionLabel="name"
+        optionValue="id"
+        [ngModel]="activeOrganizationId()"
+        ariaLabel="Organization"
+        (onChange)="switchOrganization($event)" />
+    </div>
+    } @else if (organizationList.length == 1) { @let organization = organizationList[0]!;
+    <div class="organization-switcher">
+      @if (organization.logo) {
+      <img
+        [src]="organization.logo"
+        [alt]="organization.name" />
+      } @else {
+      <span class="organization-mark">{{ initialsFrom(organization.name) }}</span>
+      }
+      <span class="organization-name">{{ organization.name }}</span>
+    </div>
+    }
 
     <nav class="nav-list">
       @for (item of navItems; track item.route) {
       <a
         class="nav-item"
-        href="{{ item.route }}"
         [routerLink]="item.route"
         routerLinkActive="is-active"
         [routerLinkActiveOptions]="{ exact: true }">
@@ -29,10 +44,7 @@
 
   <div class="workspace">
     <header class="topbar">
-      <div class="organization-switcher">
-        <span class="organization-mark">O</span>
-        <span class="organization-name">Default organization</span>
-      </div>
+      <div></div>
 
       <div class="topbar-actions">
         <p-button
@@ -47,11 +59,18 @@
 
         <ri-theme-toggle />
 
+        <p-menu
+          #ownerMenu
+          [model]="ownerMenuItems"
+          [popup]="true"
+          appendTo="body" />
+
         <p-button
-          label="TO"
+          [label]="ownerInitials()"
           severity="secondary"
           class="owner-button"
-          aria-label="Owner menu" />
+          aria-label="Owner menu"
+          (onClick)="ownerMenu.toggle($event)" />
       </div>
     </header>
 

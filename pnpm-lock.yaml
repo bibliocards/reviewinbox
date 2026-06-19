@@ -57,8 +57,8 @@ importers:
         specifier: ^4.10.7
         version: 4.12.25
       ngx-better-auth:
-        specifier: ^1.6.0
-        version: 1.6.0(9da8be6f990e1d73e024ca673e01a4b1)
+        specifier: ^1.6.1
+        version: 1.6.1(9da8be6f990e1d73e024ca673e01a4b1)
       pg:
         specifier: ^8.16.3
         version: 8.21.0
@@ -6508,8 +6508,8 @@ packages:
   neo-async@2.6.2:
     resolution: {integrity: sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==}
 
-  ngx-better-auth@1.6.0:
-    resolution: {integrity: sha512-UPc5YLlGtQhV4wxZ9CZuT24S1ftipowgIIubuwUk4pedAxAjEDKwxHz9Vhu4NaUM8g61L9EqKOAduxSk1+EIMg==}
+  ngx-better-auth@1.6.1:
+    resolution: {integrity: sha512-mguFoz+Nw7pqFb/Sot6uYZdFPO0wge1U+wpxRkzttsExzIYOf2MNwJe/kbLhanf/Zg4DJpBcAWAfC0nj44bF5Q==}
     peerDependencies:
       '@angular/common': '>=20.0.0'
       '@angular/core': '>=20.0.0'
@@ -15863,7 +15863,7 @@ snapshots:
 
   neo-async@2.6.2: {}
 
-  ngx-better-auth@1.6.0(9da8be6f990e1d73e024ca673e01a4b1):
+  ngx-better-auth@1.6.1(9da8be6f990e1d73e024ca673e01a4b1):
     dependencies:
       '@angular/common': 21.2.16(@angular/core@21.2.16(@angular/compiler@21.2.16)(rxjs@7.8.2))(rxjs@7.8.2)
       '@angular/core': 21.2.16(@angular/compiler@21.2.16)(rxjs@7.8.2)

@@ -8,8 +8,8 @@ import { providePrimeNG } from 'primeng/config'
 import { environment } from '../environments/environment'
 import { resolveOptionalString } from '../environments/environment.model'
 import { appRoutes } from './app.routes'
-import { reviewInboxTheme } from './theme'
-import { TranslocoHttpLoader } from './transloco-loader'
+import { reviewInboxTheme } from './shared/theme'
+import { TranslocoHttpLoader } from './shared/transloco-loader'
 
 export const appConfig: ApplicationConfig = {
   providers: [

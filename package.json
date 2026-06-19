@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@11.5.3",
+  "packageManager": "pnpm@11.8.0",
   "scripts": {
     "serve": "nx run-many -t serve -p api web --tui=false",
     "serve:api": "nx serve api",
@@ -35,7 +35,7 @@
     "better-auth": "^1.6.19",
     "drizzle-orm": "^0.45.1",
     "hono": "^4.10.7",
-    "ngx-better-auth": "^1.6.0",
+    "ngx-better-auth": "^1.6.1",
     "pg": "^8.16.3",
     "postcss": "^8.5.15",
     "primeicons": "^7.0.0",
