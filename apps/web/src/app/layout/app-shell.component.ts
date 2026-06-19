@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal } from '@angular/core'
+import { Component, computed, effect, HostListener, inject, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router'
 import { AuthService, OrganizationService } from 'ngx-better-auth'
@@ -123,6 +123,11 @@ export class AppShellComponent {
       next: () => this.loadActiveMember(organizationId),
       error: () => this.activeMemberRole.set(undefined),
     })
+  }
+
+  @HostListener('window:reviewinbox:organizations-changed')
+  protected reloadOrganizations(): void {
+    this.organizations.reload()
   }
 
   private loadActiveMember(organizationId: string): void {

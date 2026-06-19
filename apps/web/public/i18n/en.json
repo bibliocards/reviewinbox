@@ -12,6 +12,46 @@
         "copyFailed": "We could not copy this invitation link.",
         "inviteFailed": "We could not send this invitation yet."
       }
+    },
+    "profile": {
+      "loading": "Loading Organization profile...",
+      "saved": "Organization profile saved.",
+      "logoSaved": "Organization logo saved.",
+      "uploadLogo": "Upload logo",
+      "uploadingLogo": "Uploading...",
+      "logoAlt": "{{name}} logo",
+      "nameLabel": "Organization name",
+      "logoHint": "Use a PNG, JPEG, or WebP image up to 5MB.",
+      "save": "Save changes",
+      "identity": {
+        "title": "Organization identity",
+        "description": "Update the visible name and logo used across ReviewInbox."
+      },
+      "danger": {
+        "title": "Danger zone",
+        "description": "Delete this Organization and everything it owns.",
+        "selfHostedUnavailable": "Organization deletion is not available in self-hosted deployments.",
+        "ownerOnly": "Only an Organization Owner can delete this Organization.",
+        "consequences": "This permanently deletes Apps, Store Connections, encrypted Store Credentials, Reviews, and Sync Runs.",
+        "confirmLabel": "Type {{name}} to confirm deletion",
+        "delete": "Delete Organization"
+      },
+      "errors": {
+        "deleteFailed": "We could not delete this Organization yet.",
+        "loadFailed": "We could not load this Organization profile.",
+        "logoFailed": "We could not upload this logo yet.",
+        "logoSize": "Logo must be 5MB or smaller.",
+        "logoType": "Logo must be a PNG, JPEG, or WebP image.",
+        "nameRequired": "Organization name is required.",
+        "saveFailed": "We could not save this Organization profile yet."
+      }
+    }
+  },
+  "organizations": {
+    "new": {
+      "badge": "Cloud setup",
+      "title": "Create an Organization",
+      "description": "Organization creation will live here. For now, this placeholder keeps the cloud deletion flow in a safe landing state."
     }
   }
 }

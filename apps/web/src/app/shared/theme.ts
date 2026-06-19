@@ -1,16 +1,16 @@
 import { definePreset } from '@primeuix/themes'
 import Aura from '@primeuix/themes/aura'
 
-const darkCanvas = '#010102'
-const darkSurface1 = '#0d0e12'
-const darkSurface2 = '#14161c'
-const darkSurface3 = '#1a1d24'
-const darkSurface4 = '#20242d'
-const darkHairline = '#23252a'
-const darkHairlineStrong = '#343844'
-const darkInk = '#f7f8f8'
-const darkInkMuted = '#d0d6e0'
-const darkInkSubtle = '#8a8f98'
+const darkCanvas = '#0f1117'
+const darkSurface1 = '#141821'
+const darkSurface2 = '#1a1f2a'
+const darkSurface3 = '#202635'
+const darkSurface4 = '#273044'
+const darkHairline = '#2a3140'
+const darkHairlineStrong = '#3a4356'
+const darkInk = '#f3f5f7'
+const darkInkMuted = '#c7ced8'
+const darkInkSubtle = '#9aa3b2'
 const lightCanvas = '#f7f7f2'
 const lightSurface1 = '#ffffff'
 const lightSurface2 = '#f0f1f6'
@@ -27,11 +27,11 @@ const primaryFocus = '#5e69d1'
 
 const darkSurfacePalette = {
   0: '#ffffff',
-  50: '#f7f8f8',
-  100: '#d0d6e0',
-  200: '#b4bbc7',
-  300: '#8a8f98',
-  400: '#62666d',
+  50: '#f3f5f7',
+  100: '#c7ced8',
+  200: '#b2bbc8',
+  300: '#9aa3b2',
+  400: '#727b8c',
   500: '#343844',
   600: darkHairline,
   700: darkSurface4,
@@ -83,7 +83,7 @@ const darkColorScheme = {
     hoverBorderColor: darkHairlineStrong,
     focusBorderColor: primaryFocus,
     color: darkInk,
-    disabledColor: '#62666d',
+    disabledColor: '#727b8c',
     placeholderColor: darkInkSubtle,
     floatLabelColor: darkInkSubtle,
     floatLabelFocusColor: primaryHover,
@@ -124,8 +124,8 @@ const darkColorScheme = {
   list: {
     option: {
       focusBackground: darkSurface2,
-      selectedBackground: 'color-mix(in srgb, #5e6ad2 22%, #14161c)',
-      selectedFocusBackground: 'color-mix(in srgb, #5e6ad2 30%, #14161c)',
+      selectedBackground: 'color-mix(in srgb, #5e6ad2 22%, #1a1f2a)',
+      selectedFocusBackground: 'color-mix(in srgb, #5e6ad2 30%, #1a1f2a)',
       color: darkInkMuted,
       focusColor: darkInk,
       selectedColor: darkInk,

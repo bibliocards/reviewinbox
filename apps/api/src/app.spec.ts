@@ -15,6 +15,7 @@ vi.mock('./db', () => ({
     betterAuthUrl: 'http://127.0.0.1:3000',
     deploymentMode: 'self-hosted',
     appPublicUrl: 'http://localhost:4200',
+    uploadLocalDir: 'volumes/uploads-test',
     mailFrom: undefined,
     smtpHost: undefined,
   },

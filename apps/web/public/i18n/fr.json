@@ -12,6 +12,46 @@
         "copyFailed": "Impossible de copier ce lien d’invitation.",
         "inviteFailed": "Impossible d’envoyer cette invitation pour le moment."
       }
+    },
+    "profile": {
+      "loading": "Chargement du profil de l’Organization...",
+      "saved": "Profil de l’Organization enregistré.",
+      "logoSaved": "Logo de l’Organization enregistré.",
+      "uploadLogo": "Importer un logo",
+      "uploadingLogo": "Import en cours...",
+      "logoAlt": "Logo de {{name}}",
+      "nameLabel": "Nom de l’Organization",
+      "logoHint": "Utilisez une image PNG, JPEG ou WebP de 5 Mo maximum.",
+      "save": "Enregistrer",
+      "identity": {
+        "title": "Identité de l’Organization",
+        "description": "Modifiez le nom visible et le logo utilisés dans ReviewInbox."
+      },
+      "danger": {
+        "title": "Zone dangereuse",
+        "description": "Supprimez cette Organization et toutes les données qu’elle possède.",
+        "selfHostedUnavailable": "La suppression d’Organization n’est pas disponible en déploiement self-hosted.",
+        "ownerOnly": "Seul un Owner peut supprimer cette Organization.",
+        "consequences": "Cette action supprime définitivement les Apps, Store Connections, Store Credentials chiffrés, Reviews et Sync Runs.",
+        "confirmLabel": "Saisissez {{name}} pour confirmer la suppression",
+        "delete": "Supprimer l’Organization"
+      },
+      "errors": {
+        "deleteFailed": "Impossible de supprimer cette Organization pour le moment.",
+        "loadFailed": "Impossible de charger le profil de cette Organization.",
+        "logoFailed": "Impossible d’importer ce logo pour le moment.",
+        "logoSize": "Le logo doit faire 5 Mo maximum.",
+        "logoType": "Le logo doit être une image PNG, JPEG ou WebP.",
+        "nameRequired": "Le nom de l’Organization est requis.",
+        "saveFailed": "Impossible d’enregistrer le profil de cette Organization pour le moment."
+      }
+    }
+  },
+  "organizations": {
+    "new": {
+      "badge": "Configuration cloud",
+      "title": "Créer une Organization",
+      "description": "La création d’Organization sera ajoutée ici. Pour l’instant, ce placeholder garde le flux de suppression cloud dans un état sûr."
     }
   }
 }

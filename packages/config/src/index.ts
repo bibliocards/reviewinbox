@@ -76,6 +76,13 @@ export const serverConfigSchema = z
     smtpUser: optionalStringSchema,
     smtpPassword: optionalStringSchema,
     smtpSecure: booleanEnvSchema,
+    uploadLocalDir: z.string().default('volumes/uploads'),
+    s3Region: optionalStringSchema,
+    s3Bucket: optionalStringSchema,
+    s3Endpoint: optionalStringSchema,
+    s3AccessKeyId: optionalStringSchema,
+    s3SecretAccessKey: optionalStringSchema,
+    s3PublicBaseUrl: optionalStringSchema,
   })
   .superRefine((config, context) => {
     if ((config.smtpHost && !config.mailFrom) || (!config.smtpHost && config.mailFrom)) {
@@ -83,6 +90,15 @@ export const serverConfigSchema = z
         code: 'custom',
         path: ['mailFrom'],
         message: 'MAIL_FROM and SMTP_HOST must be configured together to enable invitation email delivery.',
+      })
+    }
+
+    const s3Values = [config.s3Region, config.s3Bucket, config.s3AccessKeyId, config.s3SecretAccessKey]
+    if (s3Values.some(Boolean) && !s3Values.every(Boolean)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['s3Bucket'],
+        message: 'S3_REGION, S3_BUCKET, S3_ACCESS_KEY_ID, and S3_SECRET_ACCESS_KEY must be configured together.',
       })
     }
 
@@ -163,6 +179,13 @@ export function loadServerConfig(env: NodeJS.ProcessEnv = process.env): ServerCo
     smtpUser: env['SMTP_USER'],
     smtpPassword: env['SMTP_PASSWORD'],
     smtpSecure: env['SMTP_SECURE'],
+    uploadLocalDir: env['UPLOAD_LOCAL_DIR'],
+    s3Region: env['S3_REGION'],
+    s3Bucket: env['S3_BUCKET'],
+    s3Endpoint: env['S3_ENDPOINT'],
+    s3AccessKeyId: env['S3_ACCESS_KEY_ID'],
+    s3SecretAccessKey: env['S3_SECRET_ACCESS_KEY'],
+    s3PublicBaseUrl: env['S3_PUBLIC_BASE_URL'],
   })
 }
 

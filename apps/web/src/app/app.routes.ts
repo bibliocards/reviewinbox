@@ -47,6 +47,11 @@ export const appRoutes: Routes = [
         path: 'organization',
         loadChildren: () => import('./pages/organization/organization.routes').then((routes) => routes.organizationRoutes),
       },
+      {
+        path: 'organizations/new',
+        title: 'Create Organization | ReviewInbox',
+        loadComponent: () => import('./pages/organizations-new/organizations-new.page').then((page) => page.OrganizationsNewPageComponent),
+      },
     ],
   },
   {

@@ -52,17 +52,17 @@
 
   html.dark {
     color-scheme: dark;
-    --color-canvas: #010102;
-    --color-surface-1: #0d0e12;
-    --color-surface-2: #14161c;
-    --color-surface-3: #1a1d24;
-    --color-surface-4: #20242d;
-    --color-hairline: #23252a;
-    --color-hairline-strong: #343844;
-    --color-ink: #f7f8f8;
-    --color-ink-muted: #d0d6e0;
-    --color-ink-subtle: #8a8f98;
-    --color-ink-tertiary: #62666d;
+    --color-canvas: #0f1117;
+    --color-surface-1: #141821;
+    --color-surface-2: #1a1f2a;
+    --color-surface-3: #202635;
+    --color-surface-4: #273044;
+    --color-hairline: #2a3140;
+    --color-hairline-strong: #3a4356;
+    --color-ink: #f3f5f7;
+    --color-ink-muted: #c7ced8;
+    --color-ink-subtle: #9aa3b2;
+    --color-ink-tertiary: #727b8c;
   }
 
   body {

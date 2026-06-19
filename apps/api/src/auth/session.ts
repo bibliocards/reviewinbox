@@ -65,3 +65,21 @@ export async function requireActiveOrganizationOwnerSession(
 
   return sessionResult
 }
+
+export async function requireActiveOrganizationManagerSession(
+  context: Context,
+): Promise<{ ok: true; session: ActiveOrganizationSession } | { ok: false; response: Response }> {
+  const sessionResult = await requireActiveOrganizationSession(context)
+  if (!sessionResult.ok) {
+    return sessionResult
+  }
+
+  if (!['owner', 'admin'].includes(sessionResult.session.role)) {
+    return {
+      ok: false,
+      response: context.json({ error: 'Organization Admin permission required.' }, 403),
+    }
+  }
+
+  return sessionResult
+}
