@@ -7,7 +7,7 @@
     <nav
       class="flex gap-1 rounded-xl border border-hairline bg-surface-2 p-1"
       aria-label="Organization settings">
-      @for (tab of tabs; track tab.route) {
+      @for (tab of tabs(); track tab.route) { @if (tab.visible !== false) {
       <a
         class="rounded-lg px-3 py-2 text-sm font-medium text-ink-subtle no-underline transition hover:bg-surface-1 hover:text-ink"
         routerLinkActive="bg-surface-1 text-ink shadow-sm"
@@ -15,7 +15,7 @@
         [routerLink]="tab.route">
         {{ tab.label }}
       </a>
-      }
+      } }
     </nav>
   </header>
 

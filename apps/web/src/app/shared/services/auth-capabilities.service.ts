@@ -7,6 +7,7 @@ import { resolveBoolean, resolveDeploymentMode, resolveOptionalString } from '..
 
 export type AuthCapabilities = {
   deploymentMode: 'self-hosted' | 'cloud'
+  isCloud: boolean
   appPublicUrl: string
   emailPassword: boolean
   google: boolean
@@ -23,6 +24,7 @@ export class AuthCapabilitiesService {
 
   readonly capabilities: AuthCapabilities = {
     deploymentMode: resolveDeploymentMode(environment.deploymentMode),
+    isCloud: resolveDeploymentMode(environment.deploymentMode) === 'cloud',
     appPublicUrl: globalThis.location?.origin ?? 'http://localhost:4200',
     emailPassword: true,
     google: resolveBoolean(environment.auth.google),
@@ -36,6 +38,7 @@ export class AuthCapabilitiesService {
     catchError(() =>
       of({
         deploymentMode: this.capabilities.deploymentMode,
+        isCloud: this.capabilities.isCloud,
         appPublicUrl: this.capabilities.appPublicUrl,
         auth: {
           emailPassword: this.capabilities.emailPassword,

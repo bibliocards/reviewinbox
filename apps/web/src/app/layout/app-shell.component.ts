@@ -7,6 +7,7 @@ import { ButtonModule } from 'primeng/button'
 import { MenuModule } from 'primeng/menu'
 import { type SelectChangeEvent, SelectModule } from 'primeng/select'
 import { ThemeToggleComponent } from '../shared/components/theme-toggle/theme-toggle.component'
+import { AuthCapabilitiesService } from '../shared/services/auth-capabilities.service'
 
 type ShellNavItem = {
   label: string
@@ -26,6 +27,7 @@ export class AppShellComponent {
   private readonly authService = inject(AuthService)
   private readonly organizationService = inject(OrganizationService)
   private readonly router = inject(Router)
+  private readonly capabilities = inject(AuthCapabilitiesService).capabilities
 
   private readonly session = this.authService.session
   private readonly selectedOrganizationId = signal<string | undefined>(undefined)
@@ -52,11 +54,17 @@ export class AppShellComponent {
     return ['owner', 'admin'].includes(role)
   })
 
-  protected readonly ownerMenuItems: MenuItem[] = [
+  protected readonly ownerMenuItems = computed<MenuItem[]>(() => [
     {
       label: 'Account settings',
       icon: 'pi pi-cog',
       routerLink: ['/settings'],
+    },
+    {
+      label: 'New organization',
+      icon: 'pi pi-plus',
+      routerLink: ['/organizations/new'],
+      visible: this.capabilities.isCloud,
     },
     {
       separator: true,
@@ -66,7 +74,7 @@ export class AppShellComponent {
       icon: 'pi pi-power-off',
       command: () => this.logout(),
     },
-  ]
+  ])
 
   protected readonly navItems = computed<ShellNavItem[]>(() => [
     {

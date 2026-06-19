@@ -1,5 +1,6 @@
-import { Component } from '@angular/core'
+import { Component, computed, inject } from '@angular/core'
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router'
+import { AuthCapabilitiesService } from '../../shared/services/auth-capabilities.service'
 
 @Component({
   selector: 'ri-organization-page',
@@ -7,9 +8,11 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router'
   templateUrl: './organization.page.html',
 })
 export class OrganizationPageComponent {
-  protected readonly tabs = [
+  private readonly capabilities = inject(AuthCapabilitiesService).capabilities
+
+  protected readonly tabs = computed(() => [
     { label: 'Profile', route: 'profile' },
     { label: 'Members', route: 'members' },
-    { label: 'Billing', route: 'billing' },
-  ]
+    { label: 'Billing', route: 'billing', visible: this.capabilities.isCloud },
+  ])
 }
