@@ -1,10 +1,10 @@
-import { and, eq } from "drizzle-orm"
-import type { Context } from "hono"
+import { and, eq } from 'drizzle-orm'
+import type { Context } from 'hono'
 
-import { member } from "@reviewinbox/db"
+import { member } from '@reviewinbox/db'
 
-import { auth } from "../auth"
-import { database } from "../db"
+import { auth } from '../auth'
+import { database } from '../db'
 
 type ActiveOrganizationSession = {
   userId: string
@@ -18,12 +18,12 @@ export async function requireActiveOrganizationSession(
   const session = await auth.api.getSession({ headers: context.req.raw.headers })
 
   if (!session) {
-    return { ok: false, response: context.json({ error: "Authentication required." }, 401) }
+    return { ok: false, response: context.json({ error: 'Authentication required.' }, 401) }
   }
 
   const activeOrganizationId = session.session.activeOrganizationId
   if (!activeOrganizationId) {
-    return { ok: false, response: context.json({ error: "Active Organization required." }, 403) }
+    return { ok: false, response: context.json({ error: 'Active Organization required.' }, 403) }
   }
 
   const membership = await database.query.member.findFirst({
@@ -34,7 +34,7 @@ export async function requireActiveOrganizationSession(
   if (!membership) {
     return {
       ok: false,
-      response: context.json({ error: "Active Organization is not available." }, 403),
+      response: context.json({ error: 'Active Organization is not available.' }, 403),
     }
   }
 
@@ -56,10 +56,10 @@ export async function requireActiveOrganizationOwnerSession(
     return sessionResult
   }
 
-  if (sessionResult.session.role !== "owner") {
+  if (sessionResult.session.role !== 'owner') {
     return {
       ok: false,
-      response: context.json({ error: "Organization Owner permission required." }, 403),
+      response: context.json({ error: 'Organization Owner permission required.' }, 403),
     }
   }
 

@@ -1,10 +1,10 @@
-import { relations } from "drizzle-orm"
+import { relations } from 'drizzle-orm'
 
-import { apps } from "./app-schema"
-import { organization } from "./auth-schema"
-import { reviews } from "./review-schema"
-import { storeConnections, storeCredentials } from "./store-schema"
-import { syncRuns } from "./sync-run-schema"
+import { apps } from './app-schema'
+import { organization } from './auth-schema'
+import { reviews } from './review-schema'
+import { storeConnections, storeCredentials } from './store-schema'
+import { syncRuns } from './sync-run-schema'
 
 export const appRelations = relations(apps, ({ one, many }) => ({
   organization: one(organization, {

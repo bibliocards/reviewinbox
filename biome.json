@@ -6,9 +6,12 @@
     "useIgnoreFile": true
   },
   "files": {
-    "ignoreUnknown": false,
+    "ignoreUnknown": true,
     "includes": [
-      "**",
+      "**/*.ts",
+      "**/*.html",
+      "**/*.css",
+      "**/*.json",
       "!dist",
       "!node_modules",
       "!volumes",
@@ -20,17 +23,31 @@
     "enabled": true,
     "indentStyle": "space",
     "indentWidth": 2,
-    "lineWidth": 100
+    "lineWidth": 140,
+    "lineEnding": "lf"
   },
   "javascript": {
+    "parser": {
+      "unsafeParameterDecoratorsEnabled": true
+    },
     "formatter": {
+      "quoteStyle": "single",
+      "jsxQuoteStyle": "double",
       "semicolons": "asNeeded",
-      "quoteStyle": "double"
+      "trailingCommas": "all",
+      "arrowParentheses": "always",
+      "bracketSpacing": true,
+      "bracketSameLine": false
     }
   },
   "html": {
     "parser": {
       "interpolation": true
+    },
+    "formatter": {
+      "enabled": true,
+      "indentScriptAndStyle": false,
+      "selfCloseVoidElements": "always"
     }
   },
   "css": {
@@ -44,7 +61,33 @@
       "preset": "recommended",
       "complexity": {
         "useLiteralKeys": "off"
+      },
+      "a11y": {
+        "useAltText": "off",
+        "useAnchorContent": "off",
+        "useButtonType": "off",
+        "useValidAnchor": "off"
       }
     }
-  }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.*.html"],
+      "html": {
+        "formatter": {
+          "indentWidth": 2,
+          "attributePosition": "multiline",
+          "bracketSameLine": true
+        }
+      }
+    }
+  ]
 }

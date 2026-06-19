@@ -1,22 +1,15 @@
-import {
-  appResponseSchema,
-  createAppRequestSchema,
-  listAppsResponseSchema,
-} from "@reviewinbox/contracts"
-import { apps } from "@reviewinbox/db"
-import { and, eq } from "drizzle-orm"
-import { Hono } from "hono"
+import { appResponseSchema, createAppRequestSchema, listAppsResponseSchema } from '@reviewinbox/contracts'
+import { apps } from '@reviewinbox/db'
+import { and, eq } from 'drizzle-orm'
+import { Hono } from 'hono'
 
-import {
-  requireActiveOrganizationOwnerSession,
-  requireActiveOrganizationSession,
-} from "../auth/session"
-import { database } from "../db"
-import { parseJsonBody, parseUuidParam } from "../http/validation"
+import { requireActiveOrganizationOwnerSession, requireActiveOrganizationSession } from '../auth/session'
+import { database } from '../db'
+import { parseJsonBody, parseUuidParam } from '../http/validation'
 
 export const appsRoutes = new Hono()
 
-appsRoutes.get("/api/apps", async (context) => {
+appsRoutes.get('/api/apps', async (context) => {
   const sessionResult = await requireActiveOrganizationSession(context)
   if (!sessionResult.ok) {
     return sessionResult.response
@@ -30,7 +23,7 @@ appsRoutes.get("/api/apps", async (context) => {
   return context.json(listAppsResponseSchema.parse({ apps: rows.map(toAppResponse) }))
 })
 
-appsRoutes.post("/api/apps", async (context) => {
+appsRoutes.post('/api/apps', async (context) => {
   const sessionResult = await requireActiveOrganizationOwnerSession(context)
   if (!sessionResult.ok) {
     return sessionResult.response
@@ -50,32 +43,29 @@ appsRoutes.post("/api/apps", async (context) => {
     .returning()
 
   if (!created) {
-    throw new Error("App creation did not return a row.")
+    throw new Error('App creation did not return a row.')
   }
 
   return context.json(appResponseSchema.parse(toAppResponse(created)), 201)
 })
 
-appsRoutes.get("/api/apps/:appId", async (context) => {
+appsRoutes.get('/api/apps/:appId', async (context) => {
   const sessionResult = await requireActiveOrganizationSession(context)
   if (!sessionResult.ok) {
     return sessionResult.response
   }
 
-  const appIdResult = parseUuidParam(context, "appId", "App")
+  const appIdResult = parseUuidParam(context, 'appId', 'App')
   if (!appIdResult.ok) {
     return appIdResult.response
   }
 
   const row = await database.query.apps.findFirst({
-    where: and(
-      eq(apps.id, appIdResult.data),
-      eq(apps.organizationId, sessionResult.session.organizationId),
-    ),
+    where: and(eq(apps.id, appIdResult.data), eq(apps.organizationId, sessionResult.session.organizationId)),
   })
 
   if (!row) {
-    return context.json({ error: "App not found." }, 404)
+    return context.json({ error: 'App not found.' }, 404)
   }
 
   return context.json(appResponseSchema.parse(toAppResponse(row)))

@@ -1,9 +1,9 @@
-import { z } from "zod"
+import { z } from 'zod'
 
-export const storeProviderSchema = z.enum(["apple_app_store", "google_play"])
+export const storeProviderSchema = z.enum(['apple_app_store', 'google_play'])
 export type StoreProvider = z.infer<typeof storeProviderSchema>
 
-export const storeConnectionStatusSchema = z.enum(["active", "disabled"])
+export const storeConnectionStatusSchema = z.enum(['active', 'disabled'])
 export type StoreConnectionStatus = z.infer<typeof storeConnectionStatusSchema>
 
 export const storeCredentialMetadataSchema = z.object({
@@ -52,7 +52,7 @@ export const updateStoreConnectionRequestSchema = z
   })
   .strict()
   .refine((value) => Object.keys(value).length > 0, {
-    message: "At least one Store Connection field must be provided.",
+    message: 'At least one Store Connection field must be provided.',
   })
 export type UpdateStoreConnectionRequest = z.infer<typeof updateStoreConnectionRequestSchema>
 
@@ -72,10 +72,10 @@ export const storeCredentialResponseSchema = z.object({
 })
 export type StoreCredentialResponse = z.infer<typeof storeCredentialResponseSchema>
 
-export const replyStatusSchema = z.enum(["pending", "drafted", "published", "ignored", "failed"])
+export const replyStatusSchema = z.enum(['pending', 'drafted', 'published', 'ignored', 'failed'])
 export type ReplyStatus = z.infer<typeof replyStatusSchema>
 
-export const syncRunStatusSchema = z.enum(["pending", "running", "succeeded", "failed"])
+export const syncRunStatusSchema = z.enum(['pending', 'running', 'succeeded', 'failed'])
 export type SyncRunStatus = z.infer<typeof syncRunStatusSchema>
 
 export const normalizedReviewSchema = z.object({

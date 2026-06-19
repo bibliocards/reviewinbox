@@ -1,5 +1,5 @@
-import { loadServerConfig } from "@reviewinbox/config"
-import { createDatabase } from "@reviewinbox/db"
+import { loadServerConfig } from '@reviewinbox/config'
+import { createDatabase } from '@reviewinbox/db'
 
 const config = loadServerConfig()
 

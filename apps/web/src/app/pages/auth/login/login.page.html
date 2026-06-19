@@ -1,0 +1,122 @@
+<main class="min-h-screen bg-canvas px-5 py-6 text-ink">
+  <header class="mx-auto flex max-w-[1920px] items-center justify-between gap-4">
+    <a
+      class="inline-flex items-center gap-3 text-ink no-underline"
+      routerLink="/login">
+      <span class="grid size-9 place-items-center rounded-xl bg-primary text-sm font-bold text-primary-contrast">R</span>
+      <span class="sr-only">ReviewInbox</span>
+    </a>
+
+    <div class="flex items-center gap-3">
+      <ri-theme-toggle />
+
+      <p-button
+        variant="outlined"
+        routerLink="/sign-up">
+        Sign up
+      </p-button>
+    </div>
+  </header>
+
+  <section class="mx-auto mt-14 w-full max-w-153 rounded-3xl border border-hairline bg-surface-1 px-6 py-8 sm:mt-20 sm:px-14 sm:py-10">
+    <h1 class="m-0 text-xl font-semibold tracking-[-0.8px] text-ink sm:text-2xl">Sign in to ReviewInbox</h1>
+
+    <div class="mt-6 grid gap-2 sm:grid-cols-3">
+      <p-button
+        label="Google"
+        icon="pi pi-google"
+        severity="secondary"
+        [disabled]="!capabilities.google"
+        styleClass="w-full justify-center" />
+      <p-button
+        label="Apple"
+        icon="pi pi-apple"
+        severity="secondary"
+        [disabled]="true"
+        styleClass="w-full justify-center" />
+      <p-button
+        label="GitHub"
+        icon="pi pi-github"
+        severity="secondary"
+        [disabled]="true"
+        styleClass="w-full justify-center" />
+    </div>
+
+    <div class="mt-2">
+      <p-button
+        label="Continue with SSO"
+        icon="pi pi-lock"
+        severity="secondary"
+        [disabled]="!capabilities.enterpriseSso"
+        styleClass="w-full justify-center" />
+    </div>
+
+    <div class="my-6 flex items-center gap-4 text-sm text-ink-tertiary">
+      <span class="h-px flex-1 bg-hairline"></span>
+      or
+      <span class="h-px flex-1 bg-hairline"></span>
+    </div>
+
+    <form
+      class="grid gap-4"
+      (submit)="signIn($event)">
+      <label class="grid gap-1.5 text-sm font-medium text-ink">
+        Email
+        <input
+          class=""
+          pInputText
+          type="email"
+          autocomplete="email"
+          [formField]="loginForm.email" />
+      </label>
+
+      <div class="grid gap-1.5 text-sm font-medium text-ink">
+        <label for="login-password">Password</label>
+        <p-password
+          inputId="login-password"
+          [formField]="loginForm.password"
+          autocomplete="current-password"
+          [feedback]="false"
+          [toggleMask]="true"
+          [fluid]="true"
+          inputStyleClass="w-full" />
+      </div>
+      @if (errorMessage()) {
+      <p class="m-0 rounded-xl border border-red-400 bg-surface-2 px-3 py-2 text-sm text-ink-muted">{{ errorMessage() }}</p>
+      }
+
+      <p-button
+        type="submit"
+        label="Sign in"
+        class="mt-1"
+        [fluid]="true"
+        [loading]="isSubmitting()"
+        [disabled]="!canSubmit()" />
+    </form>
+
+    <div class="mt-7 grid gap-2 text-center text-sm text-ink-subtle">
+      <p class="m-0">
+        Don't have an account?
+        <a
+          class="font-medium text-linear-primary underline-offset-4 hover:underline"
+          routerLink="/sign-up"
+          >Sign up</a
+        >
+      </p>
+      <p class="m-0">
+        Forgot your
+        <a
+          class="font-medium text-linear-primary underline-offset-4 hover:underline"
+          routerLink="/forgot-password"
+          >email</a
+        >
+        or
+        <a
+          class="font-medium text-linear-primary underline-offset-4 hover:underline"
+          routerLink="/forgot-password"
+          >password</a
+        >?
+      </p>
+    </div>
+  </section>
+</main>

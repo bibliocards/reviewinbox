@@ -1,7 +1,7 @@
-import { Component } from "@angular/core"
+import { Component } from '@angular/core'
 
 @Component({
-  selector: "ri-reply-inbox-page",
-  template: "",
+  selector: 'ri-reply-inbox-page',
+  template: '',
 })
 export class ReplyInboxPageComponent {}

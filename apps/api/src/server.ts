@@ -1,7 +1,7 @@
-import { serve } from "@hono/node-server"
-import { loadServerConfig } from "@reviewinbox/config"
+import { serve } from '@hono/node-server'
+import { loadServerConfig } from '@reviewinbox/config'
 
-import { createApp } from "./app"
+import { createApp } from './app'
 
 const config = loadServerConfig()
 

@@ -1,6 +1,6 @@
-import type { Context } from "hono"
-import type { z } from "zod"
-import { z as zod } from "zod"
+import type { Context } from 'hono'
+import type { z } from 'zod'
+import { z as zod } from 'zod'
 
 const uuidParamSchema = zod.uuid()
 
@@ -10,7 +10,7 @@ export async function parseJsonBody<TSchema extends z.ZodType>(context: Context,
   try {
     body = await context.req.json()
   } catch {
-    return { ok: false as const, response: context.json({ error: "Invalid JSON body." }, 400) }
+    return { ok: false as const, response: context.json({ error: 'Invalid JSON body.' }, 400) }
   }
 
   const result = schema.safeParse(body)
@@ -19,7 +19,7 @@ export async function parseJsonBody<TSchema extends z.ZodType>(context: Context,
       ok: false as const,
       response: context.json(
         {
-          error: "Invalid request body.",
+          error: 'Invalid request body.',
           issues: result.error.issues.map((issue) => ({
             path: issue.path,
             message: issue.message,

@@ -1,20 +1,20 @@
-import { index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import { index, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
 
-import { organization } from "./auth-schema"
+import { organization } from './auth-schema'
 
 export const apps = pgTable(
-  "apps",
+  'apps',
   {
-    id: uuid("id").defaultRandom().primaryKey(),
-    organizationId: text("organization_id")
+    id: uuid('id').defaultRandom().primaryKey(),
+    organizationId: text('organization_id')
       .notNull()
-      .references(() => organization.id, { onDelete: "cascade" }),
-    name: text("name").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at')
       .defaultNow()
       .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
   },
-  (table) => [index("apps_organization_id_idx").on(table.organizationId)],
+  (table) => [index('apps_organization_id_idx').on(table.organizationId)],
 )

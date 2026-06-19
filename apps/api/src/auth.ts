@@ -1,18 +1,18 @@
-import { betterAuth } from "better-auth"
-import { drizzleAdapter } from "better-auth/adapters/drizzle"
-import { organization } from "better-auth/plugins/organization"
-import { databaseSchema } from "@reviewinbox/db"
+import { betterAuth } from 'better-auth'
+import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { organization } from 'better-auth/plugins/organization'
+import { databaseSchema } from '@reviewinbox/db'
 
-import { database, serverConfig } from "./db"
+import { database, serverConfig } from './db'
 
-const rateLimitStorage = process.env["NODE_ENV"] === "test" ? "memory" : "database"
+const rateLimitStorage = process.env['NODE_ENV'] === 'test' ? 'memory' : 'database'
 
 export const auth = betterAuth({
-  appName: "ReviewInbox",
-  basePath: "/auth",
+  appName: 'ReviewInbox',
+  basePath: '/auth',
   baseURL: serverConfig.betterAuthUrl,
   database: drizzleAdapter(database, {
-    provider: "pg",
+    provider: 'pg',
     schema: databaseSchema,
   }),
   emailAndPassword: {

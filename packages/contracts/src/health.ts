@@ -1,8 +1,8 @@
-import { z } from "zod"
+import { z } from 'zod'
 
 export const healthResponseSchema = z.object({
   ok: z.literal(true),
-  service: z.literal("api"),
+  service: z.literal('api'),
   checkedAt: z.iso.datetime(),
 })
 

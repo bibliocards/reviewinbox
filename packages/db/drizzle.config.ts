@@ -1,12 +1,10 @@
-import { defineConfig } from "drizzle-kit"
+import { defineConfig } from 'drizzle-kit'
 
 export default defineConfig({
-  dialect: "postgresql",
-  schema: "./packages/db/src/schema.ts",
-  out: "./packages/db/migrations",
+  dialect: 'postgresql',
+  schema: './packages/db/src/schema.ts',
+  out: './packages/db/migrations',
   dbCredentials: {
-    url:
-      process.env["DATABASE_URL"] ??
-      "postgres://reviewinbox:reviewinbox@localhost:5432/reviewinbox",
+    url: process.env['DATABASE_URL'] ?? 'postgres://reviewinbox:reviewinbox@localhost:5432/reviewinbox',
   },
 })

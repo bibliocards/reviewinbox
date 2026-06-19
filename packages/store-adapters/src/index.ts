@@ -1,4 +1,4 @@
-export type StoreProvider = "apple_app_store" | "google_play"
+export type StoreProvider = 'apple_app_store' | 'google_play'
 
 export type NormalizedStoreReview = {
   externalReviewId: string

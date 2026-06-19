@@ -1,22 +1,28 @@
 <div class="app-shell">
-  <aside class="sidebar" aria-label="Primary navigation">
-    <a class="brand" href="/" routerLink="/" aria-label="ReviewInbox home">
+  <aside
+    class="sidebar"
+    aria-label="Primary navigation">
+    <p-button
+      class="brand"
+      routerLink="/"
+      aria-label="ReviewInbox home">
       <span class="brand-mark">R</span>
       <span class="brand-name">ReviewInbox</span>
-    </a>
+    </p-button>
 
     <nav class="nav-list">
       @for (item of navItems; track item.route) {
-        <a
-          class="nav-item"
-          href="{{ item.route }}"
-          [routerLink]="item.route"
-          routerLinkActive="is-active"
-          [routerLinkActiveOptions]="{ exact: true }"
-        >
-          <i class="pi {{ item.icon }}" aria-hidden="true"></i>
-          <span>{{ item.label }}</span>
-        </a>
+      <a
+        class="nav-item"
+        href="{{ item.route }}"
+        [routerLink]="item.route"
+        routerLinkActive="is-active"
+        [routerLinkActiveOptions]="{ exact: true }">
+        <i
+          class="pi {{ item.icon }}"
+          aria-hidden="true"></i>
+        <span>{{ item.label }}</span>
+      </a>
       }
     </nav>
   </aside>
@@ -29,25 +35,30 @@
       </div>
 
       <div class="topbar-actions">
-        <p-button severity="secondary" class="search-button" icon="pi pi-search" label="search" />
-
-        <p-button label="Connect app" size="small" />
-
         <p-button
           severity="secondary"
-          class="theme-button"
-          size="small"
-          [attr.aria-label]="themeLabel()"
-          [title]="themeLabel()"
-          (click)="toggleTheme()"
-          [icon]="themeIcon()" />
+          class="search-button"
+          icon="pi pi-search"
+          label="search" />
 
-        <p-button label="TO" severity="secondary" class="owner-button" aria-label="Owner menu" />
+        <p-button
+          label="Connect app"
+          size="small" />
+
+        <ri-theme-toggle />
+
+        <p-button
+          label="TO"
+          severity="secondary"
+          class="owner-button"
+          aria-label="Owner menu" />
       </div>
     </header>
 
     <main class="content-shell">
-      <section class="content-container" aria-label="Current page">
+      <section
+        class="content-container"
+        aria-label="Current page">
         <router-outlet />
       </section>
     </main>
