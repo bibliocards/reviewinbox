@@ -1,11 +1,15 @@
 import { Component, computed, effect, HostListener, inject, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router'
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
+import type { ConnectAppResponse } from '@reviewinbox/contracts'
 import { AuthService, OrganizationService } from 'ngx-better-auth'
 import type { MenuItem } from 'primeng/api'
 import { ButtonModule } from 'primeng/button'
+import { DialogService } from 'primeng/dynamicdialog'
 import { MenuModule } from 'primeng/menu'
 import { type SelectChangeEvent, SelectModule } from 'primeng/select'
+import { ConnectAppDialogComponent } from '../shared/components/connect-app-dialog/connect-app-dialog.component'
 import { ThemeToggleComponent } from '../shared/components/theme-toggle/theme-toggle.component'
 import { AuthCapabilitiesService } from '../shared/services/auth-capabilities.service'
 
@@ -19,7 +23,17 @@ type ShellNavItem = {
 
 @Component({
   selector: 'ri-app-shell',
-  imports: [ButtonModule, RouterLink, RouterLinkActive, RouterOutlet, SelectModule, ThemeToggleComponent, FormsModule, MenuModule],
+  imports: [
+    ButtonModule,
+    RouterLink,
+    RouterLinkActive,
+    RouterOutlet,
+    SelectModule,
+    ThemeToggleComponent,
+    FormsModule,
+    MenuModule,
+    TranslocoDirective,
+  ],
   templateUrl: './app-shell.component.html',
   styleUrl: './app-shell.component.css',
 })
@@ -27,6 +41,8 @@ export class AppShellComponent {
   private readonly authService = inject(AuthService)
   private readonly organizationService = inject(OrganizationService)
   private readonly router = inject(Router)
+  private readonly dialogService = inject(DialogService)
+  private readonly transloco = inject(TranslocoService)
   private readonly capabilities = inject(AuthCapabilitiesService).capabilities
 
   private readonly session = this.authService.session
@@ -136,6 +152,29 @@ export class AppShellComponent {
   @HostListener('window:reviewinbox:organizations-changed')
   protected reloadOrganizations(): void {
     this.organizations.reload()
+  }
+
+  protected openConnectAppDialog(): void {
+    const dialog = this.dialogService.open(ConnectAppDialogComponent, {
+      header: this.transloco.translate('apps.connectDialog.title'),
+      modal: true,
+      closable: true,
+      dismissableMask: true,
+      width: 'min(920px, 94vw)',
+      contentStyle: { overflow: 'auto' },
+      breakpoints: {
+        '640px': '94vw',
+      },
+    })
+
+    dialog?.onClose.subscribe((result?: ConnectAppResponse) => {
+      if (!result) {
+        return
+      }
+
+      dispatchEvent(new CustomEvent('reviewinbox:apps-changed'))
+      void this.router.navigate(['/apps'], { state: { appCreated: result.app.name } })
+    })
   }
 
   private loadActiveMember(organizationId: string): void {

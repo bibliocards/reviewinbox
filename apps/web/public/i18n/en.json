@@ -1,4 +1,98 @@
 {
+  "apps": {
+    "actions": {
+      "connectApp": "Connect app",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "stores": {
+      "apple": "Apple App Store",
+      "google": "Google Play"
+    },
+    "list": {
+      "title": "Apps",
+      "description": "Create Apps and connect them to Apple App Store or Google Play.",
+      "createdSuccess": "App {{name}} created.",
+      "updatedSuccess": "App {{name}} updated.",
+      "deletedSuccess": "App {{name}} deleted.",
+      "deleteConfirm": "Delete {{name}} and all of its Store Connections, Store Credentials, Reviews, Reply Drafts, Published Replies, and Sync Runs? This cannot be undone.",
+      "loading": "Loading Apps...",
+      "createdAgo": "{{distance}} ago",
+      "empty": {
+        "title": "No Apps connected yet",
+        "description": "Create your first App now. Store Connections can be added in the same flow."
+      },
+      "table": {
+        "app": "App",
+        "created": "Created",
+        "actions": "Actions"
+      },
+      "status": {
+        "configured": "Configured",
+        "missing": "Missing"
+      },
+      "errors": {
+        "loadFailed": "We could not load Apps yet.",
+        "deleteFailed": "We could not delete this App yet."
+      }
+    },
+    "connectDialog": {
+      "title": "Connect app",
+      "editTitle": "Edit app",
+      "steps": {
+        "createApp": "Create App",
+        "editApp": "Edit App",
+        "addStoreConnections": "Add Store Connections",
+        "editStoreConnections": "Edit Store Connections"
+      },
+      "createApp": {
+        "title": "Create the App",
+        "description": "Start with the product name. Store-specific details come next.",
+        "nameLabel": "App name"
+      },
+      "editApp": {
+        "title": "Edit the App",
+        "description": "Update the visible name for this App. Store-specific details come next."
+      },
+      "storeConnections": {
+        "title": "Add Store Connections",
+        "description": "Connect Apple, Google, both, or skip this for now."
+      },
+      "editStoreConnections": {
+        "title": "Edit Store Connections",
+        "description": "Update public store identifiers. Leave credential fields empty to keep the existing Store Credential."
+      },
+      "credentials": {
+        "keepExistingPlaceholder": "Leave blank to keep the existing Store Credential"
+      },
+      "apple": {
+        "skipHint": "Leave every field empty to skip Apple for now.",
+        "editHint": "Update App Store identifiers. Fill key id and private key only to replace the Store Credential.",
+        "appStoreAppIdLabel": "App Store app id",
+        "issuerIdLabel": "Issuer id",
+        "keyIdLabel": "Key id",
+        "privateKeyLabel": "Private key"
+      },
+      "google": {
+        "skipHint": "Leave every field empty to skip Google for now.",
+        "editHint": "Update the package name. Fill the service account JSON only to replace the Store Credential.",
+        "packageNameLabel": "Package name",
+        "serviceAccountJsonLabel": "Service account JSON"
+      },
+      "actions": {
+        "back": "Back",
+        "continue": "Continue",
+        "create": "Create app",
+        "createAndConnect": "Create app and connect stores",
+        "save": "Save changes"
+      },
+      "errors": {
+        "partialStoreConnection": "Complete every field for a Store Connection, or leave all of its fields empty.",
+        "createFailed": "We could not create this App yet.",
+        "updateFailed": "We could not update this App yet."
+      }
+    }
+  },
   "errors": {
     "generic": "Something went wrong. Please try again."
   },

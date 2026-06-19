@@ -5,6 +5,7 @@ import { provideTransloco } from '@jsverse/transloco'
 import { organizationClient } from 'better-auth/client/plugins'
 import { provideBetterAuth } from 'ngx-better-auth'
 import { providePrimeNG } from 'primeng/config'
+import { DialogService } from 'primeng/dynamicdialog'
 import { environment } from '../environments/environment'
 import { resolveOptionalString } from '../environments/environment.model'
 import { appRoutes } from './app.routes'
@@ -43,5 +44,6 @@ export const appConfig: ApplicationConfig = {
       },
       loader: TranslocoHttpLoader,
     }),
+    DialogService,
   ],
 }

@@ -1,4 +1,98 @@
 {
+  "apps": {
+    "actions": {
+      "connectApp": "Connecter une App",
+      "edit": "Modifier",
+      "delete": "Supprimer"
+    },
+    "stores": {
+      "apple": "Apple App Store",
+      "google": "Google Play"
+    },
+    "list": {
+      "title": "Apps",
+      "description": "Créez des Apps et connectez-les à Apple App Store ou Google Play.",
+      "createdSuccess": "App {{name}} créée.",
+      "updatedSuccess": "App {{name}} modifiée.",
+      "deletedSuccess": "App {{name}} supprimée.",
+      "deleteConfirm": "Supprimer {{name}} et toutes ses Store Connections, Store Credentials, Reviews, Reply Drafts, Published Replies et Sync Runs ? Cette action est irréversible.",
+      "loading": "Chargement des Apps...",
+      "createdAgo": "il y a {{distance}}",
+      "empty": {
+        "title": "Aucune App connectée pour le moment",
+        "description": "Créez votre première App maintenant. Les Store Connections peuvent être ajoutées dans le même flux."
+      },
+      "table": {
+        "app": "App",
+        "created": "Créée",
+        "actions": "Actions"
+      },
+      "status": {
+        "configured": "Configurée",
+        "missing": "Manquante"
+      },
+      "errors": {
+        "loadFailed": "Impossible de charger les Apps pour le moment.",
+        "deleteFailed": "Impossible de supprimer cette App pour le moment."
+      }
+    },
+    "connectDialog": {
+      "title": "Connecter une App",
+      "editTitle": "Modifier l’App",
+      "steps": {
+        "createApp": "Créer l’App",
+        "editApp": "Modifier l’App",
+        "addStoreConnections": "Ajouter des Store Connections",
+        "editStoreConnections": "Modifier les Store Connections"
+      },
+      "createApp": {
+        "title": "Créer l’App",
+        "description": "Commencez par le nom du produit. Les informations propres aux stores viennent ensuite.",
+        "nameLabel": "Nom de l’App"
+      },
+      "editApp": {
+        "title": "Modifier l’App",
+        "description": "Mettez à jour le nom visible de cette App. Les informations propres aux stores viennent ensuite."
+      },
+      "storeConnections": {
+        "title": "Ajouter des Store Connections",
+        "description": "Connectez Apple, Google, les deux, ou ignorez cette étape pour le moment."
+      },
+      "editStoreConnections": {
+        "title": "Modifier les Store Connections",
+        "description": "Mettez à jour les identifiants publics des stores. Laissez les champs de credential vides pour conserver le Store Credential existant."
+      },
+      "credentials": {
+        "keepExistingPlaceholder": "Laissez vide pour conserver le Store Credential existant"
+      },
+      "apple": {
+        "skipHint": "Laissez tous les champs vides pour ignorer Apple pour le moment.",
+        "editHint": "Mettez à jour les identifiants App Store. Remplissez le key id et la private key seulement pour remplacer le Store Credential.",
+        "appStoreAppIdLabel": "Identifiant App Store de l’App",
+        "issuerIdLabel": "Issuer id",
+        "keyIdLabel": "Key id",
+        "privateKeyLabel": "Private key"
+      },
+      "google": {
+        "skipHint": "Laissez tous les champs vides pour ignorer Google pour le moment.",
+        "editHint": "Mettez à jour le package name. Remplissez le JSON du service account seulement pour remplacer le Store Credential.",
+        "packageNameLabel": "Package name",
+        "serviceAccountJsonLabel": "JSON du service account"
+      },
+      "actions": {
+        "back": "Retour",
+        "continue": "Continuer",
+        "create": "Créer l’App",
+        "createAndConnect": "Créer l’App et connecter les stores",
+        "save": "Enregistrer"
+      },
+      "errors": {
+        "partialStoreConnection": "Complétez tous les champs d’une Store Connection, ou laissez-les tous vides.",
+        "createFailed": "Impossible de créer cette App pour le moment.",
+        "updateFailed": "Impossible de modifier cette App pour le moment."
+      }
+    }
+  },
   "errors": {
     "generic": "Une erreur est survenue. Réessayez."
   },

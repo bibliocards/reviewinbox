@@ -1,0 +1,172 @@
+<form
+  class="grid gap-5"
+  (submit)="submit($event)"
+  *transloco="let t">
+  <p-stepper
+    [value]="activeStep()"
+    [linear]="true">
+    <p-step-list>
+      <p-step [value]="1">{{ t(isEditing() ? 'apps.connectDialog.steps.editApp' : 'apps.connectDialog.steps.createApp') }}</p-step>
+      <p-step [value]="2"
+        >{{ t(isEditing() ? 'apps.connectDialog.steps.editStoreConnections' : 'apps.connectDialog.steps.addStoreConnections') }}</p-step
+      >
+    </p-step-list>
+
+    <p-step-panels>
+      <p-step-panel [value]="1">
+        <ng-template #content>
+          <div class="grid gap-4 pt-4">
+            <div>
+              <h2 class="m-0 text-lg font-semibold text-ink">
+                {{ t(isEditing() ? 'apps.connectDialog.editApp.title' : 'apps.connectDialog.createApp.title') }}
+              </h2>
+              <p class="m-0 mt-1 text-sm text-ink-subtle">
+                {{ t(isEditing() ? 'apps.connectDialog.editApp.description' : 'apps.connectDialog.createApp.description') }}
+              </p>
+            </div>
+
+            <label class="grid gap-1.5 text-sm font-medium text-ink">
+              <span>{{ t('apps.connectDialog.createApp.nameLabel') }}</span>
+              <input
+                pInputText
+                type="text"
+                autocomplete="off"
+                [attr.aria-label]="t('apps.connectDialog.createApp.nameLabel')"
+                [formField]="connectAppForm.appName" />
+            </label>
+          </div>
+        </ng-template>
+      </p-step-panel>
+
+      <p-step-panel [value]="2">
+        <ng-template #content>
+          <div class="grid gap-4 pt-4">
+            <div>
+              <h2 class="m-0 text-lg font-semibold text-ink">
+                {{ t(isEditing() ? 'apps.connectDialog.editStoreConnections.title' : 'apps.connectDialog.storeConnections.title') }}
+              </h2>
+              <p class="m-0 mt-1 text-sm text-ink-subtle">
+                {{ t(isEditing() ? 'apps.connectDialog.editStoreConnections.description' : 'apps.connectDialog.storeConnections.description') }}
+              </p>
+            </div>
+
+            <section class="grid gap-3 rounded-2xl border border-hairline bg-surface-1 p-4">
+              <div>
+                <h3 class="m-0 font-semibold text-ink flex gap-2 items-center">
+                  <i
+                    class="pi pi-apple"
+                    aria-hidden="true"></i>
+                  <span>{{ t('apps.stores.apple') }}</span>
+                </h3>
+                <p class="m-0 mt-1 text-xs text-ink-tertiary">
+                  {{ t(isEditing() ? 'apps.connectDialog.apple.editHint' : 'apps.connectDialog.apple.skipHint') }}
+                </p>
+              </div>
+              <div class="grid gap-3 md:grid-cols-2">
+                <label class="grid gap-1.5 text-sm font-medium text-ink">
+                  <span>{{ t('apps.connectDialog.apple.appStoreAppIdLabel') }}</span>
+                  <input
+                    pInputText
+                    type="text"
+                    autocomplete="off"
+                    [attr.aria-label]="t('apps.connectDialog.apple.appStoreAppIdLabel')"
+                    [formField]="connectAppForm.appleAppStoreAppId" />
+                </label>
+                <label class="grid gap-1.5 text-sm font-medium text-ink">
+                  <span>{{ t('apps.connectDialog.apple.issuerIdLabel') }}</span>
+                  <input
+                    pInputText
+                    type="text"
+                    autocomplete="off"
+                    [attr.aria-label]="t('apps.connectDialog.apple.issuerIdLabel')"
+                    [formField]="connectAppForm.appleIssuerId" />
+                </label>
+                <label class="grid gap-1.5 text-sm font-medium text-ink md:col-span-2">
+                  <span>{{ t('apps.connectDialog.apple.keyIdLabel') }}</span>
+                  <input
+                    pInputText
+                    type="text"
+                    autocomplete="off"
+                    [attr.placeholder]="appleCredentialPlaceholderKey() ? t(appleCredentialPlaceholderKey()!) : null"
+                    [attr.aria-label]="t('apps.connectDialog.apple.keyIdLabel')"
+                    [formField]="connectAppForm.appleKeyId" />
+                </label>
+                <label class="grid gap-1.5 text-sm font-medium text-ink md:col-span-2">
+                  <span>{{ t('apps.connectDialog.apple.privateKeyLabel') }}</span>
+                  <textarea
+                    class="w-full rounded-md border border-hairline-strong bg-surface-0 px-3 py-2 text-sm text-ink outline-none transition focus:border-primary"
+                    rows="6"
+                    autocomplete="off"
+                    [attr.placeholder]="appleCredentialPlaceholderKey() ? t(appleCredentialPlaceholderKey()!) : null"
+                    [attr.aria-label]="t('apps.connectDialog.apple.privateKeyLabel')"
+                    [formField]="connectAppForm.applePrivateKey"></textarea>
+                </label>
+              </div>
+            </section>
+
+            <section class="grid gap-3 rounded-2xl border border-hairline bg-surface-1 p-4">
+              <div>
+                <h3 class="m-0 font-semibold text-ink flex gap-2 items-center">
+                  <i
+                    class="pi pi-google"
+                    aria-hidden="true"></i>
+                  <span>{{ t('apps.stores.google') }}</span>
+                </h3>
+                <p class="m-0 mt-1 text-xs text-ink-tertiary">
+                  {{ t(isEditing() ? 'apps.connectDialog.google.editHint' : 'apps.connectDialog.google.skipHint') }}
+                </p>
+              </div>
+              <div class="grid gap-3">
+                <label class="grid gap-1.5 text-sm font-medium text-ink">
+                  <span>{{ t('apps.connectDialog.google.packageNameLabel') }}</span>
+                  <input
+                    pInputText
+                    type="text"
+                    autocomplete="off"
+                    [attr.aria-label]="t('apps.connectDialog.google.packageNameLabel')"
+                    [formField]="connectAppForm.googlePackageName" />
+                </label>
+                <label class="grid gap-1.5 text-sm font-medium text-ink">
+                  <span>{{ t('apps.connectDialog.google.serviceAccountJsonLabel') }}</span>
+                  <textarea
+                    class="w-full rounded-md border border-hairline-strong bg-surface-0 px-3 py-2 font-mono text-sm text-ink outline-none transition focus:border-primary"
+                    rows="6"
+                    autocomplete="off"
+                    [attr.placeholder]="googleCredentialPlaceholderKey() ? t(googleCredentialPlaceholderKey()!) : null"
+                    [attr.aria-label]="t('apps.connectDialog.google.serviceAccountJsonLabel')"
+                    [formField]="connectAppForm.googleServiceAccountJson"></textarea>
+                </label>
+              </div>
+            </section>
+          </div>
+        </ng-template>
+      </p-step-panel>
+    </p-step-panels>
+  </p-stepper>
+  @if (errorMessageKey(); as messageKey) {
+  <p class="m-0 rounded-xl border border-red-400 bg-surface-2 px-3 py-2 text-sm text-ink-muted">{{ t(messageKey) }}</p>
+  }
+
+  <div class="flex flex-wrap justify-end gap-2">
+    @if (activeStep() === 2) {
+    <p-button
+      type="button"
+      severity="secondary"
+      [outlined]="true"
+      [label]="t('apps.connectDialog.actions.back')"
+      [disabled]="isSaving()"
+      (onClick)="previousStep()" />
+    } @if (activeStep() === 1) {
+    <p-button
+      type="button"
+      [label]="t('apps.connectDialog.actions.continue')"
+      (onClick)="nextStep()" />
+    } @else {
+    <p-button
+      type="submit"
+      [label]="t(submitLabelKey())"
+      [loading]="isSaving()"
+      [disabled]="isSaving()" />
+    }
+  </div>
+</form>

@@ -6,6 +6,7 @@ import {
   putStoreCredentialRequestSchema,
   storeConnectionResponseSchema,
   storeCredentialResponseSchema,
+  updateAppRequestSchema,
 } from './index'
 
 const isoDate = '2026-06-18T10:00:00.000Z'
@@ -81,6 +82,34 @@ describe('App and Store Connection contracts', () => {
       hasCredential: true,
       updatedAt: isoDate,
       keyId: 'abc123',
+    })
+  })
+
+  it('models App updates with optional Store Credential replacement', () => {
+    expect(
+      updateAppRequestSchema.parse({
+        app: { name: 'Updated App' },
+        connections: {
+          apple: {
+            appStoreAppId: '123456789',
+            issuerId: 'issuer-123',
+          },
+          google: {
+            packageName: 'com.example.app',
+          },
+        },
+      }),
+    ).toEqual({
+      app: { name: 'Updated App' },
+      connections: {
+        apple: {
+          appStoreAppId: '123456789',
+          issuerId: 'issuer-123',
+        },
+        google: {
+          packageName: 'com.example.app',
+        },
+      },
     })
   })
 })

@@ -63,6 +63,7 @@
         "useLiteralKeys": "off"
       },
       "a11y": {
+        "noLabelWithoutControl": "off",
         "useAltText": "off",
         "useAnchorContent": "off",
         "useButtonType": "off",

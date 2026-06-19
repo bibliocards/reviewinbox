@@ -34,6 +34,7 @@
     "@primeuix/themes": "^2.0.3",
     "@tailwindcss/postcss": "^4.3.1",
     "better-auth": "^1.6.19",
+    "date-fns": "^4.4.0",
     "drizzle-orm": "^0.45.1",
     "hono": "^4.10.7",
     "ngx-better-auth": "^1.6.2",

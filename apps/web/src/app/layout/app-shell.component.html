@@ -46,7 +46,9 @@
     <header class="topbar">
       <div></div>
 
-      <div class="topbar-actions">
+      <div
+        class="topbar-actions"
+        *transloco="let t">
         <!--p-button
           severity="secondary"
           class="search-button"
@@ -54,8 +56,9 @@
           label="search" /-->
 
         <p-button
-          label="Connect app"
-          size="small" />
+          [label]="t('apps.actions.connectApp')"
+          size="small"
+          (onClick)="openConnectAppDialog()" />
 
         <ri-theme-toggle />
 
