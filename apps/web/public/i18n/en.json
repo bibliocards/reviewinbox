@@ -1,1 +1,16 @@
-{}
+{
+  "errors": {
+    "generic": "Something went wrong. Please try again."
+  },
+  "organization": {
+    "members": {
+      "inviteCanceled": "Invitation canceled.",
+      "inviteSent": "Invitation sent.",
+      "errors": {
+        "alreadyMember": "This user is already a member of this Organization.",
+        "cancelFailed": "We could not cancel this invitation yet.",
+        "inviteFailed": "We could not send this invitation yet."
+      }
+    }
+  }
+}

@@ -2,18 +2,18 @@
   <aside
     class="sidebar"
     aria-label="Primary navigation">
-    @let organizationList = organizations() ?? []; @if (organizationList.length > 1) {
+    @let organizations = organizationList(); @if (organizations.length > 1) {
     <div>
       <p-select
         [fluid]="true"
-        [options]="organizationList"
+        [options]="organizations"
         optionLabel="name"
         optionValue="id"
         [ngModel]="activeOrganizationId()"
         ariaLabel="Organization"
         (onChange)="switchOrganization($event)" />
     </div>
-    } @else if (organizationList.length == 1) { @let organization = organizationList[0]!;
+    } @else if (organizations.length == 1) { @let organization = organizations[0]!;
     <div class="organization-switcher">
       @if (organization.logo) {
       <img
@@ -27,18 +27,18 @@
     }
 
     <nav class="nav-list">
-      @for (item of navItems; track item.route) {
+      @for (item of navItems(); track item.route) { @if (item.visible !== false) {
       <a
         class="nav-item"
         [routerLink]="item.route"
         routerLinkActive="is-active"
-        [routerLinkActiveOptions]="{ exact: true }">
+        [routerLinkActiveOptions]="{ exact: item.exact ?? true }">
         <i
           class="pi {{ item.icon }}"
           aria-hidden="true"></i>
         <span>{{ item.label }}</span>
       </a>
-      }
+      } }
     </nav>
   </aside>
 

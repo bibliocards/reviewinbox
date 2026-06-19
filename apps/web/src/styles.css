@@ -93,3 +93,19 @@
     outline-offset: 2px;
   }
 }
+
+@layer components {
+  .ri-chip {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    border-radius: 9999px;
+    background: var(--color-surface-2);
+    padding: 4px 10px;
+    color: var(--color-ink-muted);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+    text-transform: capitalize;
+  }
+}

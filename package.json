@@ -35,7 +35,7 @@
     "better-auth": "^1.6.19",
     "drizzle-orm": "^0.45.1",
     "hono": "^4.10.7",
-    "ngx-better-auth": "^1.6.1",
+    "ngx-better-auth": "^1.6.2",
     "pg": "^8.16.3",
     "postcss": "^8.5.15",
     "primeicons": "^7.0.0",

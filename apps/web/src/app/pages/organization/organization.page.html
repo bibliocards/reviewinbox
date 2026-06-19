@@ -1,0 +1,23 @@
+<div class="grid gap-6 p-6 text-ink sm:p-8">
+  <header class="flex flex-col gap-4 border-b border-hairline pb-5 md:flex-row md:items-end md:justify-between">
+    <div>
+      <h1 class="m-0 mt-2 text-2xl font-semibold tracking-[-0.8px] text-ink">Organization settings</h1>
+    </div>
+
+    <nav
+      class="flex gap-1 rounded-xl border border-hairline bg-surface-2 p-1"
+      aria-label="Organization settings">
+      @for (tab of tabs; track tab.route) {
+      <a
+        class="rounded-lg px-3 py-2 text-sm font-medium text-ink-subtle no-underline transition hover:bg-surface-1 hover:text-ink"
+        routerLinkActive="bg-surface-1 text-ink shadow-sm"
+        [routerLinkActiveOptions]="{ exact: true }"
+        [routerLink]="tab.route">
+        {{ tab.label }}
+      </a>
+      }
+    </nav>
+  </header>
+
+  <router-outlet />
+</div>

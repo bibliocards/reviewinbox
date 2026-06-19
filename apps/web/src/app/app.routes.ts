@@ -2,23 +2,20 @@ import type { Routes } from '@angular/router'
 import { canActivate, redirectLoggedInTo, redirectUnauthorizedTo } from 'ngx-better-auth'
 import { AppShellComponent } from './layout/app-shell.component'
 import { AppsPageComponent } from './pages/apps/apps.page'
-import { LoginPageComponent } from './pages/auth/login/login.page'
-import { SignUpPageComponent } from './pages/auth/sign-up/sign-up.page'
 import { ReplyInboxPageComponent } from './pages/reply-inbox/reply-inbox.page'
-import { SettingsPageComponent } from './pages/settings/settings.page'
 import { signUpAvailableGuard } from './shared/guards/sign-up-available.guard'
 
 export const appRoutes: Routes = [
   {
     path: 'login',
     title: 'Log in | ReviewInbox',
-    component: LoginPageComponent,
+    loadComponent: () => import('./pages/auth/login/login.page').then((page) => page.LoginPageComponent),
     ...canActivate(redirectLoggedInTo(['/'])),
   },
   {
     path: 'sign-up',
     title: 'Create account | ReviewInbox',
-    component: SignUpPageComponent,
+    loadComponent: () => import('./pages/auth/sign-up/sign-up.page').then((page) => page.SignUpPageComponent),
     canActivate: [...canActivate(redirectLoggedInTo(['/'])).canActivate, signUpAvailableGuard],
   },
   {
@@ -39,7 +36,11 @@ export const appRoutes: Routes = [
       {
         path: 'settings',
         title: 'Settings | ReviewInbox',
-        component: SettingsPageComponent,
+        loadComponent: () => import('./pages/settings/settings.page').then((page) => page.SettingsPageComponent),
+      },
+      {
+        path: 'organization',
+        loadChildren: () => import('./pages/organization/organization.routes').then((routes) => routes.organizationRoutes),
       },
     ],
   },
