@@ -1,8 +1,11 @@
-import { healthResponseSchema } from '@reviewinbox/contracts'
+import { clientConfigResponseSchema, healthResponseSchema } from '@reviewinbox/contracts'
+import { user } from '@reviewinbox/db'
+import { count } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
 
 import { auth } from './auth'
+import { database, serverConfig } from './db'
 import { appsRoutes } from './routes/apps'
 import { storeConnectionsRoutes } from './routes/store-connections'
 
@@ -27,7 +30,24 @@ export function createApp() {
     return context.json(health)
   })
 
-  app.on(['GET', 'POST'], '/auth/*', (context) => auth.handler(context.req.raw))
+  app.get('/api/client-config', async (context) => {
+    const [result] = await database.select({ count: count() }).from(user)
+    const signUpAvailable = serverConfig.deploymentMode === 'cloud' || (result?.count ?? 0) === 0
+
+    const config = clientConfigResponseSchema.parse({
+      deploymentMode: serverConfig.deploymentMode,
+      auth: {
+        emailPassword: true,
+        google: false,
+        enterpriseSso: false,
+        signUpAvailable,
+      },
+    })
+
+    return context.json(config)
+  })
+
+  app.on(['GET', 'POST'], '/api/auth/*', (context) => auth.handler(context.req.raw))
   app.route('/', appsRoutes)
   app.route('/', storeConnectionsRoutes)
 

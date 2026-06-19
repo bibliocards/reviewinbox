@@ -21,7 +21,7 @@ APP_ENCRYPTION_KEY=$(openssl rand -base64 32)
 BETTER_AUTH_SECRET=$(openssl rand -base64 32)
 ```
 
-Keep `BETTER_AUTH_URL` aligned with the Hono API origin. For local development it defaults to `http://127.0.0.1:3000`, while `BETTER_AUTH_TRUSTED_ORIGINS` includes the Angular dev server origins used by the `/auth` proxy.
+Keep `BETTER_AUTH_URL` aligned with the Hono API origin. For local development it defaults to `http://127.0.0.1:3000`, while `BETTER_AUTH_TRUSTED_ORIGINS` includes the Angular dev server origins used by the `/api` proxy.
 
 Start Postgres:
 
@@ -41,7 +41,7 @@ Start the product app stack:
 pnpm nx run-many -t serve -p api web
 ```
 
-Open `http://localhost:4200`. The Angular dev server proxies `/api` and reserved `/auth` paths to Hono on `http://127.0.0.1:3000`.
+Open `http://localhost:4200`. The Angular dev server proxies `/api` paths, including `/api/auth`, to Hono on `http://127.0.0.1:3000`.
 
 ## Checks
 

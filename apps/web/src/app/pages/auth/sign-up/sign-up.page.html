@@ -23,7 +23,7 @@
     <p class="mt-2 text-sm leading-5 text-ink-subtle">
       Set up the first Owner account and choose the Organization name for this ReviewInbox instance.
     </p>
-
+    @if (capabilities.externalProviders) {
     <div class="mt-6 grid gap-2 sm:grid-cols-3">
       <p-button
         label="Google"
@@ -59,6 +59,7 @@
       or
       <span class="h-px flex-1 bg-hairline"></span>
     </div>
+    }
 
     <form
       class="grid gap-4"

@@ -9,7 +9,7 @@ const rateLimitStorage = process.env['NODE_ENV'] === 'test' ? 'memory' : 'databa
 
 export const auth = betterAuth({
   appName: 'ReviewInbox',
-  basePath: '/auth',
+  basePath: '/api/auth',
   baseURL: serverConfig.betterAuthUrl,
   database: drizzleAdapter(database, {
     provider: 'pg',

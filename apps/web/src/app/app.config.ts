@@ -5,6 +5,8 @@ import { provideTransloco } from '@jsverse/transloco'
 import { organizationClient } from 'better-auth/client/plugins'
 import { provideBetterAuth } from 'ngx-better-auth'
 import { providePrimeNG } from 'primeng/config'
+import { environment } from '../environments/environment'
+import { resolveOptionalString } from '../environments/environment.model'
 import { appRoutes } from './app.routes'
 import { reviewInboxTheme } from './theme'
 import { TranslocoHttpLoader } from './transloco-loader'
@@ -26,7 +28,8 @@ export const appConfig: ApplicationConfig = {
       },
     }),
     provideBetterAuth({
-      basePath: '/auth',
+      baseURL: resolveOptionalString(environment.apiUrl),
+      basePath: resolveOptionalString(environment.authBasePath) ?? '/api/auth',
       plugins: [organizationClient()],
     }),
     provideRouter(appRoutes),
@@ -36,7 +39,7 @@ export const appConfig: ApplicationConfig = {
         availableLangs: ['en', 'fr'],
         defaultLang: 'en',
         reRenderOnLangChange: true,
-        prodMode: !isDevMode(),
+        prodMode: environment.production || !isDevMode(),
       },
       loader: TranslocoHttpLoader,
     }),
