@@ -1,0 +1,53 @@
+<main class="min-h-screen bg-canvas px-5 py-6 text-ink">
+  <header class="mx-auto flex max-w-[1920px] items-center justify-between gap-4">
+    <a
+      class="inline-flex items-center gap-3 text-ink no-underline"
+      routerLink="/">
+      <span class="grid size-9 place-items-center rounded-xl bg-primary text-sm font-bold text-primary-contrast">R</span>
+      <span class="sr-only">ReviewInbox</span>
+    </a>
+
+    <ri-theme-toggle />
+  </header>
+
+  <section
+    class="mx-auto mt-14 grid w-full max-w-153 gap-5 rounded-3xl border border-hairline bg-surface-1 px-6 py-8 sm:mt-20 sm:px-14 sm:py-10">
+    <div>
+      <h1 class="m-0 mt-2 text-xl font-semibold tracking-[-0.8px] text-ink sm:text-2xl">Accept your invitation</h1>
+    </div>
+    @if (isLoading()) {
+    <p class="m-0 text-sm text-ink-subtle">Loading invitation...</p>
+    } @else if (invitation(); as invitation) {
+    <div class="rounded-2xl border border-hairline bg-surface-2 p-4">
+      <p class="m-0 text-sm text-ink-subtle">You were invited to join</p>
+      <p class="m-0 mt-1 text-lg font-semibold text-ink">{{ invitation.organizationName }}</p>
+      <p class="m-0 mt-2 text-sm text-ink-subtle">Use {{ invitation.email }} to accept this invitation.</p>
+    </div>
+    @if (!session()) {
+    <div class="flex justify-end gap-3">
+      <p-button
+        label="Sign in"
+        severity="secondary"
+        routerLink="/login"
+        [queryParams]="loginQueryParams()" />
+      <p-button
+        label="Create account"
+        routerLink="/sign-up"
+        [queryParams]="signUpQueryParams()" />
+    </div>
+    } @else if (isAccepting()) {
+    <p class="m-0 text-sm text-ink-subtle">Accepting invitation...</p>
+    } } @if (errorMessage()) {
+    <div class="grid gap-3 rounded-xl border border-red-400 bg-surface-2 px-3 py-2 text-sm text-ink-muted">
+      <p class="m-0">{{ errorMessage() }}</p>
+      @if (session()) {
+      <p-button
+        label="Sign in with another account"
+        severity="secondary"
+        size="small"
+        (onClick)="signOut()" />
+      }
+    </div>
+    }
+  </section>
+</main>

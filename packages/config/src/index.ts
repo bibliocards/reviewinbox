@@ -11,6 +11,12 @@ const booleanEnvSchema = z
   .default('false')
   .transform((value) => value === 'true')
 
+const optionalStringSchema = z
+  .string()
+  .trim()
+  .transform((value) => (value.length > 0 ? value : undefined))
+  .optional()
+
 function isLocalHttpOrigin(origin: string) {
   const url = new URL(origin)
   return url.protocol === 'http:' && localOrigins.has(`${url.protocol}//${url.hostname}`)
@@ -30,6 +36,20 @@ function parseOrigin(origin: string) {
   return origin
 }
 
+function parseAppPublicOrigin(origin: string) {
+  const url = new URL(origin)
+
+  if (url.origin !== origin) {
+    throw new Error(`APP_PUBLIC_URL must be an origin without path, query, hash, or credentials: ${origin}`)
+  }
+
+  if (url.protocol !== 'https:' && !isLocalHttpOrigin(origin)) {
+    throw new Error(`APP_PUBLIC_URL must use HTTPS unless it is local: ${origin}`)
+  }
+
+  return origin
+}
+
 export const serverConfigSchema = z
   .object({
     deploymentMode: deploymentModeSchema.default('self-hosted'),
@@ -37,6 +57,7 @@ export const serverConfigSchema = z
     runDatabaseMigrationsOnStartup: booleanEnvSchema,
     apiHost: z.string().default('127.0.0.1'),
     apiPort: z.coerce.number().int().min(1).max(65535).default(3000),
+    appPublicUrl: z.string().default('http://localhost:4200').transform(parseAppPublicOrigin),
     betterAuthSecret: z.string().min(32).optional(),
     betterAuthUrl: z.url().default('http://127.0.0.1:3000'),
     betterAuthTrustedOrigins: z
@@ -49,10 +70,32 @@ export const serverConfigSchema = z
           .filter((origin) => origin.length > 0)
           .map(parseOrigin),
       ),
+    mailFrom: optionalStringSchema,
+    smtpHost: optionalStringSchema,
+    smtpPort: z.coerce.number().int().min(1).max(65535).default(587),
+    smtpUser: optionalStringSchema,
+    smtpPassword: optionalStringSchema,
+    smtpSecure: booleanEnvSchema,
   })
   .superRefine((config, context) => {
+    if ((config.smtpHost && !config.mailFrom) || (!config.smtpHost && config.mailFrom)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['mailFrom'],
+        message: 'MAIL_FROM and SMTP_HOST must be configured together to enable invitation email delivery.',
+      })
+    }
+
     if (config.deploymentMode !== 'cloud') {
       return
+    }
+
+    if (new URL(config.appPublicUrl).protocol !== 'https:') {
+      context.addIssue({
+        code: 'custom',
+        path: ['appPublicUrl'],
+        message: 'Cloud deployments must set APP_PUBLIC_URL to an HTTPS origin.',
+      })
     }
 
     if (new URL(config.betterAuthUrl).protocol !== 'https:') {
@@ -110,9 +153,16 @@ export function loadServerConfig(env: NodeJS.ProcessEnv = process.env): ServerCo
     runDatabaseMigrationsOnStartup: env['RUN_DB_MIGRATIONS_ON_STARTUP'],
     apiHost: env['API_HOST'],
     apiPort: env['API_PORT'],
+    appPublicUrl: env['APP_PUBLIC_URL'],
     betterAuthSecret: env['BETTER_AUTH_SECRET'],
     betterAuthUrl: env['BETTER_AUTH_URL'],
     betterAuthTrustedOrigins: env['BETTER_AUTH_TRUSTED_ORIGINS'],
+    mailFrom: env['MAIL_FROM'],
+    smtpHost: env['SMTP_HOST'],
+    smtpPort: env['SMTP_PORT'],
+    smtpUser: env['SMTP_USER'],
+    smtpPassword: env['SMTP_PASSWORD'],
+    smtpSecure: env['SMTP_SECURE'],
   })
 }
 

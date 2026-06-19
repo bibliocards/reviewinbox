@@ -9,6 +9,7 @@
       "errors": {
         "alreadyMember": "Cet utilisateur est déjà membre de cette Organization.",
         "cancelFailed": "Impossible d’annuler cette invitation pour le moment.",
+        "copyFailed": "Impossible de copier ce lien d’invitation.",
         "inviteFailed": "Impossible d’envoyer cette invitation pour le moment."
       }
     }

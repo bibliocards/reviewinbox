@@ -1,7 +1,7 @@
 import { Component, computed, effect, inject, signal } from '@angular/core'
 import { toSignal } from '@angular/core/rxjs-interop'
 import { email, FormField, form, required, submit } from '@angular/forms/signals'
-import { Router, RouterLink } from '@angular/router'
+import { ActivatedRoute, Router, RouterLink } from '@angular/router'
 import { AuthService } from 'ngx-better-auth'
 import { ButtonModule } from 'primeng/button'
 import { InputTextModule } from 'primeng/inputtext'
@@ -18,6 +18,7 @@ import { AuthCapabilitiesService } from '../../../shared/services/auth-capabilit
 export class LoginPageComponent {
   private readonly auth = inject(AuthService)
   private readonly authCapabilities = inject(AuthCapabilitiesService)
+  private readonly route = inject(ActivatedRoute)
   private readonly router = inject(Router)
 
   protected readonly capabilities = this.authCapabilities.capabilities
@@ -27,6 +28,8 @@ export class LoginPageComponent {
   protected readonly errorMessage = signal<string | null>(null)
   protected readonly isSubmitting = signal(false)
   protected readonly canSubmit = computed(() => this.loginForm().valid() && !this.isSubmitting())
+  protected readonly redirectUrl = this.safeRedirect(this.route.snapshot.queryParamMap.get('redirect'))
+  protected readonly signUpQueryParams = computed(() => (this.redirectUrl ? { redirect: this.redirectUrl } : {}))
 
   private readonly loginModel = signal({
     email: '',
@@ -42,7 +45,7 @@ export class LoginPageComponent {
   constructor() {
     effect(() => {
       if (this.capabilities.deploymentMode === 'self-hosted' && this.signUpAvailable()) {
-        void this.router.navigateByUrl('/sign-up')
+        void this.router.navigate(['/sign-up'], { queryParams: this.signUpQueryParams() })
       }
     })
   }
@@ -61,12 +64,16 @@ export class LoginPageComponent {
     submit(this.loginForm, async () => {
       try {
         await firstValueFrom(this.auth.signInEmail(this.loginForm().value()))
-        await this.router.navigateByUrl('/')
+        await this.router.navigateByUrl(this.redirectUrl ?? '/')
       } catch {
         this.errorMessage.set('We could not sign you in with these credentials.')
       } finally {
         this.isSubmitting.set(false)
       }
     })
+  }
+
+  private safeRedirect(redirect: string | null): string | null {
+    return redirect?.startsWith('/') && !redirect.startsWith('//') ? redirect : null
   }
 }

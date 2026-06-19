@@ -19,6 +19,11 @@ export const appRoutes: Routes = [
     canActivate: [...canActivate(redirectLoggedInTo(['/'])).canActivate, signUpAvailableGuard],
   },
   {
+    path: 'accept-invitation/:invitationId',
+    title: 'Accept invitation | ReviewInbox',
+    loadComponent: () => import('./pages/accept-invitation/accept-invitation.page').then((page) => page.AcceptInvitationPageComponent),
+  },
+  {
     path: '',
     component: AppShellComponent,
     ...canActivate(redirectUnauthorizedTo(['/login'])),

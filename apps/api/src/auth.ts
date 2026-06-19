@@ -4,6 +4,7 @@ import { organization } from 'better-auth/plugins/organization'
 import { databaseSchema } from '@reviewinbox/db'
 
 import { database, serverConfig } from './db'
+import { invitationLink, sendInvitationEmail } from './mail'
 
 const rateLimitStorage = process.env['NODE_ENV'] === 'test' ? 'memory' : 'database'
 
@@ -18,7 +19,23 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
-  plugins: [organization()],
+  plugins: [
+    organization({
+      requireEmailVerificationOnInvitation: false,
+      async sendInvitationEmail(data) {
+        await sendInvitationEmail(
+          {
+            email: data.email,
+            invitedByEmail: data.inviter.user.email,
+            invitedByName: data.inviter.user.name,
+            inviteLink: invitationLink(data.id, serverConfig),
+            organizationName: data.organization.name,
+          },
+          serverConfig,
+        )
+      },
+    }),
+  ],
   rateLimit: {
     enabled: true,
     storage: rateLimitStorage,

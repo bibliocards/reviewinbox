@@ -1,21 +1,25 @@
 import { Component, computed, inject, signal } from '@angular/core'
+import { toSignal } from '@angular/core/rxjs-interop'
 import { email, FormField, form, required, submit } from '@angular/forms/signals'
 import { TranslocoDirective } from '@jsverse/transloco'
-import { OrganizationService } from 'ngx-better-auth'
+import { AuthService, OrganizationService } from 'ngx-better-auth'
 import { ButtonModule } from 'primeng/button'
 import { InputTextModule } from 'primeng/inputtext'
 import { SelectModule } from 'primeng/select'
 import { firstValueFrom } from 'rxjs'
 import { betterAuthErrorKey } from '../../../../shared/better-auth-errors'
+import { AuthCapabilitiesService } from '../../../../shared/services/auth-capabilities.service'
 
 type MemberView = {
   id: string
   role: string | string[]
   createdAt?: Date | string
   user?: {
+    id?: string
     name?: string | null
     email?: string | null
   }
+  userId?: string
 }
 
 type InvitationView = {
@@ -36,12 +40,18 @@ type FullOrganizationView = {
   templateUrl: './organization-members.page.html',
 })
 export class OrganizationMembersPageComponent {
+  private readonly auth = inject(AuthService)
   private readonly organizations = inject(OrganizationService)
+  private readonly authCapabilities = inject(AuthCapabilitiesService)
 
   protected readonly fullOrganization = this.organizations.fullOrganizationResource(() => ({ membersLimit: 100 }))
   protected readonly invitations = this.organizations.invitationsResource(() => ({}))
+  protected readonly clientConfig = toSignal(this.authCapabilities.clientConfig(), { initialValue: null })
   protected readonly errorMessageKey = signal<string | null>(null)
   protected readonly successMessageKey = signal<string | null>(null)
+  protected readonly copiedInvitationId = signal<string | null>(null)
+  protected readonly latestInvitationId = signal<string | null>(null)
+  protected readonly latestInvitationLink = signal<string | null>(null)
   protected readonly isSubmitting = signal(false)
 
   protected readonly roleOptions = [
@@ -70,7 +80,7 @@ export class OrganizationMembersPageComponent {
   protected readonly pendingInvitations = computed(() =>
     this.invitations.error()
       ? []
-      : ((this.invitations.value() as InvitationView[] | undefined) ?? []).filter((invitation) => invitation.status !== 'canceled'),
+      : ((this.invitations.value() as InvitationView[] | undefined) ?? []).filter((invitation) => invitation.status === 'pending'),
   )
 
   protected inviteMember(event: Event): void {
@@ -89,8 +99,10 @@ export class OrganizationMembersPageComponent {
       const value = this.inviteForm().value()
 
       try {
-        await firstValueFrom(this.organizations.inviteMember({ email: value.email, role: value.role }))
+        const invitation = await firstValueFrom(this.organizations.inviteMember({ email: value.email, role: value.role }))
         this.inviteModel.set({ email: '', role: 'member' })
+        this.latestInvitationId.set(invitation.id)
+        this.latestInvitationLink.set(this.invitationLink(invitation.id))
         this.invitations.reload()
         this.successMessageKey.set('organization.members.inviteSent')
       } catch (error) {
@@ -117,6 +129,20 @@ export class OrganizationMembersPageComponent {
     return Array.isArray(role) ? role.join(', ') : (role ?? 'member')
   }
 
+  protected invitationLink(invitationId: string): string {
+    const appPublicUrl = this.clientConfig()?.appPublicUrl ?? globalThis.location.origin
+    return new URL(`/accept-invitation/${invitationId}`, appPublicUrl).toString()
+  }
+
+  protected copyInvitationLink(invitationId: string): void {
+    const link = this.invitationLink(invitationId)
+
+    navigator.clipboard
+      .writeText(link)
+      .then(() => this.copiedInvitationId.set(invitationId))
+      .catch(() => this.errorMessageKey.set('organization.members.errors.copyFailed'))
+  }
+
   protected initialsFrom(member: MemberView): string {
     const label = member.user?.name ?? member.user?.email ?? 'Member'
 
@@ -127,5 +153,10 @@ export class OrganizationMembersPageComponent {
       .map((part) => part[0])
       .join('')
       .toUpperCase()
+  }
+
+  protected isCurrentUser(member: MemberView): boolean {
+    const sessionUser = this.auth.session()?.user
+    return Boolean(sessionUser?.id && (member.userId === sessionUser.id || member.user?.id === sessionUser.id))
   }
 }

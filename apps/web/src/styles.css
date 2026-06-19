@@ -107,5 +107,11 @@
     font-weight: 500;
     line-height: 1;
     text-transform: capitalize;
+
+    &.ri-chip-primary {
+      border: 1px solid color-mix(in srgb, var(--color-linear-primary) 28%, transparent);
+      background: color-mix(in srgb, var(--color-linear-primary) 16%, transparent);
+      color: var(--color-linear-primary-hover);
+    }
   }
 }

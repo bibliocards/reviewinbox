@@ -5,7 +5,12 @@
     <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
       <div>
         <h2 class="m-0 text-lg font-semibold text-ink">Invite member</h2>
-        <p class="m-0 mt-1 text-sm text-ink-subtle">Send an invitation to join the active Organization.</p>
+        @if (clientConfig()?.mail?.invitationEmailEnabled) {
+        <p class="m-0 mt-1 text-sm text-ink-subtle">Send an email invitation, or copy the invitation link after creating it.</p>
+        } @else {
+        <p class="m-0 mt-1 text-sm text-ink-subtle">Email delivery is not configured. Create an invitation, then copy its link.</p>
+        }
+        <p class="m-0 mt-1 text-xs text-ink-tertiary">Invitation links should only be shared with the invited email owner.</p>
       </div>
     </div>
 
@@ -42,6 +47,16 @@
     <p class="m-0 rounded-xl border border-red-400 bg-surface-2 px-3 py-2 text-sm text-ink-muted">{{ t(messageKey) }}</p>
     } @if (successMessageKey(); as messageKey) {
     <p class="m-0 rounded-xl border border-green-500/40 bg-surface-2 px-3 py-2 text-sm text-ink-muted">{{ t(messageKey) }}</p>
+    } @if (latestInvitationLink(); as link) {
+    <div
+      class="grid gap-2 rounded-xl border border-hairline bg-surface-2 px-3 py-2 text-sm text-ink-muted sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+      <span class="truncate">{{ link }}</span>
+      <p-button
+        label="Copy link"
+        size="small"
+        [outlined]="true"
+        (onClick)="copyInvitationLink(latestInvitationId() || '')" />
+    </div>
     }
   </div>
 
@@ -66,7 +81,12 @@
             {{ initialsFrom(member) }}
           </span>
           <div class="min-w-0">
-            <p class="m-0 truncate text-sm font-medium text-ink">{{ member.user?.name || member.user?.email || 'Member' }}</p>
+            <div class="flex min-w-0 items-center gap-2">
+              <p class="m-0 truncate text-sm font-medium text-ink">{{ member.user?.name || member.user?.email || 'Member' }}</p>
+              @if (isCurrentUser(member)) {
+              <span class="ri-chip ri-chip-primary shrink-0">You</span>
+              }
+            </div>
             @if (member.user?.email && member.user?.name) {
             <p class="m-0 truncate text-sm text-ink-subtle">{{ member.user?.email }}</p>
             }
@@ -93,12 +113,18 @@
     } @else {
     <div class="divide-y divide-hairline overflow-hidden rounded-xl border border-hairline">
       @for (invitation of pendingInvitations(); track invitation.id) {
-      <article class="grid gap-3 p-4 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-center">
+      <article class="grid gap-3 p-4 md:grid-cols-[minmax(0,1fr)_auto_auto_auto] md:items-center">
         <div class="min-w-0">
           <p class="m-0 truncate text-sm font-medium text-ink">{{ invitation.email }}</p>
           <p class="m-0 text-sm text-ink-subtle">Role: {{ roleLabel(invitation.role) }}</p>
         </div>
         <span class="ri-chip">{{ invitation.status || 'pending' }}</span>
+        <p-button
+          [label]="copiedInvitationId() === invitation.id ? 'Copied' : 'Copy link'"
+          severity="secondary"
+          [outlined]="true"
+          size="small"
+          (onClick)="copyInvitationLink(invitation.id)" />
         <p-button
           label="Cancel"
           severity="danger"

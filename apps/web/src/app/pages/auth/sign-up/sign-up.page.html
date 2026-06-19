@@ -20,10 +20,15 @@
 
   <section class="mx-auto mt-10 w-full max-w-153 rounded-3xl border border-hairline bg-surface-1 px-6 py-8 sm:mt-14 sm:px-14 sm:py-10">
     <h1 class="m-0 text-xl font-semibold tracking-[-0.8px] text-ink sm:text-2xl">Create your ReviewInbox account</h1>
+    @if (isInvitationSignUp) {
+    <p class="mt-2 text-sm leading-5 text-ink-subtle">
+      Create an account with the invited email address, then we will return you to the invitation.
+    </p>
+    } @else {
     <p class="mt-2 text-sm leading-5 text-ink-subtle">
       Set up the first Owner account and choose the Organization name for this ReviewInbox instance.
     </p>
-    @if (capabilities.externalProviders) {
+    } @if (capabilities.externalProviders) {
     <div class="mt-6 grid gap-2 sm:grid-cols-3">
       <p-button
         label="Google"
@@ -92,7 +97,7 @@
           [fluid]="true"
           inputStyleClass="w-full" />
       </div>
-
+      @if (!isInvitationSignUp) {
       <label class="grid gap-1.5 text-sm font-medium text-ink">
         Organization name
         <input
@@ -101,7 +106,7 @@
           autocomplete="organization"
           [formField]="signUpForm.organizationName" />
       </label>
-      @if (errorMessage()) {
+      } @if (errorMessage()) {
       <p class="m-0 rounded-xl border border-red-400 bg-surface-2 px-3 py-2 text-sm text-ink-muted">{{ errorMessage() }}</p>
       }
 
@@ -119,6 +124,7 @@
       <a
         class="font-medium text-linear-primary underline-offset-4 hover:underline"
         routerLink="/login"
+        [queryParams]="loginQueryParams()"
         >Sign in</a
       >
     </p>

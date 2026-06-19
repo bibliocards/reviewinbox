@@ -9,6 +9,7 @@
       "errors": {
         "alreadyMember": "This user is already a member of this Organization.",
         "cancelFailed": "We could not cancel this invitation yet.",
+        "copyFailed": "We could not copy this invitation link.",
         "inviteFailed": "We could not send this invitation yet."
       }
     }

@@ -14,6 +14,9 @@ vi.mock('./db', () => ({
     betterAuthTrustedOrigins: ['http://localhost:4200'],
     betterAuthUrl: 'http://127.0.0.1:3000',
     deploymentMode: 'self-hosted',
+    appPublicUrl: 'http://localhost:4200',
+    mailFrom: undefined,
+    smtpHost: undefined,
   },
 }))
 
