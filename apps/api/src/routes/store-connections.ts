@@ -5,15 +5,26 @@ import {
   putStoreCredentialRequestSchema,
   storeConnectionResponseSchema,
   storeCredentialResponseSchema,
+  syncRunResponseSchema,
   updateStoreConnectionRequestSchema,
 } from '@reviewinbox/contracts'
 import { decodeStoreCredentialEncryptionKey, encryptStoreCredential } from '@reviewinbox/core'
 import { apps, storeConnections, storeCredentials } from '@reviewinbox/db'
+import {
+  SyncStoreConnectionNotFoundError,
+  syncReviewsForStoreConnection,
+  verifyAppleStoreCredentialForApp,
+  verifyGooglePlayStoreCredentialForApp,
+} from '@reviewinbox/sync'
 import { and, eq } from 'drizzle-orm'
 import { Hono } from 'hono'
 import type { Context } from 'hono'
 
-import { requireActiveOrganizationOwnerSession, requireActiveOrganizationSession } from '../auth/session'
+import {
+  requireActiveOrganizationManagerSession,
+  requireActiveOrganizationOwnerSession,
+  requireActiveOrganizationSession,
+} from '../auth/session'
 import { database } from '../db'
 import { parseJsonBody, parseUuidParam } from '../http/validation'
 
@@ -122,6 +133,45 @@ storeConnectionsRoutes.put('/api/store-connections/:storeConnectionId/credential
     return bodyResult.response
   }
 
+  if (existing.connection.provider === 'apple_app_store') {
+    if (!existing.connection.externalAppId) {
+      return context.json(
+        {
+          error: 'Apple Store Connection requires an app identifier before credential verification.',
+          errorCode: 'apple_app_id_required_for_verification',
+        },
+        400,
+      )
+    }
+
+    const verification = await verifyAppleStoreCredentialForApp({
+      appStoreAppId: existing.connection.externalAppId,
+      plaintext: bodyResult.data.plaintext,
+    })
+    if (!verification.ok) {
+      return context.json({ error: verification.errorMessage, errorCode: verification.errorCode }, 400)
+    }
+  }
+  if (existing.connection.provider === 'google_play') {
+    if (!existing.connection.externalAppId) {
+      return context.json(
+        {
+          error: 'Google Play Store Connection requires a package name before credential verification.',
+          errorCode: 'google_package_name_required_for_verification',
+        },
+        400,
+      )
+    }
+
+    const verification = await verifyGooglePlayStoreCredentialForApp({
+      packageName: existing.connection.externalAppId,
+      plaintext: bodyResult.data.plaintext,
+    })
+    if (!verification.ok) {
+      return context.json({ error: verification.errorMessage, errorCode: verification.errorCode }, 400)
+    }
+  }
+
   const encryptionConfig = loadEncryptionConfig()
   const encrypted = encryptStoreCredential(bodyResult.data.plaintext, decodeStoreCredentialEncryptionKey(encryptionConfig.appEncryptionKey))
 
@@ -154,6 +204,34 @@ storeConnectionsRoutes.put('/api/store-connections/:storeConnectionId/credential
       },
     }),
   )
+})
+
+storeConnectionsRoutes.post('/api/store-connections/:storeConnectionId/sync-reviews', async (context) => {
+  const sessionResult = await requireActiveOrganizationManagerSession(context)
+  if (!sessionResult.ok) {
+    return sessionResult.response
+  }
+
+  const storeConnectionIdResult = parseUuidParam(context, 'storeConnectionId', 'Store Connection')
+  if (!storeConnectionIdResult.ok) {
+    return storeConnectionIdResult.response
+  }
+
+  try {
+    const syncRun = await syncReviewsForStoreConnection({
+      database,
+      organizationId: sessionResult.session.organizationId,
+      storeConnectionId: storeConnectionIdResult.data,
+    })
+
+    return context.json(syncRunResponseSchema.parse(syncRun), syncRun.status === 'failed' ? 422 : 200)
+  } catch (error) {
+    if (error instanceof SyncStoreConnectionNotFoundError) {
+      return context.json({ error: 'Store Connection not found.' }, 404)
+    }
+
+    throw error
+  }
 })
 
 storeConnectionsRoutes.delete('/api/store-connections/:storeConnectionId/credential', async (context) => {

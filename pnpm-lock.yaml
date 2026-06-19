@@ -161,6 +161,8 @@ importers:
 
   packages/store-adapters: {}
 
+  packages/sync: {}
+
 packages:
 
   '@algolia/abtesting@1.14.1':

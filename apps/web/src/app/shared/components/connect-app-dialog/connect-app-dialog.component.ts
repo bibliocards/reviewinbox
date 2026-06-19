@@ -1,14 +1,9 @@
+import { HttpErrorResponse } from '@angular/common/http'
 import { Component, computed, inject, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FormField, form, required } from '@angular/forms/signals'
 import { TranslocoDirective } from '@jsverse/transloco'
-import type {
-  AppListItemResponse,
-  ConnectAppRequest,
-  ConnectAppResponse,
-  UpdateAppRequest,
-  UpdateAppResponse,
-} from '@reviewinbox/contracts'
+import type { AppListItemResponse, ConnectAppRequest, ConnectAppResponse, UpdateAppRequest } from '@reviewinbox/contracts'
 import { ButtonModule } from 'primeng/button'
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog'
 import { InputTextModule } from 'primeng/inputtext'
@@ -100,8 +95,13 @@ export class ConnectAppDialogComponent {
 
     request.pipe(finalize(() => this.isSaving.set(false))).subscribe({
       next: (result) => this.close(result),
-      error: () =>
-        this.errorMessageKey.set(this.isEditing() ? 'apps.connectDialog.errors.updateFailed' : 'apps.connectDialog.errors.createFailed'),
+      error: (error: unknown) =>
+        this.errorMessageKey.set(
+          connectAppErrorMessageKey(
+            error,
+            this.isEditing() ? 'apps.connectDialog.errors.updateFailed' : 'apps.connectDialog.errors.createFailed',
+          ),
+        ),
     })
   }
 
@@ -167,7 +167,7 @@ export class ConnectAppDialogComponent {
     }
   }
 
-  private close(result: ConnectAppResponse | UpdateAppResponse): void {
+  private close(result: ConnectAppResponse): void {
     this.dialogRef.close(result)
   }
 
@@ -221,4 +221,52 @@ export class ConnectAppDialogComponent {
     const value = this.connectAppForm().value()
     return !value.googleServiceAccountJson.trim() || Boolean(value.googlePackageName.trim())
   }
+}
+
+const connectAppErrorKeys: Record<string, string> = {
+  apple_app_id_required_for_verification: 'apps.connectDialog.errors.appleAppIdRequiredForVerification',
+  apple_auth_failed: 'apps.connectDialog.errors.appleAuthFailed',
+  apple_credential_replacement_incomplete: 'apps.connectDialog.errors.appleCredentialReplacementIncomplete',
+  apple_credential_required_for_verification: 'apps.connectDialog.errors.appleCredentialRequiredForVerification',
+  apple_forbidden: 'apps.connectDialog.errors.appleForbidden',
+  apple_invalid_response: 'apps.connectDialog.errors.appleUnavailable',
+  apple_issuer_change_requires_credential_replacement: 'apps.connectDialog.errors.appleIssuerChangeRequiresCredentialReplacement',
+  apple_not_found: 'apps.connectDialog.errors.appleNotFound',
+  apple_rate_limited: 'apps.connectDialog.errors.appleRateLimited',
+  apple_unavailable: 'apps.connectDialog.errors.appleUnavailable',
+  google_auth_failed: 'apps.connectDialog.errors.googleAuthFailed',
+  google_credential_invalid_json: 'apps.connectDialog.errors.googleCredentialInvalidJson',
+  google_credential_not_object: 'apps.connectDialog.errors.googleCredentialNotObject',
+  google_credential_required_for_verification: 'apps.connectDialog.errors.googleCredentialRequiredForVerification',
+  google_forbidden: 'apps.connectDialog.errors.googleForbidden',
+  google_invalid_response: 'apps.connectDialog.errors.googleUnavailable',
+  google_not_found: 'apps.connectDialog.errors.googleNotFound',
+  google_package_name_required_for_verification: 'apps.connectDialog.errors.googlePackageNameRequiredForVerification',
+  google_rate_limited: 'apps.connectDialog.errors.googleRateLimited',
+  google_unavailable: 'apps.connectDialog.errors.googleUnavailable',
+  invalid_credential_format: 'apps.connectDialog.errors.appleCredentialInvalidFormat',
+  invalid_google_credential_format: 'apps.connectDialog.errors.googleCredentialInvalidFormat',
+}
+
+function connectAppErrorMessageKey(error: unknown, fallback: string): string {
+  const errorCode = apiErrorCode(error)
+
+  return errorCode ? (connectAppErrorKeys[errorCode] ?? fallback) : fallback
+}
+
+function apiErrorCode(error: unknown): string | null {
+  if (error instanceof HttpErrorResponse) {
+    return readErrorCode(error.error)
+  }
+
+  return readErrorCode(error)
+}
+
+function readErrorCode(value: unknown): string | null {
+  if (!value || typeof value !== 'object') {
+    return null
+  }
+
+  const errorCode = (value as Record<string, unknown>)['errorCode']
+  return typeof errorCode === 'string' ? errorCode : null
 }

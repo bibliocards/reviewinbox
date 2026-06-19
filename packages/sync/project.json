@@ -1,0 +1,34 @@
+{
+  "name": "sync",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "packages/sync/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "swc packages/sync/src -d dist/packages/sync --strip-leading-paths"
+      },
+      "outputs": ["{workspaceRoot}/dist/packages/sync"]
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p packages/sync/tsconfig.lib.json --noEmit"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run packages/sync/src --passWithNoTests"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "biome lint packages/sync"
+      }
+    }
+  },
+  "tags": ["scope:shared", "type:sync"]
+}

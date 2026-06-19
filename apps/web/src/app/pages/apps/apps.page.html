@@ -47,8 +47,22 @@
       <ng-template #header>
         <tr>
           <th>{{ t('apps.list.table.app') }}</th>
-          <th>{{ t('apps.stores.apple') }}</th>
-          <th>{{ t('apps.stores.google') }}</th>
+          <th>
+            <div class="flex items-center gap-2">
+              <i
+                class="pi pi-apple"
+                aria-hidden="true"></i>
+              <span>{{ t('apps.stores.apple') }}</span>
+            </div>
+          </th>
+          <th>
+            <div class="flex items-center gap-2">
+              <i
+                class="pi pi-google"
+                aria-hidden="true"></i>
+              <span>{{ t('apps.stores.google') }}</span>
+            </div>
+          </th>
           <th>{{ t('apps.list.table.actions') }}</th>
         </tr>
       </ng-template>
@@ -76,14 +90,60 @@
             </div>
           </td>
           <td>
-            <span [class]="storeStatusClass(app, 'apple_app_store')">
-              {{ isStoreConfigured(app, 'apple_app_store') ? t('apps.list.status.configured') : t('apps.list.status.missing') }}
-            </span>
+            <div class="grid gap-2">
+              <div class="flex flex-wrap items-center gap-2">
+                <span [class]="storeStatusClass(app, 'apple_app_store')">
+                  {{ isStoreConfigured(app, 'apple_app_store') ? t('apps.list.status.configured') : t('apps.list.status.missing') }}
+                </span>
+                @if (appleStoreConnection(app)) {
+                <p-button
+                  size="small"
+                  severity="secondary"
+                  [outlined]="true"
+                  [label]="t('apps.list.sync.action')"
+                  [loading]="isSyncingApple(app)"
+                  [disabled]="syncingStoreConnectionId() !== null"
+                  icon="pi pi-refresh"
+                  (onClick)="syncAppleReviews(app)" />
+                }
+              </div>
+              @if (syncRunForApple(app); as syncRun) {
+              <p
+                class="m-0 text-xs"
+                [class.text-green-700]="syncRun.status === 'succeeded'"
+                [class.text-red-600]="syncRun.status === 'failed'">
+                {{ t(syncRunMessageKey(syncRun), { fetchedCount: syncRun.fetchedCount, storedCount: syncRun.storedCount }) }}
+              </p>
+              }
+            </div>
           </td>
           <td>
-            <span [class]="storeStatusClass(app, 'google_play')">
-              {{ isStoreConfigured(app, 'google_play') ? t('apps.list.status.configured') : t('apps.list.status.missing') }}
-            </span>
+            <div class="grid gap-2">
+              <div class="flex flex-wrap items-center gap-2">
+                <span [class]="storeStatusClass(app, 'google_play')">
+                  {{ isStoreConfigured(app, 'google_play') ? t('apps.list.status.configured') : t('apps.list.status.missing') }}
+                </span>
+                @if (googleStoreConnection(app)) {
+                <p-button
+                  size="small"
+                  severity="secondary"
+                  [outlined]="true"
+                  [label]="t('apps.list.sync.action')"
+                  [loading]="isSyncingGoogle(app)"
+                  [disabled]="syncingStoreConnectionId() !== null"
+                  icon="pi pi-refresh"
+                  (onClick)="syncGoogleReviews(app)" />
+                }
+              </div>
+              @if (syncRunForGoogle(app); as syncRun) {
+              <p
+                class="m-0 text-xs"
+                [class.text-green-700]="syncRun.status === 'succeeded'"
+                [class.text-red-600]="syncRun.status === 'failed'">
+                {{ t(syncRunMessageKey(syncRun), { fetchedCount: syncRun.fetchedCount, storedCount: syncRun.storedCount }) }}
+              </p>
+              }
+            </div>
           </td>
           <td>
             <div class="flex justify-end gap-2">

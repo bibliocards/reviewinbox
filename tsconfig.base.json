@@ -18,6 +18,7 @@
       "@reviewinbox/contracts": ["packages/contracts/src/index.ts"],
       "@reviewinbox/core": ["packages/core/src/index.ts"],
       "@reviewinbox/db": ["packages/db/src/index.ts"],
+      "@reviewinbox/sync": ["packages/sync/src/index.ts"],
       "@reviewinbox/store-adapters": ["packages/store-adapters/src/index.ts"]
     }
   }

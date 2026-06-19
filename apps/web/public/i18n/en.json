@@ -31,6 +31,29 @@
         "configured": "Configured",
         "missing": "Missing"
       },
+      "sync": {
+        "action": "Sync",
+        "succeeded": "Sync finished: {{fetchedCount}} Reviews fetched, {{storedCount}} stored.",
+        "failed": "We could not sync Reviews yet.",
+        "errors": {
+          "appleAuthFailed": "The Apple Store Credential is invalid.",
+          "appleForbidden": "This Apple Store Credential cannot access Reviews for this App.",
+          "appleNotFound": "Apple cannot find this App for this Store Credential.",
+          "appleRateLimited": "Apple is temporarily rate limiting API calls. Try again in a few minutes.",
+          "appleUnavailable": "Apple App Store is unavailable right now.",
+          "googleAuthFailed": "The Google Play Store Credential is invalid.",
+          "googleForbidden": "This Google Play Store Credential cannot access Reviews for this App.",
+          "googleNotFound": "Google Play cannot find this App for this Store Credential.",
+          "googleRateLimited": "Google Play is temporarily rate limiting API calls. Try again in a few minutes.",
+          "googleUnavailable": "Google Play is unavailable right now.",
+          "invalidCredentialFormat": "The saved Apple Store Credential is invalid.",
+          "invalidGoogleCredentialFormat": "The saved Google Play Store Credential is invalid.",
+          "missingCredential": "This Store Connection has no Store Credential.",
+          "missingExternalAppId": "This Store Connection has no App Store app id.",
+          "storeConnectionDisabled": "This Store Connection is disabled.",
+          "unsupportedStoreProvider": "This Store Connection does not support this sync."
+        }
+      },
       "errors": {
         "loadFailed": "We could not load Apps yet.",
         "deleteFailed": "We could not delete this App yet."
@@ -87,7 +110,27 @@
         "save": "Save changes"
       },
       "errors": {
+        "appleAppIdRequiredForVerification": "Enter the App Store app id before verifying the Apple Store Credential.",
+        "appleAuthFailed": "The Apple Store Credential is invalid. Check the issuer id, key id, and private key.",
+        "appleCredentialInvalidFormat": "The Apple Store Credential must contain issuerId, keyId, and privateKey.",
+        "appleCredentialReplacementIncomplete": "To replace the Apple Store Credential, enter both the key id and private key.",
+        "appleCredentialRequiredForVerification": "Add an Apple Store Credential before verifying this Store Connection.",
+        "appleForbidden": "This Apple Store Credential cannot access Reviews for this App.",
+        "appleIssuerChangeRequiresCredentialReplacement": "Changing the Apple issuer id requires replacing the Store Credential.",
+        "appleNotFound": "Apple cannot find this App for this Store Credential. Check the App Store app id.",
+        "appleRateLimited": "Apple is temporarily rate limiting API calls. Try again in a few minutes.",
+        "appleUnavailable": "We could not verify the Apple Store Credential yet. Try again later.",
         "partialStoreConnection": "Complete every field for a Store Connection, or leave all of its fields empty.",
+        "googleAuthFailed": "The Google Play Store Credential is invalid. Check the service account JSON.",
+        "googleCredentialInvalidFormat": "The Google Play Store Credential must contain client_email and private_key.",
+        "googleCredentialInvalidJson": "The Google Play Store Credential must be valid JSON.",
+        "googleCredentialRequiredForVerification": "Add a Google Play Store Credential before verifying this Store Connection.",
+        "googleCredentialNotObject": "The Google Play Store Credential must be a JSON object.",
+        "googleForbidden": "This Google Play Store Credential cannot access Reviews for this App.",
+        "googleNotFound": "Google Play cannot find this App for this Store Credential. Check the package name.",
+        "googlePackageNameRequiredForVerification": "Enter the package name before verifying the Google Play Store Credential.",
+        "googleRateLimited": "Google Play is temporarily rate limiting API calls. Try again in a few minutes.",
+        "googleUnavailable": "We could not verify the Google Play Store Credential yet. Try again later.",
         "createFailed": "We could not create this App yet.",
         "updateFailed": "We could not update this App yet."
       }

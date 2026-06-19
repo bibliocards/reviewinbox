@@ -78,6 +78,24 @@ export type ReplyStatus = z.infer<typeof replyStatusSchema>
 export const syncRunStatusSchema = z.enum(['pending', 'running', 'succeeded', 'failed'])
 export type SyncRunStatus = z.infer<typeof syncRunStatusSchema>
 
+export const syncRunResponseSchema = z.object({
+  id: z.uuid(),
+  organizationId: z.string().min(1),
+  appId: z.uuid(),
+  storeConnectionId: z.uuid(),
+  status: syncRunStatusSchema,
+  startedAt: z.iso.datetime().nullable(),
+  finishedAt: z.iso.datetime().nullable(),
+  fetchedCount: z.number().int().min(0),
+  storedCount: z.number().int().min(0),
+  errorCode: z.string().min(1).nullable(),
+  errorMessage: z.string().min(1).nullable(),
+  checkpoint: z.record(z.string(), z.unknown()).nullable(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+})
+export type SyncRunResponse = z.infer<typeof syncRunResponseSchema>
+
 export const normalizedReviewSchema = z.object({
   externalReviewId: z.string().min(1),
   authorDisplayName: z.string().min(1).nullable().optional(),

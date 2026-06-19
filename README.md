@@ -51,6 +51,13 @@ Both self-hosted and cloud deployments use the same codebase, with behavior sele
 
 See `CONTEXT.md` for the project glossary and `docs/adr/` for architectural decisions.
 
+## Store Review Sync Limits
+
+Store APIs do not expose the same historical review window.
+
+- Apple App Store: ReviewInbox uses the App Store Connect customer reviews API. The current implementation paginates through the API response and stores the app version when Apple provides `appVersionString`.
+- Google Play: ReviewInbox uses the Google Play Developer Reply to Reviews API. Google only exposes reviews that include comments and were created or modified within the last 7 days. Historical Google Play reviews must be imported from the Google Play Console CSV export if needed. ReviewInbox stores the app version when Google provides `appVersionName`.
+
 ## Status
 
 ReviewInbox is in early planning. The first implementation milestone is repository foundation, followed by auth, multi-app support, store sync, AI reply drafts, and the reply inbox.

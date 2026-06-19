@@ -9,8 +9,14 @@ import {
   updateAppRequestSchema,
   updateAppResponseSchema,
 } from '@reviewinbox/contracts'
-import { decodeStoreCredentialEncryptionKey, encryptStoreCredential } from '@reviewinbox/core'
+import {
+  decodeStoreCredentialEncryptionKey,
+  decryptStoreCredential,
+  encryptStoreCredential,
+  type EncryptedStoreCredential,
+} from '@reviewinbox/core'
 import { apps, storeConnections, storeCredentials } from '@reviewinbox/db'
+import { verifyAppleStoreCredentialForApp, verifyGooglePlayStoreCredentialForApp } from '@reviewinbox/sync'
 import { and, eq } from 'drizzle-orm'
 import { Hono } from 'hono'
 
@@ -95,10 +101,28 @@ appsRoutes.post('/api/apps/connect', async (context) => {
   }
 
   const connections = bodyResult.data.connections ?? {}
+  if (connections.apple) {
+    const plaintext = stringifyAppleCredential(connections.apple)
+    const verification = await verifyAppleStoreCredentialForApp({
+      appStoreAppId: connections.apple.appStoreAppId,
+      plaintext,
+    })
+    if (!verification.ok) {
+      return context.json({ error: verification.errorMessage, errorCode: verification.errorCode }, 400)
+    }
+  }
   if (connections.google) {
     const serviceAccountJsonResult = parseServiceAccountJson(connections.google.serviceAccountJson)
     if (!serviceAccountJsonResult.ok) {
-      return context.json({ error: serviceAccountJsonResult.error }, 400)
+      return context.json({ error: serviceAccountJsonResult.error, errorCode: serviceAccountJsonResult.errorCode }, 400)
+    }
+
+    const verification = await verifyGooglePlayStoreCredentialForApp({
+      packageName: connections.google.packageName,
+      plaintext: connections.google.serviceAccountJson,
+    })
+    if (!verification.ok) {
+      return context.json({ error: verification.errorMessage, errorCode: verification.errorCode }, 400)
     }
   }
 
@@ -137,14 +161,7 @@ appsRoutes.post('/api/apps/connect', async (context) => {
         throw new Error('Apple Store Connection creation did not return a row.')
       }
 
-      const encrypted = encryptStoreCredential(
-        JSON.stringify({
-          issuerId: connections.apple.issuerId,
-          keyId: connections.apple.keyId,
-          privateKey: connections.apple.privateKey,
-        }),
-        encryptionKey,
-      )
+      const encrypted = encryptStoreCredential(stringifyAppleCredential(connections.apple), encryptionKey)
 
       const [credential] = await transaction
         .insert(storeCredentials)
@@ -257,17 +274,64 @@ appsRoutes.put('/api/apps/:appId', async (context) => {
 
   const connections = bodyResult.data.connections ?? {}
   if (connections.apple && Boolean(connections.apple.keyId) !== Boolean(connections.apple.privateKey)) {
-    return context.json({ error: 'Apple Store Credential replacement requires both key id and private key.' }, 400)
+    return context.json(
+      {
+        error: 'Apple Store Credential replacement requires both key id and private key.',
+        errorCode: 'apple_credential_replacement_incomplete',
+      },
+      400,
+    )
   }
   if (connections.google?.serviceAccountJson) {
     const serviceAccountJsonResult = parseServiceAccountJson(connections.google.serviceAccountJson)
     if (!serviceAccountJsonResult.ok) {
-      return context.json({ error: serviceAccountJsonResult.error }, 400)
+      return context.json({ error: serviceAccountJsonResult.error, errorCode: serviceAccountJsonResult.errorCode }, 400)
     }
   }
 
   const encryptionConfig = loadEncryptionConfig()
   const encryptionKey = decodeStoreCredentialEncryptionKey(encryptionConfig.appEncryptionKey)
+
+  if (connections.apple) {
+    const applePlaintextResult = await getAppleCredentialPlaintextForVerification({
+      appId: existingApp.id,
+      organizationId: sessionResult.session.organizationId,
+      issuerId: connections.apple.issuerId,
+      encryptionKey,
+      ...(connections.apple.keyId !== undefined ? { keyId: connections.apple.keyId } : {}),
+      ...(connections.apple.privateKey !== undefined ? { privateKey: connections.apple.privateKey } : {}),
+    })
+    if (!applePlaintextResult.ok) {
+      return context.json({ error: applePlaintextResult.error, errorCode: applePlaintextResult.errorCode }, 400)
+    }
+
+    const verification = await verifyAppleStoreCredentialForApp({
+      appStoreAppId: connections.apple.appStoreAppId,
+      plaintext: applePlaintextResult.plaintext,
+    })
+    if (!verification.ok) {
+      return context.json({ error: verification.errorMessage, errorCode: verification.errorCode }, 400)
+    }
+  }
+  if (connections.google) {
+    const googlePlaintextResult = await getGoogleCredentialPlaintextForVerification({
+      appId: existingApp.id,
+      organizationId: sessionResult.session.organizationId,
+      encryptionKey,
+      ...(connections.google.serviceAccountJson !== undefined ? { serviceAccountJson: connections.google.serviceAccountJson } : {}),
+    })
+    if (!googlePlaintextResult.ok) {
+      return context.json({ error: googlePlaintextResult.error, errorCode: googlePlaintextResult.errorCode }, 400)
+    }
+
+    const verification = await verifyGooglePlayStoreCredentialForApp({
+      packageName: connections.google.packageName,
+      plaintext: googlePlaintextResult.plaintext,
+    })
+    if (!verification.ok) {
+      return context.json({ error: verification.errorMessage, errorCode: verification.errorCode }, 400)
+    }
+  }
 
   const result = await database.transaction(async (transaction) => {
     const [updatedApp] = await transaction
@@ -291,7 +355,7 @@ appsRoutes.put('/api/apps/:appId', async (context) => {
 
       if (connections.apple.keyId && connections.apple.privateKey) {
         const encrypted = encryptStoreCredential(
-          JSON.stringify({
+          stringifyAppleCredential({
             issuerId: connections.apple.issuerId,
             keyId: connections.apple.keyId,
             privateKey: connections.apple.privateKey,
@@ -463,15 +527,122 @@ async function replaceStoreCredential(
   })
 }
 
-function parseServiceAccountJson(value: string): { ok: true } | { ok: false; error: string } {
+function parseServiceAccountJson(value: string): { ok: true } | { ok: false; error: string; errorCode: string } {
   try {
     const parsed = JSON.parse(value) as unknown
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return { ok: false, error: 'Google Play Store Credential must be a JSON object.' }
+      return { ok: false, error: 'Google Play Store Credential must be a JSON object.', errorCode: 'google_credential_not_object' }
     }
 
     return { ok: true }
   } catch {
-    return { ok: false, error: 'Google Play Store Credential must be valid JSON.' }
+    return { ok: false, error: 'Google Play Store Credential must be valid JSON.', errorCode: 'google_credential_invalid_json' }
+  }
+}
+
+function stringifyAppleCredential(input: { issuerId: string; keyId: string; privateKey: string }) {
+  return JSON.stringify({
+    issuerId: input.issuerId,
+    keyId: input.keyId,
+    privateKey: input.privateKey,
+  })
+}
+
+async function getAppleCredentialPlaintextForVerification(input: {
+  appId: string
+  organizationId: string
+  issuerId: string
+  keyId?: string
+  privateKey?: string
+  encryptionKey: Buffer
+}): Promise<{ ok: true; plaintext: string } | { ok: false; error: string; errorCode: string }> {
+  if (input.keyId && input.privateKey) {
+    return {
+      ok: true,
+      plaintext: stringifyAppleCredential({
+        issuerId: input.issuerId,
+        keyId: input.keyId,
+        privateKey: input.privateKey,
+      }),
+    }
+  }
+
+  const [existingApple] = await database
+    .select({ connection: storeConnections, credential: storeCredentials })
+    .from(storeConnections)
+    .leftJoin(storeCredentials, eq(storeCredentials.storeConnectionId, storeConnections.id))
+    .where(
+      and(
+        eq(storeConnections.appId, input.appId),
+        eq(storeConnections.organizationId, input.organizationId),
+        eq(storeConnections.provider, 'apple_app_store'),
+      ),
+    )
+
+  if (!existingApple?.credential) {
+    return {
+      ok: false,
+      error: 'Apple Store Credential is required before verifying this Store Connection.',
+      errorCode: 'apple_credential_required_for_verification',
+    }
+  }
+  if (existingApple.connection.externalStoreId !== input.issuerId) {
+    return {
+      ok: false,
+      error: 'Apple issuer id changes require replacing the Store Credential.',
+      errorCode: 'apple_issuer_change_requires_credential_replacement',
+    }
+  }
+
+  return {
+    ok: true,
+    plaintext: decryptStoreCredential(toEncryptedStoreCredential(existingApple.credential), input.encryptionKey),
+  }
+}
+
+function toEncryptedStoreCredential(row: typeof storeCredentials.$inferSelect): EncryptedStoreCredential {
+  return {
+    ciphertext: row.ciphertext,
+    nonce: row.nonce,
+    authTag: row.authTag,
+    algorithm: row.algorithm as EncryptedStoreCredential['algorithm'],
+    version: row.version as EncryptedStoreCredential['version'],
+    keyId: row.keyId,
+  }
+}
+
+async function getGoogleCredentialPlaintextForVerification(input: {
+  appId: string
+  organizationId: string
+  serviceAccountJson?: string
+  encryptionKey: Buffer
+}): Promise<{ ok: true; plaintext: string } | { ok: false; error: string; errorCode: string }> {
+  if (input.serviceAccountJson) {
+    return { ok: true, plaintext: input.serviceAccountJson }
+  }
+
+  const [existingGoogle] = await database
+    .select({ credential: storeCredentials })
+    .from(storeConnections)
+    .leftJoin(storeCredentials, eq(storeCredentials.storeConnectionId, storeConnections.id))
+    .where(
+      and(
+        eq(storeConnections.appId, input.appId),
+        eq(storeConnections.organizationId, input.organizationId),
+        eq(storeConnections.provider, 'google_play'),
+      ),
+    )
+
+  if (!existingGoogle?.credential) {
+    return {
+      ok: false,
+      error: 'Google Play Store Credential is required before verifying this Store Connection.',
+      errorCode: 'google_credential_required_for_verification',
+    }
+  }
+
+  return {
+    ok: true,
+    plaintext: decryptStoreCredential(toEncryptedStoreCredential(existingGoogle.credential), input.encryptionKey),
   }
 }

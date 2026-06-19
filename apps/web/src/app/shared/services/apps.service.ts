@@ -5,6 +5,7 @@ import type {
   ConnectAppResponse,
   DeleteAppResponse,
   ListAppsResponse,
+  SyncRunResponse,
   UpdateAppRequest,
   UpdateAppResponse,
 } from '@reviewinbox/contracts'
@@ -31,5 +32,9 @@ export class AppsService {
 
   deleteApp(appId: string): Observable<DeleteAppResponse> {
     return this.http.delete<DeleteAppResponse>(`${this.apiUrl}/api/apps/${appId}`)
+  }
+
+  syncStoreConnectionReviews(storeConnectionId: string): Observable<SyncRunResponse> {
+    return this.http.post<SyncRunResponse>(`${this.apiUrl}/api/store-connections/${storeConnectionId}/sync-reviews`, {})
   }
 }

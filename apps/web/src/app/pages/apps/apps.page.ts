@@ -1,6 +1,14 @@
+import { HttpErrorResponse } from '@angular/common/http'
 import { Component, computed, effect, HostListener, inject, signal } from '@angular/core'
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
-import type { AppListItemResponse, ConnectAppResponse, StoreProvider, UpdateAppResponse } from '@reviewinbox/contracts'
+import type {
+  AppListItemResponse,
+  ConnectAppResponse,
+  StoreConnectionResponse,
+  StoreProvider,
+  SyncRunResponse,
+  UpdateAppResponse,
+} from '@reviewinbox/contracts'
 import { formatDistanceToNow } from 'date-fns/formatDistanceToNow'
 import { enUS, fr } from 'date-fns/locale'
 import { OrganizationService } from 'ngx-better-auth'
@@ -40,6 +48,8 @@ export class AppsPageComponent {
   protected readonly successMessageKey = signal<string | null>(null)
   protected readonly activeMemberRole = signal<string | string[] | undefined>(undefined)
   protected readonly appIconStates = signal<Record<string, AppIconState>>({})
+  protected readonly syncingStoreConnectionId = signal<string | null>(null)
+  protected readonly syncRunByStoreConnectionId = signal<Record<string, SyncRunResponse>>({})
   protected readonly canDeleteApps = computed(() => {
     const role = this.roleLabel(this.activeMemberRole()).toLowerCase()
     return ['owner', 'admin'].includes(role)
@@ -131,10 +141,75 @@ export class AppsPageComponent {
     })
   }
 
+  protected syncAppleReviews(app: AppListItemResponse): void {
+    this.syncReviews(this.appleStoreConnection(app))
+  }
+
+  protected syncGoogleReviews(app: AppListItemResponse): void {
+    this.syncReviews(this.googleStoreConnection(app))
+  }
+
+  private syncReviews(connection: StoreConnectionResponse | null): void {
+    if (!connection || this.syncingStoreConnectionId()) {
+      return
+    }
+
+    this.syncingStoreConnectionId.set(connection.id)
+    this.appsService.syncStoreConnectionReviews(connection.id).subscribe({
+      next: (syncRun) => this.setSyncRunResult(syncRun),
+      error: (error: unknown) => this.setSyncRunResult(syncRunFromError(error, connection.id)),
+      complete: () => this.syncingStoreConnectionId.set(null),
+    })
+  }
+
   protected isStoreConfigured(app: AppListItemResponse, provider: StoreProvider): boolean {
     return app.storeConnections.some(
       (connection) => connection.provider === provider && connection.status === 'active' && connection.credential.hasCredential,
     )
+  }
+
+  protected appleStoreConnection(app: AppListItemResponse): StoreConnectionResponse | null {
+    return (
+      app.storeConnections.find(
+        (connection) => connection.provider === 'apple_app_store' && connection.status === 'active' && connection.credential.hasCredential,
+      ) ?? null
+    )
+  }
+
+  protected googleStoreConnection(app: AppListItemResponse): StoreConnectionResponse | null {
+    return (
+      app.storeConnections.find(
+        (connection) => connection.provider === 'google_play' && connection.status === 'active' && connection.credential.hasCredential,
+      ) ?? null
+    )
+  }
+
+  protected isSyncingApple(app: AppListItemResponse): boolean {
+    const connection = this.appleStoreConnection(app)
+    return connection != null && this.syncingStoreConnectionId() === connection.id
+  }
+
+  protected isSyncingGoogle(app: AppListItemResponse): boolean {
+    const connection = this.googleStoreConnection(app)
+    return connection != null && this.syncingStoreConnectionId() === connection.id
+  }
+
+  protected syncRunForApple(app: AppListItemResponse): SyncRunResponse | null {
+    const connection = this.appleStoreConnection(app)
+    return connection ? (this.syncRunByStoreConnectionId()[connection.id] ?? null) : null
+  }
+
+  protected syncRunForGoogle(app: AppListItemResponse): SyncRunResponse | null {
+    const connection = this.googleStoreConnection(app)
+    return connection ? (this.syncRunByStoreConnectionId()[connection.id] ?? null) : null
+  }
+
+  protected syncRunMessageKey(syncRun: SyncRunResponse): string {
+    if (syncRun.status === 'succeeded') {
+      return 'apps.list.sync.succeeded'
+    }
+
+    return syncRunErrorMessageKeys[syncRun.errorCode ?? ''] ?? 'apps.list.sync.failed'
   }
 
   protected storeStatusClass(app: AppListItemResponse, provider: StoreProvider): string {
@@ -218,4 +293,62 @@ export class AppsPageComponent {
   private roleLabel(role: string | string[] | undefined): string {
     return Array.isArray(role) ? role.join(', ') : (role ?? 'member')
   }
+
+  private setSyncRunResult(syncRun: SyncRunResponse): void {
+    this.syncRunByStoreConnectionId.update((results) => ({
+      ...results,
+      [syncRun.storeConnectionId]: syncRun,
+    }))
+    this.syncingStoreConnectionId.set(null)
+  }
+}
+
+const syncRunErrorMessageKeys: Record<string, string> = {
+  apple_auth_failed: 'apps.list.sync.errors.appleAuthFailed',
+  apple_forbidden: 'apps.list.sync.errors.appleForbidden',
+  apple_invalid_response: 'apps.list.sync.errors.appleUnavailable',
+  apple_not_found: 'apps.list.sync.errors.appleNotFound',
+  apple_rate_limited: 'apps.list.sync.errors.appleRateLimited',
+  apple_unavailable: 'apps.list.sync.errors.appleUnavailable',
+  google_auth_failed: 'apps.list.sync.errors.googleAuthFailed',
+  google_forbidden: 'apps.list.sync.errors.googleForbidden',
+  google_invalid_response: 'apps.list.sync.errors.googleUnavailable',
+  google_not_found: 'apps.list.sync.errors.googleNotFound',
+  google_rate_limited: 'apps.list.sync.errors.googleRateLimited',
+  google_unavailable: 'apps.list.sync.errors.googleUnavailable',
+  invalid_credential_format: 'apps.list.sync.errors.invalidCredentialFormat',
+  invalid_google_credential_format: 'apps.list.sync.errors.invalidGoogleCredentialFormat',
+  missing_credential: 'apps.list.sync.errors.missingCredential',
+  missing_external_app_id: 'apps.list.sync.errors.missingExternalAppId',
+  store_connection_disabled: 'apps.list.sync.errors.storeConnectionDisabled',
+  unsupported_store_provider: 'apps.list.sync.errors.unsupportedStoreProvider',
+}
+
+function syncRunFromError(error: unknown, storeConnectionId: string): SyncRunResponse {
+  const body = error instanceof HttpErrorResponse ? error.error : null
+  if (isSyncRunResponse(body)) {
+    return body
+  }
+
+  const now = new Date().toISOString()
+  return {
+    id: crypto.randomUUID(),
+    organizationId: '',
+    appId: '00000000-0000-0000-0000-000000000000',
+    storeConnectionId,
+    status: 'failed',
+    startedAt: null,
+    finishedAt: now,
+    fetchedCount: 0,
+    storedCount: 0,
+    errorCode: 'sync_failed',
+    errorMessage: null,
+    checkpoint: null,
+    createdAt: now,
+    updatedAt: now,
+  }
+}
+
+function isSyncRunResponse(value: unknown): value is SyncRunResponse {
+  return Boolean(value && typeof value === 'object' && (value as Partial<SyncRunResponse>).storeConnectionId)
 }
