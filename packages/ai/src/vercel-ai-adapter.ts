@@ -1,24 +1,25 @@
+import type { LanguageModel } from 'ai'
 import type { ReplyDraftProvider, ReplyDraftProviderRequest, ReplyDraftProviderResult } from './provider'
 
 export type VercelAiGenerateObject = (request: {
-  model: unknown
+  model: LanguageModel
   system: string
   prompt: string
   schema: unknown
   temperature: number
   maxOutputTokens: number
-}) => Promise<{ object: unknown }>
+}) => Promise<{ output: unknown }>
 
 export type VercelAiReplyDraftAdapterOptions = {
-  model: unknown
+  model: LanguageModel
   modelName: string
-  generateObject: VercelAiGenerateObject
+  generateText: VercelAiGenerateObject
 }
 
 export function createVercelAiReplyDraftProvider(options: VercelAiReplyDraftAdapterOptions): ReplyDraftProvider {
   return {
     async generateReplyDraftCompletion(request: ReplyDraftProviderRequest): Promise<ReplyDraftProviderResult> {
-      const result = await options.generateObject({
+      const result = await options.generateText({
         model: options.model,
         system: request.system,
         prompt: request.prompt,
@@ -28,7 +29,7 @@ export function createVercelAiReplyDraftProvider(options: VercelAiReplyDraftAdap
       })
 
       return {
-        output: result.object,
+        output: result.output,
         model: options.modelName,
       }
     },

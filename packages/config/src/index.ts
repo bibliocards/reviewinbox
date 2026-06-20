@@ -4,6 +4,10 @@ export const deploymentModeSchema = z.enum(['self-hosted', 'cloud'])
 
 export type DeploymentMode = z.infer<typeof deploymentModeSchema>
 
+export const aiProviderKindSchema = z.enum(['disabled', 'managed', 'openai-compatible'])
+
+export type AiProviderKind = z.infer<typeof aiProviderKindSchema>
+
 const localOrigins = new Set(['http://localhost', 'http://127.0.0.1'])
 
 const booleanEnvSchema = z
@@ -48,6 +52,10 @@ function parseAppPublicOrigin(origin: string) {
   }
 
   return origin
+}
+
+function isLocalHttpUrl(url: URL) {
+  return url.protocol === 'http:' && localOrigins.has(`${url.protocol}//${url.hostname}`)
 }
 
 export const serverConfigSchema = z
@@ -135,6 +143,85 @@ export const serverConfigSchema = z
 
 export type ServerConfig = z.infer<typeof serverConfigSchema>
 
+export const aiConfigSchema = z
+  .object({
+    deploymentMode: deploymentModeSchema.default('self-hosted'),
+    provider: aiProviderKindSchema.default('disabled'),
+    model: optionalStringSchema,
+    apiKey: optionalStringSchema,
+    baseUrl: optionalStringSchema,
+  })
+  .superRefine((config, context) => {
+    if (config.baseUrl) {
+      let baseUrl: URL
+      try {
+        baseUrl = new URL(config.baseUrl)
+      } catch {
+        context.addIssue({
+          code: 'custom',
+          path: ['baseUrl'],
+          message: 'AI_BASE_URL must be a valid URL.',
+        })
+        return
+      }
+
+      if (baseUrl.username || baseUrl.password || baseUrl.search || baseUrl.hash) {
+        context.addIssue({
+          code: 'custom',
+          path: ['baseUrl'],
+          message: 'AI_BASE_URL must not include credentials, query, or hash.',
+        })
+      }
+
+      if (config.deploymentMode === 'cloud' && baseUrl.protocol !== 'https:') {
+        context.addIssue({
+          code: 'custom',
+          path: ['baseUrl'],
+          message: 'Cloud deployments must use HTTPS AI_BASE_URL values.',
+        })
+      }
+
+      if (config.deploymentMode !== 'cloud' && baseUrl.protocol !== 'https:' && !isLocalHttpUrl(baseUrl)) {
+        context.addIssue({
+          code: 'custom',
+          path: ['baseUrl'],
+          message: 'AI_BASE_URL must use HTTPS unless it is a local self-hosted URL.',
+        })
+      }
+    }
+
+    if (config.provider === 'disabled') {
+      return
+    }
+
+    if (!config.model) {
+      context.addIssue({
+        code: 'custom',
+        path: ['model'],
+        message: 'AI_MODEL is required when AI_PROVIDER is enabled.',
+      })
+    }
+
+    if (config.provider === 'managed') {
+      context.addIssue({
+        code: 'custom',
+        path: ['provider'],
+        message: 'AI_PROVIDER=managed is reserved for cloud deployments but is not supported by this runtime yet.',
+      })
+      return
+    }
+
+    if (config.provider === 'openai-compatible' && !config.apiKey) {
+      context.addIssue({
+        code: 'custom',
+        path: ['apiKey'],
+        message: 'AI_API_KEY is required when AI_PROVIDER=openai-compatible.',
+      })
+    }
+  })
+
+export type AiConfig = z.infer<typeof aiConfigSchema>
+
 export const appEncryptionKeySchema = z.string().superRefine((value, context) => {
   let decoded: Buffer
 
@@ -186,6 +273,16 @@ export function loadServerConfig(env: NodeJS.ProcessEnv = process.env): ServerCo
     s3AccessKeyId: env['S3_ACCESS_KEY_ID'],
     s3SecretAccessKey: env['S3_SECRET_ACCESS_KEY'],
     s3PublicBaseUrl: env['S3_PUBLIC_BASE_URL'],
+  })
+}
+
+export function loadAiConfig(env: NodeJS.ProcessEnv = process.env): AiConfig {
+  return aiConfigSchema.parse({
+    deploymentMode: env['DEPLOYMENT_MODE'],
+    provider: env['AI_PROVIDER'],
+    model: env['AI_MODEL'],
+    apiKey: env['AI_API_KEY'],
+    baseUrl: env['AI_BASE_URL'],
   })
 }
 

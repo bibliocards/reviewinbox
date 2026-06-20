@@ -1,11 +1,14 @@
-import { loadServerConfig } from '@reviewinbox/config'
+import { loadAiConfig, loadServerConfig } from '@reviewinbox/config'
 import { runDatabaseMigrations } from '@reviewinbox/db'
 import { createQueueClient } from '@reviewinbox/queue'
+
+import { createWorkerReplyDraftProvider } from './ai-provider'
 
 const shutdownSignals = ['SIGINT', 'SIGTERM'] as const
 
 async function main() {
   const config = loadServerConfig()
+  const aiConfig = loadAiConfig()
 
   if (config.runDatabaseMigrationsOnStartup) {
     console.info('Applying database migrations before starting ReviewInbox worker')
@@ -20,7 +23,12 @@ async function main() {
   })
 
   await queue.start()
-  console.info('ReviewInbox worker started; no job handlers are registered yet')
+  const replyDraftProvider = createWorkerReplyDraftProvider(aiConfig)
+  console.info(
+    replyDraftProvider
+      ? 'ReviewInbox worker started with AI drafting provider configured; no job handlers are registered yet'
+      : 'ReviewInbox worker started with AI drafting disabled; no job handlers are registered yet',
+  )
 
   const signal = await waitForShutdownSignal()
   console.info(`ReviewInbox worker received ${signal}, shutting down`)

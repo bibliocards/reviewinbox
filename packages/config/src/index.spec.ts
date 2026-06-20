@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { loadEncryptionConfig, loadServerConfig } from './index'
+import { loadAiConfig, loadEncryptionConfig, loadServerConfig } from './index'
 
 describe('loadServerConfig', () => {
   it('uses safe local defaults', () => {
@@ -16,6 +16,59 @@ describe('loadServerConfig', () => {
     expect(loadServerConfig({ RUN_DB_MIGRATIONS_ON_STARTUP: 'true' })).toMatchObject({
       runDatabaseMigrationsOnStartup: true,
     })
+  })
+})
+
+describe('loadAiConfig', () => {
+  it('defaults to disabled AI', () => {
+    expect(loadAiConfig({})).toMatchObject({
+      deploymentMode: 'self-hosted',
+      provider: 'disabled',
+    })
+  })
+
+  it('accepts OpenAI-compatible provider configuration', () => {
+    expect(
+      loadAiConfig({
+        AI_PROVIDER: 'openai-compatible',
+        AI_MODEL: 'gpt-4.1-mini',
+        AI_API_KEY: 'test-key',
+        AI_BASE_URL: 'http://localhost:11434/v1',
+      }),
+    ).toEqual({
+      deploymentMode: 'self-hosted',
+      provider: 'openai-compatible',
+      model: 'gpt-4.1-mini',
+      apiKey: 'test-key',
+      baseUrl: 'http://localhost:11434/v1',
+    })
+  })
+
+  it('requires an API key for OpenAI-compatible provider configuration', () => {
+    expect(() => loadAiConfig({ AI_PROVIDER: 'openai-compatible', AI_MODEL: 'gpt-4.1-mini' })).toThrow(/AI_API_KEY/)
+  })
+
+  it('rejects managed AI until runtime support exists', () => {
+    expect(() => loadAiConfig({ DEPLOYMENT_MODE: 'cloud', AI_PROVIDER: 'managed', AI_MODEL: 'gpt-4.1-mini' })).toThrow(
+      /not supported/,
+    )
+  })
+
+  it('rejects non-local HTTP AI base URLs', () => {
+    expect(() =>
+      loadAiConfig({ AI_PROVIDER: 'openai-compatible', AI_MODEL: 'gpt-4.1-mini', AI_API_KEY: 'test-key', AI_BASE_URL: 'http://example.com/v1' }),
+    ).toThrow(/HTTPS/)
+  })
+
+  it('rejects AI base URLs with credentials', () => {
+    expect(() =>
+      loadAiConfig({
+        AI_PROVIDER: 'openai-compatible',
+        AI_MODEL: 'gpt-4.1-mini',
+        AI_API_KEY: 'test-key',
+        AI_BASE_URL: 'https://user:pass@example.com/v1',
+      }),
+    ).toThrow(/credentials/)
   })
 })
 
