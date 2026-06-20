@@ -69,9 +69,9 @@ Biome owns formatting and linting for the repo. Do not add separate oxfmt or oxl
 
 Self-hosted deployments use three app images plus Postgres:
 
-- `ghcr.io/reviewinbox/api:<semver>` from `apps/api/Dockerfile`
-- `ghcr.io/reviewinbox/web:<semver>` from `apps/web/Dockerfile`
-- `ghcr.io/reviewinbox/worker:<semver>` from `apps/worker/Dockerfile`
+- `ghcr.io/bibliocards/reviewinbox-api:<semver>` from `apps/api/Dockerfile`
+- `ghcr.io/bibliocards/reviewinbox-web:<semver>` from `apps/web/Dockerfile`
+- `ghcr.io/bibliocards/reviewinbox-worker:<semver>` from `apps/worker/Dockerfile`
 
 The self-hosted compose file pins images through `REVIEWINBOX_VERSION` in `.env.self-hosted`. Do not document or recommend `latest` for VPS installs.
 

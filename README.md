@@ -29,9 +29,9 @@ ReviewInbox is in early alpha. The Docker Compose setup is the intended self-hos
 
 The recommended self-hosted setup uses pinned Docker images and Docker Compose:
 
-- `ghcr.io/reviewinbox/api:${REVIEWINBOX_VERSION}`
-- `ghcr.io/reviewinbox/web:${REVIEWINBOX_VERSION}`
-- `ghcr.io/reviewinbox/worker:${REVIEWINBOX_VERSION}`
+- `ghcr.io/bibliocards/reviewinbox-api:${REVIEWINBOX_VERSION}`
+- `ghcr.io/bibliocards/reviewinbox-web:${REVIEWINBOX_VERSION}`
+- `ghcr.io/bibliocards/reviewinbox-worker:${REVIEWINBOX_VERSION}`
 - Postgres 18
 
 Quick start on a VPS:

@@ -15,7 +15,7 @@ services:
       retries: 10
 
   api:
-    image: ghcr.io/reviewinbox/api:${REVIEWINBOX_VERSION:-latest}
+    image: ghcr.io/bibliocards/reviewinbox-api:${REVIEWINBOX_VERSION:-latest}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -56,7 +56,7 @@ services:
       retries: 5
 
   worker:
-    image: ghcr.io/reviewinbox/worker:${REVIEWINBOX_VERSION:-latest}
+    image: ghcr.io/bibliocards/reviewinbox-worker:${REVIEWINBOX_VERSION:-latest}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -93,7 +93,7 @@ services:
       - uploads:/usr/src/app/volumes/uploads
 
   web:
-    image: ghcr.io/reviewinbox/web:${REVIEWINBOX_VERSION:-latest}
+    image: ghcr.io/bibliocards/reviewinbox-web:${REVIEWINBOX_VERSION:-latest}
     restart: unless-stopped
     environment:
       REVIEWINBOX_API_URL: ${REVIEWINBOX_API_URL:-}
