@@ -23,6 +23,12 @@ type AppIconState = {
   url: string | null
 }
 
+type ReplyDraftQueueMessage = {
+  key: string
+  params?: Record<string, number>
+  status: 'success' | 'error'
+}
+
 type AppleLookupResponse = {
   results?: Array<{
     artworkUrl100?: string
@@ -50,10 +56,13 @@ export class AppsPageComponent {
   protected readonly appIconStates = signal<Record<string, AppIconState>>({})
   protected readonly syncingStoreConnectionId = signal<string | null>(null)
   protected readonly syncRunByStoreConnectionId = signal<Record<string, SyncRunResponse>>({})
+  protected readonly queueingReplyDraftsAppId = signal<string | null>(null)
+  protected readonly replyDraftQueueMessageByAppId = signal<Record<string, ReplyDraftQueueMessage>>({})
   protected readonly canDeleteApps = computed(() => {
     const role = this.roleLabel(this.activeMemberRole()).toLowerCase()
     return ['owner', 'admin'].includes(role)
   })
+  protected readonly canQueueReplyDrafts = this.canDeleteApps
 
   constructor() {
     this.organizationService.getActiveMember().subscribe({
@@ -149,6 +158,27 @@ export class AppsPageComponent {
     this.syncReviews(this.googleStoreConnection(app))
   }
 
+  protected queueMissingReplyDrafts(app: AppListItemResponse): void {
+    if (!app.autoDraftEnabled || this.queueingReplyDraftsAppId()) {
+      return
+    }
+
+    this.queueingReplyDraftsAppId.set(app.id)
+    this.appsService.queueMissingReplyDrafts(app.id).subscribe({
+      next: (result) => {
+        this.setReplyDraftQueueMessage(app.id, {
+          key: 'apps.list.replyDrafts.queued',
+          params: { queuedCount: result.queuedCount, skippedCount: result.skippedCount },
+          status: 'success',
+        })
+      },
+      error: () => {
+        this.setReplyDraftQueueMessage(app.id, { key: 'apps.list.replyDrafts.errors.queueFailed', status: 'error' })
+      },
+      complete: () => this.queueingReplyDraftsAppId.set(null),
+    })
+  }
+
   private syncReviews(connection: StoreConnectionResponse | null): void {
     if (!connection || this.syncingStoreConnectionId()) {
       return
@@ -192,6 +222,14 @@ export class AppsPageComponent {
   protected isSyncingGoogle(app: AppListItemResponse): boolean {
     const connection = this.googleStoreConnection(app)
     return connection != null && this.syncingStoreConnectionId() === connection.id
+  }
+
+  protected isQueueingReplyDrafts(app: AppListItemResponse): boolean {
+    return this.queueingReplyDraftsAppId() === app.id
+  }
+
+  protected replyDraftQueueMessage(app: AppListItemResponse): ReplyDraftQueueMessage | null {
+    return this.replyDraftQueueMessageByAppId()[app.id] ?? null
   }
 
   protected syncRunForApple(app: AppListItemResponse): SyncRunResponse | null {
@@ -300,6 +338,14 @@ export class AppsPageComponent {
       [syncRun.storeConnectionId]: syncRun,
     }))
     this.syncingStoreConnectionId.set(null)
+  }
+
+  private setReplyDraftQueueMessage(appId: string, message: ReplyDraftQueueMessage): void {
+    this.replyDraftQueueMessageByAppId.update((messages) => ({
+      ...messages,
+      [appId]: message,
+    }))
+    this.queueingReplyDraftsAppId.set(null)
   }
 }
 

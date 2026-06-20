@@ -13,6 +13,7 @@ export type SyncRunResult = {
   errorCode: string | null
   errorMessage: string | null
   checkpoint: Record<string, unknown> | null
+  newReviewIds: string[]
   createdAt: string
   updatedAt: string
 }
@@ -31,6 +32,7 @@ export function toSyncRunResult(run: typeof syncRuns.$inferSelect): SyncRunResul
     errorCode: run.errorCode,
     errorMessage: run.errorMessage,
     checkpoint: (run.checkpoint as Record<string, unknown> | null) ?? null,
+    newReviewIds: [],
     createdAt: run.createdAt.toISOString(),
     updatedAt: run.updatedAt.toISOString(),
   }

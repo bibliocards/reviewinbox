@@ -113,7 +113,7 @@ async function fetchAppleCustomerReviewsPage(input: {
 
 function assertAppleApiUrl(value: string) {
   const url = new URL(value)
-  if (url.protocol !== 'https:' || url.hostname !== 'api.appstoreconnect.apple-app-store.com') {
+  if (url.protocol !== 'https:' || url.hostname !== 'api.appstoreconnect.apple.com') {
     throw new AppleStoreAdapterError('apple_unavailable', 'Apple App Store review API URL is invalid.')
   }
 }

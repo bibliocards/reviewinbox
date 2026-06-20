@@ -2,6 +2,7 @@
   "apps": {
     "actions": {
       "connectApp": "Connect app",
+      "generateMissingDrafts": "Generate missing drafts",
       "edit": "Edit",
       "delete": "Delete"
     },
@@ -52,6 +53,13 @@
           "missingExternalAppId": "This Store Connection has no App Store app id.",
           "storeConnectionDisabled": "This Store Connection is disabled.",
           "unsupportedStoreProvider": "This Store Connection does not support this sync."
+        }
+      },
+      "replyDrafts": {
+        "queued": "Queued {{queuedCount}} Reply Drafts. Skipped {{skippedCount}}.",
+        "autoDraftDisabled": "Enable auto-drafting first.",
+        "errors": {
+          "queueFailed": "We could not queue missing Reply Drafts yet."
         }
       },
       "errors": {

@@ -81,7 +81,7 @@ export async function syncReviewsForStoreConnection(input: SyncReviewsForStoreCo
             ...(input.maxPages !== undefined ? { maxPages: input.maxPages } : {}),
           })
 
-    const storedCount = await storeSyncedReviews(
+    const storedReviews = await storeSyncedReviews(
       input.database,
       {
         organizationId: scoped.connection.organizationId,
@@ -97,7 +97,7 @@ export async function syncReviewsForStoreConnection(input: SyncReviewsForStoreCo
         status: 'succeeded',
         finishedAt: new Date(),
         fetchedCount: result.reviews.length,
-        storedCount,
+        storedCount: storedReviews.storedCount,
         checkpoint: result.checkpoint,
       })
       .where(eq(syncRuns.id, createdRun.id))
@@ -107,7 +107,7 @@ export async function syncReviewsForStoreConnection(input: SyncReviewsForStoreCo
       throw new Error('Sync Run update did not return a row.')
     }
 
-    return toSyncRunResult(updatedRun)
+    return { ...toSyncRunResult(updatedRun), newReviewIds: storedReviews.newReviewIds }
   } catch (error) {
     const code =
       error instanceof AppleStoreAdapterError || error instanceof GooglePlayStoreAdapterError || error instanceof SyncRunFailureError

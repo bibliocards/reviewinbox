@@ -2,6 +2,7 @@
   "apps": {
     "actions": {
       "connectApp": "Connecter une App",
+      "generateMissingDrafts": "Générer les drafts manquants",
       "edit": "Modifier",
       "delete": "Supprimer"
     },
@@ -52,6 +53,13 @@
           "missingExternalAppId": "Cette Store Connection n’a pas d’identifiant App Store.",
           "storeConnectionDisabled": "Cette Store Connection est désactivée.",
           "unsupportedStoreProvider": "Cette Store Connection ne supporte pas cette sync."
+        }
+      },
+      "replyDrafts": {
+        "queued": "{{queuedCount}} Reply Drafts mis en file. {{skippedCount}} ignorés.",
+        "autoDraftDisabled": "Activez d’abord l’auto-drafting.",
+        "errors": {
+          "queueFailed": "Impossible de mettre les Reply Drafts manquants en file pour le moment."
         }
       },
       "errors": {

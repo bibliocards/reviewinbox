@@ -6,6 +6,7 @@ import {
   createAppRequestSchema,
   deleteAppResponseSchema,
   listAppsResponseSchema,
+  queueMissingReplyDraftsResponseSchema,
   updateAppRequestSchema,
   updateAppResponseSchema,
 } from '@reviewinbox/contracts'
@@ -16,6 +17,7 @@ import {
   type EncryptedStoreCredential,
 } from '@reviewinbox/core'
 import { apps, storeConnections, storeCredentials } from '@reviewinbox/db'
+import { selectMissingReplyDraftReviews } from '@reviewinbox/reply-drafts'
 import { verifyAppleStoreCredentialForApp, verifyGooglePlayStoreCredentialForApp } from '@reviewinbox/sync'
 import { and, eq } from 'drizzle-orm'
 import { Hono } from 'hono'
@@ -27,6 +29,7 @@ import {
 } from '../auth/session'
 import { database } from '../db'
 import { parseJsonBody, parseUuidParam } from '../http/validation'
+import { enqueueGenerateReplyDraftJobs } from '../queue'
 
 export const appsRoutes = new Hono()
 
@@ -419,6 +422,44 @@ appsRoutes.delete('/api/apps/:appId', async (context) => {
   return context.json(deleteAppResponseSchema.parse(deleted))
 })
 
+appsRoutes.post('/api/apps/:appId/reply-drafts/queue-missing', async (context) => {
+  const sessionResult = await requireActiveOrganizationManagerSession(context)
+  if (!sessionResult.ok) {
+    return sessionResult.response
+  }
+
+  const appIdResult = parseUuidParam(context, 'appId', 'App')
+  if (!appIdResult.ok) {
+    return appIdResult.response
+  }
+
+  const selection = await selectMissingReplyDraftReviews({
+    database,
+    organizationId: sessionResult.session.organizationId,
+    appId: appIdResult.data,
+  })
+
+  if (selection.status === 'app_not_found') {
+    return context.json({ error: 'App not found.' }, 404)
+  }
+
+  if (selection.status === 'auto_draft_disabled') {
+    return context.json({ error: 'Enable auto-drafting before queueing missing Reply Drafts.' }, 409)
+  }
+
+  const queuedCount = await enqueueGenerateReplyDraftJobs({
+    organizationId: sessionResult.session.organizationId,
+    reviewIds: selection.reviewIds,
+  })
+
+  return context.json(
+    queueMissingReplyDraftsResponseSchema.parse({
+      queuedCount,
+      skippedCount: selection.skippedCount + selection.reviewIds.length - queuedCount,
+    }),
+  )
+})
+
 type AppRow = typeof apps.$inferSelect
 type StoreConnectionRow = typeof storeConnections.$inferSelect
 type StoreProvider = StoreConnectionRow['provider']
@@ -436,6 +477,7 @@ function toAppResponse(app: AppRow) {
   return {
     id: app.id,
     name: app.name,
+    autoDraftEnabled: app.autoDraftEnabled,
     createdAt: app.createdAt.toISOString(),
     updatedAt: app.updatedAt.toISOString(),
   }

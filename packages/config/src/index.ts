@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+let envFileLoaded = false
+
 export const deploymentModeSchema = z.enum(['self-hosted', 'cloud'])
 
 export type DeploymentMode = z.infer<typeof deploymentModeSchema>
@@ -249,7 +251,7 @@ export const encryptionConfigSchema = z.object({
 
 export type EncryptionConfig = z.infer<typeof encryptionConfigSchema>
 
-export function loadServerConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
+export function loadServerConfig(env: NodeJS.ProcessEnv = loadProcessEnv()): ServerConfig {
   return serverConfigSchema.parse({
     deploymentMode: env['DEPLOYMENT_MODE'],
     databaseUrl: env['DATABASE_URL'],
@@ -276,7 +278,7 @@ export function loadServerConfig(env: NodeJS.ProcessEnv = process.env): ServerCo
   })
 }
 
-export function loadAiConfig(env: NodeJS.ProcessEnv = process.env): AiConfig {
+export function loadAiConfig(env: NodeJS.ProcessEnv = loadProcessEnv()): AiConfig {
   return aiConfigSchema.parse({
     deploymentMode: env['DEPLOYMENT_MODE'],
     provider: env['AI_PROVIDER'],
@@ -286,8 +288,27 @@ export function loadAiConfig(env: NodeJS.ProcessEnv = process.env): AiConfig {
   })
 }
 
-export function loadEncryptionConfig(env: NodeJS.ProcessEnv = process.env): EncryptionConfig {
+export function loadEncryptionConfig(env: NodeJS.ProcessEnv = loadProcessEnv()): EncryptionConfig {
   return encryptionConfigSchema.parse({
     appEncryptionKey: env['APP_ENCRYPTION_KEY'],
   })
+}
+
+function loadProcessEnv(): NodeJS.ProcessEnv {
+  if (!envFileLoaded) {
+    envFileLoaded = true
+    try {
+      process.loadEnvFile('.env')
+    } catch (error) {
+      if (!isMissingEnvFileError(error)) {
+        throw error
+      }
+    }
+  }
+
+  return process.env
+}
+
+function isMissingEnvFileError(error: unknown): boolean {
+  return error instanceof Error && 'code' in error && error.code === 'ENOENT'
 }

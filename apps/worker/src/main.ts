@@ -1,6 +1,8 @@
+import { generateReplyDraft } from '@reviewinbox/ai'
 import { loadAiConfig, loadServerConfig } from '@reviewinbox/config'
-import { runDatabaseMigrations } from '@reviewinbox/db'
+import { createDatabase, runDatabaseMigrations } from '@reviewinbox/db'
 import { createQueueClient } from '@reviewinbox/queue'
+import { generateReplyDraftForReview } from '@reviewinbox/reply-drafts'
 
 import { createWorkerReplyDraftProvider } from './ai-provider'
 
@@ -15,6 +17,7 @@ async function main() {
     await runDatabaseMigrations(config.databaseUrl)
   }
 
+  const database = createDatabase(config.databaseUrl)
   const queue = createQueueClient({
     databaseUrl: config.databaseUrl,
     onError: (error) => {
@@ -24,10 +27,41 @@ async function main() {
 
   await queue.start()
   const replyDraftProvider = createWorkerReplyDraftProvider(aiConfig)
+  if (replyDraftProvider) {
+    await queue.workGenerateReplyDraft(async (job) => {
+      console.info('ReviewInbox worker processing Reply Draft job', {
+        jobId: job.id,
+        reviewId: job.payload.reviewId,
+      })
+
+      const result = await generateReplyDraftForReview({
+        database,
+        organizationId: job.payload.organizationId,
+        reviewId: job.payload.reviewId,
+        generateDraft: (draftInput) => generateReplyDraft(draftInput, { provider: replyDraftProvider }),
+      })
+
+      if (result.status === 'failed' && isRetryableDraftFailure(result.errorCode)) {
+        console.warn('ReviewInbox worker will retry Reply Draft job', {
+          jobId: job.id,
+          reviewId: job.payload.reviewId,
+          errorCode: result.errorCode,
+        })
+        throw new Error(`Reply Draft generation failed with ${result.errorCode}.`)
+      }
+
+      console.info('ReviewInbox worker finished Reply Draft job', {
+        jobId: job.id,
+        reviewId: job.payload.reviewId,
+        status: result.status,
+      })
+    })
+  }
+
   console.info(
     replyDraftProvider
-      ? 'ReviewInbox worker started with AI drafting provider configured; no job handlers are registered yet'
-      : 'ReviewInbox worker started with AI drafting disabled; no job handlers are registered yet',
+      ? 'ReviewInbox worker started with AI drafting handler registered'
+      : 'ReviewInbox worker started with AI drafting disabled; no job handlers are registered',
   )
 
   const signal = await waitForShutdownSignal()
@@ -55,4 +89,8 @@ function serializeErrorForLog(error: unknown): { name: string; message: string }
   }
 
   return { name: 'UnknownError', message: 'Unknown worker error' }
+}
+
+function isRetryableDraftFailure(errorCode: string): boolean {
+  return errorCode === 'provider_unavailable' || errorCode === 'provider_rate_limited'
 }

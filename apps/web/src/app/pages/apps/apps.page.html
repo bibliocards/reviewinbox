@@ -147,6 +147,29 @@
           </td>
           <td>
             <div class="flex justify-end gap-2">
+              @if (canQueueReplyDrafts()) {
+              <div class="grid justify-items-end gap-1">
+                <p-button
+                  size="small"
+                  severity="secondary"
+                  [outlined]="true"
+                  [label]="t('apps.actions.generateMissingDrafts')"
+                  [loading]="isQueueingReplyDrafts(app)"
+                  [disabled]="!app.autoDraftEnabled || queueingReplyDraftsAppId() !== null"
+                  icon="pi pi-sparkles"
+                  (onClick)="queueMissingReplyDrafts(app)" />
+                @if (!app.autoDraftEnabled) {
+                <p class="m-0 max-w-48 text-right text-xs text-ink-subtle">{{ t('apps.list.replyDrafts.autoDraftDisabled') }}</p>
+                } @if (replyDraftQueueMessage(app); as queueMessage) {
+                <p
+                  class="m-0 max-w-56 text-right text-xs"
+                  [class.text-green-700]="queueMessage.status === 'success'"
+                  [class.text-red-600]="queueMessage.status === 'error'">
+                  {{ t(queueMessage.key, queueMessage.params) }}
+                </p>
+                }
+              </div>
+              }
               <p-button
                 size="small"
                 [outlined]="true"

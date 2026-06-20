@@ -5,6 +5,7 @@ import type {
   ConnectAppResponse,
   DeleteAppResponse,
   ListAppsResponse,
+  QueueMissingReplyDraftsResponse,
   SyncRunResponse,
   UpdateAppRequest,
   UpdateAppResponse,
@@ -36,5 +37,9 @@ export class AppsService {
 
   syncStoreConnectionReviews(storeConnectionId: string): Observable<SyncRunResponse> {
     return this.http.post<SyncRunResponse>(`${this.apiUrl}/api/store-connections/${storeConnectionId}/sync-reviews`, {})
+  }
+
+  queueMissingReplyDrafts(appId: string): Observable<QueueMissingReplyDraftsResponse> {
+    return this.http.post<QueueMissingReplyDraftsResponse>(`${this.apiUrl}/api/apps/${appId}/reply-drafts/queue-missing`, {})
   }
 }

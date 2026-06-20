@@ -27,6 +27,7 @@ import {
 } from '../auth/session'
 import { database } from '../db'
 import { parseJsonBody, parseUuidParam } from '../http/validation'
+import { enqueueGenerateReplyDraftJobs } from '../queue'
 
 export const storeConnectionsRoutes = new Hono()
 
@@ -224,6 +225,17 @@ storeConnectionsRoutes.post('/api/store-connections/:storeConnectionId/sync-revi
       storeConnectionId: storeConnectionIdResult.data,
     })
 
+    if (syncRun.status === 'succeeded') {
+      try {
+        await enqueueGenerateReplyDraftJobs({
+          organizationId: syncRun.organizationId,
+          reviewIds: syncRun.newReviewIds,
+        })
+      } catch (error) {
+        console.error('ReviewInbox draft job enqueue failed after successful sync', serializeErrorForLog(error))
+      }
+    }
+
     return context.json(syncRunResponseSchema.parse(syncRun), syncRun.status === 'failed' ? 422 : 200)
   } catch (error) {
     if (error instanceof SyncStoreConnectionNotFoundError) {
@@ -338,4 +350,12 @@ function toStoreConnectionResponse(row: { connection: StoreConnectionRow; creden
       keyId: row.credential?.keyId ?? null,
     },
   }
+}
+
+function serializeErrorForLog(error: unknown): { name: string; message: string } {
+  if (error instanceof Error) {
+    return { name: error.name, message: error.message }
+  }
+
+  return { name: 'UnknownError', message: 'Unknown draft enqueue error' }
 }

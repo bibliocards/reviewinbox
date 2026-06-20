@@ -4,6 +4,7 @@ import { storeConnectionResponseSchema } from './store'
 export const appResponseSchema = z.object({
   id: z.uuid(),
   name: z.string().min(1),
+  autoDraftEnabled: z.boolean(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 })
@@ -113,3 +114,9 @@ export const deleteAppResponseSchema = z.object({
   id: z.uuid(),
 })
 export type DeleteAppResponse = z.infer<typeof deleteAppResponseSchema>
+
+export const queueMissingReplyDraftsResponseSchema = z.object({
+  queuedCount: z.number().int().nonnegative(),
+  skippedCount: z.number().int().nonnegative(),
+})
+export type QueueMissingReplyDraftsResponse = z.infer<typeof queueMissingReplyDraftsResponseSchema>
