@@ -165,13 +165,15 @@
         {{ review.body }}
       </blockquote>
       @if (review.replyDraft; as draft) {
-      <div class="rounded-2xl border border-hairline bg-surface-0 p-4">
+      <div class="rounded-2xl border border-hairline-strong bg-surface-2 p-4">
         <p class="m-0 text-xs font-semibold uppercase tracking-[0.18em] text-ink-subtle">{{ t('replyInbox.replyDraft') }}</p>
-        <p class="m-0 mt-2 whitespace-pre-wrap text-sm leading-6 text-ink">{{ draft.draftText }}</p>
+        <p class="m-0 mt-2 whitespace-pre-wrap text-sm leading-6 text-ink-muted">{{ draft.draftText }}</p>
       </div>
       } @if (review.publishedReply; as publishedReply) {
-      <div class="rounded-2xl border border-purple-500/20 bg-purple-500/5 p-4">
-        <p class="m-0 text-xs font-semibold uppercase tracking-[0.18em] text-purple-700">{{ t('replyInbox.publishedReply') }}</p>
+      <div class="rounded-2xl border border-primary-500/20 bg-primary-500/5 p-4">
+        <p class="m-0 text-xs font-semibold uppercase tracking-[0.18em] text-primary-700 dark:text-primary-300">
+          {{ t('replyInbox.publishedReply') }}
+        </p>
         <p class="m-0 mt-2 whitespace-pre-wrap text-sm leading-6 text-ink">{{ publishedReply.replyText }}</p>
       </div>
       } @if (review.lastPublishFailure; as failure) {

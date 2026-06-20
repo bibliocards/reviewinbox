@@ -1,8 +1,10 @@
 import { generateReplyDraft } from '@reviewinbox/ai'
-import { loadAiConfig, loadServerConfig } from '@reviewinbox/config'
-import { createDatabase, runDatabaseMigrations } from '@reviewinbox/db'
+import { getNextAutoSyncWindowStartsAt, loadAiConfig, loadServerConfig } from '@reviewinbox/config'
+import { closeDatabase, createDatabase, runDatabaseMigrations, storeConnections, storeCredentials } from '@reviewinbox/db'
 import { createQueueClient } from '@reviewinbox/queue'
 import { generateReplyDraftForReview } from '@reviewinbox/reply-drafts'
+import { syncReviewsForStoreConnection } from '@reviewinbox/sync'
+import { asc, eq } from 'drizzle-orm'
 
 import { createWorkerReplyDraftProvider } from './ai-provider'
 
@@ -26,7 +28,38 @@ async function main() {
   })
 
   await queue.start()
+  let autoSyncTimer: ReturnType<typeof setTimeout> | null = null
   const replyDraftProvider = createWorkerReplyDraftProvider(aiConfig)
+
+  await queue.workSyncStoreConnection(async (job) => {
+    console.info('ReviewInbox worker processing Store Connection sync job', {
+      jobId: job.id,
+      storeConnectionId: job.payload.storeConnectionId,
+      windowStartsAt: job.payload.windowStartsAt,
+    })
+
+    const syncRun = await syncReviewsForStoreConnection({
+      database,
+      organizationId: job.payload.organizationId,
+      storeConnectionId: job.payload.storeConnectionId,
+    })
+
+    if (syncRun.status === 'succeeded' && replyDraftProvider) {
+      await enqueueGenerateReplyDraftJobs({
+        organizationId: syncRun.organizationId,
+        reviewIds: syncRun.newReviewIds,
+      })
+    }
+
+    console.info('ReviewInbox worker finished Store Connection sync job', {
+      jobId: job.id,
+      storeConnectionId: job.payload.storeConnectionId,
+      status: syncRun.status,
+      fetchedCount: syncRun.fetchedCount,
+      storedCount: syncRun.storedCount,
+    })
+  })
+
   if (replyDraftProvider) {
     await queue.workGenerateReplyDraft(async (job) => {
       console.info('ReviewInbox worker processing Reply Draft job', {
@@ -58,16 +91,87 @@ async function main() {
     })
   }
 
+  if (config.autoSyncReviewsEnabled) {
+    autoSyncTimer = scheduleNextAutoSyncRun()
+  }
+
   console.info(
     replyDraftProvider
-      ? 'ReviewInbox worker started with AI drafting handler registered'
-      : 'ReviewInbox worker started with AI drafting disabled; no job handlers are registered',
+      ? 'ReviewInbox worker started with Store Connection sync and AI drafting handlers registered'
+      : 'ReviewInbox worker started with Store Connection sync handler registered; AI drafting disabled',
   )
 
   const signal = await waitForShutdownSignal()
   console.info(`ReviewInbox worker received ${signal}, shutting down`)
 
-  await queue.stop()
+  if (autoSyncTimer) {
+    clearTimeout(autoSyncTimer)
+  }
+  try {
+    await queue.stop()
+  } finally {
+    await closeDatabase(database)
+  }
+
+  async function enqueueGenerateReplyDraftJobs(input: { organizationId: string; reviewIds: string[] }): Promise<void> {
+    for (const reviewId of input.reviewIds) {
+      try {
+        await queue.enqueueGenerateReplyDraft({ organizationId: input.organizationId, reviewId })
+      } catch (error) {
+        console.error('ReviewInbox worker draft job enqueue failed after Store Connection sync', {
+          reviewId,
+          error: serializeErrorForLog(error),
+        })
+      }
+    }
+  }
+
+  function scheduleNextAutoSyncRun(): ReturnType<typeof setTimeout> {
+    const windowStartsAt = getNextAutoSyncWindowStartsAt()
+    const delayMs = Math.max(0, windowStartsAt.getTime() - Date.now())
+    console.info('ReviewInbox worker scheduled next automatic Store Connection sync window', {
+      windowStartsAt: windowStartsAt.toISOString(),
+      spreadWindowMinutes: config.autoSyncReviewsSpreadWindowMinutes,
+    })
+
+    return setTimeout(() => {
+      void enqueueAutoSyncWindow(windowStartsAt)
+        .catch((error: unknown) => {
+          console.error('ReviewInbox worker failed to enqueue automatic Store Connection sync window', serializeErrorForLog(error))
+        })
+        .finally(() => {
+          autoSyncTimer = scheduleNextAutoSyncRun()
+        })
+    }, delayMs)
+  }
+
+  async function enqueueAutoSyncWindow(windowStartsAt: Date): Promise<void> {
+    const connections = await database
+      .select({ organizationId: storeConnections.organizationId, storeConnectionId: storeConnections.id })
+      .from(storeConnections)
+      .innerJoin(storeCredentials, eq(storeCredentials.storeConnectionId, storeConnections.id))
+      .where(eq(storeConnections.status, 'active'))
+      .orderBy(asc(storeConnections.id))
+
+    const spreadMs = config.autoSyncReviewsSpreadWindowMinutes * 60 * 1000
+    for (const [index, connection] of connections.entries()) {
+      const delayMs = connections.length <= 1 ? 0 : Math.floor((spreadMs * index) / connections.length)
+      await queue.enqueueSyncStoreConnection(
+        {
+          organizationId: connection.organizationId,
+          storeConnectionId: connection.storeConnectionId,
+          windowStartsAt: windowStartsAt.toISOString(),
+        },
+        { startAfter: new Date(windowStartsAt.getTime() + delayMs) },
+      )
+    }
+
+    console.info('ReviewInbox worker enqueued automatic Store Connection sync window', {
+      windowStartsAt: windowStartsAt.toISOString(),
+      storeConnectionCount: connections.length,
+      spreadWindowMinutes: config.autoSyncReviewsSpreadWindowMinutes,
+    })
+  }
 }
 
 function waitForShutdownSignal(): Promise<(typeof shutdownSignals)[number]> {

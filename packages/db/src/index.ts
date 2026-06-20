@@ -16,6 +16,10 @@ export function createDatabase(databaseUrl: string) {
   return drizzle(pool, { schema: databaseSchema })
 }
 
+export async function closeDatabase(database: Database): Promise<void> {
+  await database.$client.end()
+}
+
 export async function runDatabaseMigrations(databaseUrl: string, migrationsFolder = resolve(process.cwd(), 'packages/db/migrations')) {
   const pool = new pg.Pool({ connectionString: databaseUrl })
 

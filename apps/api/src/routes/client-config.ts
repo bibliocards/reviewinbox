@@ -1,4 +1,5 @@
 import { clientConfigResponseSchema } from '@reviewinbox/contracts'
+import { getNextAutoSyncWindowStartsAt } from '@reviewinbox/config'
 import { user } from '@reviewinbox/db'
 import { count } from 'drizzle-orm'
 import { Hono } from 'hono'
@@ -23,6 +24,11 @@ clientConfigRoutes.get('/api/client-config', async (context) => {
     },
     mail: {
       invitationEmailEnabled: invitationEmailEnabled(serverConfig),
+    },
+    autoSync: {
+      reviewsEnabled: serverConfig.autoSyncReviewsEnabled,
+      nextWindowStartsAt: getNextAutoSyncWindowStartsAt().toISOString(),
+      spreadWindowMinutes: serverConfig.autoSyncReviewsSpreadWindowMinutes,
     },
   })
 

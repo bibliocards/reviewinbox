@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http'
 import { Injectable, inject } from '@angular/core'
 import type { ClientConfigResponse } from '@reviewinbox/contracts'
+import { addHours } from 'date-fns'
 import { catchError, map, of, shareReplay } from 'rxjs'
 import { environment } from '../../../environments/environment'
 import { resolveBoolean, resolveDeploymentMode, resolveOptionalString } from '../../../environments/environment.model'
@@ -49,6 +50,11 @@ export class AuthCapabilitiesService {
         mail: {
           invitationEmailEnabled: this.capabilities.invitationEmailEnabled,
         },
+        autoSync: {
+          reviewsEnabled: true,
+          nextWindowStartsAt: nextSixHourUtcWindow().toISOString(),
+          spreadWindowMinutes: 60,
+        },
       }),
     ),
     shareReplay({ bufferSize: 1, refCount: true }),
@@ -61,4 +67,9 @@ export class AuthCapabilitiesService {
   clientConfig() {
     return this.clientConfig$
   }
+}
+
+function nextSixHourUtcWindow(now = new Date()): Date {
+  const currentSlot = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), Math.floor(now.getUTCHours() / 6) * 6))
+  return currentSlot.getTime() >= now.getTime() ? currentSlot : addHours(currentSlot, 6)
 }

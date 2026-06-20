@@ -1,8 +1,10 @@
-import { Component, computed, effect, HostListener, inject, signal } from '@angular/core'
+import { Component, computed, DestroyRef, effect, HostListener, inject, signal } from '@angular/core'
+import { toSignal } from '@angular/core/rxjs-interop'
 import { FormsModule } from '@angular/forms'
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router'
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
 import type { ConnectAppResponse } from '@reviewinbox/contracts'
+import { addHours } from 'date-fns'
 import { AuthService, OrganizationService } from 'ngx-better-auth'
 import type { MenuItem } from 'primeng/api'
 import { ButtonModule } from 'primeng/button'
@@ -43,7 +45,9 @@ export class AppShellComponent {
   private readonly router = inject(Router)
   private readonly dialogService = inject(DialogService)
   private readonly transloco = inject(TranslocoService)
-  private readonly capabilities = inject(AuthCapabilitiesService).capabilities
+  private readonly authCapabilities = inject(AuthCapabilitiesService)
+  private readonly capabilities = this.authCapabilities.capabilities
+  private readonly destroyRef = inject(DestroyRef)
 
   private readonly session = this.authService.session
   private readonly selectedOrganizationId = signal<string | undefined>(undefined)
@@ -53,7 +57,10 @@ export class AppShellComponent {
   private readonly didInitializeActiveOrganization = signal(false)
   private readonly loadedActiveMemberOrganizationId = signal<string | undefined>(undefined)
   private readonly activeMemberRole = signal<string | string[] | undefined>(undefined)
+  private readonly now = signal(new Date())
+  private readonly clientConfig = toSignal(this.authCapabilities.clientConfig(), { initialValue: null })
   protected readonly ownerInitials = computed(() => this.initialsFrom(this.session()?.user?.name))
+  protected readonly isCloud = this.capabilities.isCloud
   protected readonly organizations = this.organizationService.organizationsResource()
   protected readonly organizationList = computed(() => {
     if (this.organizations.error()) {
@@ -111,8 +118,26 @@ export class AppShellComponent {
       visible: this.canManageOrganization(),
     },
   ])
+  protected readonly autoSyncStatus = computed(() => {
+    const autoSync = this.clientConfig()?.autoSync
+    if (!autoSync?.reviewsEnabled) {
+      return null
+    }
+
+    const nextWindow = this.nextWindowAfter(autoSync.nextWindowStartsAt, this.now())
+    if (!nextWindow) {
+      return null
+    }
+
+    return {
+      startsAt: new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(nextWindow),
+    }
+  })
 
   constructor() {
+    const clock = setInterval(() => this.now.set(new Date()), 60_000)
+    this.destroyRef.onDestroy(() => clearInterval(clock))
+
     effect(() => {
       const organizationId = this.activeOrganizationId()
 
@@ -203,5 +228,18 @@ export class AppShellComponent {
       .map((part) => part[0])
       .join('')
       .toUpperCase()
+  }
+
+  private nextWindowAfter(firstWindowStartsAt: string, now: Date): Date | null {
+    const next = new Date(firstWindowStartsAt)
+    if (Number.isNaN(next.getTime())) {
+      return null
+    }
+
+    while (next.getTime() <= now.getTime()) {
+      next.setTime(addHours(next, 6).getTime())
+    }
+
+    return next
   }
 }

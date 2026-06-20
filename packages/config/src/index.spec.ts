@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { loadAiConfig, loadEncryptionConfig, loadServerConfig } from './index'
+import { getNextAutoSyncWindowStartsAt, loadAiConfig, loadEncryptionConfig, loadServerConfig } from './index'
 
 describe('loadServerConfig', () => {
   it('uses safe local defaults', () => {
@@ -16,6 +16,14 @@ describe('loadServerConfig', () => {
     expect(loadServerConfig({ RUN_DB_MIGRATIONS_ON_STARTUP: 'true' })).toMatchObject({
       runDatabaseMigrationsOnStartup: true,
     })
+  })
+})
+
+describe('getNextAutoSyncWindowStartsAt', () => {
+  it('returns the next six-hour UTC window', () => {
+    expect(getNextAutoSyncWindowStartsAt(new Date('2026-06-20T05:59:00.000Z')).toISOString()).toBe('2026-06-20T06:00:00.000Z')
+    expect(getNextAutoSyncWindowStartsAt(new Date('2026-06-20T06:00:00.000Z')).toISOString()).toBe('2026-06-20T06:00:00.000Z')
+    expect(getNextAutoSyncWindowStartsAt(new Date('2026-06-20T23:59:00.000Z')).toISOString()).toBe('2026-06-21T00:00:00.000Z')
   })
 })
 
@@ -49,14 +57,17 @@ describe('loadAiConfig', () => {
   })
 
   it('rejects managed AI until runtime support exists', () => {
-    expect(() => loadAiConfig({ DEPLOYMENT_MODE: 'cloud', AI_PROVIDER: 'managed', AI_MODEL: 'gpt-4.1-mini' })).toThrow(
-      /not supported/,
-    )
+    expect(() => loadAiConfig({ DEPLOYMENT_MODE: 'cloud', AI_PROVIDER: 'managed', AI_MODEL: 'gpt-4.1-mini' })).toThrow(/not supported/)
   })
 
   it('rejects non-local HTTP AI base URLs', () => {
     expect(() =>
-      loadAiConfig({ AI_PROVIDER: 'openai-compatible', AI_MODEL: 'gpt-4.1-mini', AI_API_KEY: 'test-key', AI_BASE_URL: 'http://example.com/v1' }),
+      loadAiConfig({
+        AI_PROVIDER: 'openai-compatible',
+        AI_MODEL: 'gpt-4.1-mini',
+        AI_API_KEY: 'test-key',
+        AI_BASE_URL: 'http://example.com/v1',
+      }),
     ).toThrow(/HTTPS/)
   })
 

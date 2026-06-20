@@ -95,6 +95,18 @@
   font-size: 14px;
 }
 
+.sidebar-link-icon {
+  display: inline-flex;
+  color: inherit;
+  text-decoration: none;
+}
+
+.sidebar-link-icon:hover,
+.sidebar-link-icon:focus-visible {
+  color: var(--color-ink);
+  outline: none;
+}
+
 .workspace {
   display: grid;
   grid-template-rows: 56px minmax(0, 1fr);

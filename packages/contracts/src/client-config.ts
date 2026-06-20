@@ -14,6 +14,11 @@ export const clientConfigResponseSchema = z.object({
   mail: z.object({
     invitationEmailEnabled: z.boolean(),
   }),
+  autoSync: z.object({
+    reviewsEnabled: z.boolean(),
+    nextWindowStartsAt: z.iso.datetime(),
+    spreadWindowMinutes: z.number().int().positive(),
+  }),
 })
 
 export type ClientConfigResponse = z.infer<typeof clientConfigResponseSchema>

@@ -17,6 +17,13 @@ const booleanEnvSchema = z
   .default('false')
   .transform((value) => value === 'true')
 
+const enabledBooleanEnvSchema = z
+  .enum(['true', 'false'])
+  .default('true')
+  .transform((value) => value === 'true')
+
+const autoSyncWindowStartHours = [0, 6, 12, 18] as const
+
 const optionalStringSchema = z
   .string()
   .trim()
@@ -86,6 +93,8 @@ export const serverConfigSchema = z
     smtpUser: optionalStringSchema,
     smtpPassword: optionalStringSchema,
     smtpSecure: booleanEnvSchema,
+    autoSyncReviewsEnabled: enabledBooleanEnvSchema,
+    autoSyncReviewsSpreadWindowMinutes: z.coerce.number().int().min(1).max(360).default(60),
     uploadLocalDir: z.string().default('volumes/uploads'),
     s3Region: optionalStringSchema,
     s3Bucket: optionalStringSchema,
@@ -144,6 +153,21 @@ export const serverConfigSchema = z
   })
 
 export type ServerConfig = z.infer<typeof serverConfigSchema>
+
+export function getNextAutoSyncWindowStartsAt(now = new Date()): Date {
+  const year = now.getUTCFullYear()
+  const month = now.getUTCMonth()
+  const date = now.getUTCDate()
+
+  for (const hour of autoSyncWindowStartHours) {
+    const candidate = new Date(Date.UTC(year, month, date, hour))
+    if (candidate.getTime() >= now.getTime()) {
+      return candidate
+    }
+  }
+
+  return new Date(Date.UTC(year, month, date + 1, autoSyncWindowStartHours[0]))
+}
 
 export const aiConfigSchema = z
   .object({
@@ -268,6 +292,8 @@ export function loadServerConfig(env: NodeJS.ProcessEnv = loadProcessEnv()): Ser
     smtpUser: env['SMTP_USER'],
     smtpPassword: env['SMTP_PASSWORD'],
     smtpSecure: env['SMTP_SECURE'],
+    autoSyncReviewsEnabled: env['AUTO_SYNC_REVIEWS_ENABLED'],
+    autoSyncReviewsSpreadWindowMinutes: env['AUTO_SYNC_REVIEWS_SPREAD_WINDOW_MINUTES'],
     uploadLocalDir: env['UPLOAD_LOCAL_DIR'],
     s3Region: env['S3_REGION'],
     s3Bucket: env['S3_BUCKET'],
