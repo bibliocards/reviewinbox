@@ -15,6 +15,13 @@
       "when": 1781789096524,
       "tag": "0001_illegal_nightcrawler",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781957999911,
+      "tag": "0002_lovely_kinsey_walden",
+      "breakpoints": true
     }
   ]
 }

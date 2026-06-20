@@ -7,6 +7,7 @@
   "scripts": {
     "serve": "nx run-many -t serve -p api web --tui=false",
     "serve:api": "nx serve api",
+    "serve:worker": "nx serve worker",
     "serve:web": "nx serve web",
     "format": "biome format --write .",
     "format:check": "biome format .",
@@ -40,6 +41,7 @@
     "ngx-better-auth": "^1.6.2",
     "nodemailer": "^9.0.1",
     "pg": "^8.16.3",
+    "pg-boss": "^12.19.1",
     "postcss": "^8.5.15",
     "primeicons": "^7.0.0",
     "primeng": "^21.1.9",

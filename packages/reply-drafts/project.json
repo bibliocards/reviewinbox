@@ -1,0 +1,34 @@
+{
+  "name": "reply-drafts",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "packages/reply-drafts/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "swc packages/reply-drafts/src -d dist/packages/reply-drafts --strip-leading-paths"
+      },
+      "outputs": ["{workspaceRoot}/dist/packages/reply-drafts"]
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p packages/reply-drafts/tsconfig.lib.json --noEmit"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run packages/reply-drafts/src --passWithNoTests"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "biome lint packages/reply-drafts"
+      }
+    }
+  },
+  "tags": ["scope:shared", "type:reply-drafts"]
+}

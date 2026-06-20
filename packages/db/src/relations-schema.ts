@@ -2,6 +2,7 @@ import { relations } from 'drizzle-orm'
 
 import { apps } from './app-schema'
 import { organization } from './auth-schema'
+import { replyDrafts } from './reply-draft-schema'
 import { reviews } from './review-schema'
 import { storeConnections, storeCredentials } from './store-schema'
 import { syncRuns } from './sync-run-schema'
@@ -13,6 +14,7 @@ export const appRelations = relations(apps, ({ one, many }) => ({
   }),
   storeConnections: many(storeConnections),
   reviews: many(reviews),
+  replyDrafts: many(replyDrafts),
   syncRuns: many(syncRuns),
 }))
 
@@ -52,6 +54,25 @@ export const reviewRelations = relations(reviews, ({ one }) => ({
   storeConnection: one(storeConnections, {
     fields: [reviews.storeConnectionId],
     references: [storeConnections.id],
+  }),
+  replyDraft: one(replyDrafts, {
+    fields: [reviews.id],
+    references: [replyDrafts.reviewId],
+  }),
+}))
+
+export const replyDraftRelations = relations(replyDrafts, ({ one }) => ({
+  organization: one(organization, {
+    fields: [replyDrafts.organizationId],
+    references: [organization.id],
+  }),
+  app: one(apps, {
+    fields: [replyDrafts.appId],
+    references: [apps.id],
+  }),
+  review: one(reviews, {
+    fields: [replyDrafts.reviewId],
+    references: [reviews.id],
   }),
 }))
 

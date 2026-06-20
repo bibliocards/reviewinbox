@@ -1,7 +1,7 @@
+import { databaseSchema } from '@reviewinbox/db'
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { organization } from 'better-auth/plugins/organization'
-import { databaseSchema } from '@reviewinbox/db'
 
 import { database, serverConfig } from './db'
 import { invitationLink, sendInvitationEmail } from './mail'

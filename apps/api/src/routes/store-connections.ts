@@ -17,8 +17,8 @@ import {
   verifyGooglePlayStoreCredentialForApp,
 } from '@reviewinbox/sync'
 import { and, eq } from 'drizzle-orm'
-import { Hono } from 'hono'
 import type { Context } from 'hono'
+import { Hono } from 'hono'
 
 import {
   requireActiveOrganizationManagerSession,

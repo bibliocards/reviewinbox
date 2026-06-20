@@ -5,6 +5,15 @@ import { organization } from './auth-schema'
 import { storeConnections } from './store-schema'
 
 export const replyStatusEnum = pgEnum('reply_status', ['pending', 'drafted', 'published', 'ignored', 'failed'])
+export const draftFailureCodeEnum = pgEnum('draft_failure_code', [
+  'provider_unavailable',
+  'provider_rate_limited',
+  'invalid_provider_config',
+  'safety_rejected',
+  'context_too_large',
+  'invalid_model_output',
+  'unknown',
+])
 
 export const reviews = pgTable(
   'reviews',
@@ -30,6 +39,10 @@ export const reviews = pgTable(
     locale: text('locale'),
     reviewedAt: timestamp('reviewed_at').notNull(),
     replyStatus: replyStatusEnum('reply_status').default('pending').notNull(),
+    detectedReviewLanguage: text('detected_review_language'),
+    chosenReplyLanguage: text('chosen_reply_language'),
+    draftFailureCode: draftFailureCodeEnum('draft_failure_code'),
+    draftFailureAt: timestamp('draft_failure_at'),
     rawPayload: jsonb('raw_payload'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at')
