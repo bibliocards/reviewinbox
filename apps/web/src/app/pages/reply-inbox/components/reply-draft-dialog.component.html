@@ -1,0 +1,23 @@
+<div
+  class="grid gap-4"
+  *transloco="let t">
+  <p class="m-0 text-sm text-ink-subtle">
+    {{ t(data.mode === 'manual' ? 'replyInbox.dialog.manualDescription' : 'replyInbox.dialog.editDescription') }}
+  </p>
+  <textarea
+    class="min-h-48 w-full rounded-2xl border border-hairline bg-surface-1 p-3 text-sm text-ink outline-none transition focus:border-primary"
+    [formField]="draftForm.draftText"
+    [attr.aria-label]="t('replyInbox.dialog.replyDraft')"></textarea>
+  <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+    <p-button
+      severity="secondary"
+      [label]="t('replyInbox.actions.saveDraft')"
+      [disabled]="!canSubmit()"
+      (onClick)="submit('save')" />
+    <p-button
+      [label]="t('replyInbox.actions.saveAndPublish')"
+      [disabled]="!canSubmit()"
+      icon="pi pi-send"
+      (onClick)="submit('publish')" />
+  </div>
+</div>

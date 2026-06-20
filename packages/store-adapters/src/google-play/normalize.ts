@@ -19,12 +19,16 @@ export function normalizeGooglePlayReview(resource: GooglePlayReviewResource): N
     title: null,
     body: readString(userComment.text) ?? '',
     language: readString(userComment.reviewerLanguage),
-    version: readString(userComment.appVersionName),
+    version: readString(userComment.appVersionName) ?? readVersionCode(userComment.appVersionCode),
     country: null,
     locale: readString(userComment.reviewerLanguage),
     reviewedAt: readGoogleTimestamp(userComment.lastModified),
     rawPayload: resource,
   }
+}
+
+function readVersionCode(value: unknown) {
+  return typeof value === 'number' && Number.isInteger(value) ? String(value) : null
 }
 
 function readGoogleTimestamp(value: GoogleTimestamp | undefined) {

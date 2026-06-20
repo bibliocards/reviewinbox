@@ -144,6 +144,59 @@
       }
     }
   },
+  "replyInbox": {
+    "eyebrow": "Reply Inbox",
+    "title": "Reply Inbox",
+    "description": "Review, edit, ignore, and publish replies for imported Reviews.",
+    "loading": "Loading Reviews...",
+    "reviewedAgo": "{{distance}} ago",
+    "rating": "{{rating}}/5 stars",
+    "untitledReview": "Untitled Review",
+    "replyDraft": "Reply Draft",
+    "publishedReply": "Published Reply",
+    "filters": {
+      "allApps": "All Apps",
+      "actionable": "Actionable"
+    },
+    "status": {
+      "pending": "Pending",
+      "drafted": "Drafted",
+      "failed": "Failed",
+      "ignored": "Ignored",
+      "published": "Published"
+    },
+    "actions": {
+      "publishDraft": "Publish draft",
+      "generateDraft": "Generate draft",
+      "replyManually": "Reply manually",
+      "edit": "Modify before publishing",
+      "ignore": "Ignore",
+      "unignore": "Unignore",
+      "saveDraft": "Save draft",
+      "saveAndPublish": "Save and publish"
+    },
+    "dialog": {
+      "manualTitle": "Write a Reply Draft",
+      "editTitle": "Modify Reply Draft",
+      "manualDescription": "Write the reply text, then save it as a Reply Draft or publish it immediately.",
+      "editDescription": "Adjust the saved Reply Draft, then save it or publish the edited version.",
+      "replyDraft": "Reply Draft",
+      "cancel": "Cancel"
+    },
+    "messages": {
+      "draftQueued": "Reply Draft generation queued. It will be available soon.",
+      "draftSaved": "Reply Draft saved.",
+      "published": "Reply published.",
+      "ignored": "Review ignored.",
+      "unignored": "Review restored.",
+      "actionFailed": "We could not complete this action yet.",
+      "lastPublishFailed": "Last publish failed:"
+    },
+    "empty": {
+      "title": "No Reviews in this view",
+      "description": "Change the App or status filter, or sync Reviews from the Apps page."
+    }
+  },
   "errors": {
     "generic": "Something went wrong. Please try again."
   },

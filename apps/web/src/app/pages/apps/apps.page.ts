@@ -16,24 +16,13 @@ import { ButtonModule } from 'primeng/button'
 import { DialogService } from 'primeng/dynamicdialog'
 import { TableModule } from 'primeng/table'
 import { ConnectAppDialogComponent } from '../../shared/components/connect-app-dialog/connect-app-dialog.component'
+import { AppIconsService } from '../../shared/services/app-icons.service'
 import { AppsService } from '../../shared/services/apps.service'
-
-type AppIconState = {
-  sourceId: string | null
-  url: string | null
-}
 
 type ReplyDraftQueueMessage = {
   key: string
   params?: Record<string, number>
   status: 'success' | 'error'
-}
-
-type AppleLookupResponse = {
-  results?: Array<{
-    artworkUrl100?: string
-    artworkUrl512?: string
-  }>
 }
 
 @Component({
@@ -46,6 +35,7 @@ export class AppsPageComponent {
   private readonly dialogService = inject(DialogService)
   private readonly transloco = inject(TranslocoService)
   private readonly organizationService = inject(OrganizationService)
+  private readonly appIcons = inject(AppIconsService)
 
   protected readonly appsResource = this.appsService.appsResource()
   protected readonly apps = computed(() => this.appsResource.value().apps)
@@ -53,7 +43,6 @@ export class AppsPageComponent {
   protected readonly successAppName = signal<string | null>(history.state?.appCreated ?? null)
   protected readonly successMessageKey = signal<string | null>(null)
   protected readonly activeMemberRole = signal<string | string[] | undefined>(undefined)
-  protected readonly appIconStates = signal<Record<string, AppIconState>>({})
   protected readonly syncingStoreConnectionId = signal<string | null>(null)
   protected readonly syncRunByStoreConnectionId = signal<Record<string, SyncRunResponse>>({})
   protected readonly queueingReplyDraftsAppId = signal<string | null>(null)
@@ -71,9 +60,7 @@ export class AppsPageComponent {
     })
 
     effect(() => {
-      for (const app of this.apps()) {
-        this.loadAppIcon(app)
-      }
+      this.appIcons.loadIcons(this.apps())
     })
   }
 
@@ -264,7 +251,7 @@ export class AppsPageComponent {
   }
 
   protected appIconUrl(app: AppListItemResponse): string | null {
-    return this.appIconStates()[app.id]?.url ?? null
+    return this.appIcons.iconUrl(app.id)
   }
 
   protected initialsFrom(name: string): string {
@@ -275,57 +262,6 @@ export class AppsPageComponent {
       .map((part) => part[0])
       .join('')
       .toUpperCase()
-  }
-
-  private loadAppIcon(app: AppListItemResponse): void {
-    const sourceId = this.appleAppStoreAppId(app)
-    const existing = this.appIconStates()[app.id]
-    if (existing?.sourceId === sourceId) {
-      return
-    }
-
-    this.appIconStates.update((states) => ({
-      ...states,
-      [app.id]: { sourceId, url: null },
-    }))
-
-    if (!sourceId) {
-      return
-    }
-
-    void this.resolveAppleIconUrl(sourceId).then((url) => {
-      this.appIconStates.update((states) => ({
-        ...states,
-        [app.id]: { sourceId, url },
-      }))
-    })
-  }
-
-  private appleAppStoreAppId(app: AppListItemResponse): string | null {
-    return (
-      app.storeConnections.find(
-        (connection) =>
-          connection.provider === 'apple_app_store' &&
-          connection.status === 'active' &&
-          connection.credential.hasCredential &&
-          connection.externalAppId,
-      )?.externalAppId ?? null
-    )
-  }
-
-  private async resolveAppleIconUrl(appStoreAppId: string): Promise<string | null> {
-    try {
-      const response = await fetch(`https://itunes.apple.com/lookup?id=${encodeURIComponent(appStoreAppId)}`)
-      if (!response.ok) {
-        return null
-      }
-
-      const data = (await response.json()) as AppleLookupResponse
-      const result = data.results?.[0]
-      return result?.artworkUrl512 ?? result?.artworkUrl100 ?? null
-    } catch {
-      return null
-    }
   }
 
   private roleLabel(role: string | string[] | undefined): string {

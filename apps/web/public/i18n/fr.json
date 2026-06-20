@@ -144,6 +144,59 @@
       }
     }
   },
+  "replyInbox": {
+    "eyebrow": "Reply Inbox",
+    "title": "Reply Inbox",
+    "description": "Relisez, modifiez, ignorez et publiez les replies des Reviews importées.",
+    "loading": "Chargement des Reviews...",
+    "reviewedAgo": "il y a {{distance}}",
+    "rating": "{{rating}}/5 étoiles",
+    "untitledReview": "Review sans titre",
+    "replyDraft": "Reply Draft",
+    "publishedReply": "Published Reply",
+    "filters": {
+      "allApps": "Toutes les Apps",
+      "actionable": "À traiter"
+    },
+    "status": {
+      "pending": "Pending",
+      "drafted": "Drafted",
+      "failed": "Failed",
+      "ignored": "Ignored",
+      "published": "Published"
+    },
+    "actions": {
+      "publishDraft": "Publier le draft",
+      "generateDraft": "Générer un draft",
+      "replyManually": "Répondre manuellement",
+      "edit": "Modifier avant publication",
+      "ignore": "Ignorer",
+      "unignore": "Restaurer",
+      "saveDraft": "Enregistrer le draft",
+      "saveAndPublish": "Enregistrer et publier"
+    },
+    "dialog": {
+      "manualTitle": "Écrire un Reply Draft",
+      "editTitle": "Modifier le Reply Draft",
+      "manualDescription": "Rédigez la reply, puis enregistrez-la comme Reply Draft ou publiez-la immédiatement.",
+      "editDescription": "Ajustez le Reply Draft enregistré, puis sauvegardez-le ou publiez la version modifiée.",
+      "replyDraft": "Reply Draft",
+      "cancel": "Annuler"
+    },
+    "messages": {
+      "draftQueued": "Génération du Reply Draft mise en file. Il sera disponible bientôt.",
+      "draftSaved": "Reply Draft enregistré.",
+      "published": "Reply publiée.",
+      "ignored": "Review ignorée.",
+      "unignored": "Review restaurée.",
+      "actionFailed": "Impossible de terminer cette action pour le moment.",
+      "lastPublishFailed": "Dernière publication échouée :"
+    },
+    "empty": {
+      "title": "Aucune Review dans cette vue",
+      "description": "Changez le filtre d’App ou de statut, ou synchronisez les Reviews depuis la page Apps."
+    }
+  },
   "errors": {
     "generic": "Une erreur est survenue. Réessayez."
   },

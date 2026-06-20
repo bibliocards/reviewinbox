@@ -1,0 +1,186 @@
+<div
+  class="grid gap-6 p-6 text-ink sm:p-8"
+  *transloco="let t">
+  <header class="flex flex-col gap-4 border-b border-hairline pb-5 lg:flex-row lg:items-end lg:justify-between">
+    <div>
+      <h1 class="m-0 mt-2 text-2xl font-semibold tracking-[-0.8px] text-ink">{{ t('replyInbox.title') }}</h1>
+      <p class="m-0 mt-2 max-w-2xl text-sm text-ink-subtle">{{ t('replyInbox.description') }}</p>
+    </div>
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <p-select
+        class="w-full sm:w-56"
+        [fluid]="true"
+        [options]="appOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [(ngModel)]="selectedAppId"
+        [ariaLabel]="t('replyInbox.filters.allApps')">
+        <ng-template
+          #item
+          #selectedItem
+          let-item>
+          <div class="flex min-w-0 items-center gap-2">
+            @if (item.imageUrl) {
+            <img
+              class="size-6 rounded-md object-cover"
+              [src]="item.imageUrl"
+              [alt]="item.label" />
+            } @else if (item.value) {
+            <span
+              class="grid size-6 shrink-0 place-items-center rounded-md border border-hairline bg-surface-2 text-[0.65rem] font-semibold text-ink-subtle">
+              {{ initialsFrom(item.label) }}
+            </span>
+            }
+            <span class="truncate">{{ item.label }}</span>
+          </div>
+        </ng-template>
+      </p-select>
+      <p-select
+        class="w-full sm:w-48"
+        [fluid]="true"
+        [options]="filterOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [(ngModel)]="selectedFilter"
+        [ariaLabel]="t('replyInbox.filters.actionable')" />
+    </div>
+  </header>
+  @if (message(); as currentMessage) {
+  <p
+    class="m-0 rounded-xl border bg-surface-1 px-3 py-2 text-sm"
+    [class.border-green-500]="currentMessage.status === 'success'"
+    [class.text-green-700]="currentMessage.status === 'success'"
+    [class.border-red-400]="currentMessage.status === 'error'"
+    [class.text-red-600]="currentMessage.status === 'error'">
+    {{ t(currentMessage.key) }}
+  </p>
+  } @if (inboxResource.isLoading()) {
+  <div class="rounded-2xl border border-hairline bg-surface-1 p-5">
+    <p class="m-0 text-sm text-ink-subtle">{{ t('replyInbox.loading') }}</p>
+  </div>
+  } @else if (reviews().length === 0) {
+  <div class="rounded-3xl border border-dashed border-hairline-strong bg-surface-1 p-8 text-center">
+    <h2 class="m-0 text-xl font-semibold text-ink">{{ t('replyInbox.empty.title') }}</h2>
+    <p class="m-0 mt-2 text-sm text-ink-subtle">{{ t('replyInbox.empty.description') }}</p>
+  </div>
+  } @else {
+  <section class="grid gap-4">
+    @for (review of reviews(); track review.id) {
+    <article class="grid gap-4 rounded-3xl border border-hairline bg-surface-1 p-5 shadow-sm">
+      <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <span [class]="statusClass(review.replyStatus)">{{ t('replyInbox.status.' + review.replyStatus) }}</span>
+            <div class="rounded-full border border-hairline bg-surface-2 px-2.5 py-1 text-xs text-ink-subtle flex items-center gap-1">
+              <i
+                class="pi"
+                [ngClass]="{'pi-apple': isFromAppStore(review), 'pi-google': !isFromAppStore(review)}"
+                aria-hidden="true"></i>
+              <span>{{ providerLabel(review) }}</span>
+            </div>
+            <div class="flex items-center gap-1.5 text-sm text-ink-subtle">
+              <div
+                class="grid size-5 shrink-0 place-items-center overflow-hidden rounded-md border border-hairline bg-surface-2 text-[0.6rem] font-semibold">
+                @if (appIconUrl(review.appId); as iconUrl) {
+                <img
+                  class="size-full object-cover"
+                  [src]="iconUrl"
+                  [alt]="review.appName" />
+                } @else {
+                <span>{{ initialsFrom(review.appName) }}</span>
+                }
+              </div>
+              <span>{{ review.appName }}</span>
+            </div>
+          </div>
+          <h2 class="m-0 mt-3 text-lg font-semibold text-ink">{{ review.title || t('replyInbox.untitledReview') }}</h2>
+          <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-subtle">
+            <span>{{ reviewedAgo(review) }}</span>
+            @if (review.version) {
+            <span aria-hidden="true">·</span>
+            <span>v{{ review.version }}</span>
+            }
+            <span aria-hidden="true">·</span>
+            <span
+              class="inline-flex items-center gap-0.5 text-amber-500"
+              [attr.aria-label]="t('replyInbox.rating', { rating: review.rating })">
+              @for (star of [1, 2, 3, 4, 5]; track star) {
+              <i
+                class="pi text-xs"
+                [ngClass]="star <= review.rating ? 'pi-star-fill' : 'pi-star'"
+                aria-hidden="true"></i>
+              }
+            </span>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2 lg:justify-end">
+          @if (review.replyStatus === 'drafted') {
+          <p-button
+            [label]="t('replyInbox.actions.publishDraft')"
+            icon="pi pi-send"
+            [loading]="activeReviewId() === review.id"
+            [disabled]="activeReviewId() !== null"
+            (onClick)="publish(review)" />
+          <p-button
+            severity="secondary"
+            [outlined]="true"
+            [label]="t('replyInbox.actions.edit')"
+            icon="pi pi-pencil"
+            (onClick)="openDraftDialog(review)" />
+          } @else if (review.replyStatus === 'pending' || review.replyStatus === 'failed') {
+          <p-button
+            [label]="t('replyInbox.actions.generateDraft')"
+            icon="pi pi-sparkles"
+            [loading]="activeReviewId() === review.id"
+            [disabled]="activeReviewId() !== null"
+            (onClick)="queueDraft(review)" />
+          <p-button
+            severity="secondary"
+            [outlined]="true"
+            [label]="t('replyInbox.actions.replyManually')"
+            icon="pi pi-pencil"
+            (onClick)="openDraftDialog(review)" />
+          } @else if (review.replyStatus === 'ignored') {
+          <p-button
+            severity="secondary"
+            [outlined]="true"
+            [label]="t('replyInbox.actions.unignore')"
+            icon="pi pi-undo"
+            [loading]="activeReviewId() === review.id"
+            [disabled]="activeReviewId() !== null"
+            (onClick)="unignore(review)" />
+          } @if (review.replyStatus !== 'ignored' && review.replyStatus !== 'published') {
+          <p-button
+            severity="secondary"
+            [outlined]="true"
+            [label]="t('replyInbox.actions.ignore')"
+            icon="pi pi-ban"
+            [disabled]="activeReviewId() !== null"
+            (onClick)="ignore(review)" />
+          }
+        </div>
+      </div>
+
+      <blockquote class="m-0 whitespace-pre-wrap rounded-2xl bg-surface-2 p-4 text-sm leading-6 text-ink-muted">
+        {{ review.body }}
+      </blockquote>
+      @if (review.replyDraft; as draft) {
+      <div class="rounded-2xl border border-hairline bg-surface-0 p-4">
+        <p class="m-0 text-xs font-semibold uppercase tracking-[0.18em] text-ink-subtle">{{ t('replyInbox.replyDraft') }}</p>
+        <p class="m-0 mt-2 whitespace-pre-wrap text-sm leading-6 text-ink">{{ draft.draftText }}</p>
+      </div>
+      } @if (review.publishedReply; as publishedReply) {
+      <div class="rounded-2xl border border-purple-500/20 bg-purple-500/5 p-4">
+        <p class="m-0 text-xs font-semibold uppercase tracking-[0.18em] text-purple-700">{{ t('replyInbox.publishedReply') }}</p>
+        <p class="m-0 mt-2 whitespace-pre-wrap text-sm leading-6 text-ink">{{ publishedReply.replyText }}</p>
+      </div>
+      } @if (review.lastPublishFailure; as failure) {
+      <p class="m-0 rounded-xl border border-red-400 bg-red-500/5 px-3 py-2 text-sm text-red-700">
+        {{ t('replyInbox.messages.lastPublishFailed') }} {{ failure.errorMessage }}
+      </p>
+      }
+    </article>
+    }
+  </section>
+  }
+</div>

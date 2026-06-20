@@ -43,10 +43,24 @@ export type StoreReviewSyncResult = {
   checkpoint: ReviewSyncCheckpoint | null
 }
 
+export type StoreReplyPublishRequest<TCredential> = {
+  externalAppId: string
+  externalReviewId: string
+  replyText: string
+  credential: TCredential
+  timeoutMs?: number
+}
+
+export type StoreReplyPublishResult = {
+  externalReplyId: string | null
+  publishedAt: string
+}
+
 export type StoreReviewAdapter<TCredential, TErrorCode extends string = string> = {
   provider: StoreProvider
   verifyCredential(request: StoreCredentialVerificationRequest<TCredential>): Promise<StoreCredentialVerificationResult<TErrorCode>>
   syncReviews(request: StoreReviewSyncRequest<TCredential>): Promise<StoreReviewSyncResult>
+  publishReply(request: StoreReplyPublishRequest<TCredential>): Promise<StoreReplyPublishResult>
 }
 
 export * from './apple-app-store'

@@ -28,7 +28,7 @@ describe('syncAppleAppStoreReviews', () => {
     })
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://api.appstoreconnect.apple.com/v1/apps/123456789/customerReviews?limit=200',
+      'https://api.appstoreconnect.apple.com/v1/apps/123456789/customerReviews?include=response&sort=-createdDate&limit=200',
       expect.any(Object),
     )
   })

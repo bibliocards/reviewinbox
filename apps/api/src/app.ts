@@ -12,6 +12,7 @@ import { appsRoutes } from './routes/apps'
 import { clientConfigRoutes } from './routes/client-config'
 import { invitationsRoutes } from './routes/invitations'
 import { organizationProfileRoutes } from './routes/organization-profile'
+import { replyInboxRoutes } from './routes/reply-inbox'
 import { storeConnectionsRoutes } from './routes/store-connections'
 
 export function createApp() {
@@ -72,6 +73,7 @@ export function createApp() {
   app.on(['GET', 'POST'], '/api/auth/*', (context) => auth.handler(context.req.raw))
   app.route('/', organizationProfileRoutes)
   app.route('/', appsRoutes)
+  app.route('/', replyInboxRoutes)
   app.route('/', storeConnectionsRoutes)
 
   return app

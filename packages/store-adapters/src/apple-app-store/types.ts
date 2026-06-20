@@ -15,6 +15,14 @@ export type AppleReviewSyncRequest = {
   timeoutMs?: number
 }
 
+export type AppleReplyPublishRequest = {
+  appStoreAppId: string
+  externalReviewId: string
+  replyText: string
+  credential: AppleAppStoreCredential
+  timeoutMs?: number
+}
+
 export type AppleStoreAdapterErrorCode =
   | 'apple_auth_failed'
   | 'apple_forbidden'
@@ -35,4 +43,8 @@ export type AppleCustomerReviewsResponse = {
 export type AppleCustomerReviewResource = {
   id: string
   attributes?: Record<string, unknown>
+}
+
+export type AppleCustomerReviewResponseResource = {
+  id?: string
 }

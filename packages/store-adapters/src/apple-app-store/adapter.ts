@@ -1,5 +1,5 @@
 import type { StoreReviewAdapter } from '../index'
-import { syncAppleAppStoreReviews, verifyAppleCredentialForApp } from './client'
+import { publishAppleAppStoreReply, syncAppleAppStoreReviews, verifyAppleCredentialForApp } from './client'
 import type { AppleAppStoreCredential, AppleStoreAdapterErrorCode } from './types'
 
 export const appleAppStoreReviewAdapter: StoreReviewAdapter<AppleAppStoreCredential, AppleStoreAdapterErrorCode> = {
@@ -17,6 +17,14 @@ export const appleAppStoreReviewAdapter: StoreReviewAdapter<AppleAppStoreCredent
       checkpoint: request.checkpoint,
       ...(request.maxPages !== undefined ? { maxPages: request.maxPages } : {}),
       ...(request.pageLimit !== undefined ? { pageLimit: request.pageLimit } : {}),
+      ...(request.timeoutMs !== undefined ? { timeoutMs: request.timeoutMs } : {}),
+    }),
+  publishReply: (request) =>
+    publishAppleAppStoreReply({
+      appStoreAppId: request.externalAppId,
+      externalReviewId: request.externalReviewId,
+      replyText: request.replyText,
+      credential: request.credential,
       ...(request.timeoutMs !== undefined ? { timeoutMs: request.timeoutMs } : {}),
     }),
 }

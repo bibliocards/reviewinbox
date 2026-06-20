@@ -14,6 +14,14 @@ export type GooglePlayReviewSyncRequest = {
   timeoutMs?: number
 }
 
+export type GooglePlayReplyPublishRequest = {
+  packageName: string
+  externalReviewId: string
+  replyText: string
+  credential: GooglePlayServiceAccountCredential
+  timeoutMs?: number
+}
+
 export type GooglePlayStoreAdapterErrorCode =
   | 'google_auth_failed'
   | 'google_forbidden'
@@ -28,6 +36,13 @@ export type GooglePlayReviewsResponse = {
   reviews?: GooglePlayReviewResource[]
   tokenPagination?: {
     nextPageToken?: string
+  }
+}
+
+export type GooglePlayReplyPublishResponse = {
+  result?: {
+    replyText?: string
+    lastEdited?: GoogleTimestamp
   }
 }
 

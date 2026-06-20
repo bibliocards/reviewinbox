@@ -1,6 +1,7 @@
 export {
   type AppleCredentialParseResult,
   type GooglePlayCredentialParseResult,
+  decryptStoreCredentialPlaintext,
   parseAppleCredentialPlaintext,
   parseGooglePlayCredentialPlaintext,
   verifyAppleStoreCredentialForApp,

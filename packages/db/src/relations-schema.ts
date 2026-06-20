@@ -3,6 +3,7 @@ import { relations } from 'drizzle-orm'
 import { apps } from './app-schema'
 import { organization } from './auth-schema'
 import { replyDrafts } from './reply-draft-schema'
+import { publishedReplies, replyAuditEvents } from './reply-publishing-schema'
 import { reviews } from './review-schema'
 import { storeConnections, storeCredentials } from './store-schema'
 import { syncRuns } from './sync-run-schema'
@@ -15,6 +16,8 @@ export const appRelations = relations(apps, ({ one, many }) => ({
   storeConnections: many(storeConnections),
   reviews: many(reviews),
   replyDrafts: many(replyDrafts),
+  publishedReplies: many(publishedReplies),
+  replyAuditEvents: many(replyAuditEvents),
   syncRuns: many(syncRuns),
 }))
 
@@ -42,7 +45,7 @@ export const storeCredentialRelations = relations(storeCredentials, ({ one }) =>
   }),
 }))
 
-export const reviewRelations = relations(reviews, ({ one }) => ({
+export const reviewRelations = relations(reviews, ({ one, many }) => ({
   organization: one(organization, {
     fields: [reviews.organizationId],
     references: [organization.id],
@@ -59,9 +62,14 @@ export const reviewRelations = relations(reviews, ({ one }) => ({
     fields: [reviews.id],
     references: [replyDrafts.reviewId],
   }),
+  publishedReply: one(publishedReplies, {
+    fields: [reviews.id],
+    references: [publishedReplies.reviewId],
+  }),
+  auditEvents: many(replyAuditEvents),
 }))
 
-export const replyDraftRelations = relations(replyDrafts, ({ one }) => ({
+export const replyDraftRelations = relations(replyDrafts, ({ one, many }) => ({
   organization: one(organization, {
     fields: [replyDrafts.organizationId],
     references: [organization.id],
@@ -72,6 +80,45 @@ export const replyDraftRelations = relations(replyDrafts, ({ one }) => ({
   }),
   review: one(reviews, {
     fields: [replyDrafts.reviewId],
+    references: [reviews.id],
+  }),
+  publishedReplies: many(publishedReplies),
+}))
+
+export const publishedReplyRelations = relations(publishedReplies, ({ one }) => ({
+  organization: one(organization, {
+    fields: [publishedReplies.organizationId],
+    references: [organization.id],
+  }),
+  app: one(apps, {
+    fields: [publishedReplies.appId],
+    references: [apps.id],
+  }),
+  storeConnection: one(storeConnections, {
+    fields: [publishedReplies.storeConnectionId],
+    references: [storeConnections.id],
+  }),
+  review: one(reviews, {
+    fields: [publishedReplies.reviewId],
+    references: [reviews.id],
+  }),
+  replyDraft: one(replyDrafts, {
+    fields: [publishedReplies.replyDraftId],
+    references: [replyDrafts.id],
+  }),
+}))
+
+export const replyAuditEventRelations = relations(replyAuditEvents, ({ one }) => ({
+  organization: one(organization, {
+    fields: [replyAuditEvents.organizationId],
+    references: [organization.id],
+  }),
+  app: one(apps, {
+    fields: [replyAuditEvents.appId],
+    references: [apps.id],
+  }),
+  review: one(reviews, {
+    fields: [replyAuditEvents.reviewId],
     references: [reviews.id],
   }),
 }))

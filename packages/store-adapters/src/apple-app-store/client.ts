@@ -1,9 +1,15 @@
 import { getCheckpointReviewedAt } from '../common'
-import type { NormalizedStoreReview, StoreReviewSyncResult } from '../index'
+import type { NormalizedStoreReview, StoreReplyPublishResult, StoreReviewSyncResult } from '../index'
 import { AppleStoreAdapterError, toAppleStoreAdapterError } from './errors'
 import { createAppleAppStoreConnectJwt } from './jwt'
 import { normalizeAppleReview } from './normalize'
-import type { AppleCredentialVerificationResult, AppleCustomerReviewsResponse, AppleReviewSyncRequest } from './types'
+import type {
+  AppleCredentialVerificationResult,
+  AppleCustomerReviewResponseResource,
+  AppleCustomerReviewsResponse,
+  AppleReplyPublishRequest,
+  AppleReviewSyncRequest,
+} from './types'
 
 const appleApiBaseUrl = 'https://api.appstoreconnect.apple.com/v1'
 const defaultTimeoutMs = 20_000
@@ -66,8 +72,56 @@ export async function syncAppleAppStoreReviews(input: AppleReviewSyncRequest): P
   }
 }
 
+export async function publishAppleAppStoreReply(input: AppleReplyPublishRequest): Promise<StoreReplyPublishResult> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), input.timeoutMs ?? defaultTimeoutMs)
+
+  try {
+    const response = await fetch(`${appleApiBaseUrl}/customerReviewResponses`, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${createAppleAppStoreConnectJwt(input.credential)}`,
+        accept: 'application/json',
+        'content-type': 'application/json',
+      },
+      redirect: 'error',
+      signal: controller.signal,
+      body: JSON.stringify({
+        data: {
+          type: 'customerReviewResponses',
+          attributes: { responseBody: input.replyText },
+          relationships: {
+            review: {
+              data: { type: 'customerReviews', id: input.externalReviewId },
+            },
+          },
+        },
+      }),
+    })
+
+    if (!response.ok) {
+      throw toAppleStoreAdapterError(response.status)
+    }
+
+    const body = (await response.json()) as unknown
+    return {
+      externalReplyId: parseCustomerReviewResponse(body).id ?? null,
+      publishedAt: new Date().toISOString(),
+    }
+  } catch (error) {
+    if (error instanceof AppleStoreAdapterError) {
+      throw error
+    }
+    throw new AppleStoreAdapterError('apple_unavailable', 'Apple App Store review API is unavailable.')
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
 function buildCustomerReviewsUrl(appStoreAppId: string, limit: number) {
   const url = new URL(`${appleApiBaseUrl}/apps/${encodeURIComponent(appStoreAppId)}/customerReviews`)
+  url.searchParams.set('include', 'response')
+  url.searchParams.set('sort', '-createdDate')
   url.searchParams.set('limit', String(limit))
   return url.toString()
 }
@@ -129,4 +183,17 @@ function parseCustomerReviewsResponse(value: unknown): AppleCustomerReviewsRespo
   }
 
   return { data: response.data, ...(response.links ? { links: response.links } : {}) }
+}
+
+function parseCustomerReviewResponse(value: unknown): AppleCustomerReviewResponseResource {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new AppleStoreAdapterError('apple_invalid_response', 'Apple App Store review API returned an invalid response.')
+  }
+
+  const response = value as { data?: AppleCustomerReviewResponseResource }
+  if (!response.data || typeof response.data !== 'object' || Array.isArray(response.data)) {
+    throw new AppleStoreAdapterError('apple_invalid_response', 'Apple App Store review API returned an invalid response.')
+  }
+
+  return response.data
 }
