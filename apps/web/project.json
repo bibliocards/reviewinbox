@@ -10,6 +10,7 @@
         "outputPath": "dist/apps/web",
         "browser": "apps/web/src/main.ts",
         "index": "apps/web/src/index.html",
+        "serviceWorker": "apps/web/ngsw-config.json",
         "tsConfig": "apps/web/tsconfig.app.json",
         "assets": [
           {

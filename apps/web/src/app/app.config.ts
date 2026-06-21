@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http'
 import { type ApplicationConfig, isDevMode, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from '@angular/core'
 import { provideRouter } from '@angular/router'
+import { provideServiceWorker } from '@angular/service-worker'
 import { provideTransloco } from '@jsverse/transloco'
 import { organizationClient } from 'better-auth/client/plugins'
 import { provideBetterAuth } from 'ngx-better-auth'
@@ -34,6 +35,10 @@ export const appConfig: ApplicationConfig = {
       plugins: [organizationClient()],
     }),
     provideRouter(appRoutes),
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: environment.production || !isDevMode(),
+      registrationStrategy: 'registerWhenStable:30000',
+    }),
     provideHttpClient(),
     provideTransloco({
       config: {
