@@ -60,10 +60,7 @@ storeConnectionsRoutes.post('/api/apps/:appId/store-connections', async (context
 
   const storeConnectionLimitDecision = await canCreateStoreConnectionForOrganization(appResult.organizationId)
   if (!storeConnectionLimitDecision.allowed) {
-    return context.json(
-      { error: 'Organization Store Connection limit reached.', errorCode: storeConnectionLimitDecision.reason },
-      403,
-    )
+    return context.json({ error: 'Organization Store Connection limit reached.', errorCode: storeConnectionLimitDecision.reason }, 403)
   }
 
   const [created] = await database

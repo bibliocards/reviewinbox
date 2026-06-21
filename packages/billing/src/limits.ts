@@ -19,8 +19,7 @@ export function getEffectiveOrganizationLimits(
     storeConnectionLimit: overrides.storeConnectionLimit ?? plan.storeConnectionLimit,
     includedMonthlyReviewImports: overrides.includedMonthlyReviewImports ?? plan.includedMonthlyReviewImports,
     monthlyReviewImportCap: overrides.monthlyReviewImportCap ?? plan.monthlyReviewImportCap,
-    includedMonthlyManagedAiReplyDrafts:
-      overrides.includedMonthlyManagedAiReplyDrafts ?? plan.includedMonthlyManagedAiReplyDrafts,
+    includedMonthlyManagedAiReplyDrafts: overrides.includedMonthlyManagedAiReplyDrafts ?? plan.includedMonthlyManagedAiReplyDrafts,
     monthlyManagedAiReplyDraftCap: overrides.monthlyManagedAiReplyDraftCap ?? plan.monthlyManagedAiReplyDraftCap,
   }
 }

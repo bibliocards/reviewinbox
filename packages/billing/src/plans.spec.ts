@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  extraMemberSeat,
-  getPlanDefinition,
-  managedAiReplyDraftOveragePack,
-  reviewImportOveragePack,
-} from './plans'
+import { extraMemberSeat, getPlanDefinition, managedAiReplyDraftOveragePack, reviewImportOveragePack } from './plans'
 
 describe('plan definitions', () => {
   it('defines the free tier limits', () => {

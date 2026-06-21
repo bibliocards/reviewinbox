@@ -24,32 +24,16 @@ export function canCreateApp(context: OrganizationLimitContext, currentAppCount:
   return enforceCountLimit(context, currentAppCount, 'appLimit', 'app_limit_reached')
 }
 
-export function canCreateStoreConnection(
-  context: OrganizationLimitContext,
-  currentStoreConnectionCount: number,
-): EnforcementDecision {
-  return enforceCountLimit(
-    context,
-    currentStoreConnectionCount,
-    'storeConnectionLimit',
-    'store_connection_limit_reached',
-  )
+export function canCreateStoreConnection(context: OrganizationLimitContext, currentStoreConnectionCount: number): EnforcementDecision {
+  return enforceCountLimit(context, currentStoreConnectionCount, 'storeConnectionLimit', 'store_connection_limit_reached')
 }
 
 export function canInviteMember(context: OrganizationLimitContext, currentMemberCount: number): EnforcementDecision {
   return enforceCountLimit(context, currentMemberCount, 'memberLimit', 'member_limit_reached')
 }
 
-export function canImportNewReview(
-  context: OrganizationLimitContext,
-  monthlyImportedReviewCount: number,
-): EnforcementDecision {
-  return enforceCountLimit(
-    context,
-    monthlyImportedReviewCount,
-    'monthlyReviewImportCap',
-    'monthly_review_import_cap_reached',
-  )
+export function canImportNewReview(context: OrganizationLimitContext, monthlyImportedReviewCount: number): EnforcementDecision {
+  return enforceCountLimit(context, monthlyImportedReviewCount, 'monthlyReviewImportCap', 'monthly_review_import_cap_reached')
 }
 
 export function canGenerateManagedAiReplyDraft(
