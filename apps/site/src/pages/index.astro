@@ -4,6 +4,11 @@ import '../styles.css'
 const appUrl = import.meta.env.PUBLIC_APP_URL ?? 'http://localhost:4200'
 const signInUrl = new URL('/login', appUrl).toString()
 const signUpUrl = new URL('/sign-up', appUrl).toString()
+const planSignUpUrl = (plan: string) => {
+  const url = new URL('/sign-up', appUrl)
+  url.searchParams.set('plan', plan)
+  return url.toString()
+}
 const siteUrl = 'https://reviewinbox.app'
 const pageTitle = 'ReviewInbox | Reply to app reviews faster'
 const pageDescription = 'ReviewInbox is a Reply Inbox for app store Reviews, with AI-generated Reply Drafts your team controls.'
@@ -53,6 +58,32 @@ const workflow = [
     description: 'Published Replies stay separate from drafts so the audit trail remains clear.',
   },
 ]
+
+const pricingPlans = [
+  {
+    name: 'Free',
+    price: '$0/mo',
+    description: 'For trying ReviewInbox on one App.',
+    featured: true,
+    features: ['1 member', '1 App', '2 Store Connections', '30 Review imports/month', '5 Managed AI Reply Drafts/month'],
+  },
+  {
+    name: 'Starter',
+    price: '$9/mo',
+    description: 'For a small team running a couple of Apps.',
+    featured: false,
+    features: ['3 members included', '2 Apps', '4 Store Connections', '500 Review imports/month', '100 Managed AI Reply Drafts/month'],
+  },
+  {
+    name: 'Pro',
+    price: '$29/mo',
+    description: 'For teams managing several Apps and higher review volume.',
+    featured: false,
+    features: ['10 members included', '10 Apps', '20 Store Connections', '5,000 Review imports/month', '1,000 Managed AI Reply Drafts/month'],
+  },
+]
+
+const selfHostedHighlights = ['No billing limits', 'Bring Your Own Key AI', 'Your Postgres and backups', 'Docker Compose deployment']
 
 const faqs = [
   {
@@ -124,7 +155,7 @@ const faqs = [
 
           <div class="hidden items-center gap-md text-sm text-ink-subtle md:flex">
             <a class="inline-flex min-h-10 items-center px-xs transition hover:text-ink" href="#product">Product</a>
-            <a class="inline-flex min-h-10 items-center px-xs transition hover:text-ink" href="#pricing">Pricing</a>
+            <a class="inline-flex min-h-10 items-center px-xs transition hover:text-ink" href="/pricing/">Pricing</a>
             <a class="inline-flex min-h-10 items-center px-xs transition hover:text-ink" href="/docs/">Docs</a>
           </div>
 
@@ -223,24 +254,34 @@ const faqs = [
             <p class="mt-md text-base leading-7 text-ink-muted">Pricing is intentionally simple while ReviewInbox is early. Start with Cloud, or run the same product yourself.</p>
           </div>
 
-          <div class="grid gap-md md:grid-cols-2">
-            <article class="rounded-lg border border-hairline-strong bg-surface-2 p-lg">
-              <p class="text-sm text-ink-subtle">Cloud</p>
-              <h3 class="mt-xs text-3xl font-semibold tracking-[-0.8px] text-ink">Hosted for your team</h3>
-              <p class="mt-md text-sm leading-6 text-ink-muted">Use ReviewInbox without operating infrastructure. Best for teams that want the Reply Inbox live quickly.</p>
-              <a class="mt-lg inline-flex min-h-10 items-center rounded-md bg-linear-primary px-md py-sm text-sm font-medium text-white transition hover:bg-linear-primary-focus" href={signUpUrl}>
-                Start free
-              </a>
-            </article>
+          <div class="grid gap-md xl:grid-cols-[1fr_320px]">
+            <div class="grid gap-md lg:grid-cols-3">
+            {pricingPlans.map((plan) => (
+              <article class:list={['rounded-lg border p-lg shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]', plan.featured ? 'border-hairline-strong bg-surface-2' : 'border-hairline bg-surface-1']}>
+                <p class="text-sm text-ink-subtle">{plan.name}</p>
+                <h3 class="mt-xs text-3xl font-semibold tracking-[-0.8px] text-ink">{plan.price}</h3>
+                <p class="mt-md min-h-12 text-sm leading-6 text-ink-muted">{plan.description}</p>
+                <ul class="mt-lg grid gap-xs text-sm text-ink-muted">
+                  {plan.features.map((feature) => <li>+ {feature}</li>)}
+                </ul>
+              </article>
+            ))}
+            </div>
 
-            <article class="rounded-lg border border-hairline bg-surface-1 p-lg">
-              <p class="text-sm text-ink-subtle">Self-hosted</p>
-              <h3 class="mt-xs text-3xl font-semibold tracking-[-0.8px] text-ink">Run it on your VPS</h3>
-              <p class="mt-md text-sm leading-6 text-ink-muted">Deploy with Docker Compose, keep Store Credentials under your control, and put ReviewInbox behind your own HTTPS proxy.</p>
-              <a class="mt-lg inline-flex min-h-10 items-center rounded-md border border-hairline bg-canvas px-md py-sm text-sm font-medium text-ink transition hover:border-hairline-strong hover:bg-surface-2" href="/docs/self-hosting/">
-                Read self-hosting docs
-              </a>
+            <article class="rounded-lg border border-hairline bg-[radial-gradient(circle_at_top_right,rgba(94,106,210,0.18),transparent_38%),#0f1117] p-lg shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+              <p class="text-sm text-linear-primary-hover">Self-hosted</p>
+              <h3 class="mt-xs text-3xl font-semibold tracking-[-0.8px] text-ink">Host it yourself</h3>
+              <p class="mt-md text-sm leading-6 text-ink-muted">Run the same ReviewInbox product on your own VPS. You operate the infrastructure; ReviewInbox does not enforce billing limits.</p>
+              <ul class="mt-lg grid gap-xs text-sm text-ink-muted">
+                {selfHostedHighlights.map((highlight) => <li>+ {highlight}</li>)}
+              </ul>
+              <a class="mt-lg inline-flex min-h-10 w-fit items-center rounded-md border border-hairline-strong bg-canvas px-md py-sm text-sm font-medium text-ink transition hover:bg-surface-2" href="/docs/self-hosting/">Host it myself</a>
             </article>
+          </div>
+          <div class="mt-lg flex flex-col gap-sm sm:flex-row">
+            <a class="inline-flex min-h-10 w-fit items-center rounded-md bg-linear-primary px-md py-sm text-sm font-medium text-white transition hover:bg-linear-primary-focus" href={planSignUpUrl('free')}>Start free</a>
+            <a class="inline-flex min-h-10 w-fit items-center rounded-md border border-hairline bg-surface-1 px-md py-sm text-sm font-medium text-ink transition hover:border-hairline-strong hover:bg-surface-2" href="/docs/self-hosting/">Host it myself</a>
+            <a class="inline-flex min-h-10 w-fit items-center rounded-md border border-hairline bg-surface-1 px-md py-sm text-sm font-medium text-ink transition hover:border-hairline-strong hover:bg-surface-2" href="/pricing/">See all pricing details</a>
           </div>
         </section>
 
@@ -284,6 +325,7 @@ const faqs = [
           <p class="font-medium text-ink">ReviewInbox</p>
           <div class="flex gap-md">
             <a class="inline-flex min-h-10 items-center hover:text-ink" href="/docs/">Docs</a>
+            <a class="inline-flex min-h-10 items-center hover:text-ink" href="/pricing/">Pricing</a>
             <a class="inline-flex min-h-10 items-center hover:text-ink" href={signInUrl}>Sign in</a>
             <a class="inline-flex min-h-10 items-center hover:text-ink" href={signUpUrl}>Start free</a>
           </div>

@@ -28,6 +28,7 @@ export class SignUpPageComponent {
   protected readonly invitationId = this.route.snapshot.queryParamMap.get('invitationId')
   protected readonly isInvitationSignUp = Boolean(this.invitationId)
   protected readonly redirectUrl = this.safeRedirect(this.route.snapshot.queryParamMap.get('redirect'))
+  protected readonly selectedPlan = this.parseSelectedPlan(this.route.snapshot.queryParamMap.get('plan'))
   protected readonly loginQueryParams = computed(() => (this.redirectUrl ? { redirect: this.redirectUrl } : {}))
 
   private readonly signUpModel = signal({
@@ -101,5 +102,13 @@ export class SignUpPageComponent {
 
   private safeRedirect(redirect: string | null): string | null {
     return redirect?.startsWith('/') && !redirect.startsWith('//') ? redirect : null
+  }
+
+  private parseSelectedPlan(plan: string | null): 'free' | 'starter' | 'pro' | 'business' {
+    if (plan === 'starter' || plan === 'pro' || plan === 'business') {
+      return plan
+    }
+
+    return 'free'
   }
 }

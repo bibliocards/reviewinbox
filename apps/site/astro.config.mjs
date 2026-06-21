@@ -27,7 +27,10 @@ export default defineConfig({
       sidebar: [
         {
           label: 'Guides',
-          items: [{ label: 'Self-hosting', slug: 'docs/self-hosting' }],
+          items: [
+            { label: 'Usage and limits', slug: 'docs/usage-limits' },
+            { label: 'Self-hosting', slug: 'docs/self-hosting' },
+          ],
         },
       ],
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/bibliocards/reviewinbox' }],

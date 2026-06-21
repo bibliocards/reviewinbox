@@ -1,0 +1,212 @@
+---
+import '../styles.css'
+
+const appUrl = import.meta.env.PUBLIC_APP_URL ?? 'http://localhost:4200'
+const signInUrl = new URL('/login', appUrl).toString()
+const signUpUrl = new URL('/sign-up', appUrl).toString()
+const planSignUpUrl = (plan: string) => {
+  const url = new URL('/sign-up', appUrl)
+  url.searchParams.set('plan', plan)
+  return url.toString()
+}
+const siteUrl = 'https://reviewinbox.app/pricing/'
+const pageTitle = 'ReviewInbox Pricing | Usage limits for app review workflows'
+const pageDescription = 'ReviewInbox pricing plans for Cloud and self-hosted deployments, including Review imports, Managed AI Reply Drafts, Apps, Store Connections, and members.'
+
+const plans = [
+  {
+    name: 'Free',
+    price: '$0',
+    interval: '/month',
+    note: 'Available now',
+    description: 'Try ReviewInbox with one App and low monthly volume.',
+    featured: true,
+    members: '1',
+    apps: '1',
+    storeConnections: '2',
+    reviews: '30/month',
+    drafts: '5/month',
+    cta: 'Start free',
+    href: planSignUpUrl('free'),
+  },
+  {
+    name: 'Starter',
+    price: '$9',
+    interval: '/month',
+    note: 'Available now',
+    description: 'For small teams managing a couple of Apps.',
+    featured: false,
+    members: '3 included',
+    apps: '2',
+    storeConnections: '4',
+    reviews: '500/month',
+    drafts: '100/month',
+    cta: 'Select Starter',
+    href: planSignUpUrl('starter'),
+  },
+  {
+    name: 'Pro',
+    price: '$29',
+    interval: '/month',
+    note: 'Available now',
+    description: 'For teams with several Apps and regular review operations.',
+    featured: false,
+    members: '10 included',
+    apps: '10',
+    storeConnections: '20',
+    reviews: '5,000/month',
+    drafts: '1,000/month',
+    cta: 'Select Pro',
+    href: planSignUpUrl('pro'),
+  },
+  {
+    name: 'Business',
+    price: '$99',
+    interval: '/month',
+    note: 'Scale',
+    description: 'For larger teams, higher limits, and operational needs.',
+    featured: false,
+    members: '25 included',
+    apps: '50 included, 100 limit',
+    storeConnections: '100 included, 200 limit',
+    reviews: '50,000/month',
+    drafts: '10,000/month',
+    cta: 'Select Business',
+    href: planSignUpUrl('business'),
+  },
+]
+
+const rows = [
+  ['Members', 'members'],
+  ['Apps', 'apps'],
+  ['Connections', 'storeConnections'],
+  ['Review imports', 'reviews'],
+  ['AI drafts', 'drafts'],
+] as const
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={pageDescription} />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#010102" />
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <link rel="canonical" href={siteUrl} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={siteUrl} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDescription} />
+    <meta property="og:site_name" content="ReviewInbox" />
+    <title>{pageTitle}</title>
+  </head>
+  <body>
+    <div class="min-h-screen bg-canvas text-ink">
+      <header class="sticky top-0 z-20 border-hairline/80 border-b bg-canvas/85 backdrop-blur-xl">
+        <nav class="mx-auto flex h-14 max-w-7xl items-center justify-between px-md sm:px-lg">
+          <a href="/" class="inline-flex min-h-10 items-center gap-xs font-semibold text-[15px] tracking-[-0.2px] text-ink">
+            <img src="/icons/icon-96x96.png" alt="" class="size-7 rounded-md" width="28" height="28" />
+            <span>ReviewInbox</span>
+          </a>
+          <div class="hidden items-center gap-md text-sm text-ink-subtle md:flex">
+            <a class="inline-flex min-h-10 items-center px-xs transition hover:text-ink" href="/">Product</a>
+            <a class="inline-flex min-h-10 items-center px-xs text-ink" href="/pricing/">Pricing</a>
+            <a class="inline-flex min-h-10 items-center px-xs transition hover:text-ink" href="/docs/">Docs</a>
+          </div>
+          <div class="flex items-center gap-xs">
+            <a class="hidden min-h-10 items-center rounded-md px-sm py-xs text-sm font-medium text-ink transition hover:bg-surface-1 sm:inline-flex" href={signInUrl}>Sign in</a>
+            <a class="inline-flex min-h-10 items-center rounded-md bg-linear-primary px-sm py-xs text-sm font-medium text-white transition hover:bg-linear-primary-focus" href={signUpUrl}>Start free</a>
+          </div>
+        </nav>
+      </header>
+
+      <main>
+        <section class="mx-auto max-w-7xl px-md pt-20 pb-section sm:px-lg lg:pt-28">
+          <p class="mb-lg w-fit rounded-full border border-hairline bg-surface-1 px-sm py-xxs text-sm text-ink-muted">Cloud plans and self-hosted freedom</p>
+          <div class="grid gap-xl lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
+            <div>
+              <h1 class="max-w-4xl text-4xl font-semibold leading-[1.04] tracking-[-1.4px] text-ink sm:text-6xl sm:tracking-[-2.3px]">Pricing that follows Review operations.</h1>
+            </div>
+            <p class="max-w-2xl text-lg leading-8 text-ink-muted lg:justify-self-end">
+              ReviewInbox plans are scoped to an Organization. Usage limits apply to Cloud deployments; self-hosted deployments stay billing-free.
+            </p>
+          </div>
+        </section>
+
+        <section class="mx-auto max-w-7xl px-md pb-section sm:px-lg">
+          <div class="overflow-x-auto rounded-xl border border-hairline bg-surface-1">
+            <div class="grid min-w-[1040px] grid-cols-[190px_repeat(4,minmax(190px,1fr))]">
+              <div class="border-hairline border-r p-lg">
+                <p class="text-sm font-medium text-linear-primary-hover">Plans</p>
+                <p class="mt-sm text-sm leading-6 text-ink-subtle">Pick the Organization plan that matches your review volume.</p>
+              </div>
+
+              {plans.map((plan) => (
+                <article class:list={['border-hairline border-r p-lg last:border-r-0', plan.featured ? 'bg-surface-2' : 'bg-surface-1']}>
+                  <div class="flex items-center justify-between gap-sm">
+                    <h2 class="text-xl font-semibold text-ink">{plan.name}</h2>
+                    <span class="rounded-full border border-hairline bg-canvas px-xs py-xxs text-xs text-ink-subtle">{plan.note}</span>
+                  </div>
+                  <div class="mt-xl flex items-end gap-xxs">
+                    <p class="text-4xl font-semibold tracking-[-1px] text-ink">{plan.price}</p>
+                    <p class="pb-1 font-mono text-xs uppercase tracking-[0.08em] text-ink-subtle">{plan.interval}</p>
+                  </div>
+                  <p class="mt-md min-h-14 text-sm leading-6 text-ink-muted">{plan.description}</p>
+                  <a class:list={['mt-lg inline-flex min-h-10 w-full items-center justify-center rounded-md px-md py-sm text-sm font-medium transition', plan.featured ? 'bg-linear-primary text-white hover:bg-linear-primary-focus' : 'border border-hairline bg-canvas text-ink hover:border-hairline-strong hover:bg-surface-2']} href={plan.href}>{plan.cta}</a>
+                </article>
+              ))}
+
+              {rows.map(([label, key]) => (
+                <>
+                  <div class="border-hairline border-t border-r bg-canvas p-lg text-sm font-medium text-ink-subtle">{label}</div>
+                  {plans.map((plan) => (
+                    <div class="border-hairline border-t border-r p-lg text-sm font-medium text-ink last:border-r-0">{plan[key]}</div>
+                  ))}
+                </>
+              ))}
+            </div>
+          </div>
+          <p class="mt-md text-sm leading-6 text-ink-subtle">
+            Overage packs are planned for paid plans and require an explicit Owner cap before extra usage is allowed.
+          </p>
+        </section>
+
+        <section class="mx-auto max-w-7xl px-md pb-section sm:px-lg">
+          <div class="grid gap-md lg:grid-cols-3">
+            <article class="rounded-xl border border-hairline bg-surface-1 p-lg">
+              <h2 class="text-2xl font-semibold tracking-[-0.5px] text-ink">Overages, later</h2>
+              <p class="mt-md text-sm leading-6 text-ink-muted">Paid plans are designed for explicit Owner caps before any overage is allowed.</p>
+              <ul class="mt-lg grid gap-xs text-sm text-ink-muted">
+                <li>+ 100 Managed AI Reply Drafts: planned at $5</li>
+                <li>+ 1,000 Review imports: planned at $5</li>
+                <li>+ 1 member seat: planned at $5/month</li>
+              </ul>
+            </article>
+            <article class="rounded-xl border border-hairline bg-surface-1 p-lg">
+              <h2 class="text-2xl font-semibold tracking-[-0.5px] text-ink">Self-hosted</h2>
+              <p class="mt-md text-sm leading-6 text-ink-muted">Run ReviewInbox yourself without billing limits. Bring your own AI provider and operate Postgres, backups, SMTP, storage, and updates.</p>
+              <a class="mt-lg inline-flex min-h-10 items-center rounded-md border border-hairline bg-canvas px-md py-sm text-sm font-medium text-ink transition hover:border-hairline-strong hover:bg-surface-2" href="/docs/self-hosting/">Read self-hosting docs</a>
+            </article>
+            <article class="rounded-xl border border-hairline bg-surface-1 p-lg">
+              <h2 class="text-2xl font-semibold tracking-[-0.5px] text-ink">Organization billing</h2>
+              <p class="mt-md text-sm leading-6 text-ink-muted">Plans attach to Organizations, not individual users. A user can belong to multiple Organizations, each with its own limits and usage.</p>
+              <a class="mt-lg inline-flex min-h-10 items-center rounded-md border border-hairline bg-canvas px-md py-sm text-sm font-medium text-ink transition hover:border-hairline-strong hover:bg-surface-2" href="/docs/usage-limits/">Read usage docs</a>
+            </article>
+          </div>
+        </section>
+      </main>
+
+      <footer class="border-hairline border-t py-xl">
+        <div class="mx-auto flex max-w-7xl flex-col gap-md px-md text-sm text-ink-subtle sm:flex-row sm:items-center sm:justify-between sm:px-lg">
+          <p class="font-medium text-ink">ReviewInbox</p>
+          <div class="flex gap-md">
+            <a class="inline-flex min-h-10 items-center hover:text-ink" href="/docs/">Docs</a>
+            <a class="inline-flex min-h-10 items-center hover:text-ink" href={signInUrl}>Sign in</a>
+            <a class="inline-flex min-h-10 items-center hover:text-ink" href={signUpUrl}>Start free</a>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>
