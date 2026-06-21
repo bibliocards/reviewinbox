@@ -7,6 +7,18 @@ const signUpUrl = new URL('/sign-up', appUrl).toString()
 const siteUrl = 'https://reviewinbox.app'
 const pageTitle = 'ReviewInbox | Reply to app reviews faster'
 const pageDescription = 'ReviewInbox is a Reply Inbox for app store Reviews, with AI-generated Reply Drafts your team controls.'
+const pageKeywords = [
+  'ReviewInbox',
+  'app review management',
+  'app store reviews',
+  'Google Play reviews',
+  'App Store reviews',
+  'reply inbox',
+  'AI reply drafts',
+  'review response tool',
+  'mobile app support',
+  'self-hosted review management',
+]
 
 const features = [
   {
@@ -63,6 +75,7 @@ const faqs = [
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <meta name="description" content={pageDescription} />
+    <meta name="keywords" content={pageKeywords.join(', ')} />
     <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#010102" />
     <link rel="icon" href="/favicon.png" type="image/png" />
@@ -86,6 +99,7 @@ const faqs = [
       operatingSystem: 'Web',
       url: siteUrl,
       description: pageDescription,
+      keywords: pageKeywords,
       offers: {
         '@type': 'Offer',
         price: '0',
@@ -103,7 +117,10 @@ const faqs = [
 
       <header class="sticky top-0 z-20 border-hairline/80 border-b bg-canvas/85 backdrop-blur-xl">
         <nav class="mx-auto flex h-14 max-w-7xl items-center justify-between px-md sm:px-lg">
-          <a href="/" class="font-semibold text-[15px] tracking-[-0.2px] text-ink">ReviewInbox</a>
+          <a href="/" class="inline-flex min-h-10 items-center gap-xs font-semibold text-[15px] tracking-[-0.2px] text-ink">
+            <img src="/icons/icon-96x96.png" alt="" class="size-7 rounded-md" width="28" height="28" />
+            <span>ReviewInbox</span>
+          </a>
 
           <div class="hidden items-center gap-md text-sm text-ink-subtle md:flex">
             <a class="inline-flex min-h-10 items-center px-xs transition hover:text-ink" href="#product">Product</a>
