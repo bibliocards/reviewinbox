@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="ReviewInbox">
+  <rect width="64" height="64" rx="16" fill="#010102" />
+  <rect x="10" y="14" width="44" height="36" rx="10" fill="#141821" stroke="#3a4356" stroke-width="2" />
+  <path d="M18 24h28M18 32h20M18 40h14" stroke="#f7f8f8" stroke-width="4" stroke-linecap="round" />
+  <circle cx="45" cy="41" r="9" fill="#5e6ad2" />
+  <path d="M40.5 41.5l3 3 6-7" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+</svg>
