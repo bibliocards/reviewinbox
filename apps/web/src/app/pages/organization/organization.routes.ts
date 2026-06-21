@@ -26,8 +26,8 @@ export const organizationRoutes: Routes = [
         component: OrganizationMembersPageComponent,
       },
       {
-        path: 'billing',
-        title: 'Organization billing | ReviewInbox',
+        path: 'usage',
+        title: 'Organization usage | ReviewInbox',
         component: OrganizationBillingPageComponent,
       },
     ],

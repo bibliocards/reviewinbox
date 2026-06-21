@@ -1,4 +1,5 @@
 import { loadEncryptionConfig } from '@reviewinbox/config'
+import { canCreateApp, canCreateStoreConnection } from '@reviewinbox/billing'
 import {
   appResponseSchema,
   connectAppRequestSchema,
@@ -16,10 +17,10 @@ import {
   encryptStoreCredential,
   type EncryptedStoreCredential,
 } from '@reviewinbox/core'
-import { apps, storeConnections, storeCredentials } from '@reviewinbox/db'
+import { apps, organization as organizationTable, storeConnections, storeCredentials } from '@reviewinbox/db'
 import { selectMissingReplyDraftReviews } from '@reviewinbox/reply-drafts'
 import { verifyAppleStoreCredentialForApp, verifyGooglePlayStoreCredentialForApp } from '@reviewinbox/sync'
-import { and, eq } from 'drizzle-orm'
+import { and, count, eq } from 'drizzle-orm'
 import { Hono } from 'hono'
 
 import {
@@ -27,7 +28,7 @@ import {
   requireActiveOrganizationOwnerSession,
   requireActiveOrganizationSession,
 } from '../auth/session'
-import { database } from '../db'
+import { database, serverConfig } from '../db'
 import { parseJsonBody, parseUuidParam } from '../http/validation'
 import { enqueueGenerateReplyDraftJobs } from '../queue'
 
@@ -77,6 +78,11 @@ appsRoutes.post('/api/apps', async (context) => {
     return bodyResult.response
   }
 
+  const appLimitDecision = await canCreateAppForOrganization(sessionResult.session.organizationId)
+  if (!appLimitDecision.allowed) {
+    return context.json({ error: 'Organization app limit reached.', errorCode: appLimitDecision.reason }, 403)
+  }
+
   const [created] = await database
     .insert(apps)
     .values({
@@ -104,6 +110,22 @@ appsRoutes.post('/api/apps/connect', async (context) => {
   }
 
   const connections = bodyResult.data.connections ?? {}
+  const requestedStoreConnectionCount = Number(Boolean(connections.apple)) + Number(Boolean(connections.google))
+  const appLimitDecision = await canCreateAppForOrganization(sessionResult.session.organizationId)
+  if (!appLimitDecision.allowed) {
+    return context.json({ error: 'Organization app limit reached.', errorCode: appLimitDecision.reason }, 403)
+  }
+
+  if (requestedStoreConnectionCount > 0) {
+    const storeConnectionLimitDecision = await canCreateStoreConnectionsForOrganization(
+      sessionResult.session.organizationId,
+      requestedStoreConnectionCount,
+    )
+    if (!storeConnectionLimitDecision.allowed) {
+      return context.json({ error: 'Organization Store Connection limit reached.', errorCode: storeConnectionLimitDecision.reason }, 403)
+    }
+  }
+
   if (connections.apple) {
     const plaintext = stringifyAppleCredential(connections.apple)
     const verification = await verifyAppleStoreCredentialForApp({
@@ -500,6 +522,52 @@ function toStoreConnectionResponse(connection: StoreConnectionRow, credential?: 
       keyId: credential?.keyId ?? null,
     },
   }
+}
+
+async function canCreateAppForOrganization(organizationId: string) {
+  const organization = await selectBillingOrganization(organizationId)
+  if (!organization) {
+    return { allowed: false as const, reason: 'app_limit_reached' as const, remaining: 0 as const }
+  }
+
+  const [appCount] = await database.select({ count: count() }).from(apps).where(eq(apps.organizationId, organizationId))
+
+  return canCreateApp(
+    {
+      deploymentMode: serverConfig.deploymentMode,
+      planName: organization.planName,
+      overrides: organization.billingOverrides,
+    },
+    appCount?.count ?? 0,
+  )
+}
+
+async function canCreateStoreConnectionsForOrganization(organizationId: string, requestedCount: number) {
+  const organization = await selectBillingOrganization(organizationId)
+  if (!organization) {
+    return { allowed: false as const, reason: 'store_connection_limit_reached' as const, remaining: 0 as const }
+  }
+
+  const [storeConnectionCount] = await database
+    .select({ count: count() })
+    .from(storeConnections)
+    .where(eq(storeConnections.organizationId, organizationId))
+
+  return canCreateStoreConnection(
+    {
+      deploymentMode: serverConfig.deploymentMode,
+      planName: organization.planName,
+      overrides: organization.billingOverrides,
+    },
+    (storeConnectionCount?.count ?? 0) + requestedCount - 1,
+  )
+}
+
+async function selectBillingOrganization(organizationId: string) {
+  return database.query.organization.findFirst({
+    columns: { planName: true, billingOverrides: true },
+    where: eq(organizationTable.id, organizationId),
+  })
 }
 
 async function upsertStoreConnection(

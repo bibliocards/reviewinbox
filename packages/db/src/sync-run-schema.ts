@@ -4,7 +4,7 @@ import { apps } from './app-schema'
 import { organization } from './auth-schema'
 import { storeConnections } from './store-schema'
 
-export const syncRunStatusEnum = pgEnum('sync_run_status', ['pending', 'running', 'succeeded', 'failed'])
+export const syncRunStatusEnum = pgEnum('sync_run_status', ['pending', 'running', 'succeeded', 'partial', 'failed'])
 
 export const syncRuns = pgTable(
   'sync_runs',

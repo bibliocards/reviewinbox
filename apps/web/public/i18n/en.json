@@ -35,6 +35,7 @@
       "sync": {
         "action": "Sync",
         "succeeded": "Sync finished: {{fetchedCount}} Reviews fetched, {{storedCount}} stored.",
+        "partial": "Sync stopped after reaching a usage limit.",
         "failed": "We could not sync Reviews yet.",
         "errors": {
           "appleAuthFailed": "The Apple Store Credential is invalid.",
@@ -51,6 +52,7 @@
           "invalidGoogleCredentialFormat": "The saved Google Play Store Credential is invalid.",
           "missingCredential": "This Store Connection has no Store Credential.",
           "missingExternalAppId": "This Store Connection has no App Store app id.",
+          "monthlyReviewImportCapReached": "Monthly Review import limit reached.",
           "storeConnectionDisabled": "This Store Connection is disabled.",
           "unsupportedStoreProvider": "This Store Connection does not support this sync."
         }

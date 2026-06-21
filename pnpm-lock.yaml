@@ -177,6 +177,8 @@ importers:
 
   packages/ai: {}
 
+  packages/billing: {}
+
   packages/config: {}
 
   packages/contracts: {}

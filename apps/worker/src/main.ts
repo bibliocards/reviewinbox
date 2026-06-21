@@ -1,10 +1,11 @@
 import { generateReplyDraft } from '@reviewinbox/ai'
+import { getPlanDefinition } from '@reviewinbox/billing'
 import { getNextAutoSyncWindowStartsAt, loadAiConfig, loadServerConfig } from '@reviewinbox/config'
-import { closeDatabase, createDatabase, runDatabaseMigrations, storeConnections, storeCredentials } from '@reviewinbox/db'
+import { closeDatabase, createDatabase, organization, runDatabaseMigrations, storeConnections, storeCredentials, syncRuns } from '@reviewinbox/db'
 import { createQueueClient } from '@reviewinbox/queue'
 import { generateReplyDraftForReview } from '@reviewinbox/reply-drafts'
 import { syncReviewsForStoreConnection } from '@reviewinbox/sync'
-import { asc, eq } from 'drizzle-orm'
+import { and, asc, desc, eq } from 'drizzle-orm'
 
 import { createWorkerReplyDraftProvider } from './ai-provider'
 
@@ -30,6 +31,7 @@ async function main() {
   await queue.start()
   let autoSyncTimer: ReturnType<typeof setTimeout> | null = null
   const replyDraftProvider = createWorkerReplyDraftProvider(aiConfig)
+  const replyDraftProviderKind = aiConfig.provider === 'managed' || aiConfig.provider === 'openai-compatible' ? aiConfig.provider : null
 
   await queue.workSyncStoreConnection(async (job) => {
     console.info('ReviewInbox worker processing Store Connection sync job', {
@@ -42,9 +44,10 @@ async function main() {
       database,
       organizationId: job.payload.organizationId,
       storeConnectionId: job.payload.storeConnectionId,
+      deploymentMode: config.deploymentMode,
     })
 
-    if (syncRun.status === 'succeeded' && replyDraftProvider) {
+    if ((syncRun.status === 'succeeded' || syncRun.status === 'partial') && replyDraftProvider) {
       await enqueueGenerateReplyDraftJobs({
         organizationId: syncRun.organizationId,
         reviewIds: syncRun.newReviewIds,
@@ -71,6 +74,8 @@ async function main() {
         database,
         organizationId: job.payload.organizationId,
         reviewId: job.payload.reviewId,
+        deploymentMode: config.deploymentMode,
+        aiProvider: replyDraftProviderKind ?? 'openai-compatible',
         generateDraft: (draftInput) => generateReplyDraft(draftInput, { provider: replyDraftProvider }),
       })
 
@@ -155,6 +160,11 @@ async function main() {
 
     const spreadMs = config.autoSyncReviewsSpreadWindowMinutes * 60 * 1000
     for (const [index, connection] of connections.entries()) {
+      const shouldSync = await shouldAutoSyncStoreConnection(connection.organizationId, connection.storeConnectionId, windowStartsAt)
+      if (!shouldSync) {
+        continue
+      }
+
       const delayMs = connections.length <= 1 ? 0 : Math.floor((spreadMs * index) / connections.length)
       await queue.enqueueSyncStoreConnection(
         {
@@ -171,6 +181,30 @@ async function main() {
       storeConnectionCount: connections.length,
       spreadWindowMinutes: config.autoSyncReviewsSpreadWindowMinutes,
     })
+  }
+
+  async function shouldAutoSyncStoreConnection(organizationId: string, storeConnectionId: string, windowStartsAt: Date): Promise<boolean> {
+    if (config.deploymentMode !== 'cloud') {
+      return true
+    }
+
+    const billingOrganization = await database.query.organization.findFirst({
+      columns: { planName: true },
+      where: eq(organization.id, organizationId),
+    })
+    if (!billingOrganization) {
+      return false
+    }
+
+    const intervalMs = getPlanDefinition(billingOrganization.planName).autoSyncIntervalHours * 60 * 60 * 1000
+    const lastRun = await database.query.syncRuns.findFirst({
+      columns: { startedAt: true, createdAt: true },
+      where: and(eq(syncRuns.storeConnectionId, storeConnectionId), eq(syncRuns.organizationId, organizationId)),
+      orderBy: [desc(syncRuns.startedAt), desc(syncRuns.createdAt)],
+    })
+    const lastRunAt = lastRun?.startedAt ?? lastRun?.createdAt
+
+    return !lastRunAt || windowStartsAt.getTime() - lastRunAt.getTime() >= intervalMs
   }
 }
 

@@ -18,6 +18,7 @@ import {
   reviews,
   storeConnections,
   storeCredentials,
+  usageEvents,
   user,
 } from '@reviewinbox/db'
 import { decryptStoreCredentialPlaintext, parseAppleCredentialPlaintext, parseGooglePlayCredentialPlaintext } from '@reviewinbox/sync'
@@ -475,6 +476,12 @@ async function publishReply(input: {
       .set({ replyStatus: 'published', updatedAt: new Date() })
       .where(and(eq(reviews.id, latestRow.review.id), eq(reviews.organizationId, input.organizationId), eq(reviews.replyStatus, 'drafted')))
     await insertAuditEvent(transaction, latestRow.review, input.actorUserId, 'published', { externalReplyId: publish.externalReplyId })
+    await transaction.insert(usageEvents).values({
+      organizationId: latestRow.review.organizationId,
+      type: 'published_reply_created',
+      quantity: 1,
+      occurredAt: new Date(),
+    })
 
     return { ok: true }
   })

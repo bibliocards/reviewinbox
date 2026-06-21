@@ -60,6 +60,8 @@ export function getSafeSyncErrorMessage(errorCode: string) {
       return 'Store Connection is disabled.'
     case 'unsupported_store_provider':
       return 'Store Connection provider is not supported by this sync.'
+    case 'monthly_review_import_cap_reached':
+      return 'Monthly Review import limit reached.'
     default:
       return 'Review sync failed.'
   }

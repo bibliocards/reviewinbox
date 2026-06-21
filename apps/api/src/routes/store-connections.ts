@@ -1,4 +1,5 @@
 import { loadEncryptionConfig } from '@reviewinbox/config'
+import { canCreateStoreConnection, getPlanDefinition } from '@reviewinbox/billing'
 import {
   createStoreConnectionRequestSchema,
   listStoreConnectionsResponseSchema,
@@ -9,14 +10,14 @@ import {
   updateStoreConnectionRequestSchema,
 } from '@reviewinbox/contracts'
 import { decodeStoreCredentialEncryptionKey, encryptStoreCredential } from '@reviewinbox/core'
-import { apps, storeConnections, storeCredentials } from '@reviewinbox/db'
+import { apps, organization as organizationTable, storeConnections, storeCredentials } from '@reviewinbox/db'
 import {
   SyncStoreConnectionNotFoundError,
   syncReviewsForStoreConnection,
   verifyAppleStoreCredentialForApp,
   verifyGooglePlayStoreCredentialForApp,
 } from '@reviewinbox/sync'
-import { and, eq } from 'drizzle-orm'
+import { and, count, eq } from 'drizzle-orm'
 import type { Context } from 'hono'
 import { Hono } from 'hono'
 
@@ -25,7 +26,7 @@ import {
   requireActiveOrganizationOwnerSession,
   requireActiveOrganizationSession,
 } from '../auth/session'
-import { database } from '../db'
+import { database, serverConfig } from '../db'
 import { parseJsonBody, parseUuidParam } from '../http/validation'
 import { enqueueGenerateReplyDraftJobs } from '../queue'
 
@@ -55,6 +56,14 @@ storeConnectionsRoutes.post('/api/apps/:appId/store-connections', async (context
   const bodyResult = await parseJsonBody(context, createStoreConnectionRequestSchema)
   if (!bodyResult.ok) {
     return bodyResult.response
+  }
+
+  const storeConnectionLimitDecision = await canCreateStoreConnectionForOrganization(appResult.organizationId)
+  if (!storeConnectionLimitDecision.allowed) {
+    return context.json(
+      { error: 'Organization Store Connection limit reached.', errorCode: storeConnectionLimitDecision.reason },
+      403,
+    )
   }
 
   const [created] = await database
@@ -218,14 +227,26 @@ storeConnectionsRoutes.post('/api/store-connections/:storeConnectionId/sync-revi
     return storeConnectionIdResult.response
   }
 
+  if (serverConfig.deploymentMode === 'cloud') {
+    const organization = await database.query.organization.findFirst({
+      columns: { planName: true },
+      where: eq(organizationTable.id, sessionResult.session.organizationId),
+    })
+
+    if (!organization || !getPlanDefinition(organization.planName).allowManualSync) {
+      return context.json({ error: 'Manual sync is not available on this plan.', errorCode: 'manual_sync_not_available' }, 403)
+    }
+  }
+
   try {
     const syncRun = await syncReviewsForStoreConnection({
       database,
       organizationId: sessionResult.session.organizationId,
       storeConnectionId: storeConnectionIdResult.data,
+      deploymentMode: serverConfig.deploymentMode,
     })
 
-    if (syncRun.status === 'succeeded') {
+    if (syncRun.status === 'succeeded' || syncRun.status === 'partial') {
       try {
         await enqueueGenerateReplyDraftJobs({
           organizationId: syncRun.organizationId,
@@ -350,6 +371,30 @@ function toStoreConnectionResponse(row: { connection: StoreConnectionRow; creden
       keyId: row.credential?.keyId ?? null,
     },
   }
+}
+
+async function canCreateStoreConnectionForOrganization(organizationId: string) {
+  const organization = await database.query.organization.findFirst({
+    columns: { planName: true, billingOverrides: true },
+    where: eq(organizationTable.id, organizationId),
+  })
+  if (!organization) {
+    return { allowed: false as const, reason: 'store_connection_limit_reached' as const, remaining: 0 as const }
+  }
+
+  const [storeConnectionCount] = await database
+    .select({ count: count() })
+    .from(storeConnections)
+    .where(eq(storeConnections.organizationId, organizationId))
+
+  return canCreateStoreConnection(
+    {
+      deploymentMode: serverConfig.deploymentMode,
+      planName: organization.planName,
+      overrides: organization.billingOverrides,
+    },
+    storeConnectionCount?.count ?? 0,
+  )
 }
 
 function serializeErrorForLog(error: unknown): { name: string; message: string } {

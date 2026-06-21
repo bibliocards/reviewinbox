@@ -13,6 +13,6 @@ export class OrganizationPageComponent {
   protected readonly tabs = computed(() => [
     { label: 'Profile', route: 'profile' },
     { label: 'Members', route: 'members' },
-    { label: 'Billing', route: 'billing', visible: this.capabilities.isCloud },
+    { label: 'Usage', route: 'usage', visible: this.capabilities.isCloud },
   ])
 }

@@ -1,5 +1,19 @@
 import { relations } from 'drizzle-orm'
-import { bigint, boolean, index, integer, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
+import { bigint, boolean, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
+
+type OrganizationPlanName = 'free' | 'starter' | 'pro' | 'business'
+type OrganizationBillingOverrides = Partial<{
+  includedMembers: number
+  memberLimit: number
+  includedApps: number
+  appLimit: number
+  includedStoreConnections: number
+  storeConnectionLimit: number
+  includedMonthlyReviewImports: number
+  monthlyReviewImportCap: number
+  includedMonthlyManagedAiReplyDrafts: number
+  monthlyManagedAiReplyDraftCap: number
+}>
 
 export const user = pgTable('user', {
   id: text('id').primaryKey(),
@@ -81,6 +95,8 @@ export const organization = pgTable(
     name: text('name').notNull(),
     slug: text('slug').notNull().unique(),
     logo: text('logo'),
+    planName: text('plan_name').$type<OrganizationPlanName>().default('free').notNull(),
+    billingOverrides: jsonb('billing_overrides').$type<OrganizationBillingOverrides>().default({}).notNull(),
     createdAt: timestamp('created_at').notNull(),
     metadata: text('metadata'),
   },

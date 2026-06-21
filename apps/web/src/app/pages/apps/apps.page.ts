@@ -220,6 +220,10 @@ export class AppsPageComponent {
       return 'apps.list.sync.succeeded'
     }
 
+    if (syncRun.status === 'partial') {
+      return syncRunErrorMessageKeys[syncRun.errorCode ?? ''] ?? 'apps.list.sync.partial'
+    }
+
     return syncRunErrorMessageKeys[syncRun.errorCode ?? ''] ?? 'apps.list.sync.failed'
   }
 
@@ -306,6 +310,7 @@ const syncRunErrorMessageKeys: Record<string, string> = {
   invalid_google_credential_format: 'apps.list.sync.errors.invalidGoogleCredentialFormat',
   missing_credential: 'apps.list.sync.errors.missingCredential',
   missing_external_app_id: 'apps.list.sync.errors.missingExternalAppId',
+  monthly_review_import_cap_reached: 'apps.list.sync.errors.monthlyReviewImportCapReached',
   store_connection_disabled: 'apps.list.sync.errors.storeConnectionDisabled',
   unsupported_store_provider: 'apps.list.sync.errors.unsupportedStoreProvider',
 }

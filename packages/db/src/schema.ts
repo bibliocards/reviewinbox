@@ -1,5 +1,6 @@
 export * from './app-schema'
 export * from './auth-schema'
+export * from './billing-schema'
 export * from './relations-schema'
 export * from './reply-draft-schema'
 export * from './reply-publishing-schema'

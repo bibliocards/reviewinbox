@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http'
 import { Injectable, inject } from '@angular/core'
-import type { DeleteOrganizationResponse, OrganizationProfileResponse } from '@reviewinbox/contracts'
+import type { DeleteOrganizationResponse, OrganizationProfileResponse, OrganizationUsageResponse } from '@reviewinbox/contracts'
 import type { Observable } from 'rxjs'
 import { environment } from '../../../environments/environment'
 import { resolveOptionalString } from '../../../environments/environment.model'
@@ -12,6 +12,10 @@ export class OrganizationProfileService {
 
   getProfile(): Observable<OrganizationProfileResponse> {
     return this.http.get<OrganizationProfileResponse>(`${this.apiUrl}/api/organization/profile`)
+  }
+
+  getUsage(): Observable<OrganizationUsageResponse> {
+    return this.http.get<OrganizationUsageResponse>(`${this.apiUrl}/api/organization/usage`)
   }
 
   updateProfile(input: { name: string }): Observable<OrganizationProfileResponse> {

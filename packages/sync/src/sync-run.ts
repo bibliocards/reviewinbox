@@ -1,6 +1,7 @@
-import { type Database, storeConnections, storeCredentials, syncRuns } from '@reviewinbox/db'
+import { getMonthlyUsagePeriod } from '@reviewinbox/billing'
+import { type Database, organization, storeConnections, storeCredentials, syncRuns, usageEvents } from '@reviewinbox/db'
 import { AppleStoreAdapterError, GooglePlayStoreAdapterError } from '@reviewinbox/store-adapters'
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, gte, lt, sql } from 'drizzle-orm'
 
 import { decryptStoreCredentialPlaintext } from './credentials'
 import { syncAppleReviews, syncGoogleReviews } from './provider-sync'
@@ -14,6 +15,7 @@ export type SyncReviewsForStoreConnectionInput = {
   database: Database
   organizationId: string
   storeConnectionId: string
+  deploymentMode: 'self-hosted' | 'cloud'
   maxPages?: number
 }
 
@@ -81,6 +83,26 @@ export async function syncReviewsForStoreConnection(input: SyncReviewsForStoreCo
             ...(input.maxPages !== undefined ? { maxPages: input.maxPages } : {}),
           })
 
+    const usagePeriod = getMonthlyUsagePeriod()
+    const billingOrganization = await input.database.query.organization.findFirst({
+      columns: { planName: true, billingOverrides: true },
+      where: eq(organization.id, scoped.connection.organizationId),
+    })
+    if (!billingOrganization) {
+      return await failSyncRun(input.database, createdRun.id, 'organization_not_found')
+    }
+    const [monthlyReviewImports] = await input.database
+      .select({ quantity: sql<number>`coalesce(sum(${usageEvents.quantity}), 0)::int` })
+      .from(usageEvents)
+      .where(
+        and(
+          eq(usageEvents.organizationId, scoped.connection.organizationId),
+          eq(usageEvents.type, 'review_imported'),
+          gte(usageEvents.occurredAt, usagePeriod.startsAt),
+          lt(usageEvents.occurredAt, usagePeriod.endsAt),
+        ),
+      )
+
     const storedReviews = await storeSyncedReviews(
       input.database,
       {
@@ -89,15 +111,25 @@ export async function syncReviewsForStoreConnection(input: SyncReviewsForStoreCo
         storeConnectionId: scoped.connection.id,
       },
       result.reviews,
+      {
+        context: {
+          deploymentMode: input.deploymentMode,
+          planName: billingOrganization.planName,
+          overrides: billingOrganization.billingOverrides,
+        },
+        monthlyImportedReviewCount: monthlyReviewImports?.quantity ?? 0,
+      },
     )
 
     const [updatedRun] = await input.database
       .update(syncRuns)
       .set({
-        status: 'succeeded',
+        status: storedReviews.limitReached ? 'partial' : 'succeeded',
         finishedAt: new Date(),
         fetchedCount: result.reviews.length,
         storedCount: storedReviews.storedCount,
+        errorCode: storedReviews.limitReached ? 'monthly_review_import_cap_reached' : null,
+        errorMessage: storedReviews.limitReached ? getSafeSyncErrorMessage('monthly_review_import_cap_reached') : null,
         checkpoint: result.checkpoint,
       })
       .where(eq(syncRuns.id, createdRun.id))

@@ -1,11 +1,13 @@
 import {
   deleteOrganizationRequestSchema,
   deleteOrganizationResponseSchema,
+  organizationUsageResponseSchema,
   organizationProfileResponseSchema,
   updateOrganizationProfileRequestSchema,
 } from '@reviewinbox/contracts'
-import { member, organization as organizationTable } from '@reviewinbox/db'
-import { and, eq, ne } from 'drizzle-orm'
+import { getEffectiveOrganizationLimits, getMonthlyUsagePeriod, getUsagePercent, getUsageSeverity } from '@reviewinbox/billing'
+import { apps, member, organization as organizationTable, storeConnections, usageEvents } from '@reviewinbox/db'
+import { and, count, eq, gte, lt, ne, sql } from 'drizzle-orm'
 import { Hono } from 'hono'
 
 import { requireActiveOrganizationManagerSession, requireActiveOrganizationOwnerSession } from '../auth/session'
@@ -46,6 +48,70 @@ organizationProfileRoutes.get('/api/organization/profile', async (context) => {
       role: sessionResult.session.role,
       canDelete: sessionResult.session.role === 'owner',
       deletionAvailable: serverConfig.deploymentMode === 'cloud',
+    }),
+  )
+})
+
+organizationProfileRoutes.get('/api/organization/usage', async (context) => {
+  const sessionResult = await requireActiveOrganizationManagerSession(context)
+  if (!sessionResult.ok) {
+    return sessionResult.response
+  }
+
+  const organization = await database.query.organization.findFirst({
+    columns: { id: true, planName: true, billingOverrides: true },
+    where: eq(organizationTable.id, sessionResult.session.organizationId),
+  })
+
+  if (!organization) {
+    return context.json({ error: 'Organization not found.' }, 404)
+  }
+
+  const period = getMonthlyUsagePeriod()
+  const limits = getEffectiveOrganizationLimits(organization.planName, organization.billingOverrides)
+
+  const [[memberCount], [appCount], [storeConnectionCount], [monthlyReviewImports], [monthlyManagedAiReplyDrafts]] = await Promise.all([
+    database.select({ count: count() }).from(member).where(eq(member.organizationId, organization.id)),
+    database.select({ count: count() }).from(apps).where(eq(apps.organizationId, organization.id)),
+    database.select({ count: count() }).from(storeConnections).where(eq(storeConnections.organizationId, organization.id)),
+    selectUsageQuantity(organization.id, 'review_imported', period.startsAt, period.endsAt),
+    selectUsageQuantity(organization.id, 'managed_ai_reply_draft_generated', period.startsAt, period.endsAt),
+  ])
+
+  const limitsEnforced = serverConfig.deploymentMode === 'cloud'
+
+  return context.json(
+    organizationUsageResponseSchema.parse({
+      deploymentMode: serverConfig.deploymentMode,
+      planName: organization.planName,
+      limitsEnforced,
+      usagePeriod: {
+        key: period.key,
+        startsAt: period.startsAt.toISOString(),
+        endsAt: period.endsAt.toISOString(),
+      },
+      usage: {
+        members: toUsageItem(memberCount?.count ?? 0, limits.includedMembers, limits.memberLimit, limitsEnforced),
+        apps: toUsageItem(appCount?.count ?? 0, limits.includedApps, limits.appLimit, limitsEnforced),
+        storeConnections: toUsageItem(
+          storeConnectionCount?.count ?? 0,
+          limits.includedStoreConnections,
+          limits.storeConnectionLimit,
+          limitsEnforced,
+        ),
+        monthlyReviewImports: toUsageItem(
+          monthlyReviewImports?.quantity ?? 0,
+          limits.includedMonthlyReviewImports,
+          limits.monthlyReviewImportCap,
+          limitsEnforced,
+        ),
+        monthlyManagedAiReplyDrafts: toUsageItem(
+          monthlyManagedAiReplyDrafts?.quantity ?? 0,
+          limits.includedMonthlyManagedAiReplyDrafts,
+          limits.monthlyManagedAiReplyDraftCap,
+          limitsEnforced,
+        ),
+      },
     }),
   )
 })
@@ -197,5 +263,39 @@ async function deleteLogoBestEffort(logo: string | null | undefined): Promise<vo
     await logoStorage.deleteByUrl(logo)
   } catch (error) {
     console.warn('Unable to delete Organization logo from storage.', error)
+  }
+}
+
+function selectUsageQuantity(organizationId: string, type: typeof usageEvents.$inferSelect.type, startsAt: Date, endsAt: Date) {
+  return database
+    .select({ quantity: sql<number>`coalesce(sum(${usageEvents.quantity}), 0)::int` })
+    .from(usageEvents)
+    .where(
+      and(
+        eq(usageEvents.organizationId, organizationId),
+        eq(usageEvents.type, type),
+        gte(usageEvents.occurredAt, startsAt),
+        lt(usageEvents.occurredAt, endsAt),
+      ),
+    )
+}
+
+function toUsageItem(used: number, included: number, limit: number, limitsEnforced: boolean) {
+  if (!limitsEnforced) {
+    return {
+      used,
+      included,
+      limit: null,
+      percent: null,
+      severity: null,
+    }
+  }
+
+  return {
+    used,
+    included,
+    limit,
+    percent: getUsagePercent(used, limit),
+    severity: getUsageSeverity(used, limit),
   }
 }

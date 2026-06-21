@@ -15,6 +15,7 @@
     "forceConsistentCasingInFileNames": true,
     "paths": {
       "@reviewinbox/ai": ["packages/ai/src/index.ts"],
+      "@reviewinbox/billing": ["packages/billing/src/index.ts"],
       "@reviewinbox/config": ["packages/config/src/index.ts"],
       "@reviewinbox/contracts": ["packages/contracts/src/index.ts"],
       "@reviewinbox/core": ["packages/core/src/index.ts"],

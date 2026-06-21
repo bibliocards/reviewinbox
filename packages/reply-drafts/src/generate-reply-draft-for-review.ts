@@ -1,7 +1,8 @@
 import type { GenerateReplyDraftInput, GenerateReplyDraftResult } from '@reviewinbox/ai'
 import { AiDraftingError } from '@reviewinbox/ai'
-import { apps, type Database, replyDrafts, reviews, storeConnections } from '@reviewinbox/db'
-import { and, eq, inArray } from 'drizzle-orm'
+import { canGenerateManagedAiReplyDraft, getMonthlyUsagePeriod } from '@reviewinbox/billing'
+import { apps, type Database, organization, replyDrafts, reviews, storeConnections, usageEvents } from '@reviewinbox/db'
+import { and, eq, gte, inArray, lt, sql } from 'drizzle-orm'
 
 export type DraftGenerator = (input: GenerateReplyDraftInput) => Promise<GenerateReplyDraftResult>
 
@@ -10,6 +11,8 @@ export type GenerateReplyDraftForReviewInput = {
   organizationId: string
   reviewId: string
   generateDraft: DraftGenerator
+  deploymentMode: 'self-hosted' | 'cloud'
+  aiProvider: 'managed' | 'openai-compatible'
 }
 
 export type GenerateReplyDraftForReviewResult =
@@ -24,6 +27,7 @@ export type GenerateReplyDraftForReviewResult =
         | 'not_draftable'
         | 'draft_exists'
         | 'store_connection_disabled'
+        | 'monthly_managed_ai_reply_draft_cap_reached'
     }
 
 const draftableStatuses = ['pending', 'failed'] as const
@@ -40,6 +44,13 @@ export async function generateReplyDraftForReview(input: GenerateReplyDraftForRe
     return { status: 'skipped', reason: skipReason }
   }
 
+  if (input.aiProvider === 'managed') {
+    const decision = await canGenerateManagedAiReplyDraftForOrganization(input)
+    if (!decision.allowed) {
+      return { status: 'skipped', reason: 'monthly_managed_ai_reply_draft_cap_reached' }
+    }
+  }
+
   try {
     const generated = await input.generateDraft({
       reviewText: draftableReview.review.body,
@@ -53,7 +64,7 @@ export async function generateReplyDraftForReview(input: GenerateReplyDraftForRe
       storeLocale: draftableReview.review.locale ?? draftableReview.review.language,
     })
 
-    return storeGeneratedDraft(input.database, draftableReview, generated)
+    return storeGeneratedDraft(input.database, draftableReview, generated, input.aiProvider)
   } catch (error) {
     const errorCode = error instanceof AiDraftingError ? error.code : 'unknown'
     await recordDraftFailure(input.database, input.organizationId, input.reviewId, errorCode)
@@ -112,6 +123,7 @@ async function storeGeneratedDraft(
   database: Database,
   row: DraftableReview,
   generated: GenerateReplyDraftResult,
+  aiProvider: GenerateReplyDraftForReviewInput['aiProvider'],
 ): Promise<GenerateReplyDraftForReviewResult> {
   return database.transaction(async (transaction) => {
     const [latest] = await transaction
@@ -186,8 +198,49 @@ async function storeGeneratedDraft(
       return { status: 'skipped', reason: 'draft_exists' }
     }
 
+    if (aiProvider === 'managed') {
+      await transaction.insert(usageEvents).values({
+        organizationId: updatedReview.organizationId,
+        type: 'managed_ai_reply_draft_generated',
+        quantity: 1,
+        occurredAt: new Date(),
+      })
+    }
+
     return { status: 'drafted', replyDraftId: created.id }
   })
+}
+
+async function canGenerateManagedAiReplyDraftForOrganization(input: GenerateReplyDraftForReviewInput) {
+  const billingOrganization = await input.database.query.organization.findFirst({
+    columns: { planName: true, billingOverrides: true },
+    where: eq(organization.id, input.organizationId),
+  })
+  if (!billingOrganization) {
+    return { allowed: false as const, reason: 'monthly_managed_ai_reply_draft_cap_reached' as const, remaining: 0 as const }
+  }
+
+  const usagePeriod = getMonthlyUsagePeriod()
+  const [monthlyManagedAiReplyDrafts] = await input.database
+    .select({ quantity: sql<number>`coalesce(sum(${usageEvents.quantity}), 0)::int` })
+    .from(usageEvents)
+    .where(
+      and(
+        eq(usageEvents.organizationId, input.organizationId),
+        eq(usageEvents.type, 'managed_ai_reply_draft_generated'),
+        gte(usageEvents.occurredAt, usagePeriod.startsAt),
+        lt(usageEvents.occurredAt, usagePeriod.endsAt),
+      ),
+    )
+
+  return canGenerateManagedAiReplyDraft(
+    {
+      deploymentMode: input.deploymentMode,
+      planName: billingOrganization.planName,
+      overrides: billingOrganization.billingOverrides,
+    },
+    monthlyManagedAiReplyDrafts?.quantity ?? 0,
+  )
 }
 
 async function recordDraftFailure(database: Database, organizationId: string, reviewId: string, errorCode: string): Promise<void> {

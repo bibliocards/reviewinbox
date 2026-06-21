@@ -1,0 +1,34 @@
+{
+  "name": "billing",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "packages/billing/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "swc packages/billing/src -d dist/packages/billing --strip-leading-paths"
+      },
+      "outputs": ["{workspaceRoot}/dist/packages/billing"]
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p packages/billing/tsconfig.lib.json --noEmit"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run packages/billing/src --passWithNoTests"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "biome lint packages/billing"
+      }
+    }
+  },
+  "tags": ["scope:shared", "type:billing"]
+}

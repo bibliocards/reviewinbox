@@ -2,6 +2,7 @@ import { relations } from 'drizzle-orm'
 
 import { apps } from './app-schema'
 import { organization } from './auth-schema'
+import { usageEvents } from './billing-schema'
 import { replyDrafts } from './reply-draft-schema'
 import { publishedReplies, replyAuditEvents } from './reply-publishing-schema'
 import { reviews } from './review-schema'
@@ -19,6 +20,13 @@ export const appRelations = relations(apps, ({ one, many }) => ({
   publishedReplies: many(publishedReplies),
   replyAuditEvents: many(replyAuditEvents),
   syncRuns: many(syncRuns),
+}))
+
+export const usageEventRelations = relations(usageEvents, ({ one }) => ({
+  organization: one(organization, {
+    fields: [usageEvents.organizationId],
+    references: [organization.id],
+  }),
 }))
 
 export const storeConnectionRelations = relations(storeConnections, ({ one, many }) => ({

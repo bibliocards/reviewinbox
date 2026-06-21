@@ -5,7 +5,7 @@ export type SyncRunResult = {
   organizationId: string
   appId: string
   storeConnectionId: string
-  status: 'pending' | 'running' | 'succeeded' | 'failed'
+  status: 'pending' | 'running' | 'succeeded' | 'partial' | 'failed'
   startedAt: string | null
   finishedAt: string | null
   fetchedCount: number

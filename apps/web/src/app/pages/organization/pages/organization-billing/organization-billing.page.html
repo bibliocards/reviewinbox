@@ -1,0 +1,66 @@
+<section class="grid gap-5">
+  <div class="rounded-2xl border border-hairline bg-surface-1 p-5">
+    <h2 class="m-0 mt-3 text-lg font-semibold text-ink">Usage and limits</h2>
+    @if (usage()?.limitsEnforced) {
+    <p class="m-0 mt-2 text-sm text-ink-subtle">
+      Current monthly period: {{ usage()?.usagePeriod?.startsAt | date: 'mediumDate' }} to
+      {{ usage()?.usagePeriod?.endsAt | date: 'mediumDate' }}.
+    </p>
+    } @else {
+    <p class="m-0 mt-2 text-sm text-ink-subtle">
+      Usage is recorded for visibility. Billing limits are not enforced on this self-hosted deployment.
+    </p>
+    }
+  </div>
+  @if (isLoading()) {
+  <div
+    class="rounded-2xl border border-hairline bg-surface-1 p-5 text-sm text-ink-subtle"
+    role="status"
+    aria-busy="true">
+    Loading usage...
+  </div>
+  } @else if (errorMessage()) {
+  <div
+    class="flex flex-col gap-3 rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-sm text-red-700"
+    role="alert">
+    <span>{{ errorMessage() }}</span>
+    <button
+      class="w-fit rounded-lg border border-red-500/30 px-3 py-2 font-semibold"
+      type="button"
+      (click)="loadUsage()">
+      Try again
+    </button>
+  </div>
+  } @else {
+  <div class="grid gap-4 lg:grid-cols-2">
+    @for (item of usageItems(); track item.key) {
+    <article class="rounded-2xl border border-hairline bg-surface-1 p-5 shadow-sm">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 class="m-0 text-base font-semibold text-ink">{{ item.label }}</h3>
+          <p class="m-0 mt-1 text-sm text-ink-subtle">{{ item.description }}</p>
+        </div>
+        <span
+          class="rounded-full px-2.5 py-1 text-xs font-semibold"
+          [class]="badgeClass(item.usage)">
+          {{ usageLabel(item.usage) }}{{ statusLabel(item.usage) }}
+        </span>
+      </div>
+      @if (item.usage.percent !== null) {
+      <p-meterGroup
+        class="mt-4"
+        [value]="meterValue(item.usage)"
+        [attr.aria-label]="meterAriaLabel(item.label, item.usage)" />
+      <p class="m-0 mt-3 text-xs text-ink-tertiary">
+        {{ item.usage.used }}
+        of {{ item.usage.limit }} used. Included: {{ item.usage.included }}.
+      </p>
+      } @else {
+      <p class="m-0 mt-4 text-sm font-medium text-ink">{{ item.usage.used }} used</p>
+      <p class="m-0 mt-2 text-xs text-ink-tertiary">No limit enforced in self-hosted mode.</p>
+      }
+    </article>
+    }
+  </div>
+  }
+</section>

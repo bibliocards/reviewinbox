@@ -75,7 +75,7 @@ export type StoreCredentialResponse = z.infer<typeof storeCredentialResponseSche
 export const replyStatusSchema = z.enum(['pending', 'drafted', 'published', 'ignored', 'failed'])
 export type ReplyStatus = z.infer<typeof replyStatusSchema>
 
-export const syncRunStatusSchema = z.enum(['pending', 'running', 'succeeded', 'failed'])
+export const syncRunStatusSchema = z.enum(['pending', 'running', 'succeeded', 'partial', 'failed'])
 export type SyncRunStatus = z.infer<typeof syncRunStatusSchema>
 
 export const syncRunResponseSchema = z.object({
