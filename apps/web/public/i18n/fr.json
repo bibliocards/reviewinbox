@@ -181,6 +181,8 @@
       "manualDescription": "Rédigez la reply, puis enregistrez-la comme Reply Draft ou publiez-la immédiatement.",
       "editDescription": "Ajustez le Reply Draft enregistré, puis sauvegardez-le ou publiez la version modifiée.",
       "replyDraft": "Reply Draft",
+      "placeholder": "Merci pour votre review...",
+      "help": "Gardez un ton utile et spécifique. La reply doit contenir du texte avant d’être enregistrée ou publiée.",
       "cancel": "Annuler"
     },
     "messages": {

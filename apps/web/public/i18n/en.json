@@ -181,6 +181,8 @@
       "manualDescription": "Write the reply text, then save it as a Reply Draft or publish it immediately.",
       "editDescription": "Adjust the saved Reply Draft, then save it or publish the edited version.",
       "replyDraft": "Reply Draft",
+      "placeholder": "Thank you for your review...",
+      "help": "Keep the tone helpful and specific. The reply must contain text before it can be saved or published.",
       "cancel": "Cancel"
     },
     "messages": {

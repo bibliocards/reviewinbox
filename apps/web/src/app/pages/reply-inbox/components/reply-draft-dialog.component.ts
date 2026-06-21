@@ -42,4 +42,8 @@ export class ReplyDraftDialogComponent {
 
     this.ref.close({ action, draftText: this.draftForm().value().draftText.trim() })
   }
+
+  protected cancel(): void {
+    this.ref.close()
+  }
 }
