@@ -47,11 +47,10 @@ export class AppsPageComponent {
   protected readonly syncRunByStoreConnectionId = signal<Record<string, SyncRunResponse>>({})
   protected readonly queueingReplyDraftsAppId = signal<string | null>(null)
   protected readonly replyDraftQueueMessageByAppId = signal<Record<string, ReplyDraftQueueMessage>>({})
-  protected readonly canDeleteApps = computed(() => {
+  protected readonly canManageApps = computed(() => {
     const role = this.roleLabel(this.activeMemberRole()).toLowerCase()
     return ['owner', 'admin'].includes(role)
   })
-  protected readonly canQueueReplyDrafts = this.canDeleteApps
 
   constructor() {
     this.organizationService.getActiveMember().subscribe({
