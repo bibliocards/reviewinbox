@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http'
+import { HttpClient, httpResource } from '@angular/common/http'
 import { Injectable, inject } from '@angular/core'
 import type { DeleteOrganizationResponse, OrganizationProfileResponse, OrganizationUsageResponse } from '@reviewinbox/contracts'
 import type { Observable } from 'rxjs'
@@ -16,6 +16,10 @@ export class OrganizationProfileService {
 
   getUsage(): Observable<OrganizationUsageResponse> {
     return this.http.get<OrganizationUsageResponse>(`${this.apiUrl}/api/organization/usage`)
+  }
+
+  usageResource() {
+    return httpResource<OrganizationUsageResponse>(() => `${this.apiUrl}/api/organization/usage`)
   }
 
   updateProfile(input: { name: string }): Observable<OrganizationProfileResponse> {

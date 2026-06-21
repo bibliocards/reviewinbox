@@ -4,6 +4,7 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
 import type {
   AppListItemResponse,
   ConnectAppResponse,
+  OrganizationUsageResponse,
   StoreConnectionResponse,
   StoreProvider,
   SyncRunResponse,
@@ -19,6 +20,7 @@ import { ConnectAppDialogComponent } from '../../shared/components/connect-app-d
 import { TypedTemplateDirective } from '../../shared/directives/typed-template.directive'
 import { AppIconsService } from '../../shared/services/app-icons.service'
 import { AppsService } from '../../shared/services/apps.service'
+import { OrganizationProfileService } from '../../shared/services/organization-profile.service'
 
 type ReplyDraftQueueMessage = {
   key: string
@@ -36,9 +38,11 @@ export class AppsPageComponent {
   private readonly dialogService = inject(DialogService)
   private readonly transloco = inject(TranslocoService)
   private readonly organizationService = inject(OrganizationService)
+  private readonly organizationProfile = inject(OrganizationProfileService)
   private readonly appIcons = inject(AppIconsService)
 
   protected readonly appsResource = this.appsService.appsResource()
+  protected readonly organizationUsageResource = this.organizationProfile.usageResource()
   protected readonly apps = computed(() => this.appsResource.value().apps)
   protected readonly errorMessage = computed(() => this.appsResource.error())
   protected readonly successAppName = signal<string | null>(history.state?.appCreated ?? null)
@@ -52,6 +56,7 @@ export class AppsPageComponent {
     const role = this.roleLabel(this.activeMemberRole()).toLowerCase()
     return ['owner', 'admin'].includes(role)
   })
+  protected readonly manualSyncAvailable = computed(() => isManualSyncAvailable(this.organizationUsageResource.value()))
 
   constructor() {
     this.organizationService.getActiveMember().subscribe({
@@ -199,6 +204,10 @@ export class AppsPageComponent {
     return this.isSyncingStore(app, 'google_play')
   }
 
+  protected canManuallySync(app: AppListItemResponse, provider: StoreProvider): boolean {
+    return this.manualSyncAvailable() && this.storeConnection(app, provider) !== null
+  }
+
   protected isQueueingReplyDrafts(app: AppListItemResponse): boolean {
     return this.queueingReplyDraftsAppId() === app.id
   }
@@ -291,6 +300,10 @@ export class AppsPageComponent {
     }))
     this.queueingReplyDraftsAppId.set(null)
   }
+}
+
+function isManualSyncAvailable(usage: OrganizationUsageResponse | undefined): boolean {
+  return !usage?.limitsEnforced || usage.planName !== 'free'
 }
 
 const syncRunErrorMessageKeys: Record<string, string> = {

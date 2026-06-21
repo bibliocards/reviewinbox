@@ -40,6 +40,7 @@ describe('plan definitions', () => {
       includedStoreConnections: 20,
       includedMonthlyReviewImports: 5_000,
       includedMonthlyManagedAiReplyDrafts: 1_000,
+      autoSyncIntervalHours: 6,
     })
     expect(getPlanDefinition('business')).toMatchObject({
       includedMembers: 25,

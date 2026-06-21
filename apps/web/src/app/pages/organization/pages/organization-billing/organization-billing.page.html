@@ -1,10 +1,12 @@
 <section class="grid gap-5">
   <div class="rounded-2xl border border-hairline bg-surface-1 p-5">
-    <h2 class="m-0 mt-3 text-lg font-semibold text-ink">Usage and limits</h2>
+    <h2 class="m-0 text-lg font-semibold text-ink">Usage and limits</h2>
     @if (usage()?.limitsEnforced) {
     <p class="m-0 mt-2 text-sm text-ink-subtle">
-      Current monthly period: {{ usage()?.usagePeriod?.startsAt | date: 'mediumDate' }} to
-      {{ usage()?.usagePeriod?.endsAt | date: 'mediumDate' }}.
+      Current monthly period:
+      <strong>{{ usage()?.usagePeriod?.startsAt | date: 'mediumDate' }}</strong>
+      to
+      <strong>{{ usage()?.usagePeriod?.endsAt | date: 'mediumDate' }}</strong>.
     </p>
     } @else {
     <p class="m-0 mt-2 text-sm text-ink-subtle">

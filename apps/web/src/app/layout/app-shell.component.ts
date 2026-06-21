@@ -14,6 +14,7 @@ import { type SelectChangeEvent, SelectModule } from 'primeng/select'
 import { ConnectAppDialogComponent } from '../shared/components/connect-app-dialog/connect-app-dialog.component'
 import { ThemeToggleComponent } from '../shared/components/theme-toggle/theme-toggle.component'
 import { AuthCapabilitiesService } from '../shared/services/auth-capabilities.service'
+import { OrganizationProfileService } from '../shared/services/organization-profile.service'
 
 type ShellNavItem = {
   label: string
@@ -46,6 +47,7 @@ export class AppShellComponent {
   private readonly dialogService = inject(DialogService)
   private readonly transloco = inject(TranslocoService)
   private readonly authCapabilities = inject(AuthCapabilitiesService)
+  private readonly organizationProfile = inject(OrganizationProfileService)
   private readonly capabilities = this.authCapabilities.capabilities
   private readonly destroyRef = inject(DestroyRef)
 
@@ -59,8 +61,9 @@ export class AppShellComponent {
   private readonly activeMemberRole = signal<string | string[] | undefined>(undefined)
   private readonly now = signal(new Date())
   private readonly clientConfig = toSignal(this.authCapabilities.clientConfig(), { initialValue: null })
+  protected readonly organizationUsageResource = this.organizationProfile.usageResource()
   protected readonly ownerInitials = computed(() => this.initialsFrom(this.session()?.user?.name))
-  protected readonly isCloud = this.capabilities.isCloud
+  protected readonly isCloud = computed(() => this.capabilities().isCloud)
   protected readonly organizations = this.organizationService.organizationsResource()
   protected readonly organizationList = computed(() => {
     if (this.organizations.error()) {
@@ -87,7 +90,7 @@ export class AppShellComponent {
       label: 'New organization',
       icon: 'pi pi-plus',
       routerLink: ['/organizations/new'],
-      visible: this.capabilities.isCloud,
+      visible: this.capabilities().isCloud,
     },
     {
       separator: true,
@@ -129,13 +132,20 @@ export class AppShellComponent {
       return null
     }
 
+    const usage = this.organizationUsageResource.value()
+    if (usage?.limitsEnforced && usage.planName === 'free') {
+      return {
+        label: 'Every 24h on Free',
+      }
+    }
+
     const nextWindow = this.nextWindowAfter(autoSync.nextWindowStartsAt, this.now())
     if (!nextWindow) {
       return null
     }
 
     return {
-      startsAt: new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(nextWindow),
+      label: `Next window at ${new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(nextWindow)}`,
     }
   })
 

@@ -96,7 +96,7 @@
                 <span [class]="storeStatusClass(app, 'apple_app_store')">
                   {{ isStoreConfigured(app, 'apple_app_store') ? t('apps.list.status.configured') : t('apps.list.status.missing') }}
                 </span>
-                @if (appleStoreConnection(app)) {
+                @if (canManuallySync(app, 'apple_app_store')) {
                 <p-button
                   size="small"
                   severity="secondary"
@@ -124,7 +124,7 @@
                 <span [class]="storeStatusClass(app, 'google_play')">
                   {{ isStoreConfigured(app, 'google_play') ? t('apps.list.status.configured') : t('apps.list.status.missing') }}
                 </span>
-                @if (googleStoreConnection(app)) {
+                @if (canManuallySync(app, 'google_play')) {
                 <p-button
                   size="small"
                   severity="secondary"

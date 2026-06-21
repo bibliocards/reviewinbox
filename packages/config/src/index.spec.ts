@@ -17,6 +17,19 @@ describe('loadServerConfig', () => {
       runDatabaseMigrationsOnStartup: true,
     })
   })
+
+  it('allows local HTTP origins when simulating cloud locally', () => {
+    expect(
+      loadServerConfig({
+        DEPLOYMENT_MODE: 'cloud',
+        APP_PUBLIC_URL: 'http://localhost:4200',
+        BETTER_AUTH_URL: 'http://127.0.0.1:3000',
+        BETTER_AUTH_TRUSTED_ORIGINS: 'http://localhost:4200,http://127.0.0.1:4200',
+      }),
+    ).toMatchObject({
+      deploymentMode: 'cloud',
+    })
+  })
 })
 
 describe('getNextAutoSyncWindowStartsAt', () => {

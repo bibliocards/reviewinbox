@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http'
 import { Injectable, inject } from '@angular/core'
+import { toSignal } from '@angular/core/rxjs-interop'
 import type { ClientConfigResponse } from '@reviewinbox/contracts'
 import { addHours } from 'date-fns'
 import { catchError, map, of, shareReplay } from 'rxjs'
@@ -23,7 +24,7 @@ export class AuthCapabilitiesService {
   private readonly http = inject(HttpClient)
   private readonly apiUrl = resolveOptionalString(environment.apiUrl) ?? ''
 
-  readonly capabilities: AuthCapabilities = {
+  private readonly fallbackCapabilities: AuthCapabilities = {
     deploymentMode: resolveDeploymentMode(environment.deploymentMode),
     isCloud: resolveDeploymentMode(environment.deploymentMode) === 'cloud',
     appPublicUrl: globalThis.location?.origin ?? 'http://localhost:4200',
@@ -38,17 +39,17 @@ export class AuthCapabilitiesService {
   private readonly clientConfig$ = this.http.get<ClientConfigResponse>(`${this.apiUrl}/api/client-config`).pipe(
     catchError(() =>
       of({
-        deploymentMode: this.capabilities.deploymentMode,
-        isCloud: this.capabilities.isCloud,
-        appPublicUrl: this.capabilities.appPublicUrl,
+        deploymentMode: this.fallbackCapabilities.deploymentMode,
+        isCloud: this.fallbackCapabilities.isCloud,
+        appPublicUrl: this.fallbackCapabilities.appPublicUrl,
         auth: {
-          emailPassword: this.capabilities.emailPassword,
-          google: this.capabilities.google,
-          enterpriseSso: this.capabilities.enterpriseSso,
-          signUpAvailable: this.capabilities.deploymentMode === 'cloud',
+          emailPassword: this.fallbackCapabilities.emailPassword,
+          google: this.fallbackCapabilities.google,
+          enterpriseSso: this.fallbackCapabilities.enterpriseSso,
+          signUpAvailable: this.fallbackCapabilities.deploymentMode === 'cloud',
         },
         mail: {
-          invitationEmailEnabled: this.capabilities.invitationEmailEnabled,
+          invitationEmailEnabled: this.fallbackCapabilities.invitationEmailEnabled,
         },
         autoSync: {
           reviewsEnabled: true,
@@ -60,12 +61,30 @@ export class AuthCapabilitiesService {
     shareReplay({ bufferSize: 1, refCount: true }),
   )
 
+  readonly capabilities = toSignal(this.clientConfig$.pipe(map(toAuthCapabilities)), {
+    initialValue: this.fallbackCapabilities,
+  })
+
   signUpAvailable() {
     return this.clientConfig().pipe(map((config) => config.auth.signUpAvailable))
   }
 
   clientConfig() {
     return this.clientConfig$
+  }
+}
+
+function toAuthCapabilities(config: ClientConfigResponse): AuthCapabilities {
+  return {
+    deploymentMode: config.deploymentMode,
+    isCloud: config.deploymentMode === 'cloud',
+    appPublicUrl: config.appPublicUrl,
+    emailPassword: config.auth.emailPassword,
+    google: config.auth.google,
+    enterpriseSso: config.auth.enterpriseSso,
+    externalProviders: config.auth.google || config.auth.enterpriseSso,
+    signUpAvailable: config.auth.signUpAvailable,
+    invitationEmailEnabled: config.mail.invitationEmailEnabled,
   }
 }
 

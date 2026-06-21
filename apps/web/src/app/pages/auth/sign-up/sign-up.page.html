@@ -33,13 +33,13 @@
       Selected plan: <span class="font-semibold text-ink">{{ selectedPlan }}</span>. You can confirm billing after account setup.
     </p>
     }
-    } @if (capabilities.externalProviders) {
+    } @if (capabilities().externalProviders) {
     <div class="mt-6 grid gap-2 sm:grid-cols-3">
       <p-button
         label="Google"
         icon="pi pi-google"
         severity="secondary"
-        [disabled]="!capabilities.google"
+        [disabled]="!capabilities().google"
         styleClass="w-full justify-center" />
       <p-button
         label="Apple"
@@ -60,7 +60,7 @@
         label="Continue with SSO"
         icon="pi pi-lock"
         severity="secondary"
-        [disabled]="!capabilities.enterpriseSso"
+        [disabled]="!capabilities().enterpriseSso"
         styleClass="w-full justify-center" />
     </div>
 

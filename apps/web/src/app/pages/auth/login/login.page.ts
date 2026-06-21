@@ -23,7 +23,7 @@ export class LoginPageComponent {
 
   protected readonly capabilities = this.authCapabilities.capabilities
   protected readonly signUpAvailable = toSignal(this.authCapabilities.signUpAvailable(), {
-    initialValue: this.capabilities.deploymentMode === 'cloud',
+    initialValue: this.capabilities().deploymentMode === 'cloud',
   })
   protected readonly errorMessage = signal<string | null>(null)
   protected readonly isSubmitting = signal(false)
@@ -44,7 +44,7 @@ export class LoginPageComponent {
 
   constructor() {
     effect(() => {
-      if (this.capabilities.deploymentMode === 'self-hosted' && this.signUpAvailable()) {
+      if (this.capabilities().deploymentMode === 'self-hosted' && this.signUpAvailable()) {
         void this.router.navigate(['/sign-up'], { queryParams: this.signUpQueryParams() })
       }
     })

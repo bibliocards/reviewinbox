@@ -125,28 +125,28 @@ export const serverConfigSchema = z
       return
     }
 
-    if (new URL(config.appPublicUrl).protocol !== 'https:') {
+    if (new URL(config.appPublicUrl).protocol !== 'https:' && !isLocalHttpOrigin(config.appPublicUrl)) {
       context.addIssue({
         code: 'custom',
         path: ['appPublicUrl'],
-        message: 'Cloud deployments must set APP_PUBLIC_URL to an HTTPS origin.',
+        message: 'Cloud deployments must set APP_PUBLIC_URL to an HTTPS origin unless it is local.',
       })
     }
 
-    if (new URL(config.betterAuthUrl).protocol !== 'https:') {
+    if (new URL(config.betterAuthUrl).protocol !== 'https:' && !isLocalHttpOrigin(new URL(config.betterAuthUrl).origin)) {
       context.addIssue({
         code: 'custom',
         path: ['betterAuthUrl'],
-        message: 'Cloud deployments must set BETTER_AUTH_URL to an HTTPS origin.',
+        message: 'Cloud deployments must set BETTER_AUTH_URL to an HTTPS origin unless it is local.',
       })
     }
 
     for (const origin of config.betterAuthTrustedOrigins) {
-      if (new URL(origin).protocol !== 'https:') {
+      if (new URL(origin).protocol !== 'https:' && !isLocalHttpOrigin(origin)) {
         context.addIssue({
           code: 'custom',
           path: ['betterAuthTrustedOrigins'],
-          message: 'Cloud deployments must only trust HTTPS origins.',
+          message: 'Cloud deployments must only trust HTTPS origins unless they are local.',
         })
       }
     }
@@ -323,8 +323,9 @@ export function loadEncryptionConfig(env: NodeJS.ProcessEnv = loadProcessEnv()):
 function loadProcessEnv(): NodeJS.ProcessEnv {
   if (!envFileLoaded) {
     envFileLoaded = true
+    const envFile = process.env['REVIEWINBOX_ENV_FILE'] ?? '.env'
     try {
-      process.loadEnvFile('.env')
+      process.loadEnvFile(envFile)
     } catch (error) {
       if (!isMissingEnvFileError(error)) {
         throw error

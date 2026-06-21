@@ -83,7 +83,7 @@ export const planDefinitions = {
     monthlyManagedAiReplyDraftCap: 1_000,
     allowBringYourOwnKey: true,
     allowManualSync: true,
-    autoSyncIntervalHours: 1,
+    autoSyncIntervalHours: 6,
   },
   business: {
     name: 'business',
@@ -99,7 +99,7 @@ export const planDefinitions = {
     monthlyManagedAiReplyDraftCap: 10_000,
     allowBringYourOwnKey: true,
     allowManualSync: true,
-    autoSyncIntervalHours: 1,
+    autoSyncIntervalHours: 6,
   },
 } satisfies Record<PlanName, PlanDefinition>
 
