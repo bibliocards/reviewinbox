@@ -19,6 +19,9 @@ export const clientConfigResponseSchema = z.object({
     nextWindowStartsAt: z.iso.datetime(),
     spreadWindowMinutes: z.number().int().positive(),
   }),
+  billing: z.object({
+    availablePlans: z.array(z.enum(['starter', 'pro', 'business'])),
+  }),
 })
 
 export type ClientConfigResponse = z.infer<typeof clientConfigResponseSchema>

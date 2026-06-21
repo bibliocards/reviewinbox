@@ -18,9 +18,9 @@ Plans attach to an Organization.
 | Plan | Price | Members | Apps | Store Connections | Review imports/month | Managed AI Reply Drafts/month |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Free | $0/month | 1 | 1 | 2 | 30 | 5 |
-| Starter | $9/month | 3 | 2 | 4 | 500 | 100 |
-| Pro | $29/month | 10 | 10 | 20 | 5,000 | 1,000 |
-| Business | $99/month | 25 | 50 included, 100 limit | 100 included, 200 limit | 50,000 | 10,000 |
+| Starter | $9.99/month | 3 | 2 | 4 | 500 | 100 |
+| Pro | $29.99/month | 10 | 10 | 20 | 5,000 | 1,000 |
+| Business | $99.99/month | 25 | 50 included, 100 limit | 100 included, 200 limit | 50,000 | 10,000 |
 
 Prices are listed in USD. Free is available for low-volume evaluation.
 
@@ -49,9 +49,9 @@ ReviewInbox separates included usage from hard limits.
 
 Planned overage pack sizes:
 
-- 100 Managed AI Reply Drafts for $5.
-- 1,000 Review imports for $5.
-- 1 extra member seat for $5/month.
+- 100 Managed AI Reply Drafts for $4.99.
+- 1,000 Review imports for $4.99.
+- 1 extra member seat for $4.99/month.
 
 ## Cloud Enforcement
 

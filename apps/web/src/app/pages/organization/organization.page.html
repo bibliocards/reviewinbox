@@ -11,7 +11,7 @@
       <a
         class="rounded-lg px-3 py-2 text-sm font-medium text-ink-subtle no-underline transition hover:bg-surface-1 hover:text-ink"
         routerLinkActive="bg-surface-1 text-ink shadow-sm"
-        [routerLinkActiveOptions]="{ exact: true }"
+        [routerLinkActiveOptions]="{ paths: 'exact' }"
         [routerLink]="tab.route">
         {{ tab.label }}
       </a>

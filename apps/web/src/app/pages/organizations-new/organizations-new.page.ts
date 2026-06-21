@@ -1,17 +1,46 @@
-import { Component } from '@angular/core'
-import { TranslocoDirective } from '@jsverse/transloco'
+import { Component, computed, inject } from '@angular/core'
+import { ActivatedRoute, Router, RouterLink } from '@angular/router'
+import {
+  OrganizationCreateFormComponent,
+  type SelectedPlan,
+} from '../../shared/components/organization-create-form/organization-create-form.component'
+import { ThemeToggleComponent } from '../../shared/components/theme-toggle/theme-toggle.component'
 
 @Component({
   selector: 'ri-organizations-new-page',
-  imports: [TranslocoDirective],
-  template: `
-    <section
-      class="grid gap-3 rounded-2xl border border-hairline bg-surface-1 p-5"
-      *transloco="let t">
-      <p class="ri-chip ri-chip-primary w-fit">{{ t('organizations.new.badge') }}</p>
-      <h1 class="m-0 text-2xl font-semibold tracking-[-0.8px] text-ink">{{ t('organizations.new.title') }}</h1>
-      <p class="m-0 max-w-2xl text-sm text-ink-subtle">{{ t('organizations.new.description') }}</p>
-    </section>
-  `,
+  imports: [OrganizationCreateFormComponent, RouterLink, ThemeToggleComponent],
+  templateUrl: './organizations-new.page.html',
 })
-export class OrganizationsNewPageComponent {}
+export class OrganizationsNewPageComponent {
+  private readonly route = inject(ActivatedRoute)
+  private readonly router = inject(Router)
+
+  protected readonly selectedPlan = computed(() => this.parseSelectedPlan(this.route.snapshot.queryParamMap.get('plan')))
+  protected readonly selectedPlanLabel = computed(() => planLabels[this.selectedPlan()])
+
+  protected continueAfterCreate(event: { organizationId: string; selectedPlan: SelectedPlan }): void {
+    if (event.selectedPlan === 'free') {
+      void this.router.navigateByUrl('/apps')
+      return
+    }
+
+    void this.router.navigate(['/organization/usage'], {
+      queryParams: { plan: event.selectedPlan, checkout: 'pending' },
+    })
+  }
+
+  private parseSelectedPlan(plan: string | null): SelectedPlan {
+    if (plan === 'starter' || plan === 'pro' || plan === 'business') {
+      return plan
+    }
+
+    return 'free'
+  }
+}
+
+const planLabels: Record<SelectedPlan, string> = {
+  free: 'Free',
+  starter: 'Starter',
+  pro: 'Pro',
+  business: 'Business',
+}

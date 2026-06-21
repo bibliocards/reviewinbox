@@ -102,6 +102,14 @@ export const serverConfigSchema = z
     s3AccessKeyId: optionalStringSchema,
     s3SecretAccessKey: optionalStringSchema,
     s3PublicBaseUrl: optionalStringSchema,
+    stripeSecretKey: optionalStringSchema,
+    stripeWebhookSecret: optionalStringSchema,
+    stripeStarterPriceId: optionalStringSchema,
+    stripeStarterAnnualPriceId: optionalStringSchema,
+    stripeProPriceId: optionalStringSchema,
+    stripeProAnnualPriceId: optionalStringSchema,
+    stripeBusinessPriceId: optionalStringSchema,
+    stripeBusinessAnnualPriceId: optionalStringSchema,
   })
   .superRefine((config, context) => {
     if ((config.smtpHost && !config.mailFrom) || (!config.smtpHost && config.mailFrom)) {
@@ -118,6 +126,57 @@ export const serverConfigSchema = z
         code: 'custom',
         path: ['s3Bucket'],
         message: 'S3_REGION, S3_BUCKET, S3_ACCESS_KEY_ID, and S3_SECRET_ACCESS_KEY must be configured together.',
+      })
+    }
+
+    const stripeSecretValues = [config.stripeSecretKey, config.stripeWebhookSecret]
+    const stripePlanPairs = [
+      [config.stripeStarterPriceId, config.stripeStarterAnnualPriceId],
+      [config.stripeProPriceId, config.stripeProAnnualPriceId],
+      [config.stripeBusinessPriceId, config.stripeBusinessAnnualPriceId],
+    ]
+    const hasAnyStripePlan = stripePlanPairs.some(([monthlyPriceId, annualPriceId]) => monthlyPriceId && annualPriceId)
+    const hasPartialStripePlan = stripePlanPairs.some(
+      ([monthlyPriceId, annualPriceId]) => Boolean(monthlyPriceId) !== Boolean(annualPriceId),
+    )
+
+    if (stripeSecretValues.some(Boolean) && !stripeSecretValues.every(Boolean)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['stripeSecretKey'],
+        message: 'STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET must be configured together.',
+      })
+    }
+
+    if (hasPartialStripePlan) {
+      context.addIssue({
+        code: 'custom',
+        path: ['stripeStarterPriceId'],
+        message: 'Each enabled Stripe plan must configure both monthly and annual price IDs.',
+      })
+    }
+
+    if (stripeSecretValues.every(Boolean) && !hasAnyStripePlan) {
+      context.addIssue({
+        code: 'custom',
+        path: ['stripeStarterPriceId'],
+        message: 'Stripe billing requires at least one configured plan price pair.',
+      })
+    }
+
+    if (hasAnyStripePlan && !stripeSecretValues.every(Boolean)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['stripeSecretKey'],
+        message: 'Stripe plan prices require STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET.',
+      })
+    }
+
+    if (config.deploymentMode === 'cloud' && (!stripeSecretValues.every(Boolean) || !hasAnyStripePlan)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['stripeSecretKey'],
+        message: 'Cloud deployments must configure Stripe billing with at least one plan.',
       })
     }
 
@@ -301,6 +360,14 @@ export function loadServerConfig(env: NodeJS.ProcessEnv = loadProcessEnv()): Ser
     s3AccessKeyId: env['S3_ACCESS_KEY_ID'],
     s3SecretAccessKey: env['S3_SECRET_ACCESS_KEY'],
     s3PublicBaseUrl: env['S3_PUBLIC_BASE_URL'],
+    stripeSecretKey: env['STRIPE_SECRET_KEY'],
+    stripeWebhookSecret: env['STRIPE_WEBHOOK_SECRET'],
+    stripeStarterPriceId: env['STRIPE_STARTER_PRICE_ID'],
+    stripeStarterAnnualPriceId: env['STRIPE_STARTER_ANNUAL_PRICE_ID'],
+    stripeProPriceId: env['STRIPE_PRO_PRICE_ID'],
+    stripeProAnnualPriceId: env['STRIPE_PRO_ANNUAL_PRICE_ID'],
+    stripeBusinessPriceId: env['STRIPE_BUSINESS_PRICE_ID'],
+    stripeBusinessAnnualPriceId: env['STRIPE_BUSINESS_ANNUAL_PRICE_ID'],
   })
 }
 

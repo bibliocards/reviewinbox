@@ -3,7 +3,11 @@
     <a
       class="inline-flex items-center gap-3 text-ink no-underline"
       routerLink="/sign-up">
-      <span class="grid size-9 place-items-center rounded-xl bg-primary text-sm font-bold text-primary-contrast">R</span>
+      <img
+        class="size-12 rounded-xl"
+        src="/icon.png"
+        alt=""
+        aria-hidden="true" />
       <span class="sr-only">ReviewInbox</span>
     </a>
 
@@ -26,14 +30,13 @@
     </p>
     } @else {
     <p class="mt-2 text-sm leading-5 text-ink-subtle">
-      Set up the first Owner account and choose the Organization name for this ReviewInbox instance.
+      Create your account, then create an Organization or accept an invitation from an Owner.
     </p>
     @if (selectedPlan !== 'free') {
     <p class="mt-4 rounded-xl border border-hairline bg-surface-2 px-3 py-2 text-sm text-ink-muted">
       Selected plan: <span class="font-semibold text-ink">{{ selectedPlan }}</span>. You can confirm billing after account setup.
     </p>
-    }
-    } @if (capabilities().externalProviders) {
+    } } @if (capabilities().externalProviders) {
     <div class="mt-6 grid gap-2 sm:grid-cols-3">
       <p-button
         label="Google"
@@ -102,7 +105,7 @@
           [fluid]="true"
           inputStyleClass="w-full" />
       </div>
-      @if (!isInvitationSignUp) {
+      @if (createsOrganizationDuringSignUp()) {
       <label class="grid gap-1.5 text-sm font-medium text-ink">
         Organization name
         <input

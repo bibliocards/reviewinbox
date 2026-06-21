@@ -74,6 +74,22 @@ export class AppsPageComponent {
     this.appsResource.reload()
   }
 
+  @HostListener('window:reviewinbox:active-organization-changed')
+  protected reloadForActiveOrganization(): void {
+    this.successAppName.set(null)
+    this.successMessageKey.set(null)
+    this.syncingStoreConnectionId.set(null)
+    this.syncRunByStoreConnectionId.set({})
+    this.queueingReplyDraftsAppId.set(null)
+    this.replyDraftQueueMessageByAppId.set({})
+    this.appsResource.reload()
+    this.organizationUsageResource.reload()
+    this.organizationService.getActiveMember().subscribe({
+      next: (member) => this.activeMemberRole.set(member.role),
+      error: () => this.activeMemberRole.set(undefined),
+    })
+  }
+
   protected openConnectAppDialog(): void {
     const dialog = this.dialogService.open(ConnectAppDialogComponent, {
       header: this.transloco.translate('apps.connectDialog.title'),

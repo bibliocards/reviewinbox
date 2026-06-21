@@ -1,0 +1,35 @@
+<main class="min-h-screen bg-canvas px-5 py-6 text-ink">
+  <header class="mx-auto flex max-w-[1920px] items-center justify-between gap-4">
+    <a
+      class="inline-flex items-center gap-3 text-ink no-underline"
+      routerLink="/">
+      <img
+        class="size-12 rounded-xl"
+        src="/icon.png"
+        alt=""
+        aria-hidden="true" />
+      <span class="sr-only">ReviewInbox</span>
+    </a>
+
+    <ri-theme-toggle />
+  </header>
+
+  <section class="mx-auto mt-10 w-full max-w-153 rounded-3xl border border-hairline bg-surface-1 px-6 py-8 sm:mt-14 sm:px-14 sm:py-10">
+    <h1 class="m-0 mt-4 text-xl font-semibold tracking-[-0.8px] text-ink sm:text-2xl">Create an Organization</h1>
+    <p class="mt-2 text-sm leading-5 text-ink-subtle">
+      Set up the Organization that will manage your Apps, Store Connections, Reviews, Reply Drafts, and billing.
+    </p>
+    @if (selectedPlan() !== 'free') {
+    <p class="mt-4 rounded-xl border border-hairline bg-surface-2 px-3 py-2 text-sm text-ink-muted">
+      Selected plan: <span class="font-semibold text-ink">{{ selectedPlanLabel() }}</span>. Your Organization starts on Free; you will
+      confirm billing next.
+    </p>
+    }
+
+    <div class="mt-6">
+      <ri-organization-create-form
+        [selectedPlan]="selectedPlan()"
+        (created)="continueAfterCreate($event)" />
+    </div>
+  </section>
+</main>

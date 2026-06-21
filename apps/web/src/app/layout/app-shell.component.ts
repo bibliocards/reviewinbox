@@ -13,6 +13,7 @@ import { MenuModule } from 'primeng/menu'
 import { type SelectChangeEvent, SelectModule } from 'primeng/select'
 import { ConnectAppDialogComponent } from '../shared/components/connect-app-dialog/connect-app-dialog.component'
 import { ThemeToggleComponent } from '../shared/components/theme-toggle/theme-toggle.component'
+import { TypedTemplateDirective } from '../shared/directives/typed-template.directive'
 import { AuthCapabilitiesService } from '../shared/services/auth-capabilities.service'
 import { OrganizationProfileService } from '../shared/services/organization-profile.service'
 
@@ -36,6 +37,7 @@ type ShellNavItem = {
     FormsModule,
     MenuModule,
     TranslocoDirective,
+    TypedTemplateDirective,
   ],
   templateUrl: './app-shell.component.html',
   styleUrl: './app-shell.component.css',
@@ -168,7 +170,10 @@ export class AppShellComponent {
       this.selectedOrganizationId.set(organizationId)
       this.loadedActiveMemberOrganizationId.set(organizationId)
       this.organizationService.setActive({ organizationId }).subscribe({
-        next: () => this.loadActiveMember(organizationId),
+        next: () => {
+          this.loadActiveMember(organizationId)
+          this.notifyActiveOrganizationChanged(organizationId)
+        },
         error: () => this.activeMemberRole.set(undefined),
       })
     })
@@ -184,7 +189,11 @@ export class AppShellComponent {
     this.selectedOrganizationId.set(organizationId)
     this.loadedActiveMemberOrganizationId.set(organizationId)
     this.organizationService.setActive({ organizationId }).subscribe({
-      next: () => this.loadActiveMember(organizationId),
+      next: () => {
+        this.organizationUsageResource.reload()
+        this.loadActiveMember(organizationId)
+        this.notifyActiveOrganizationChanged(organizationId)
+      },
       error: () => this.activeMemberRole.set(undefined),
     })
   }
@@ -223,6 +232,10 @@ export class AppShellComponent {
       next: (member) => this.activeMemberRole.set(member.role),
       error: () => this.activeMemberRole.set(undefined),
     })
+  }
+
+  private notifyActiveOrganizationChanged(organizationId: string): void {
+    dispatchEvent(new CustomEvent('reviewinbox:active-organization-changed', { detail: { organizationId } }))
   }
 
   private roleLabel(role: string | string[] | undefined): string {

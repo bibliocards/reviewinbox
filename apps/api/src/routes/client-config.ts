@@ -30,7 +30,18 @@ clientConfigRoutes.get('/api/client-config', async (context) => {
       nextWindowStartsAt: getNextAutoSyncWindowStartsAt().toISOString(),
       spreadWindowMinutes: serverConfig.autoSyncReviewsSpreadWindowMinutes,
     },
+    billing: {
+      availablePlans: availableBillingPlans(),
+    },
   })
 
   return context.json(config)
 })
+
+function availableBillingPlans(): Array<'starter' | 'pro' | 'business'> {
+  return [
+    serverConfig.stripeStarterPriceId && serverConfig.stripeStarterAnnualPriceId ? 'starter' : null,
+    serverConfig.stripeProPriceId && serverConfig.stripeProAnnualPriceId ? 'pro' : null,
+    serverConfig.stripeBusinessPriceId && serverConfig.stripeBusinessAnnualPriceId ? 'business' : null,
+  ].filter((plan): plan is 'starter' | 'pro' | 'business' => plan !== null)
+}

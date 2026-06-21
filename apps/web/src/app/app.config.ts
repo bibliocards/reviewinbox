@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http'
 import { type ApplicationConfig, isDevMode, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from '@angular/core'
 import { provideRouter } from '@angular/router'
 import { provideServiceWorker } from '@angular/service-worker'
+import { stripeClient } from '@better-auth/stripe/client'
 import { provideTransloco } from '@jsverse/transloco'
 import { organizationClient } from 'better-auth/client/plugins'
 import { provideBetterAuth } from 'ngx-better-auth'
@@ -32,7 +33,7 @@ export const appConfig: ApplicationConfig = {
     provideBetterAuth({
       baseURL: resolveOptionalString(environment.apiUrl),
       basePath: resolveOptionalString(environment.authBasePath) ?? '/api/auth',
-      plugins: [organizationClient()],
+      plugins: [organizationClient(), stripeClient({ subscription: true })],
     }),
     provideRouter(appRoutes),
     provideServiceWorker('ngsw-worker.js', {

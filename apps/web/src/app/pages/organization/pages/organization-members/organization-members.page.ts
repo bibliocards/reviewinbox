@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core'
+import { Component, computed, HostListener, inject, signal } from '@angular/core'
 import { toSignal } from '@angular/core/rxjs-interop'
 import { email, FormField, form, required, submit } from '@angular/forms/signals'
 import { TranslocoDirective } from '@jsverse/transloco'
@@ -82,6 +82,17 @@ export class OrganizationMembersPageComponent {
       ? []
       : ((this.invitations.value() as InvitationView[] | undefined) ?? []).filter((invitation) => invitation.status === 'pending'),
   )
+
+  @HostListener('window:reviewinbox:active-organization-changed')
+  protected reloadForActiveOrganization(): void {
+    this.errorMessageKey.set(null)
+    this.successMessageKey.set(null)
+    this.copiedInvitationId.set(null)
+    this.latestInvitationId.set(null)
+    this.latestInvitationLink.set(null)
+    this.fullOrganization.reload()
+    this.invitations.reload()
+  }
 
   protected inviteMember(event: Event): void {
     event.preventDefault()

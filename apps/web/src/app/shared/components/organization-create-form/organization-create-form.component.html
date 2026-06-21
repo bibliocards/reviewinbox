@@ -1,0 +1,32 @@
+<form
+  class="grid gap-4"
+  (submit)="createOrganization($event)">
+  <label class="grid gap-1.5 text-sm font-medium text-ink">
+    Organization name
+    <input
+      pInputText
+      type="text"
+      autocomplete="organization"
+      [formField]="organizationForm.name" />
+    <span class="text-xs font-normal text-ink-subtle">Use your company or team name. You can change it later.</span>
+  </label>
+  @if (errorMessage()) {
+  <p
+    class="m-0 rounded-xl border border-red-400 bg-surface-2 px-3 py-2 text-sm text-ink-muted"
+    role="alert">
+    {{ errorMessage() }}
+  </p>
+  }
+
+  <p-button
+    type="submit"
+    [label]="submitLabel()"
+    [fluid]="true"
+    [loading]="isSubmitting()"
+    [disabled]="!canSubmit()" />
+  @if (showInvitationHelp()) {
+  <p class="m-0 text-center text-sm text-ink-subtle">
+    Joining an existing Organization? Ask an Organization Owner to send you an invitation link.
+  </p>
+  }
+</form>

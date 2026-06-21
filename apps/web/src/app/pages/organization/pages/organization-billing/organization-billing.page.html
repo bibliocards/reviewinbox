@@ -14,7 +14,77 @@
     </p>
     }
   </div>
-  @if (isLoading()) {
+  @if (billingSetupAvailable()) {
+  <section class="rounded-2xl border border-primary/30 bg-surface-1 p-5 shadow-sm">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div>
+        <p class="ri-chip ri-chip-primary w-fit">Billing setup</p>
+        <h3 class="m-0 mt-3 text-lg font-semibold text-ink">Activate {{ checkoutPlanLabel() }}</h3>
+        <p class="m-0 mt-2 max-w-2xl text-sm text-ink-subtle">
+          Your Organization starts on Free. Continue to Stripe Checkout to activate {{ checkoutPlanLabel() }} with secure payment, automatic
+          tax, and tax ID collection.
+        </p>
+        <fieldset class="mt-4 flex flex-wrap gap-2 border-0 p-0">
+          <legend class="sr-only">Plan</legend>
+          @for (plan of availableBillingPlans(); track plan) {
+          <button
+            type="button"
+            class="rounded-xl border px-3 py-2 text-sm font-semibold"
+            [class.border-primary]="isCheckoutPlanSelected(plan)"
+            [class.bg-primary]="isCheckoutPlanSelected(plan)"
+            [class.text-primary-contrast]="isCheckoutPlanSelected(plan)"
+            [class.border-hairline]="!isCheckoutPlanSelected(plan)"
+            (click)="selectCheckoutPlan(plan)">
+            {{ planOptionLabel(plan) }}
+          </button>
+          }
+        </fieldset>
+        @if (checkoutMessage()) {
+        <p
+          class="m-0 mt-3 rounded-xl border border-hairline bg-surface-2 px-3 py-2 text-sm text-ink-muted"
+          role="status">
+          {{ checkoutMessage() }}
+        </p>
+        }
+      </div>
+
+      <div class="grid min-w-64 gap-3 rounded-2xl border border-hairline bg-surface-2 p-4">
+        <fieldset class="grid grid-cols-2 gap-2 border-0 p-0">
+          <legend class="sr-only">Billing interval</legend>
+          <button
+            type="button"
+            class="rounded-xl border px-3 py-2 text-sm font-semibold"
+            [class.border-primary]="billingInterval() === 'monthly'"
+            [class.bg-primary]="billingInterval() === 'monthly'"
+            [class.text-primary-contrast]="billingInterval() === 'monthly'"
+            [class.border-hairline]="billingInterval() !== 'monthly'"
+            (click)="selectBillingInterval('monthly')">
+            Monthly
+          </button>
+          <button
+            type="button"
+            class="rounded-xl border px-3 py-2 text-sm font-semibold"
+            [class.border-primary]="billingInterval() === 'annual'"
+            [class.bg-primary]="billingInterval() === 'annual'"
+            [class.text-primary-contrast]="billingInterval() === 'annual'"
+            [class.border-hairline]="billingInterval() !== 'annual'"
+            (click)="selectBillingInterval('annual')">
+            Annual
+          </button>
+        </fieldset>
+        <p class="m-0 text-sm text-ink-subtle">
+          @if (billingInterval() === 'annual') {
+          {{ annualSavingsLabel() }}. } @else { {{ monthlyPriceLabel() }} }
+        </p>
+        <p-button
+          label="Continue billing setup"
+          [loading]="isStartingCheckout()"
+          [disabled]="isStartingCheckout()"
+          (onClick)="continueBillingSetup()" />
+      </div>
+    </div>
+  </section>
+  } @if (isLoading()) {
   <div
     class="rounded-2xl border border-hairline bg-surface-1 p-5 text-sm text-ink-subtle"
     role="status"

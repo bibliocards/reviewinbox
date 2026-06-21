@@ -25,10 +25,35 @@ describe('loadServerConfig', () => {
         APP_PUBLIC_URL: 'http://localhost:4200',
         BETTER_AUTH_URL: 'http://127.0.0.1:3000',
         BETTER_AUTH_TRUSTED_ORIGINS: 'http://localhost:4200,http://127.0.0.1:4200',
+        STRIPE_SECRET_KEY: 'sk_test_example',
+        STRIPE_WEBHOOK_SECRET: 'whsec_example',
+        STRIPE_STARTER_PRICE_ID: 'price_starter',
+        STRIPE_STARTER_ANNUAL_PRICE_ID: 'price_starter_annual',
       }),
     ).toMatchObject({
       deploymentMode: 'cloud',
     })
+  })
+
+  it('requires Stripe billing configuration in cloud mode', () => {
+    expect(() =>
+      loadServerConfig({
+        DEPLOYMENT_MODE: 'cloud',
+        APP_PUBLIC_URL: 'http://localhost:4200',
+        BETTER_AUTH_URL: 'http://127.0.0.1:3000',
+        BETTER_AUTH_TRUSTED_ORIGINS: 'http://localhost:4200,http://127.0.0.1:4200',
+      }),
+    ).toThrow(/Stripe billing/)
+  })
+
+  it('rejects Stripe plans missing either monthly or annual price IDs', () => {
+    expect(() =>
+      loadServerConfig({
+        STRIPE_SECRET_KEY: 'sk_test_example',
+        STRIPE_WEBHOOK_SECRET: 'whsec_example',
+        STRIPE_STARTER_PRICE_ID: 'price_starter',
+      }),
+    ).toThrow(/monthly and annual/)
   })
 })
 

@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core'
+import { Component, computed, HostListener, inject, signal } from '@angular/core'
 import { FormField, form, required } from '@angular/forms/signals'
 import { TranslocoDirective } from '@jsverse/transloco'
 import type { OrganizationProfileResponse } from '@reviewinbox/contracts'
@@ -45,6 +45,13 @@ export class OrganizationProfilePageComponent {
   })
 
   constructor() {
+    this.loadProfile()
+  }
+
+  @HostListener('window:reviewinbox:active-organization-changed')
+  protected reloadForActiveOrganization(): void {
+    this.errorMessageKey.set(null)
+    this.successMessageKey.set(null)
     this.loadProfile()
   }
 

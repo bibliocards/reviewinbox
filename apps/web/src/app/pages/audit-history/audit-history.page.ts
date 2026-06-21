@@ -1,5 +1,5 @@
 import { JsonPipe } from '@angular/common'
-import { Component, computed, effect, inject, signal } from '@angular/core'
+import { Component, computed, effect, HostListener, inject, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
 import type { ListReplyAuditEventResponse } from '@reviewinbox/contracts'
@@ -74,6 +74,15 @@ export class AuditHistoryPageComponent {
 
   protected resetPage(): void {
     this.page.set(1)
+  }
+
+  @HostListener('window:reviewinbox:active-organization-changed')
+  protected reloadForActiveOrganization(): void {
+    this.selectedAppId.set('')
+    this.selectedAction.set('')
+    this.page.set(1)
+    this.appsResource.reload()
+    this.auditResource.reload()
   }
 
   protected reviewLabel(event: ListReplyAuditEventResponse): string {

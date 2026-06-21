@@ -17,6 +17,7 @@ export type AuthCapabilities = {
   externalProviders: boolean
   signUpAvailable: boolean
   invitationEmailEnabled: boolean
+  availableBillingPlans: Array<'starter' | 'pro' | 'business'>
 }
 
 @Injectable({ providedIn: 'root' })
@@ -34,6 +35,7 @@ export class AuthCapabilitiesService {
     externalProviders: resolveDeploymentMode(environment.deploymentMode) === 'cloud',
     signUpAvailable: true,
     invitationEmailEnabled: false,
+    availableBillingPlans: [],
   }
 
   private readonly clientConfig$ = this.http.get<ClientConfigResponse>(`${this.apiUrl}/api/client-config`).pipe(
@@ -55,6 +57,9 @@ export class AuthCapabilitiesService {
           reviewsEnabled: true,
           nextWindowStartsAt: nextSixHourUtcWindow().toISOString(),
           spreadWindowMinutes: 60,
+        },
+        billing: {
+          availablePlans: this.fallbackCapabilities.availableBillingPlans,
         },
       }),
     ),
@@ -85,6 +90,7 @@ function toAuthCapabilities(config: ClientConfigResponse): AuthCapabilities {
     externalProviders: config.auth.google || config.auth.enterpriseSso,
     signUpAvailable: config.auth.signUpAvailable,
     invitationEmailEnabled: config.mail.invitationEmailEnabled,
+    availableBillingPlans: config.billing.availablePlans,
   }
 }
 

@@ -36,6 +36,13 @@
       "when": 1782058322893,
       "tag": "0004_narrow_wither",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1782065678509,
+      "tag": "0005_robust_scarlet_spider",
+      "breakpoints": true
     }
   ]
 }

@@ -21,7 +21,7 @@ export async function requireActiveOrganizationSession(
     return { ok: false, response: context.json({ error: 'Authentication required.' }, 401) }
   }
 
-  const activeOrganizationId = session.session.activeOrganizationId
+  const activeOrganizationId = (session.session as typeof session.session & { activeOrganizationId?: string }).activeOrganizationId
   if (!activeOrganizationId) {
     return { ok: false, response: context.json({ error: 'Active Organization required.' }, 403) }
   }

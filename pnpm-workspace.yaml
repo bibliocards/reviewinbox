@@ -24,4 +24,4 @@ minimumReleaseAgeExclude:
   - '@angular/build@21.2.16'
   - '@angular/cli@21.2.16'
   - '@schematics/angular@21.2.16'
-  - ngx-better-auth@1.6.2
+  - ngx-better-auth@1.6.3

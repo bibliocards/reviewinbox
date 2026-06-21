@@ -52,8 +52,8 @@ describe('plan definitions', () => {
   })
 
   it('keeps provisional overage pricing in packs', () => {
-    expect(managedAiReplyDraftOveragePack).toEqual({ size: 100, priceCents: 500 })
-    expect(reviewImportOveragePack).toEqual({ size: 1_000, priceCents: 500 })
-    expect(extraMemberSeat).toEqual({ priceCents: 500 })
+    expect(managedAiReplyDraftOveragePack).toEqual({ size: 100, priceCents: 499 })
+    expect(reviewImportOveragePack).toEqual({ size: 1_000, priceCents: 499 })
+    expect(extraMemberSeat).toEqual({ priceCents: 499 })
   })
 })

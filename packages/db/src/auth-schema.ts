@@ -21,6 +21,7 @@ export const user = pgTable('user', {
   email: text('email').notNull().unique(),
   emailVerified: boolean('email_verified').default(false).notNull(),
   image: text('image'),
+  stripeCustomerId: text('stripe_customer_id'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at')
     .defaultNow()
@@ -95,6 +96,7 @@ export const organization = pgTable(
     name: text('name').notNull(),
     slug: text('slug').notNull().unique(),
     logo: text('logo'),
+    stripeCustomerId: text('stripe_customer_id'),
     planName: text('plan_name').$type<OrganizationPlanName>().default('free').notNull(),
     billingOverrides: jsonb('billing_overrides').$type<OrganizationBillingOverrides>().default({}).notNull(),
     createdAt: timestamp('created_at').notNull(),
@@ -144,6 +146,34 @@ export const rateLimit = pgTable('rate_limit', {
   count: integer('count').notNull(),
   lastRequest: bigint('last_request', { mode: 'number' }).notNull(),
 })
+
+export const subscription = pgTable(
+  'subscription',
+  {
+    id: text('id').primaryKey(),
+    plan: text('plan').notNull(),
+    referenceId: text('reference_id').notNull(),
+    stripeCustomerId: text('stripe_customer_id'),
+    stripeSubscriptionId: text('stripe_subscription_id'),
+    status: text('status').default('incomplete').notNull(),
+    periodStart: timestamp('period_start'),
+    periodEnd: timestamp('period_end'),
+    trialStart: timestamp('trial_start'),
+    trialEnd: timestamp('trial_end'),
+    cancelAtPeriodEnd: boolean('cancel_at_period_end').default(false),
+    cancelAt: timestamp('cancel_at'),
+    canceledAt: timestamp('canceled_at'),
+    endedAt: timestamp('ended_at'),
+    seats: integer('seats'),
+    billingInterval: text('billing_interval'),
+    stripeScheduleId: text('stripe_schedule_id'),
+  },
+  (table) => [
+    index('subscription_referenceId_idx').on(table.referenceId),
+    index('subscription_stripeCustomerId_idx').on(table.stripeCustomerId),
+    index('subscription_stripeSubscriptionId_idx').on(table.stripeSubscriptionId),
+  ],
+)
 
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),

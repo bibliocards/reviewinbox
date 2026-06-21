@@ -9,9 +9,31 @@
         [options]="organizations"
         optionLabel="name"
         optionValue="id"
+        size="small"
         [ngModel]="activeOrganizationId()"
         ariaLabel="Organization"
-        (onChange)="switchOrganization($event)" />
+        (onChange)="switchOrganization($event)">
+        <ng-template
+          #item
+          #selectedItem
+          [typedTemplate]="organizations"
+          let-item>
+          <div class="flex min-w-0 items-center gap-2">
+            @if (item.logo) {
+            <img
+              class="size-6 rounded-md object-cover"
+              [src]="item.logo"
+              [alt]="item.name" />
+            } @else if (item.id) {
+            <span
+              class="grid size-6 shrink-0 place-items-center rounded-md border border-hairline bg-surface-2 text-[0.65rem] font-semibold text-ink-subtle">
+              {{ initialsFrom(item.name) }}
+            </span>
+            }
+            <span class="truncate">{{ item.name }}</span>
+          </div>
+        </ng-template>
+      </p-select>
     </div>
     } @else if (organizations.length == 1) { @let organization = organizations[0]!;
     <div class="organization-switcher">

@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common'
-import { Component, computed, effect, inject, signal } from '@angular/core'
+import { Component, computed, effect, HostListener, inject, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
 import type { ReplyInboxReview } from '@reviewinbox/contracts'
@@ -58,6 +58,15 @@ export class ReplyInboxPageComponent {
   }
 
   protected reload(): void {
+    this.inboxResource.reload()
+  }
+
+  @HostListener('window:reviewinbox:active-organization-changed')
+  protected reloadForActiveOrganization(): void {
+    this.selectedAppId.set('')
+    this.activeReviewId.set(null)
+    this.message.set(null)
+    this.appsResource.reload()
     this.inboxResource.reload()
   }
 

@@ -24,16 +24,16 @@ export type PlanDefinition = PlanLimits & {
 
 export const managedAiReplyDraftOveragePack = {
   size: 100,
-  priceCents: 500,
+  priceCents: 499,
 } as const
 
 export const reviewImportOveragePack = {
   size: 1_000,
-  priceCents: 500,
+  priceCents: 499,
 } as const
 
 export const extraMemberSeat = {
-  priceCents: 500,
+  priceCents: 499,
 } as const
 
 export const planDefinitions = {

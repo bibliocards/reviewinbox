@@ -30,6 +30,7 @@ export class SignUpPageComponent {
   protected readonly redirectUrl = this.safeRedirect(this.route.snapshot.queryParamMap.get('redirect'))
   protected readonly selectedPlan = this.parseSelectedPlan(this.route.snapshot.queryParamMap.get('plan'))
   protected readonly loginQueryParams = computed(() => (this.redirectUrl ? { redirect: this.redirectUrl } : {}))
+  protected readonly createsOrganizationDuringSignUp = computed(() => !this.capabilities().isCloud && !this.isInvitationSignUp)
 
   private readonly signUpModel = signal({
     name: '',
@@ -44,7 +45,6 @@ export class SignUpPageComponent {
     email(schema.email)
     required(schema.password)
     minLength(schema.password, 8)
-    required(schema.organizationName)
   })
 
   protected createAccount(event: Event): void {
@@ -62,6 +62,11 @@ export class SignUpPageComponent {
       const value = this.signUpForm().value()
 
       try {
+        if (this.createsOrganizationDuringSignUp() && !value.organizationName.trim()) {
+          this.errorMessage.set('Enter an Organization name to finish setup.')
+          return
+        }
+
         await firstValueFrom(
           this.auth.signUpEmail({
             name: value.name,
@@ -72,13 +77,18 @@ export class SignUpPageComponent {
           } as Parameters<AuthService['signUpEmail']>[0] & { invitationId?: string }),
         )
 
-        if (!this.isInvitationSignUp) {
+        if (this.createsOrganizationDuringSignUp()) {
           await firstValueFrom(
             this.organizations.create({
               name: value.organizationName,
               slug: this.slugify(value.organizationName),
             }),
           )
+        }
+
+        if (!this.isInvitationSignUp && this.capabilities().isCloud) {
+          await this.router.navigate(['/organizations/new'], { queryParams: { plan: this.selectedPlan } })
+          return
         }
 
         await this.router.navigateByUrl(this.redirectUrl ?? '/apps')
