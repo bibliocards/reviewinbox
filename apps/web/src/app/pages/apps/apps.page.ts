@@ -180,35 +180,23 @@ export class AppsPageComponent {
   }
 
   protected isStoreConfigured(app: AppListItemResponse, provider: StoreProvider): boolean {
-    return app.storeConnections.some(
-      (connection) => connection.provider === provider && connection.status === 'active' && connection.credential.hasCredential,
-    )
+    return this.storeConnection(app, provider) !== null
   }
 
   protected appleStoreConnection(app: AppListItemResponse): StoreConnectionResponse | null {
-    return (
-      app.storeConnections.find(
-        (connection) => connection.provider === 'apple_app_store' && connection.status === 'active' && connection.credential.hasCredential,
-      ) ?? null
-    )
+    return this.storeConnection(app, 'apple_app_store')
   }
 
   protected googleStoreConnection(app: AppListItemResponse): StoreConnectionResponse | null {
-    return (
-      app.storeConnections.find(
-        (connection) => connection.provider === 'google_play' && connection.status === 'active' && connection.credential.hasCredential,
-      ) ?? null
-    )
+    return this.storeConnection(app, 'google_play')
   }
 
   protected isSyncingApple(app: AppListItemResponse): boolean {
-    const connection = this.appleStoreConnection(app)
-    return connection != null && this.syncingStoreConnectionId() === connection.id
+    return this.isSyncingStore(app, 'apple_app_store')
   }
 
   protected isSyncingGoogle(app: AppListItemResponse): boolean {
-    const connection = this.googleStoreConnection(app)
-    return connection != null && this.syncingStoreConnectionId() === connection.id
+    return this.isSyncingStore(app, 'google_play')
   }
 
   protected isQueueingReplyDrafts(app: AppListItemResponse): boolean {
@@ -220,13 +208,11 @@ export class AppsPageComponent {
   }
 
   protected syncRunForApple(app: AppListItemResponse): SyncRunResponse | null {
-    const connection = this.appleStoreConnection(app)
-    return connection ? (this.syncRunByStoreConnectionId()[connection.id] ?? null) : null
+    return this.syncRunForStore(app, 'apple_app_store')
   }
 
   protected syncRunForGoogle(app: AppListItemResponse): SyncRunResponse | null {
-    const connection = this.googleStoreConnection(app)
-    return connection ? (this.syncRunByStoreConnectionId()[connection.id] ?? null) : null
+    return this.syncRunForStore(app, 'google_play')
   }
 
   protected syncRunMessageKey(syncRun: SyncRunResponse): string {
@@ -262,6 +248,24 @@ export class AppsPageComponent {
       .map((part) => part[0])
       .join('')
       .toUpperCase()
+  }
+
+  private storeConnection(app: AppListItemResponse, provider: StoreProvider): StoreConnectionResponse | null {
+    return (
+      app.storeConnections.find(
+        (connection) => connection.provider === provider && connection.status === 'active' && connection.credential.hasCredential,
+      ) ?? null
+    )
+  }
+
+  private isSyncingStore(app: AppListItemResponse, provider: StoreProvider): boolean {
+    const connection = this.storeConnection(app, provider)
+    return connection != null && this.syncingStoreConnectionId() === connection.id
+  }
+
+  private syncRunForStore(app: AppListItemResponse, provider: StoreProvider): SyncRunResponse | null {
+    const connection = this.storeConnection(app, provider)
+    return connection ? (this.syncRunByStoreConnectionId()[connection.id] ?? null) : null
   }
 
   private roleLabel(role: string | string[] | undefined): string {
