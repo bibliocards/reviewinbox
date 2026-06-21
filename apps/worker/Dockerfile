@@ -8,11 +8,16 @@ RUN corepack enable
 
 ENV NODE_ENV=production
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml nx.json tsconfig.base.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+RUN pnpm fetch --frozen-lockfile --store-dir=/pnpm/store
+
+COPY nx.json tsconfig.base.json ./
 COPY apps/worker ./apps/worker
 COPY packages ./packages
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --offline --store-dir=/pnpm/store \
+  && rm -rf /pnpm/store
 
 RUN mkdir -p volumes/uploads && chown -R node:node volumes
 

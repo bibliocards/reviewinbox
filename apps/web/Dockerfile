@@ -11,11 +11,16 @@ FROM base AS deps
 
 ENV HUSKY=0
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml nx.json tsconfig.base.json .postcssrc.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+RUN pnpm fetch --frozen-lockfile --store-dir=/pnpm/store
+
+COPY nx.json tsconfig.base.json .postcssrc.json ./
 COPY apps/web ./apps/web
 COPY packages ./packages
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --offline --store-dir=/pnpm/store \
+  && rm -rf /pnpm/store
 
 FROM deps AS build
 
