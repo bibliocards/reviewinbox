@@ -1,0 +1,29 @@
+<p-select
+  [class]="styleClass()"
+  [fluid]="true"
+  [options]="options()"
+  optionLabel="label"
+  optionValue="value"
+  [(ngModel)]="selectedAppId"
+  [ariaLabel]="ariaLabel()">
+  <ng-template
+    #item
+    #selectedItem
+    [typedTemplate]="options()"
+    let-item>
+    <div class="flex min-w-0 items-center gap-2">
+      @if (item.imageUrl) {
+      <img
+        class="size-6 rounded-md object-cover"
+        [src]="item.imageUrl"
+        [alt]="item.label" />
+      } @else if (item.value) {
+      <span
+        class="grid size-6 shrink-0 place-items-center rounded-md border border-hairline bg-surface-2 text-[0.65rem] font-semibold text-ink-subtle">
+        {{ initialsFrom(item.label) }}
+      </span>
+      }
+      <span class="truncate">{{ item.label }}</span>
+    </div>
+  </ng-template>
+</p-select>

@@ -3,6 +3,15 @@ import { replyStatusSchema } from './store'
 
 export const replyInboxFilterSchema = z.enum(['actionable', 'pending', 'drafted', 'failed', 'ignored', 'published'])
 export const replyAuditActionSchema = z.enum(['draft_created', 'draft_edited', 'ignored', 'unignored', 'publish_failed', 'published'])
+export const listReplyAuditEventsQuerySchema = z
+  .object({
+    page: z.coerce.number().int().min(1).max(1000).default(1),
+    pageSize: z.coerce.number().int().min(1).max(100).default(100),
+    appId: z.uuid().optional(),
+    action: replyAuditActionSchema.optional(),
+  })
+  .strict()
+export type ListReplyAuditEventsQuery = z.infer<typeof listReplyAuditEventsQuerySchema>
 
 export const replyInboxReviewSchema = z.object({
   id: z.uuid(),
@@ -68,6 +77,25 @@ export const replyAuditEventsResponseSchema = z.object({
   events: z.array(replyAuditEventResponseSchema),
 })
 export type ReplyAuditEventsResponse = z.infer<typeof replyAuditEventsResponseSchema>
+
+export const listReplyAuditEventResponseSchema = replyAuditEventResponseSchema.extend({
+  appId: z.uuid(),
+  appName: z.string(),
+  reviewTitle: z.string().nullable(),
+  reviewAuthorDisplayName: z.string().nullable(),
+  actorName: z.string(),
+  actorEmail: z.email().nullable(),
+  actorImage: z.string().nullable(),
+})
+export type ListReplyAuditEventResponse = z.infer<typeof listReplyAuditEventResponseSchema>
+
+export const listReplyAuditEventsResponseSchema = z.object({
+  events: z.array(listReplyAuditEventResponseSchema),
+  page: z.number().int().min(1),
+  pageSize: z.number().int().min(1).max(100),
+  total: z.number().int().min(0),
+})
+export type ListReplyAuditEventsResponse = z.infer<typeof listReplyAuditEventsResponseSchema>
 
 export const saveReplyDraftRequestSchema = z
   .object({

@@ -8,6 +8,7 @@ import { enUS, fr } from 'date-fns/locale'
 import { ButtonModule } from 'primeng/button'
 import { DialogService } from 'primeng/dynamicdialog'
 import { SelectModule } from 'primeng/select'
+import { AppSelectComponent, type AppSelectOption } from '../../shared/components/app-select/app-select.component'
 import { AppIconsService } from '../../shared/services/app-icons.service'
 import { AppsService } from '../../shared/services/apps.service'
 import { ReplyInboxService } from '../../shared/services/reply-inbox.service'
@@ -15,17 +16,13 @@ import { ReplyDraftDialogComponent, type ReplyDraftDialogResult } from './compon
 
 type ReplyInboxFilter = 'actionable' | ReplyInboxReview['replyStatus']
 
-type SelectOption = {
-  label: string
-  value: string
-  imageUrl?: string | null
-}
+type SelectOption = AppSelectOption
 
 const filterValues: readonly ReplyInboxFilter[] = ['actionable', 'drafted', 'failed', 'pending', 'ignored', 'published']
 
 @Component({
   selector: 'ri-reply-inbox-page',
-  imports: [ButtonModule, FormsModule, SelectModule, TranslocoDirective, NgClass],
+  imports: [AppSelectComponent, ButtonModule, FormsModule, SelectModule, TranslocoDirective, NgClass],
   templateUrl: './reply-inbox.page.html',
 })
 export class ReplyInboxPageComponent {

@@ -16,6 +16,7 @@ import { ButtonModule } from 'primeng/button'
 import { DialogService } from 'primeng/dynamicdialog'
 import { TableModule } from 'primeng/table'
 import { ConnectAppDialogComponent } from '../../shared/components/connect-app-dialog/connect-app-dialog.component'
+import { TypedTemplateDirective } from '../../shared/directives/typed-template.directive'
 import { AppIconsService } from '../../shared/services/app-icons.service'
 import { AppsService } from '../../shared/services/apps.service'
 
@@ -27,7 +28,7 @@ type ReplyDraftQueueMessage = {
 
 @Component({
   selector: 'ri-apps-page',
-  imports: [ButtonModule, TableModule, TranslocoDirective],
+  imports: [ButtonModule, TableModule, TranslocoDirective, TypedTemplateDirective],
   templateUrl: './apps.page.html',
 })
 export class AppsPageComponent {

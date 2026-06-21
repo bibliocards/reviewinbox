@@ -199,6 +199,35 @@
       "description": "Change the App or status filter, or sync Reviews from the Apps page."
     }
   },
+  "auditHistory": {
+    "title": "Audit History",
+    "description": "Track draft creation, edits, ignores, failures, and publishing across this Organization.",
+    "loading": "Loading audit history...",
+    "filters": {
+      "allActions": "All actions"
+    },
+    "actions": {
+      "draft_created": "Draft created",
+      "draft_edited": "Draft edited",
+      "ignored": "Ignored",
+      "unignored": "Unignored",
+      "publish_failed": "Publish failed",
+      "published": "Published"
+    },
+    "table": {
+      "time": "Time",
+      "action": "Action",
+      "actor": "Actor",
+      "app": "App",
+      "review": "Review",
+      "metadata": "Metadata"
+    },
+    "noMetadata": "None",
+    "empty": {
+      "title": "No audit events yet",
+      "description": "Change the App or action filter, or come back after Reply Inbox activity."
+    }
+  },
   "errors": {
     "generic": "Something went wrong. Please try again."
   },

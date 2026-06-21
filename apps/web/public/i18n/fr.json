@@ -199,6 +199,35 @@
       "description": "Changez le filtre d’App ou de statut, ou synchronisez les Reviews depuis la page Apps."
     }
   },
+  "auditHistory": {
+    "title": "Audit History",
+    "description": "Suivez les créations de draft, modifications, ignores, échecs et publications dans cette Organization.",
+    "loading": "Chargement de l’audit history...",
+    "filters": {
+      "allActions": "Toutes les actions"
+    },
+    "actions": {
+      "draft_created": "Draft créé",
+      "draft_edited": "Draft modifié",
+      "ignored": "Ignoré",
+      "unignored": "Restauré",
+      "publish_failed": "Publication échouée",
+      "published": "Publié"
+    },
+    "table": {
+      "time": "Date",
+      "action": "Action",
+      "actor": "Acteur",
+      "app": "App",
+      "review": "Review",
+      "metadata": "Metadata"
+    },
+    "noMetadata": "Aucune",
+    "empty": {
+      "title": "Aucun événement d’audit pour le moment",
+      "description": "Changez le filtre d’App ou d’action, ou revenez après une activité dans la Reply Inbox."
+    }
+  },
   "errors": {
     "generic": "Une erreur est survenue. Réessayez."
   },

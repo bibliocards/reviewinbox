@@ -2,6 +2,7 @@ import { HttpClient, type HttpResourceRef, httpResource } from '@angular/common/
 import { Injectable, inject } from '@angular/core'
 import type {
   ListReplyInboxResponse,
+  ListReplyAuditEventsResponse,
   PublishReplyRequest,
   QueueReplyDraftResponse,
   ReplyActionResponse,
@@ -19,6 +20,14 @@ export class ReplyInboxService {
   replyInboxResource(params: () => { appId?: string; filter: string }): HttpResourceRef<ListReplyInboxResponse> {
     return httpResource<ListReplyInboxResponse>(() => `${this.apiUrl}/api/reply-inbox?${toQueryString(params())}`, {
       defaultValue: { reviews: [] },
+    })
+  }
+
+  replyAuditEventsResource(
+    params: () => { page: number; pageSize: number; appId?: string; action?: string },
+  ): HttpResourceRef<ListReplyAuditEventsResponse> {
+    return httpResource<ListReplyAuditEventsResponse>(() => `${this.apiUrl}/api/reply-audit-events?${toAuditQueryString(params())}`, {
+      defaultValue: { events: [], page: 1, pageSize: 100, total: 0 },
     })
   }
 
@@ -41,6 +50,17 @@ export class ReplyInboxService {
   unignoreReview(reviewId: string): Observable<ReplyActionResponse> {
     return this.http.post<ReplyActionResponse>(`${this.apiUrl}/api/reply-inbox/${reviewId}/unignore`, {})
   }
+}
+
+function toAuditQueryString(params: { page: number; pageSize: number; appId?: string; action?: string }) {
+  const query = new URLSearchParams({ page: params.page.toString(), pageSize: params.pageSize.toString() })
+  if (params.appId) {
+    query.set('appId', params.appId)
+  }
+  if (params.action) {
+    query.set('action', params.action)
+  }
+  return query.toString()
 }
 
 function toQueryString(params: { appId?: string; filter: string }) {

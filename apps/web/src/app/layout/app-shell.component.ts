@@ -111,6 +111,11 @@ export class AppShellComponent {
       icon: 'pi-mobile',
     },
     {
+      label: 'Audit History',
+      route: '/audit-history',
+      icon: 'pi-history',
+    },
+    {
       label: 'Organization',
       route: '/organization',
       icon: 'pi-users',

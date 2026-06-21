@@ -1,5 +1,7 @@
 import {
   listReplyInboxResponseSchema,
+  listReplyAuditEventsQuerySchema,
+  listReplyAuditEventsResponseSchema,
   publishReplyRequestSchema,
   queueReplyDraftResponseSchema,
   replyActionResponseSchema,
@@ -16,6 +18,7 @@ import {
   reviews,
   storeConnections,
   storeCredentials,
+  user,
 } from '@reviewinbox/db'
 import { decryptStoreCredentialPlaintext, parseAppleCredentialPlaintext, parseGooglePlayCredentialPlaintext } from '@reviewinbox/sync'
 import {
@@ -24,7 +27,7 @@ import {
   googlePlayReviewAdapter,
   GooglePlayStoreAdapterError,
 } from '@reviewinbox/store-adapters'
-import { and, desc, eq, inArray, sql } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, sql } from 'drizzle-orm'
 import type { Context } from 'hono'
 import { Hono } from 'hono'
 import { z } from 'zod'
@@ -111,6 +114,76 @@ replyInboxRoutes.get('/api/reply-inbox', async (context) => {
   )
 })
 
+replyInboxRoutes.get('/api/reply-audit-events', async (context) => {
+  const sessionResult = await requireActiveOrganizationSession(context)
+  if (!sessionResult.ok) {
+    return sessionResult.response
+  }
+
+  const queryResult = listReplyAuditEventsQuerySchema.safeParse({
+    page: context.req.query('page') ?? undefined,
+    pageSize: context.req.query('pageSize') ?? undefined,
+    appId: context.req.query('appId') || undefined,
+    action: context.req.query('action') || undefined,
+  })
+  if (!queryResult.success) {
+    return context.json({ error: 'Invalid Reply audit filter.' }, 400)
+  }
+
+  const { page, pageSize, appId, action } = queryResult.data
+  const where = [eq(replyAuditEvents.organizationId, sessionResult.session.organizationId)]
+  if (appId) {
+    where.push(eq(replyAuditEvents.appId, appId))
+  }
+  if (action) {
+    where.push(eq(replyAuditEvents.action, action))
+  }
+
+  const [totalResult] = await database
+    .select({ total: count() })
+    .from(replyAuditEvents)
+    .where(and(...where))
+
+  const rows = await database
+    .select({
+      event: replyAuditEvents,
+      app: apps,
+      review: reviews,
+      actor: user,
+    })
+    .from(replyAuditEvents)
+    .innerJoin(apps, eq(replyAuditEvents.appId, apps.id))
+    .innerJoin(reviews, eq(replyAuditEvents.reviewId, reviews.id))
+    .leftJoin(user, eq(replyAuditEvents.actorUserId, user.id))
+    .where(and(...where))
+    .orderBy(desc(replyAuditEvents.createdAt))
+    .limit(pageSize)
+    .offset((page - 1) * pageSize)
+
+  return context.json(
+    listReplyAuditEventsResponseSchema.parse({
+      events: rows.map((row) => ({
+        id: row.event.id,
+        reviewId: row.event.reviewId,
+        appId: row.event.appId,
+        appName: row.app.name,
+        reviewTitle: row.review.title,
+        reviewAuthorDisplayName: row.review.authorDisplayName,
+        actorUserId: row.event.actorUserId,
+        actorName: row.actor?.name ?? null,
+        actorEmail: row.actor?.email ?? null,
+        actorImage: row.actor?.image ?? null,
+        action: row.event.action,
+        metadata: publicAuditMetadata(row.event.action, row.event.metadata),
+        createdAt: row.event.createdAt.toISOString(),
+      })),
+      page,
+      pageSize,
+      total: totalResult?.total ?? 0,
+    }),
+  )
+})
+
 replyInboxRoutes.get('/api/reply-inbox/:reviewId/audit-events', async (context) => {
   const sessionResult = await requireActiveOrganizationSession(context)
   if (!sessionResult.ok) {
@@ -137,7 +210,7 @@ replyInboxRoutes.get('/api/reply-inbox/:reviewId/audit-events', async (context) 
         reviewId: event.reviewId,
         actorUserId: event.actorUserId,
         action: event.action,
-        metadata: normalizeAuditMetadata(event.metadata),
+        metadata: publicAuditMetadata(event.action, event.metadata),
         createdAt: event.createdAt.toISOString(),
       })),
     }),
@@ -609,4 +682,37 @@ function replyInboxStatusSort() {
 
 function normalizeAuditMetadata(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null
+}
+
+function publicAuditMetadata(action: typeof replyAuditEvents.$inferSelect.action, value: unknown): Record<string, unknown> | null {
+  const metadata = normalizeAuditMetadata(value)
+  if (!metadata) {
+    return null
+  }
+
+  if (action === 'draft_created') {
+    return pickStringMetadata(metadata, ['mode'])
+  }
+
+  if (action === 'publish_failed') {
+    return pickStringMetadata(metadata, ['errorCode', 'errorMessage'])
+  }
+
+  if (action === 'published') {
+    return pickStringMetadata(metadata, ['externalReplyId'])
+  }
+
+  return null
+}
+
+function pickStringMetadata(metadata: Record<string, unknown>, keys: string[]): Record<string, string> | null {
+  const result: Record<string, string> = {}
+  for (const key of keys) {
+    const value = metadata[key]
+    if (typeof value === 'string' && value.length > 0) {
+      result[key] = value
+    }
+  }
+
+  return Object.keys(result).length > 0 ? result : null
 }

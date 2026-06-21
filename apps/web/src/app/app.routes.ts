@@ -39,6 +39,11 @@ export const appRoutes: Routes = [
         component: AppsPageComponent,
       },
       {
+        path: 'audit-history',
+        title: 'Audit History | ReviewInbox',
+        loadComponent: () => import('./pages/audit-history/audit-history.page').then((page) => page.AuditHistoryPageComponent),
+      },
+      {
         path: 'settings',
         title: 'Settings | ReviewInbox',
         loadComponent: () => import('./pages/settings/settings.page').then((page) => page.SettingsPageComponent),
