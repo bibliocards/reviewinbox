@@ -147,7 +147,7 @@
           </td>
           <td>
             <div class="flex justify-end gap-2">
-              @if (canQueueReplyDrafts()) {
+              @if (canManageApps()) {
               <div class="grid justify-items-end gap-1">
                 <p-button
                   size="small"
@@ -169,14 +169,14 @@
                 </p>
                 }
               </div>
-              }
+              } @if (canManageApps()) {
               <p-button
                 size="small"
                 [outlined]="true"
                 [label]="t('apps.actions.edit')"
                 icon="pi pi-pencil"
                 (onClick)="openEditAppDialog(app)" />
-              @if (canDeleteApps()) {
+              } @if (canManageApps()) {
               <p-button
                 size="small"
                 severity="danger"

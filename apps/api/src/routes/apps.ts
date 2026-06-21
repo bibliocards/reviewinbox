@@ -252,7 +252,7 @@ appsRoutes.get('/api/apps/:appId', async (context) => {
 })
 
 appsRoutes.put('/api/apps/:appId', async (context) => {
-  const sessionResult = await requireActiveOrganizationOwnerSession(context)
+  const sessionResult = await requireActiveOrganizationManagerSession(context)
   if (!sessionResult.ok) {
     return sessionResult.response
   }
