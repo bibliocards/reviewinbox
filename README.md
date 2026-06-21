@@ -1,8 +1,14 @@
+<p align="center">
+  <img src="apps/site/public/icon.png" alt="ReviewInbox icon" width="120" height="120" />
+</p>
+
 # ReviewInbox
 
 ReviewInbox is an open-source reply inbox for App Store and Google Play reviews. It imports reviews, drafts replies with AI, keeps humans in control, and helps teams turn recurring review pain into product insight.
 
 ReviewInbox is not a feedback board. It reads existing public store reviews and turns them into replies, patterns, and actions.
+
+Marketing site: <https://reviewinbox.app>
 
 ## Screenshots
 

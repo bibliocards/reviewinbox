@@ -1,0 +1,34 @@
+{
+  "name": "site",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/site/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "astro build --root apps/site"
+      },
+      "outputs": ["{workspaceRoot}/dist/apps/site"]
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "astro dev --root apps/site --host 127.0.0.1 --port 4321"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "astro check --root apps/site"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "biome lint apps/site"
+      }
+    }
+  },
+  "tags": ["scope:site", "type:app"]
+}

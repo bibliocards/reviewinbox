@@ -1,0 +1,277 @@
+---
+import '../styles.css'
+
+const appUrl = import.meta.env.PUBLIC_APP_URL ?? 'http://localhost:4200'
+const signInUrl = new URL('/login', appUrl).toString()
+const signUpUrl = new URL('/sign-up', appUrl).toString()
+const siteUrl = 'https://reviewinbox.app'
+const pageTitle = 'ReviewInbox | Reply to app reviews faster'
+const pageDescription = 'ReviewInbox is a Reply Inbox for app store Reviews, with AI-generated Reply Drafts your team controls.'
+
+const features = [
+  {
+    title: 'One Reply Inbox',
+    description: 'Bring App Store and Play Store Reviews into one queue your team can triage every day.',
+  },
+  {
+    title: 'AI Reply Drafts',
+    description: 'Generate first drafts from Review context while keeping every Published Reply under human control.',
+  },
+  {
+    title: 'Store Connections',
+    description: 'Connect Apps once, encrypt Store Credentials, and keep review operations away from shared spreadsheets.',
+  },
+]
+
+const workflow = [
+  {
+    title: 'Import Reviews',
+    description: 'New Reviews arrive in one queue with App and Store Connection context attached.',
+  },
+  {
+    title: 'Draft replies',
+    description: 'AI prepares Reply Drafts from the Review and your reply context, without mutating workflow state.',
+  },
+  {
+    title: 'Review changes',
+    description: 'Your team edits, ignores, or approves each draft before anything can be published.',
+  },
+  {
+    title: 'Publish safely',
+    description: 'Published Replies stay separate from drafts so the audit trail remains clear.',
+  },
+]
+
+const faqs = [
+  {
+    question: 'Does AI publish replies automatically?',
+    answer: 'No. AI drafting creates Reply Drafts only. Publishing remains an explicit workflow action controlled by your team.',
+  },
+  {
+    question: 'Can ReviewInbox be self-hosted?',
+    answer: 'Yes. The self-hosted stack runs with Docker Compose and keeps your data under your own infrastructure.',
+  },
+  {
+    question: 'Which stores are supported?',
+    answer: 'ReviewInbox is designed around mobile app stores, starting with the App Store and Google Play review workflow.',
+  },
+]
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={pageDescription} />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#010102" />
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png" />
+    <link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="canonical" href={siteUrl} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={siteUrl} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDescription} />
+    <meta property="og:site_name" content="ReviewInbox" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={pageDescription} />
+    <script is:inline type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      name: 'ReviewInbox',
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Web',
+      url: siteUrl,
+      description: pageDescription,
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'USD',
+        availability: 'https://schema.org/InStock',
+      },
+    })}></script>
+    <title>{pageTitle}</title>
+  </head>
+  <body>
+    <div class="min-h-screen bg-canvas text-ink">
+      <a class="sr-only focus:not-sr-only focus:fixed focus:top-sm focus:left-sm focus:z-30 focus:rounded-md focus:bg-surface-2 focus:px-md focus:py-sm focus:text-sm focus:font-medium focus:text-ink" href="#main">
+        Skip to content
+      </a>
+
+      <header class="sticky top-0 z-20 border-hairline/80 border-b bg-canvas/85 backdrop-blur-xl">
+        <nav class="mx-auto flex h-14 max-w-7xl items-center justify-between px-md sm:px-lg">
+          <a href="/" class="font-semibold text-[15px] tracking-[-0.2px] text-ink">ReviewInbox</a>
+
+          <div class="hidden items-center gap-md text-sm text-ink-subtle md:flex">
+            <a class="inline-flex min-h-10 items-center px-xs transition hover:text-ink" href="#product">Product</a>
+            <a class="inline-flex min-h-10 items-center px-xs transition hover:text-ink" href="#pricing">Pricing</a>
+            <a class="inline-flex min-h-10 items-center px-xs transition hover:text-ink" href="/docs/">Docs</a>
+          </div>
+
+          <div class="flex items-center gap-xs">
+            <a class="hidden min-h-10 items-center rounded-md px-sm py-xs text-sm font-medium text-ink transition hover:bg-surface-1 sm:inline-flex" href={signInUrl}>
+              Sign in
+            </a>
+            <a class="inline-flex min-h-10 items-center rounded-md bg-linear-primary px-sm py-xs text-sm font-medium text-white transition hover:bg-linear-primary-focus" href={signUpUrl}>
+              Start free
+            </a>
+          </div>
+        </nav>
+      </header>
+
+      <main id="main">
+        <section class="mx-auto flex max-w-7xl flex-col items-center px-md pt-20 pb-section text-center sm:px-lg lg:pt-28">
+          <p class="mb-lg rounded-full border border-hairline bg-surface-1 px-sm py-xxs text-sm text-ink-muted">
+            Reply Inbox for app store teams
+          </p>
+          <h1 class="max-w-4xl text-4xl font-semibold leading-[1.04] tracking-[-1.4px] text-ink sm:text-6xl sm:tracking-[-2.3px] lg:text-[80px] lg:tracking-[-3px]">
+            Reply to every app review with more context.
+          </h1>
+          <p class="mt-lg max-w-2xl text-lg leading-8 tracking-[-0.1px] text-ink-muted sm:text-xl">
+            ReviewInbox centralizes Reviews, drafts replies with AI, and keeps every Published Reply behind a deliberate team workflow.
+          </p>
+          <div class="mt-xl flex flex-col items-center gap-sm sm:flex-row">
+            <a class="inline-flex min-h-10 items-center rounded-md bg-linear-primary px-md py-sm text-sm font-medium text-white transition hover:bg-linear-primary-focus" href={signUpUrl}>
+              Start free
+            </a>
+            <a class="inline-flex min-h-10 items-center rounded-md border border-hairline bg-surface-1 px-md py-sm text-sm font-medium text-ink transition hover:border-hairline-strong hover:bg-surface-2" href="#product">
+              See the product
+            </a>
+          </div>
+        </section>
+
+        <section id="product" class="mx-auto max-w-7xl px-md pb-section sm:px-lg">
+          <div class="rounded-xl border border-hairline bg-surface-1 p-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sm:p-lg">
+            <picture>
+              <source srcset="/screenshots/reply-inbox-hero.avif" type="image/avif" />
+              <img
+                class="w-full rounded-lg border border-hairline bg-surface-2"
+                src="/screenshots/reply-inbox-hero.png"
+                alt="ReviewInbox Reply Inbox showing reviews and reply drafts in a dark product interface"
+                width="1439"
+                height="910"
+                loading="eager"
+                decoding="async"
+              />
+            </picture>
+          </div>
+        </section>
+
+        <section class="mx-auto max-w-7xl px-md pb-section sm:px-lg">
+          <div class="grid gap-md md:grid-cols-3">
+            {features.map((feature) => (
+              <article class="rounded-lg border border-hairline bg-surface-1 p-lg shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                <h2 class="text-[22px] font-medium leading-tight tracking-[-0.4px] text-ink">{feature.title}</h2>
+                <p class="mt-sm text-sm leading-6 text-ink-subtle">{feature.description}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section class="mx-auto max-w-7xl px-md pb-section sm:px-lg">
+          <div class="rounded-xl border border-hairline bg-surface-1 p-lg shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] lg:p-xl">
+            <div class="grid gap-lg lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
+              <div>
+                <p class="text-sm font-medium text-linear-primary-hover">Workflow</p>
+                <h2 class="mt-sm max-w-152 text-4xl font-semibold leading-tight tracking-[-1px] text-ink sm:text-5xl">
+                  Draft faster without giving up control.
+                </h2>
+              </div>
+              <p class="max-w-2xl text-base leading-7 text-ink-muted lg:justify-self-end">
+                Reviews, Reply Drafts, and Published Replies stay separate. AI helps with the blank page, while your team keeps the final say.
+              </p>
+            </div>
+
+            <ol class="mt-xl grid gap-md md:grid-cols-2 lg:grid-cols-4">
+              {workflow.map((step, index) => (
+                <li class="rounded-lg border border-hairline bg-canvas p-lg shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                  <span class="flex size-8 items-center justify-center rounded-md bg-surface-2 font-mono text-sm text-ink-muted">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <h3 class="mt-lg font-medium text-ink">{step.title}</h3>
+                  <p class="mt-sm text-sm leading-6 text-ink-subtle">{step.description}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        <section id="pricing" class="mx-auto max-w-7xl px-md pb-section sm:px-lg">
+          <div class="mb-xl max-w-2xl">
+            <p class="text-sm font-medium text-linear-primary-hover">Pricing</p>
+            <h2 class="mt-sm text-4xl font-semibold leading-tight tracking-[-1px] text-ink sm:text-5xl">Choose the deployment model first.</h2>
+            <p class="mt-md text-base leading-7 text-ink-muted">Pricing is intentionally simple while ReviewInbox is early. Start with Cloud, or run the same product yourself.</p>
+          </div>
+
+          <div class="grid gap-md md:grid-cols-2">
+            <article class="rounded-lg border border-hairline-strong bg-surface-2 p-lg">
+              <p class="text-sm text-ink-subtle">Cloud</p>
+              <h3 class="mt-xs text-3xl font-semibold tracking-[-0.8px] text-ink">Hosted for your team</h3>
+              <p class="mt-md text-sm leading-6 text-ink-muted">Use ReviewInbox without operating infrastructure. Best for teams that want the Reply Inbox live quickly.</p>
+              <a class="mt-lg inline-flex min-h-10 items-center rounded-md bg-linear-primary px-md py-sm text-sm font-medium text-white transition hover:bg-linear-primary-focus" href={signUpUrl}>
+                Start free
+              </a>
+            </article>
+
+            <article class="rounded-lg border border-hairline bg-surface-1 p-lg">
+              <p class="text-sm text-ink-subtle">Self-hosted</p>
+              <h3 class="mt-xs text-3xl font-semibold tracking-[-0.8px] text-ink">Run it on your VPS</h3>
+              <p class="mt-md text-sm leading-6 text-ink-muted">Deploy with Docker Compose, keep Store Credentials under your control, and put ReviewInbox behind your own HTTPS proxy.</p>
+              <a class="mt-lg inline-flex min-h-10 items-center rounded-md border border-hairline bg-canvas px-md py-sm text-sm font-medium text-ink transition hover:border-hairline-strong hover:bg-surface-2" href="/docs/self-hosting/">
+                Read self-hosting docs
+              </a>
+            </article>
+          </div>
+        </section>
+
+        <section id="faq" class="mx-auto max-w-7xl px-md pb-section sm:px-lg">
+          <div class="grid gap-xl lg:grid-cols-[0.8fr_1.2fr]">
+            <div>
+              <p class="text-sm font-medium text-linear-primary-hover">FAQ</p>
+              <h2 class="mt-sm text-4xl font-semibold leading-tight tracking-[-1px] text-ink sm:text-5xl">Built for review operations.</h2>
+            </div>
+            <div class="divide-y divide-hairline rounded-lg border border-hairline bg-surface-1">
+              {faqs.map((faq) => (
+                <article class="p-lg">
+                  <h3 class="font-medium text-ink">{faq.question}</h3>
+                  <p class="mt-sm text-sm leading-6 text-ink-subtle">{faq.answer}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section class="mx-auto max-w-7xl px-md pb-section sm:px-lg">
+          <div class="grid gap-lg rounded-xl border border-hairline bg-surface-1 p-lg shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] sm:p-xl lg:grid-cols-[1fr_auto] lg:items-center">
+            <div>
+              <p class="text-sm font-medium text-linear-primary-hover">Ready when your reviews are</p>
+              <h2 class="mt-sm max-w-2xl text-4xl font-semibold leading-tight tracking-[-1px] text-ink sm:text-5xl">
+              Turn app reviews into a daily workflow.
+              </h2>
+              <p class="mt-md max-w-144 text-base leading-7 text-ink-muted">
+                Centralize Reviews, generate Reply Drafts, and publish with confidence from one focused inbox.
+              </p>
+            </div>
+            <a class="inline-flex min-h-10 w-fit items-center rounded-md bg-linear-primary px-md py-sm text-sm font-medium text-white transition hover:bg-linear-primary-focus" href={signUpUrl}>
+              Start free
+            </a>
+          </div>
+        </section>
+      </main>
+
+      <footer class="border-hairline border-t py-xl">
+        <div class="mx-auto flex max-w-7xl flex-col gap-md px-md text-sm text-ink-subtle sm:flex-row sm:items-center sm:justify-between sm:px-lg">
+          <p class="font-medium text-ink">ReviewInbox</p>
+          <div class="flex gap-md">
+            <a class="inline-flex min-h-10 items-center hover:text-ink" href="/docs/">Docs</a>
+            <a class="inline-flex min-h-10 items-center hover:text-ink" href={signInUrl}>Sign in</a>
+            <a class="inline-flex min-h-10 items-center hover:text-ink" href={signUpUrl}>Start free</a>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

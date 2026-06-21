@@ -1,0 +1,14 @@
+# ReviewInbox
+
+ReviewInbox is a Reply Inbox for app store teams. It centralizes App Store and Google Play Reviews, helps teams create AI-generated Reply Drafts, and keeps every Published Reply under explicit human control.
+
+## Primary pages
+
+- Marketing site: https://reviewinbox.app/
+- Self-hosting docs: https://reviewinbox.app/docs/self-hosting/
+
+## Product positioning
+
+ReviewInbox is for mobile app teams that need a structured workflow for imported Reviews, Reply Drafts, Published Replies, Store Connections, and Store Credentials.
+
+AI drafting is assistive only: it does not publish replies automatically, mutate workflow state, call store APIs, or read privileged configuration.

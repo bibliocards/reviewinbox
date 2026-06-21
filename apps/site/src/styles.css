@@ -1,0 +1,91 @@
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter Variable", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono Variable", "SF Mono", ui-monospace, Menlo, monospace;
+
+  --color-canvas: #010102;
+  --color-surface-1: #0f1117;
+  --color-surface-2: #141821;
+  --color-surface-3: #1a1f2a;
+  --color-surface-4: #202635;
+  --color-hairline: #23252a;
+  --color-hairline-strong: #3a4356;
+  --color-ink: #f7f8f8;
+  --color-ink-muted: #d0d6e0;
+  --color-ink-subtle: #8a8f98;
+  --color-ink-tertiary: #62666d;
+  --color-linear-primary: #5e6ad2;
+  --color-linear-primary-hover: #828fff;
+  --color-linear-primary-focus: #5e69d1;
+  --color-success: #27a644;
+
+  --spacing-xxs: 4px;
+  --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 48px;
+  --spacing-section: 96px;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-xxl: 24px;
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    --sl-color-accent-low: color-mix(in srgb, var(--color-linear-primary) 24%, var(--color-canvas));
+    --sl-color-accent: var(--color-linear-primary);
+    --sl-color-accent-high: var(--color-linear-primary-hover);
+    --sl-color-white: var(--color-ink);
+    --sl-color-gray-1: var(--color-ink-muted);
+    --sl-color-gray-2: var(--color-ink-subtle);
+    --sl-color-gray-3: var(--color-ink-tertiary);
+    --sl-color-gray-4: var(--color-hairline-strong);
+    --sl-color-gray-5: var(--color-hairline);
+    --sl-color-gray-6: var(--color-surface-1);
+    --sl-color-black: var(--color-canvas);
+  }
+
+  html {
+    min-height: 100%;
+    scroll-padding-top: 72px;
+    background: var(--color-canvas);
+  }
+
+  body {
+    min-height: 100%;
+    margin: 0;
+    overflow-x: hidden;
+    color: var(--color-ink);
+    background: var(--color-canvas);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.5;
+    letter-spacing: -0.05px;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-linear-primary-focus);
+    outline-offset: 2px;
+  }
+}
