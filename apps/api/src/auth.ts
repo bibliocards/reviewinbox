@@ -21,6 +21,7 @@ type StripeRuntimeConfig = {
 
 const authPlugins = [
   organization({
+    disableOrganizationDeletion: true,
     requireEmailVerificationOnInvitation: false,
     async membershipLimit(_user, org) {
       if (serverConfig.deploymentMode === 'self-hosted') {

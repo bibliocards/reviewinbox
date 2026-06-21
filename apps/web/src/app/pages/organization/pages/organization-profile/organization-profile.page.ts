@@ -1,5 +1,6 @@
 import { Component, computed, HostListener, inject, signal } from '@angular/core'
 import { FormField, form, required } from '@angular/forms/signals'
+import { HttpErrorResponse } from '@angular/common/http'
 import { TranslocoDirective } from '@jsverse/transloco'
 import type { OrganizationProfileResponse } from '@reviewinbox/contracts'
 import { OrganizationService } from 'ngx-better-auth'
@@ -151,8 +152,16 @@ export class OrganizationProfilePageComponent {
 
           location.assign('/organizations/new')
         },
-        error: () => this.errorMessageKey.set('organization.profile.errors.deleteFailed'),
+        error: (error: unknown) => this.errorMessageKey.set(this.deleteOrganizationErrorKey(error)),
       })
+  }
+
+  private deleteOrganizationErrorKey(error: unknown): string {
+    if (error instanceof HttpErrorResponse && error.status === 409) {
+      return 'organization.profile.errors.activeSubscription'
+    }
+
+    return 'organization.profile.errors.deleteFailed'
   }
 
   private loadProfile(): void {

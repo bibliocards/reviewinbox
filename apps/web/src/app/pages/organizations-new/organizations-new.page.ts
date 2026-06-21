@@ -24,8 +24,8 @@ export class OrganizationsNewPageComponent {
       return
     }
 
-    void this.router.navigate(['/organization/usage'], {
-      queryParams: { plan: event.selectedPlan, checkout: 'pending' },
+    void this.router.navigate(['/organization/billing'], {
+      queryParams: { plan: event.selectedPlan },
     })
   }
 

@@ -268,6 +268,7 @@
         "delete": "Supprimer l’Organization"
       },
       "errors": {
+        "activeSubscription": "Annulez l’abonnement Stripe actif avant de supprimer cette Organization.",
         "deleteFailed": "Impossible de supprimer cette Organization pour le moment.",
         "loadFailed": "Impossible de charger le profil de cette Organization.",
         "logoFailed": "Impossible d’importer ce logo pour le moment.",

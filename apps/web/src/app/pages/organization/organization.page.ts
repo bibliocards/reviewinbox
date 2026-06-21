@@ -14,5 +14,6 @@ export class OrganizationPageComponent {
     { label: 'Profile', route: 'profile' },
     { label: 'Members', route: 'members' },
     { label: 'Usage', route: 'usage', visible: this.capabilities().isCloud },
+    { label: 'Billing', route: 'billing', visible: this.capabilities().isCloud },
   ])
 }

@@ -1,100 +1,102 @@
-import { DatePipe } from '@angular/common'
-import { Component, computed, HostListener, inject, signal } from '@angular/core'
+import { Component, computed, DestroyRef, HostListener, inject, signal } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
-import type { BillingPlanName, OrganizationUsageItem, OrganizationUsageResponse } from '@reviewinbox/contracts'
+import type { OrganizationUsageResponse } from '@reviewinbox/contracts'
 import { AuthService, StripeService } from 'ngx-better-auth'
 import { ButtonModule } from 'primeng/button'
-import { MeterGroupModule } from 'primeng/metergroup'
 import { firstValueFrom } from 'rxjs'
+import {
+  billingPlanHighlights,
+  billingPlanLabels,
+  billingPlanPrices,
+  billingPlanSummaries,
+  type PaidBillingPlanName,
+} from '../../../../shared/billing-plan-display'
 import { AuthCapabilitiesService } from '../../../../shared/services/auth-capabilities.service'
 import { OrganizationProfileService } from '../../../../shared/services/organization-profile.service'
 
-type PaidPlanName = Exclude<BillingPlanName, 'free'>
 type BillingInterval = 'monthly' | 'annual'
 
 @Component({
   selector: 'ri-organization-billing-page',
-  imports: [ButtonModule, DatePipe, MeterGroupModule],
+  imports: [ButtonModule],
   templateUrl: 'organization-billing.page.html',
 })
 export class OrganizationBillingPageComponent {
   private readonly auth = inject(AuthService)
   private readonly authCapabilities = inject(AuthCapabilitiesService)
+  private readonly destroyRef = inject(DestroyRef)
   private readonly organizationProfile = inject(OrganizationProfileService)
   private readonly route = inject(ActivatedRoute)
   private readonly stripe = inject(StripeService)
+  private confirmationTimer: ReturnType<typeof setTimeout> | null = null
 
   protected readonly usage = signal<OrganizationUsageResponse | null>(null)
   protected readonly isLoading = signal(true)
   protected readonly isStartingCheckout = signal(false)
+  protected readonly isOpeningPortal = signal(false)
+  protected readonly isConfirmingCheckout = signal(false)
   protected readonly errorMessage = signal<string | null>(null)
-  protected readonly checkoutMessage = signal<string | null>(null)
-  protected readonly checkoutPlan = signal<PaidPlanName | null>(this.parseCheckoutPlan(this.route.snapshot.queryParamMap.get('plan')))
+  protected readonly billingMessage = signal<string | null>(null)
+  protected readonly billingError = signal<string | null>(null)
+  protected readonly checkoutPlan = signal<PaidBillingPlanName | null>(
+    this.parseCheckoutPlan(this.route.snapshot.queryParamMap.get('plan')),
+  )
   protected readonly billingInterval = signal<BillingInterval>('monthly')
+  protected readonly requestedReason = signal(this.route.snapshot.queryParamMap.get('reason'))
   protected readonly availableBillingPlans = computed(() => this.authCapabilities.capabilities().availableBillingPlans)
-  protected readonly billingSetupAvailable = computed(() => {
-    const usage = this.usage()
-    return usage?.limitsEnforced === true && usage.planName === 'free' && this.availableBillingPlans().length > 0
-  })
-  protected readonly usageItems = computed(() => {
-    const usage = this.usage()
-    if (!usage) {
-      return []
+  protected readonly billingPlanCards = computed(() =>
+    this.availableBillingPlans().map((plan) => ({
+      name: plan,
+      label: billingPlanLabels[plan],
+      summary: billingPlanSummaries[plan],
+      price: this.billingInterval() === 'annual' ? billingPlanPrices[plan].annual : billingPlanPrices[plan].monthly,
+      subprice: this.billingInterval() === 'annual' ? '2 months free' : 'Switch to annual later',
+      highlights: billingPlanHighlights[plan],
+      selected: this.selectedCheckoutPlan() === plan,
+    })),
+  )
+  protected readonly currentPlanLabel = computed(() => {
+    const plan = this.usage()?.planName
+    if (!plan || plan === 'free') {
+      return 'Free'
     }
 
-    return [
-      {
-        key: 'members',
-        label: 'Members',
-        description: 'People who can access this Organization.',
-        usage: usage.usage.members,
-      },
-      {
-        key: 'apps',
-        label: 'Apps',
-        description: 'Mobile Apps tracked in ReviewInbox.',
-        usage: usage.usage.apps,
-      },
-      {
-        key: 'storeConnections',
-        label: 'Store Connections',
-        description: 'Apple App Store and Google Play connections.',
-        usage: usage.usage.storeConnections,
-      },
-      {
-        key: 'monthlyReviewImports',
-        label: 'Monthly Review imports',
-        description: 'New Reviews imported for this usage period.',
-        usage: usage.usage.monthlyReviewImports,
-      },
-      {
-        key: 'monthlyManagedAiReplyDrafts',
-        label: 'Managed AI Reply Drafts',
-        description: 'Reply Drafts generated with ReviewInbox managed AI.',
-        usage: usage.usage.monthlyManagedAiReplyDrafts,
-      },
-    ]
+    return billingPlanLabels[plan]
   })
-  protected readonly checkoutPlanLabel = computed(() => {
-    const plan = this.selectedCheckoutPlan()
-    return plan ? planLabels[plan] : ''
+  protected readonly reasonMessage = computed(() => {
+    switch (this.requestedReason()) {
+      case 'members-limit':
+        return 'Your Organization is close to its member limit. Compare plans to add room for the team.'
+      case 'apps-limit':
+        return 'Your Organization is close to its App limit. Compare plans to track more Apps.'
+      case 'store-connections-limit':
+        return 'Your Organization is close to its Store Connection limit. Compare plans to connect more stores.'
+      case 'review-imports-limit':
+        return 'Your Organization is close to its monthly Review import limit. Compare plans to keep imports running.'
+      case 'reply-drafts-limit':
+        return 'Your Organization is close to its managed AI Reply Draft limit. Compare plans to draft more replies.'
+      default:
+        return 'Compare available plans for this Organization.'
+    }
   })
-  protected readonly monthlyPriceLabel = computed(() => {
-    const plan = this.selectedCheckoutPlan()
-    return plan ? `${planPrices[plan].monthly}. You can switch to annual later.` : ''
-  })
-  protected readonly annualSavingsLabel = computed(() => {
-    const plan = this.selectedCheckoutPlan()
-    if (!plan) {
-      return ''
+  protected readonly unavailablePlanMessage = computed(() => {
+    const requestedPlan = this.checkoutPlan()
+    if (requestedPlan && !this.availableBillingPlans().includes(requestedPlan)) {
+      return `${billingPlanLabels[requestedPlan]} is not available in this environment.`
     }
 
-    return `${planPrices[plan].annual} yearly, 2 months free`
+    return null
   })
 
   constructor() {
     this.loadUsage()
-    this.checkoutMessage.set(this.checkoutMessageFromQuery(this.route.snapshot.queryParamMap.get('checkout')))
+    this.billingMessage.set(this.checkoutMessageFromQuery(this.route.snapshot.queryParamMap.get('checkout')))
+
+    if (this.route.snapshot.queryParamMap.get('checkout') === 'success') {
+      this.startCheckoutConfirmation()
+    }
+
+    this.destroyRef.onDestroy(() => this.clearConfirmationTimer())
   }
 
   @HostListener('window:reviewinbox:active-organization-changed')
@@ -112,77 +114,32 @@ export class OrganizationBillingPageComponent {
         this.isLoading.set(false)
       },
       error: () => {
-        this.errorMessage.set('We could not load Organization usage. Please try again.')
+        this.errorMessage.set('We could not load Organization billing. Please try again.')
         this.isLoading.set(false)
       },
     })
-  }
-
-  protected meterValue(usage: OrganizationUsageItem) {
-    return [
-      {
-        label: `${usage.percent ?? 0}%`,
-        value: usage.percent ?? 0,
-        color: this.meterColor(usage),
-      },
-    ]
-  }
-
-  protected usageLabel(usage: OrganizationUsageItem): string {
-    if (usage.limit === null) {
-      return `${usage.used} used`
-    }
-
-    return `${usage.used}/${usage.limit}`
-  }
-
-  protected statusLabel(usage: OrganizationUsageItem): string {
-    if (usage.severity === 'danger') {
-      return ' · Limit reached'
-    }
-
-    if (usage.severity === 'warning') {
-      return ' · Near limit'
-    }
-
-    return ''
-  }
-
-  protected meterAriaLabel(label: string, usage: OrganizationUsageItem): string {
-    return `${label} usage: ${usage.used} of ${usage.limit ?? 'unlimited'} used`
   }
 
   protected selectBillingInterval(interval: BillingInterval): void {
     this.billingInterval.set(interval)
   }
 
-  protected selectCheckoutPlan(plan: PaidPlanName): void {
+  protected selectCheckoutPlan(plan: PaidBillingPlanName): void {
     this.checkoutPlan.set(plan)
   }
 
-  protected planOptionLabel(plan: PaidPlanName): string {
-    return planLabels[plan]
-  }
+  protected async continueBillingSetup(plan: PaidBillingPlanName): Promise<void> {
+    this.checkoutPlan.set(plan)
 
-  protected isCheckoutPlanSelected(plan: PaidPlanName): boolean {
-    return this.selectedCheckoutPlan() === plan
-  }
-
-  protected async continueBillingSetup(): Promise<void> {
-    const plan = this.selectedCheckoutPlan()
-    if (!plan) {
-      this.checkoutMessage.set('No paid plan is configured yet.')
-      return
-    }
-
-    const organizationId = (this.auth.session()?.session as { activeOrganizationId?: string } | undefined)?.activeOrganizationId
+    const organizationId = this.activeOrganizationId()
     if (!organizationId) {
-      this.checkoutMessage.set('Choose an active Organization before starting billing setup.')
+      this.billingMessage.set('Choose an active Organization before starting billing setup.')
       return
     }
 
     this.isStartingCheckout.set(true)
-    this.checkoutMessage.set(null)
+    this.billingMessage.set(null)
+    this.billingError.set(null)
 
     try {
       const response = await firstValueFrom(
@@ -191,9 +148,9 @@ export class OrganizationBillingPageComponent {
           annual: this.billingInterval() === 'annual',
           customerType: 'organization',
           referenceId: organizationId,
-          successUrl: this.billingReturnUrl('/organization/usage?checkout=success'),
-          cancelUrl: this.billingReturnUrl(`/organization/usage?plan=${plan}&checkout=canceled`),
-          returnUrl: this.billingReturnUrl('/organization/usage'),
+          successUrl: this.billingReturnUrl(`/organization/billing?plan=${plan}&checkout=success`),
+          cancelUrl: this.billingReturnUrl(`/organization/billing?plan=${plan}&checkout=canceled`),
+          returnUrl: this.billingReturnUrl('/organization/billing'),
         }),
       )
 
@@ -202,52 +159,98 @@ export class OrganizationBillingPageComponent {
         return
       }
 
-      this.checkoutMessage.set('Stripe did not return a checkout URL. Please try again.')
+      this.billingError.set('Stripe did not return a checkout URL. Please try again.')
     } catch {
-      this.checkoutMessage.set('We could not start billing setup. Please try again.')
+      this.billingError.set('We could not start billing setup. Please try again.')
     } finally {
       this.isStartingCheckout.set(false)
     }
   }
 
-  protected planLabel(): string {
-    const usage = this.usage()
-    if (!usage) {
-      return 'Loading usage...'
+  protected async openBillingPortal(): Promise<void> {
+    const organizationId = this.activeOrganizationId()
+    if (!organizationId) {
+      this.billingMessage.set('Choose an active Organization before managing billing.')
+      return
     }
 
-    if (!usage.limitsEnforced) {
-      return 'Self-hosted'
-    }
+    this.isOpeningPortal.set(true)
+    this.billingMessage.set('Opening Stripe billing portal...')
+    this.billingError.set(null)
 
-    return usage.planName
+    try {
+      const response = await firstValueFrom(
+        this.stripe.billingPortal({
+          customerType: 'organization',
+          referenceId: organizationId,
+          returnUrl: this.billingReturnUrl('/organization/billing'),
+        }),
+      )
+
+      if (response.url) {
+        globalThis.location.assign(response.url)
+        return
+      }
+
+      this.billingError.set('Stripe did not return a billing portal URL. Please try again.')
+    } catch {
+      this.billingError.set('We could not open the billing portal. Please try again.')
+    } finally {
+      this.isOpeningPortal.set(false)
+    }
   }
 
-  protected badgeClass(usage: OrganizationUsageItem): string {
-    if (usage.severity === 'danger') {
-      return 'bg-red-500/10 text-red-700'
-    }
-
-    if (usage.severity === 'warning') {
-      return 'bg-amber-500/10 text-amber-700'
-    }
-
-    return 'bg-green-500/10 text-green-700'
+  protected isCurrentPlan(plan: PaidBillingPlanName): boolean {
+    return this.usage()?.planName === plan
   }
 
-  private meterColor(usage: OrganizationUsageItem): string {
-    if (usage.severity === 'danger') {
-      return '#dc2626'
-    }
-
-    if (usage.severity === 'warning') {
-      return '#d97706'
-    }
-
-    return '#16a34a'
+  protected planCardClass(selected: boolean): string {
+    return selected ? 'border-primary bg-surface-2' : 'border-hairline bg-surface-1'
   }
 
-  private parseCheckoutPlan(plan: string | null): PaidPlanName | null {
+  private startCheckoutConfirmation(): void {
+    this.isConfirmingCheckout.set(true)
+    this.pollCheckoutConfirmation(0)
+  }
+
+  private pollCheckoutConfirmation(attempt: number): void {
+    this.clearConfirmationTimer()
+    this.confirmationTimer = setTimeout(async () => {
+      try {
+        const usage = await firstValueFrom(this.organizationProfile.getUsage())
+        this.usage.set(usage)
+
+        if (usage.limitsEnforced && usage.planName !== 'free') {
+          this.isConfirmingCheckout.set(false)
+          this.billingMessage.set('Your subscription is active.')
+          return
+        }
+      } catch {
+        // Keep the optimistic pending state; the normal retry action remains available.
+      }
+
+      if (attempt >= 9) {
+        this.isConfirmingCheckout.set(false)
+        this.billingMessage.set('Activation is still in progress. You can keep using ReviewInbox while Stripe confirms the subscription.')
+        return
+      }
+
+      this.pollCheckoutConfirmation(attempt + 1)
+    }, 2_000)
+  }
+
+  private clearConfirmationTimer(): void {
+    if (this.confirmationTimer) {
+      clearTimeout(this.confirmationTimer)
+      this.confirmationTimer = null
+    }
+  }
+
+  private activeOrganizationId(): string | undefined {
+    return (this.auth.session()?.session as { activeOrganizationId?: string } | undefined)?.activeOrganizationId
+  }
+
+  private parseCheckoutPlan(plan: string | null): PaidBillingPlanName | null {
     if (plan === 'starter' || plan === 'pro' || plan === 'business') {
       return plan
     }
@@ -256,22 +259,18 @@ export class OrganizationBillingPageComponent {
   }
 
   private checkoutMessageFromQuery(checkout: string | null): string | null {
-    if (checkout === 'pending') {
-      return 'Create your subscription to activate the selected plan.'
-    }
-
     if (checkout === 'canceled') {
       return 'Billing setup was canceled. You can continue when you are ready.'
     }
 
     if (checkout === 'success') {
-      return 'Billing setup is complete. Usage limits will update after Stripe confirms the subscription.'
+      return 'Activation is in progress. Stripe is confirming the subscription.'
     }
 
     return null
   }
 
-  private selectedCheckoutPlan(): PaidPlanName | null {
+  private selectedCheckoutPlan(): PaidBillingPlanName | null {
     const selectedPlan = this.checkoutPlan()
     const availablePlans = this.availableBillingPlans()
     if (selectedPlan && availablePlans.includes(selectedPlan)) {
@@ -284,16 +283,4 @@ export class OrganizationBillingPageComponent {
   private billingReturnUrl(path: string): string {
     return new URL(path, this.authCapabilities.capabilities().appPublicUrl).toString()
   }
-}
-
-const planLabels: Record<PaidPlanName, string> = {
-  starter: 'Starter',
-  pro: 'Pro',
-  business: 'Business',
-}
-
-const planPrices: Record<PaidPlanName, { monthly: string; annual: string }> = {
-  starter: { monthly: '$9.99 monthly', annual: '$99.99' },
-  pro: { monthly: '$29.99 monthly', annual: '$299.99' },
-  business: { monthly: '$99.99 monthly', annual: '$999.99' },
 }

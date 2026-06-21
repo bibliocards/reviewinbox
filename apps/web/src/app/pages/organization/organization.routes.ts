@@ -3,6 +3,7 @@ import { canActivate, hasOrganizationRole } from 'ngx-better-auth'
 import { OrganizationBillingPageComponent } from './pages/organization-billing/organization-billing.page'
 import { OrganizationMembersPageComponent } from './pages/organization-members/organization-members.page'
 import { OrganizationProfilePageComponent } from './pages/organization-profile/organization-profile.page'
+import { OrganizationUsagePageComponent } from './pages/organization-usage/organization-usage.page'
 
 export const organizationRoutes: Routes = [
   {
@@ -28,6 +29,11 @@ export const organizationRoutes: Routes = [
       {
         path: 'usage',
         title: 'Organization usage | ReviewInbox',
+        component: OrganizationUsagePageComponent,
+      },
+      {
+        path: 'billing',
+        title: 'Organization billing | ReviewInbox',
         component: OrganizationBillingPageComponent,
       },
     ],

@@ -1,95 +1,33 @@
 <section class="grid gap-5">
   <div class="rounded-2xl border border-hairline bg-surface-1 p-5">
-    <h2 class="m-0 text-lg font-semibold text-ink">Usage and limits</h2>
-    @if (usage()?.limitsEnforced) {
-    <p class="m-0 mt-2 text-sm text-ink-subtle">
-      Current monthly period:
-      <strong>{{ usage()?.usagePeriod?.startsAt | date: 'mediumDate' }}</strong>
-      to
-      <strong>{{ usage()?.usagePeriod?.endsAt | date: 'mediumDate' }}</strong>.
-    </p>
-    } @else {
-    <p class="m-0 mt-2 text-sm text-ink-subtle">
-      Usage is recorded for visibility. Billing limits are not enforced on this self-hosted deployment.
-    </p>
-    }
+    <h2 class="m-0 text-lg font-semibold text-ink">Manage subscription</h2>
+    <p class="m-0 mt-2 max-w-2xl text-sm text-ink-subtle">Compare plans, activate billing, and manage your subscription through Stripe.</p>
   </div>
-  @if (billingSetupAvailable()) {
-  <section class="rounded-2xl border border-primary/30 bg-surface-1 p-5 shadow-sm">
-    <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-      <div>
-        <p class="ri-chip ri-chip-primary w-fit">Billing setup</p>
-        <h3 class="m-0 mt-3 text-lg font-semibold text-ink">Activate {{ checkoutPlanLabel() }}</h3>
-        <p class="m-0 mt-2 max-w-2xl text-sm text-ink-subtle">
-          Your Organization starts on Free. Continue to Stripe Checkout to activate {{ checkoutPlanLabel() }} with secure payment, automatic
-          tax, and tax ID collection.
-        </p>
-        <fieldset class="mt-4 flex flex-wrap gap-2 border-0 p-0">
-          <legend class="sr-only">Plan</legend>
-          @for (plan of availableBillingPlans(); track plan) {
-          <button
-            type="button"
-            class="rounded-xl border px-3 py-2 text-sm font-semibold"
-            [class.border-primary]="isCheckoutPlanSelected(plan)"
-            [class.bg-primary]="isCheckoutPlanSelected(plan)"
-            [class.text-primary-contrast]="isCheckoutPlanSelected(plan)"
-            [class.border-hairline]="!isCheckoutPlanSelected(plan)"
-            (click)="selectCheckoutPlan(plan)">
-            {{ planOptionLabel(plan) }}
-          </button>
-          }
-        </fieldset>
-        @if (checkoutMessage()) {
-        <p
-          class="m-0 mt-3 rounded-xl border border-hairline bg-surface-2 px-3 py-2 text-sm text-ink-muted"
-          role="status">
-          {{ checkoutMessage() }}
-        </p>
-        }
-      </div>
-
-      <div class="grid min-w-64 gap-3 rounded-2xl border border-hairline bg-surface-2 p-4">
-        <fieldset class="grid grid-cols-2 gap-2 border-0 p-0">
-          <legend class="sr-only">Billing interval</legend>
-          <button
-            type="button"
-            class="rounded-xl border px-3 py-2 text-sm font-semibold"
-            [class.border-primary]="billingInterval() === 'monthly'"
-            [class.bg-primary]="billingInterval() === 'monthly'"
-            [class.text-primary-contrast]="billingInterval() === 'monthly'"
-            [class.border-hairline]="billingInterval() !== 'monthly'"
-            (click)="selectBillingInterval('monthly')">
-            Monthly
-          </button>
-          <button
-            type="button"
-            class="rounded-xl border px-3 py-2 text-sm font-semibold"
-            [class.border-primary]="billingInterval() === 'annual'"
-            [class.bg-primary]="billingInterval() === 'annual'"
-            [class.text-primary-contrast]="billingInterval() === 'annual'"
-            [class.border-hairline]="billingInterval() !== 'annual'"
-            (click)="selectBillingInterval('annual')">
-            Annual
-          </button>
-        </fieldset>
-        <p class="m-0 text-sm text-ink-subtle">
-          @if (billingInterval() === 'annual') {
-          {{ annualSavingsLabel() }}. } @else { {{ monthlyPriceLabel() }} }
-        </p>
-        <p-button
-          label="Continue billing setup"
-          [loading]="isStartingCheckout()"
-          [disabled]="isStartingCheckout()"
-          (onClick)="continueBillingSetup()" />
-      </div>
-    </div>
-  </section>
+  @if (billingMessage()) {
+  <div
+    class="rounded-2xl border border-primary/30 bg-primary/10 p-4 text-sm text-ink"
+    role="status"
+    [attr.aria-busy]="isConfirmingCheckout()">
+    {{ billingMessage() }}
+  </div>
+  } @if (billingError()) {
+  <div
+    class="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700"
+    role="alert">
+    {{ billingError() }}
+  </div>
+  } @if (unavailablePlanMessage()) {
+  <div
+    class="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-700"
+    role="status">
+    {{ unavailablePlanMessage() }}
+  </div>
   } @if (isLoading()) {
   <div
     class="rounded-2xl border border-hairline bg-surface-1 p-5 text-sm text-ink-subtle"
     role="status"
     aria-busy="true">
-    Loading usage...
+    Loading billing...
   </div>
   } @else if (errorMessage()) {
   <div
@@ -103,36 +41,104 @@
       Try again
     </button>
   </div>
-  } @else {
-  <div class="grid gap-4 lg:grid-cols-2">
-    @for (item of usageItems(); track item.key) {
-    <article class="rounded-2xl border border-hairline bg-surface-1 p-5 shadow-sm">
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h3 class="m-0 text-base font-semibold text-ink">{{ item.label }}</h3>
-          <p class="m-0 mt-1 text-sm text-ink-subtle">{{ item.description }}</p>
-        </div>
-        <span
-          class="rounded-full px-2.5 py-1 text-xs font-semibold"
-          [class]="badgeClass(item.usage)">
-          {{ usageLabel(item.usage) }}{{ statusLabel(item.usage) }}
-        </span>
+  } @else if (!usage()?.limitsEnforced) {
+  <article class="rounded-2xl border border-hairline bg-surface-1 p-5">
+    <h3 class="m-0 text-base font-semibold text-ink">Self-hosted deployment</h3>
+    <p class="m-0 mt-2 text-sm text-ink-subtle">
+      Billing is not enforced on this deployment. Usage remains visible for capacity planning only.
+    </p>
+  </article>
+  } @else if (usage()?.planName !== 'free') {
+  <article class="rounded-2xl border border-hairline bg-surface-1 p-5">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div>
+        <h3 class="m-0 text-xl font-semibold text-ink">{{ currentPlanLabel() }}</h3>
+        <p class="m-0 mt-2 max-w-2xl text-sm text-ink-subtle">
+          Your subscription is managed by Stripe. Open the billing portal to update payment details, change your subscription, or view
+          invoices.
+        </p>
       </div>
-      @if (item.usage.percent !== null) {
-      <p-meterGroup
-        class="mt-4"
-        [value]="meterValue(item.usage)"
-        [attr.aria-label]="meterAriaLabel(item.label, item.usage)" />
-      <p class="m-0 mt-3 text-xs text-ink-tertiary">
-        {{ item.usage.used }}
-        of {{ item.usage.limit }} used. Included: {{ item.usage.included }}.
-      </p>
-      } @else {
-      <p class="m-0 mt-4 text-sm font-medium text-ink">{{ item.usage.used }} used</p>
-      <p class="m-0 mt-2 text-xs text-ink-tertiary">No limit enforced in self-hosted mode.</p>
+      <p-button
+        label="Manage subscription"
+        [loading]="isOpeningPortal()"
+        [disabled]="isOpeningPortal()"
+        (onClick)="openBillingPortal()" />
+    </div>
+  </article>
+  } @else {
+  <section class="grid gap-4">
+    <div class="rounded-2xl border border-hairline bg-surface-1 p-5">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h3 class="m-0 text-lg font-semibold text-ink">Choose a plan</h3>
+          <p class="m-0 mt-2 max-w-2xl text-sm text-ink-subtle">{{ reasonMessage() }}</p>
+        </div>
+        <fieldset class="grid w-fit grid-cols-2 gap-1 rounded-xl border border-hairline bg-surface-2 p-1">
+          <legend class="sr-only">Billing interval</legend>
+          <button
+            type="button"
+            class="rounded-lg px-3 py-2 text-sm font-semibold text-ink-subtle"
+            [class.bg-surface-1]="billingInterval() === 'monthly'"
+            [class.text-ink]="billingInterval() === 'monthly'"
+            [attr.aria-pressed]="billingInterval() === 'monthly'"
+            (click)="selectBillingInterval('monthly')">
+            Monthly
+          </button>
+          <button
+            type="button"
+            class="rounded-lg px-3 py-2 text-sm font-semibold text-ink-subtle"
+            [class.bg-surface-1]="billingInterval() === 'annual'"
+            [class.text-ink]="billingInterval() === 'annual'"
+            [attr.aria-pressed]="billingInterval() === 'annual'"
+            (click)="selectBillingInterval('annual')">
+            Annual
+          </button>
+        </fieldset>
+      </div>
+    </div>
+    @if (billingPlanCards().length === 0) {
+    <div class="rounded-2xl border border-hairline bg-surface-1 p-5 text-sm text-ink-subtle">
+      No paid plan is configured for this environment yet.
+    </div>
+    } @else {
+    <div class="grid gap-4 lg:grid-cols-3">
+      @for (plan of billingPlanCards(); track plan.name) {
+      <article
+        class="flex flex-col rounded-2xl border p-5 shadow-sm"
+        [class]="planCardClass(plan.selected)">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h3 class="m-0 text-lg font-semibold text-ink">{{ plan.label }}</h3>
+            <p class="m-0 mt-2 text-sm text-ink-subtle">{{ plan.summary }}</p>
+          </div>
+          @if (plan.selected) {
+          <span class="ri-chip ri-chip-primary">Selected</span>
+          } @else if (plan.name === 'starter') {
+          <span class="ri-chip ri-chip-primary">Recommended</span>
+          }
+        </div>
+
+        <div class="mt-5">
+          <p class="m-0 text-2xl font-semibold tracking-[-0.6px] text-ink">{{ plan.price }}</p>
+          <p class="m-0 mt-1 text-xs text-ink-tertiary">{{ plan.subprice }}</p>
+        </div>
+
+        <ul class="m-0 mt-5 grid list-none gap-2 p-0 text-sm text-ink-subtle">
+          @for (highlight of plan.highlights; track highlight) {
+          <li class="flex gap-2"><span class="text-primary">•</span><span>{{ highlight }}</span></li>
+          }
+        </ul>
+
+        <p-button
+          class="mt-5"
+          [label]="isCurrentPlan(plan.name) ? 'Current plan' : 'Activate ' + plan.label"
+          [loading]="isStartingCheckout() && plan.selected"
+          [disabled]="isStartingCheckout() || isConfirmingCheckout() || isCurrentPlan(plan.name)"
+          (onClick)="continueBillingSetup(plan.name)" />
+      </article>
       }
-    </article>
+    </div>
     }
-  </div>
+  </section>
   }
 </section>

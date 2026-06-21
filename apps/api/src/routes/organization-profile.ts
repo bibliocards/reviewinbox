@@ -6,14 +6,15 @@ import {
   updateOrganizationProfileRequestSchema,
 } from '@reviewinbox/contracts'
 import { getEffectiveOrganizationLimits, getMonthlyUsagePeriod, getUsagePercent, getUsageSeverity } from '@reviewinbox/billing'
-import { apps, member, organization as organizationTable, storeConnections, usageEvents } from '@reviewinbox/db'
-import { and, count, eq, gte, lt, ne, sql } from 'drizzle-orm'
+import { apps, member, organization as organizationTable, storeConnections, subscription, usageEvents } from '@reviewinbox/db'
+import { and, count, eq, gte, inArray, lt, ne, sql } from 'drizzle-orm'
 import { Hono } from 'hono'
 
 import { requireActiveOrganizationManagerSession, requireActiveOrganizationOwnerSession } from '../auth/session'
 import { database, serverConfig } from '../db'
 import { parseJsonBody } from '../http/validation'
 import { createOrganizationLogoStorage } from '../storage/organization-logo-storage'
+import { organizationDeletionBlockingStatuses } from './organization-deletion'
 
 const maxLogoBytes = 5 * 1024 * 1024
 const acceptedLogoTypes = new Map([
@@ -229,6 +230,18 @@ organizationProfileRoutes.delete('/api/organization', async (context) => {
 
   if (bodyResult.data.name !== current.name) {
     return context.json({ error: 'Organization name confirmation does not match.' }, 400)
+  }
+
+  const activeSubscription = await database.query.subscription.findFirst({
+    columns: { id: true },
+    where: and(
+      eq(subscription.referenceId, sessionResult.session.organizationId),
+      inArray(subscription.status, organizationDeletionBlockingStatuses()),
+    ),
+  })
+
+  if (activeSubscription) {
+    return context.json({ error: 'Cancel the active Stripe subscription before deleting this Organization.' }, 409)
   }
 
   const nextMembership = await database.query.member.findFirst({
