@@ -59,10 +59,7 @@ export class AppsPageComponent {
   protected readonly manualSyncAvailable = computed(() => isManualSyncAvailable(this.organizationUsageResource.value()))
 
   constructor() {
-    this.organizationService.getActiveMember().subscribe({
-      next: (member) => this.activeMemberRole.set(member.role),
-      error: () => this.activeMemberRole.set(undefined),
-    })
+    this.loadActiveMemberRole()
 
     effect(() => {
       this.appIcons.loadIcons(this.apps())
@@ -84,24 +81,11 @@ export class AppsPageComponent {
     this.replyDraftQueueMessageByAppId.set({})
     this.appsResource.reload()
     this.organizationUsageResource.reload()
-    this.organizationService.getActiveMember().subscribe({
-      next: (member) => this.activeMemberRole.set(member.role),
-      error: () => this.activeMemberRole.set(undefined),
-    })
+    this.loadActiveMemberRole()
   }
 
   protected openConnectAppDialog(): void {
-    const dialog = this.dialogService.open(ConnectAppDialogComponent, {
-      header: this.transloco.translate('apps.connectDialog.title'),
-      modal: true,
-      closable: true,
-      dismissableMask: true,
-      width: 'min(920px, 94vw)',
-      contentStyle: { overflow: 'auto' },
-      breakpoints: {
-        '640px': '94vw',
-      },
-    })
+    const dialog = this.openAppDialog('apps.connectDialog.title')
 
     dialog?.onClose.subscribe((result?: ConnectAppResponse) => {
       if (!result) {
@@ -115,18 +99,7 @@ export class AppsPageComponent {
   }
 
   protected openEditAppDialog(app: AppListItemResponse): void {
-    const dialog = this.dialogService.open(ConnectAppDialogComponent, {
-      header: this.transloco.translate('apps.connectDialog.editTitle'),
-      modal: true,
-      closable: true,
-      dismissableMask: true,
-      width: 'min(920px, 94vw)',
-      contentStyle: { overflow: 'auto' },
-      data: { app },
-      breakpoints: {
-        '640px': '94vw',
-      },
-    })
+    const dialog = this.openAppDialog('apps.connectDialog.editTitle', { app })
 
     dialog?.onClose.subscribe((result?: UpdateAppResponse) => {
       if (!result) {
@@ -299,6 +272,28 @@ export class AppsPageComponent {
 
   private roleLabel(role: string | string[] | undefined): string {
     return Array.isArray(role) ? role.join(', ') : (role ?? 'member')
+  }
+
+  private loadActiveMemberRole(): void {
+    this.organizationService.getActiveMember().subscribe({
+      next: (member) => this.activeMemberRole.set(member.role),
+      error: () => this.activeMemberRole.set(undefined),
+    })
+  }
+
+  private openAppDialog(headerKey: string, data?: { app: AppListItemResponse }) {
+    return this.dialogService.open(ConnectAppDialogComponent, {
+      header: this.transloco.translate(headerKey),
+      modal: true,
+      closable: true,
+      dismissableMask: true,
+      width: 'min(920px, 94vw)',
+      contentStyle: { overflow: 'auto' },
+      ...(data ? { data } : {}),
+      breakpoints: {
+        '640px': '94vw',
+      },
+    })
   }
 
   private setSyncRunResult(syncRun: SyncRunResponse): void {
