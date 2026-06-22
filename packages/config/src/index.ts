@@ -93,6 +93,7 @@ export const serverConfigSchema = z
     smtpUser: optionalStringSchema,
     smtpPassword: optionalStringSchema,
     smtpSecure: booleanEnvSchema,
+    replyDraftWorkerEnabled: booleanEnvSchema,
     autoSyncReviewsEnabled: enabledBooleanEnvSchema,
     autoSyncReviewsSpreadWindowMinutes: z.coerce.number().int().min(1).max(360).default(60),
     uploadLocalDir: z.string().default('volumes/uploads'),
@@ -212,6 +213,16 @@ export const serverConfigSchema = z
   })
 
 export type ServerConfig = z.infer<typeof serverConfigSchema>
+
+export const workerConfigSchema = z.object({
+  deploymentMode: deploymentModeSchema.default('self-hosted'),
+  databaseUrl: z.url().default('postgres://reviewinbox:reviewinbox@localhost:5432/reviewinbox'),
+  runDatabaseMigrationsOnStartup: booleanEnvSchema,
+  autoSyncReviewsEnabled: enabledBooleanEnvSchema,
+  autoSyncReviewsSpreadWindowMinutes: z.coerce.number().int().min(1).max(360).default(60),
+})
+
+export type WorkerConfig = z.infer<typeof workerConfigSchema>
 
 export function getNextAutoSyncWindowStartsAt(now = new Date()): Date {
   const year = now.getUTCFullYear()
@@ -351,6 +362,7 @@ export function loadServerConfig(env: NodeJS.ProcessEnv = loadProcessEnv()): Ser
     smtpUser: env['SMTP_USER'],
     smtpPassword: env['SMTP_PASSWORD'],
     smtpSecure: env['SMTP_SECURE'],
+    replyDraftWorkerEnabled: env['REPLY_DRAFT_WORKER_ENABLED'],
     autoSyncReviewsEnabled: env['AUTO_SYNC_REVIEWS_ENABLED'],
     autoSyncReviewsSpreadWindowMinutes: env['AUTO_SYNC_REVIEWS_SPREAD_WINDOW_MINUTES'],
     uploadLocalDir: env['UPLOAD_LOCAL_DIR'],
@@ -368,6 +380,16 @@ export function loadServerConfig(env: NodeJS.ProcessEnv = loadProcessEnv()): Ser
     stripeProAnnualPriceId: env['STRIPE_PRO_ANNUAL_PRICE_ID'],
     stripeBusinessPriceId: env['STRIPE_BUSINESS_PRICE_ID'],
     stripeBusinessAnnualPriceId: env['STRIPE_BUSINESS_ANNUAL_PRICE_ID'],
+  })
+}
+
+export function loadWorkerConfig(env: NodeJS.ProcessEnv = loadProcessEnv()): WorkerConfig {
+  return workerConfigSchema.parse({
+    deploymentMode: env['DEPLOYMENT_MODE'],
+    databaseUrl: env['DATABASE_URL'],
+    runDatabaseMigrationsOnStartup: env['RUN_DB_MIGRATIONS_ON_STARTUP'],
+    autoSyncReviewsEnabled: env['AUTO_SYNC_REVIEWS_ENABLED'],
+    autoSyncReviewsSpreadWindowMinutes: env['AUTO_SYNC_REVIEWS_SPREAD_WINDOW_MINUTES'],
   })
 }
 

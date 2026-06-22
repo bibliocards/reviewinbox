@@ -1,14 +1,21 @@
 import { describe, expect, it } from 'vitest'
 
-import { getNextAutoSyncWindowStartsAt, loadAiConfig, loadEncryptionConfig, loadServerConfig } from './index'
+import { getNextAutoSyncWindowStartsAt, loadAiConfig, loadEncryptionConfig, loadServerConfig, loadWorkerConfig } from './index'
 
 describe('loadServerConfig', () => {
   it('uses safe local defaults', () => {
     expect(loadServerConfig({})).toMatchObject({
       deploymentMode: 'self-hosted',
       runDatabaseMigrationsOnStartup: false,
+      replyDraftWorkerEnabled: false,
       apiHost: '127.0.0.1',
       apiPort: 3000,
+    })
+  })
+
+  it('enables Reply Draft worker enqueueing explicitly', () => {
+    expect(loadServerConfig({ REPLY_DRAFT_WORKER_ENABLED: 'true' })).toMatchObject({
+      replyDraftWorkerEnabled: true,
     })
   })
 
@@ -54,6 +61,20 @@ describe('loadServerConfig', () => {
         STRIPE_STARTER_PRICE_ID: 'price_starter',
       }),
     ).toThrow(/monthly and annual/)
+  })
+})
+
+describe('loadWorkerConfig', () => {
+  it('allows cloud worker startup without API billing configuration', () => {
+    expect(
+      loadWorkerConfig({
+        DEPLOYMENT_MODE: 'cloud',
+        DATABASE_URL: 'postgres://reviewinbox:reviewinbox@localhost:5432/reviewinbox',
+      }),
+    ).toMatchObject({
+      deploymentMode: 'cloud',
+      databaseUrl: 'postgres://reviewinbox:reviewinbox@localhost:5432/reviewinbox',
+    })
   })
 })
 

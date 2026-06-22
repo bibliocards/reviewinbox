@@ -1,9 +1,7 @@
-import { loadAiConfig } from '@reviewinbox/config'
 import { createQueueClient } from '@reviewinbox/queue'
 
 import { serverConfig } from './db'
 
-const aiConfig = loadAiConfig()
 const queue = createQueueClient({
   databaseUrl: serverConfig.databaseUrl,
   onError: (error) => {
@@ -14,7 +12,7 @@ const queue = createQueueClient({
 let queueStartPromise: Promise<void> | null = null
 
 export async function enqueueGenerateReplyDraftJobs(input: { organizationId: string; reviewIds: string[] }): Promise<number> {
-  if (aiConfig.provider === 'disabled' || input.reviewIds.length === 0) {
+  if (!serverConfig.replyDraftWorkerEnabled || input.reviewIds.length === 0) {
     return 0
   }
 

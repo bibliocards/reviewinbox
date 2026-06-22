@@ -1,6 +1,6 @@
 import { generateReplyDraft } from '@reviewinbox/ai'
 import { getPlanDefinition } from '@reviewinbox/billing'
-import { getNextAutoSyncWindowStartsAt, loadAiConfig, loadServerConfig } from '@reviewinbox/config'
+import { getNextAutoSyncWindowStartsAt, loadAiConfig, loadWorkerConfig } from '@reviewinbox/config'
 import {
   closeDatabase,
   createDatabase,
@@ -20,7 +20,7 @@ import { createWorkerReplyDraftProvider } from './ai-provider'
 const shutdownSignals = ['SIGINT', 'SIGTERM'] as const
 
 async function main() {
-  const config = loadServerConfig()
+  const config = loadWorkerConfig()
   const aiConfig = loadAiConfig()
 
   if (config.runDatabaseMigrationsOnStartup) {

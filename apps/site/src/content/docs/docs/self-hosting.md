@@ -77,13 +77,14 @@ AI drafting is optional. Without it, ReviewInbox still imports Reviews and suppo
 Enable AI-generated Reply Drafts with an OpenAI-compatible provider:
 
 ```ini
+REPLY_DRAFT_WORKER_ENABLED=true
 AI_PROVIDER=openai-compatible
 AI_MODEL=gpt-4.1-mini
 AI_API_KEY=your-provider-key
 AI_BASE_URL=
 ```
 
-Set `AI_BASE_URL` only when your provider requires a custom OpenAI-compatible endpoint.
+Set `REPLY_DRAFT_WORKER_ENABLED=true` on the API service so UI actions can enqueue Reply Draft jobs. Set the `AI_*` values on the worker service; the API does not need the provider key. Set `AI_BASE_URL` only when your provider requires a custom OpenAI-compatible endpoint.
 
 ## Reverse Proxy Model
 
