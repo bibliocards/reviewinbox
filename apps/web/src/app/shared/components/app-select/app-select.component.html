@@ -16,10 +16,12 @@
       <img
         class="size-6 rounded-md object-cover"
         [src]="item.imageUrl"
-        [alt]="item.label" />
+        alt=""
+        aria-hidden="true" />
       } @else if (item.value) {
       <span
-        class="grid size-6 shrink-0 place-items-center rounded-md border border-hairline bg-surface-2 text-[0.65rem] font-semibold text-ink-subtle">
+        class="grid size-6 shrink-0 place-items-center rounded-md border border-hairline bg-surface-2 text-[0.65rem] font-semibold text-ink-subtle"
+        aria-hidden="true">
         {{ initialsFrom(item.label) }}
       </span>
       }
