@@ -56,12 +56,13 @@
             </div>
             <div class="flex items-center gap-1.5 text-sm text-ink-subtle">
               <div
-                class="grid size-5 shrink-0 place-items-center overflow-hidden rounded-md border border-hairline bg-surface-2 text-[0.6rem] font-semibold">
+                class="grid size-5 shrink-0 place-items-center overflow-hidden rounded-md border border-hairline bg-surface-2 text-[0.6rem] font-semibold"
+                aria-hidden="true">
                 @if (appIconUrl(review.appId); as iconUrl) {
                 <img
                   class="size-full object-cover"
                   [src]="iconUrl"
-                  [alt]="review.appName" />
+                  alt="" />
                 } @else {
                 <span>{{ initialsFrom(review.appName) }}</span>
                 }
