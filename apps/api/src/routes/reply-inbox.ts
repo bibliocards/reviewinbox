@@ -90,7 +90,7 @@ replyInboxRoutes.get('/api/reply-inbox', async (context) => {
   const reviewIds = rows.map((row) => row.review.id)
   const publishFailures = reviewIds.length
     ? await database
-        .select({ event: replyAuditEvents })
+        .selectDistinctOn([replyAuditEvents.reviewId], { event: replyAuditEvents })
         .from(replyAuditEvents)
         .where(
           and(
@@ -99,14 +99,9 @@ replyInboxRoutes.get('/api/reply-inbox', async (context) => {
             eq(replyAuditEvents.action, 'publish_failed'),
           ),
         )
-        .orderBy(desc(replyAuditEvents.createdAt))
+        .orderBy(replyAuditEvents.reviewId, desc(replyAuditEvents.createdAt))
     : []
-  const latestPublishFailureByReviewId = new Map<string, typeof replyAuditEvents.$inferSelect>()
-  for (const row of publishFailures) {
-    if (!latestPublishFailureByReviewId.has(row.event.reviewId)) {
-      latestPublishFailureByReviewId.set(row.event.reviewId, row.event)
-    }
-  }
+  const latestPublishFailureByReviewId = new Map(publishFailures.map((row) => [row.event.reviewId, row.event]))
 
   return context.json(
     listReplyInboxResponseSchema.parse({
