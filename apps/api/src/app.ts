@@ -8,6 +8,7 @@ import { join } from 'node:path'
 import { auth } from './auth'
 import { requireInvitationForSelfHostedSignUp } from './auth/sign-up-policy'
 import { serverConfig } from './db'
+import { applySecurityHeaders } from './http/security-headers'
 import { appsRoutes } from './routes/apps'
 import { clientConfigRoutes } from './routes/client-config'
 import { invitationsRoutes } from './routes/invitations'
@@ -23,6 +24,7 @@ export function createApp() {
     onError: (context) => context.json({ error: 'Request body too large.' }, 413),
   })
 
+  app.use('*', applySecurityHeaders)
   mkdirSync(organizationLogosDir, { recursive: true })
   app.use('/api/uploads/organization-logos/*', async (context, next) => {
     context.header('X-Content-Type-Options', 'nosniff')
