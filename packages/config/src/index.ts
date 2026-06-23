@@ -30,37 +30,38 @@ const optionalStringSchema = z
   .transform((value) => (value.length > 0 ? value : undefined))
   .optional()
 
-function isLocalHttpOrigin(origin: string) {
-  const url = new URL(origin)
-  return url.protocol === 'http:' && localOrigins.has(`${url.protocol}//${url.hostname}`)
-}
-
-function parseOrigin(origin: string) {
+function parseOrigin(
+  origin: string,
+  messages: {
+    includesPath: string
+    requiresHttps: string
+  },
+) {
   const url = new URL(origin)
 
   if (url.origin !== origin) {
-    throw new Error(`Trusted origin must not include a path: ${origin}`)
+    throw new Error(`${messages.includesPath}: ${origin}`)
   }
 
-  if (url.protocol !== 'https:' && !isLocalHttpOrigin(origin)) {
-    throw new Error(`Trusted origin must use HTTPS unless it is local: ${origin}`)
+  if (url.protocol !== 'https:' && !isLocalHttpUrl(url)) {
+    throw new Error(`${messages.requiresHttps}: ${origin}`)
   }
 
   return origin
+}
+
+function parseTrustedOrigin(origin: string) {
+  return parseOrigin(origin, {
+    includesPath: 'Trusted origin must not include a path',
+    requiresHttps: 'Trusted origin must use HTTPS unless it is local',
+  })
 }
 
 function parseAppPublicOrigin(origin: string) {
-  const url = new URL(origin)
-
-  if (url.origin !== origin) {
-    throw new Error(`APP_PUBLIC_URL must be an origin without path, query, hash, or credentials: ${origin}`)
-  }
-
-  if (url.protocol !== 'https:' && !isLocalHttpOrigin(origin)) {
-    throw new Error(`APP_PUBLIC_URL must use HTTPS unless it is local: ${origin}`)
-  }
-
-  return origin
+  return parseOrigin(origin, {
+    includesPath: 'APP_PUBLIC_URL must be an origin without path, query, hash, or credentials',
+    requiresHttps: 'APP_PUBLIC_URL must use HTTPS unless it is local',
+  })
 }
 
 function isLocalHttpUrl(url: URL) {
@@ -85,7 +86,7 @@ export const serverConfigSchema = z
           .split(',')
           .map((origin) => origin.trim())
           .filter((origin) => origin.length > 0)
-          .map(parseOrigin),
+          .map(parseTrustedOrigin),
       ),
     mailFrom: optionalStringSchema,
     smtpHost: optionalStringSchema,
@@ -185,7 +186,8 @@ export const serverConfigSchema = z
       return
     }
 
-    if (new URL(config.appPublicUrl).protocol !== 'https:' && !isLocalHttpOrigin(config.appPublicUrl)) {
+    const appPublicUrl = new URL(config.appPublicUrl)
+    if (appPublicUrl.protocol !== 'https:' && !isLocalHttpUrl(appPublicUrl)) {
       context.addIssue({
         code: 'custom',
         path: ['appPublicUrl'],
@@ -193,7 +195,8 @@ export const serverConfigSchema = z
       })
     }
 
-    if (new URL(config.betterAuthUrl).protocol !== 'https:' && !isLocalHttpOrigin(new URL(config.betterAuthUrl).origin)) {
+    const betterAuthUrl = new URL(config.betterAuthUrl)
+    if (betterAuthUrl.protocol !== 'https:' && !isLocalHttpUrl(betterAuthUrl)) {
       context.addIssue({
         code: 'custom',
         path: ['betterAuthUrl'],
@@ -202,7 +205,8 @@ export const serverConfigSchema = z
     }
 
     for (const origin of config.betterAuthTrustedOrigins) {
-      if (new URL(origin).protocol !== 'https:' && !isLocalHttpOrigin(origin)) {
+      const trustedOrigin = new URL(origin)
+      if (trustedOrigin.protocol !== 'https:' && !isLocalHttpUrl(trustedOrigin)) {
         context.addIssue({
           code: 'custom',
           path: ['betterAuthTrustedOrigins'],
