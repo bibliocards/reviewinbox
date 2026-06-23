@@ -24,6 +24,8 @@
   @if (message(); as currentMessage) {
   <p
     class="m-0 rounded-xl border bg-surface-1 px-3 py-2 text-sm"
+    [attr.role]="currentMessage.status === 'error' ? 'alert' : 'status'"
+    [attr.aria-live]="currentMessage.status === 'error' ? 'assertive' : 'polite'"
     [class.border-green-500]="currentMessage.status === 'success'"
     [class.text-green-700]="currentMessage.status === 'success'"
     [class.border-red-400]="currentMessage.status === 'error'"
@@ -31,7 +33,10 @@
     {{ t(currentMessage.key) }}
   </p>
   } @if (inboxResource.isLoading()) {
-  <div class="rounded-2xl border border-hairline bg-surface-1 p-5">
+  <div
+    class="rounded-2xl border border-hairline bg-surface-1 p-5"
+    role="status"
+    aria-busy="true">
     <p class="m-0 text-sm text-ink-subtle">{{ t('replyInbox.loading') }}</p>
   </div>
   } @else if (reviews().length === 0) {
@@ -154,7 +159,9 @@
         <p class="m-0 mt-2 whitespace-pre-wrap text-sm leading-6 text-ink">{{ publishedReply.replyText }}</p>
       </div>
       } @if (review.lastPublishFailure; as failure) {
-      <p class="m-0 rounded-xl border border-red-400 bg-red-500/5 px-3 py-2 text-sm text-red-700">
+      <p
+        class="m-0 rounded-xl border border-red-400 bg-red-500/5 px-3 py-2 text-sm text-red-700"
+        role="alert">
         {{ t('replyInbox.messages.lastPublishFailed') }} {{ failure.errorMessage }}
       </p>
       }

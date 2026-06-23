@@ -13,15 +13,28 @@
       (onClick)="openConnectAppDialog()" />
   </header>
   @if (successAppName(); as appName) {
-  <p class="m-0 rounded-xl border border-green-500/40 bg-surface-1 px-3 py-2 text-sm text-ink-muted">
+  <p
+    class="m-0 rounded-xl border border-green-500/40 bg-surface-1 px-3 py-2 text-sm text-ink-muted"
+    role="status">
     {{ t(successMessageKey() ?? 'apps.list.createdSuccess', { name: appName }) }}
   </p>
   } @if (errorMessage()) {
-  <p class="m-0 rounded-xl border border-red-400 bg-surface-1 px-3 py-2 text-sm text-ink-muted">{{ t('apps.list.errors.loadFailed') }}</p>
+  <p
+    class="m-0 rounded-xl border border-red-400 bg-surface-1 px-3 py-2 text-sm text-ink-muted"
+    role="alert">
+    {{ t('apps.list.errors.loadFailed') }}
+  </p>
   } @if (successMessageKey() === 'apps.list.errors.deleteFailed') {
-  <p class="m-0 rounded-xl border border-red-400 bg-surface-1 px-3 py-2 text-sm text-ink-muted">{{ t('apps.list.errors.deleteFailed') }}</p>
+  <p
+    class="m-0 rounded-xl border border-red-400 bg-surface-1 px-3 py-2 text-sm text-ink-muted"
+    role="alert">
+    {{ t('apps.list.errors.deleteFailed') }}
+  </p>
   } @if (appsResource.isLoading()) {
-  <div class="rounded-2xl border border-hairline bg-surface-1 p-5">
+  <div
+    class="rounded-2xl border border-hairline bg-surface-1 p-5"
+    role="status"
+    aria-busy="true">
     <p class="m-0 text-sm text-ink-subtle">{{ t('apps.list.loading') }}</p>
   </div>
   } @else if (apps().length === 0) {
@@ -111,6 +124,7 @@
               @if (syncRunForApple(app); as syncRun) {
               <p
                 class="m-0 text-xs"
+                [attr.role]="syncRun.status === 'failed' ? 'alert' : 'status'"
                 [class.text-green-700]="syncRun.status === 'succeeded'"
                 [class.text-red-600]="syncRun.status === 'failed'">
                 {{ t(syncRunMessageKey(syncRun), { fetchedCount: syncRun.fetchedCount, storedCount: syncRun.storedCount }) }}
@@ -139,6 +153,7 @@
               @if (syncRunForGoogle(app); as syncRun) {
               <p
                 class="m-0 text-xs"
+                [attr.role]="syncRun.status === 'failed' ? 'alert' : 'status'"
                 [class.text-green-700]="syncRun.status === 'succeeded'"
                 [class.text-red-600]="syncRun.status === 'failed'">
                 {{ t(syncRunMessageKey(syncRun), { fetchedCount: syncRun.fetchedCount, storedCount: syncRun.storedCount }) }}
@@ -164,6 +179,7 @@
                 } @if (replyDraftQueueMessage(app); as queueMessage) {
                 <p
                   class="m-0 max-w-56 text-right text-xs"
+                  [attr.role]="queueMessage.status === 'error' ? 'alert' : 'status'"
                   [class.text-green-700]="queueMessage.status === 'success'"
                   [class.text-red-600]="queueMessage.status === 'error'">
                   {{ t(queueMessage.key, queueMessage.params) }}
