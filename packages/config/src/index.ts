@@ -298,20 +298,19 @@ export const aiConfigSchema = z
       })
     }
 
-    if (config.provider === 'managed') {
+    if (config.provider === 'managed' && config.deploymentMode !== 'cloud') {
       context.addIssue({
         code: 'custom',
         path: ['provider'],
-        message: 'AI_PROVIDER=managed is reserved for cloud deployments but is not supported by this runtime yet.',
+        message: 'AI_PROVIDER=managed is only available in cloud deployments.',
       })
-      return
     }
 
-    if (config.provider === 'openai-compatible' && !config.apiKey) {
+    if (!config.apiKey) {
       context.addIssue({
         code: 'custom',
         path: ['apiKey'],
-        message: 'AI_API_KEY is required when AI_PROVIDER=openai-compatible.',
+        message: `AI_API_KEY is required when AI_PROVIDER=${config.provider}.`,
       })
     }
   })

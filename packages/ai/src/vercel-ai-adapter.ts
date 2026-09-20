@@ -1,5 +1,6 @@
 import type { LanguageModel } from 'ai'
 import type { ReplyDraftProvider, ReplyDraftProviderRequest, ReplyDraftProviderResult } from './provider'
+import { translateVercelAiError } from './errors'
 
 export type VercelAiGenerateObject = (request: {
   model: LanguageModel
@@ -19,14 +20,19 @@ export type VercelAiReplyDraftAdapterOptions = {
 export function createVercelAiReplyDraftProvider(options: VercelAiReplyDraftAdapterOptions): ReplyDraftProvider {
   return {
     async generateReplyDraftCompletion(request: ReplyDraftProviderRequest): Promise<ReplyDraftProviderResult> {
-      const result = await options.generateText({
-        model: options.model,
-        system: request.system,
-        prompt: request.prompt,
-        schema: request.schema,
-        temperature: request.temperature,
-        maxOutputTokens: request.maxOutputTokens,
-      })
+      let result: Awaited<ReturnType<VercelAiGenerateObject>>
+      try {
+        result = await options.generateText({
+          model: options.model,
+          system: request.system,
+          prompt: request.prompt,
+          schema: request.schema,
+          temperature: request.temperature,
+          maxOutputTokens: request.maxOutputTokens,
+        })
+      } catch (error) {
+        throw translateVercelAiError(error) ?? error
+      }
 
       return {
         output: result.output,
