@@ -69,10 +69,7 @@ const darkColorScheme = {
     color: darkInk,
     focusColor: darkInk,
   },
-  mask: {
-    background: 'rgba(0, 0, 0, 0.72)',
-    color: darkInk,
-  },
+  mask: { background: 'rgba(0, 0, 0, 0.72)', color: darkInk },
   formField: {
     background: darkSurface1,
     disabledBackground: darkSurface2,
@@ -105,21 +102,9 @@ const darkColorScheme = {
     hoverColor: darkInk,
   },
   overlay: {
-    select: {
-      background: darkSurface3,
-      borderColor: darkHairlineStrong,
-      color: darkInk,
-    },
-    popover: {
-      background: darkSurface3,
-      borderColor: darkHairlineStrong,
-      color: darkInk,
-    },
-    modal: {
-      background: darkSurface2,
-      borderColor: darkHairlineStrong,
-      color: darkInk,
-    },
+    select: { background: darkSurface3, borderColor: darkHairlineStrong, color: darkInk },
+    popover: { background: darkSurface3, borderColor: darkHairlineStrong, color: darkInk },
+    modal: { background: darkSurface2, borderColor: darkHairlineStrong, color: darkInk },
   },
   list: {
     option: {
@@ -131,10 +116,7 @@ const darkColorScheme = {
       selectedColor: darkInk,
       selectedFocusColor: darkInk,
     },
-    optionGroup: {
-      background: darkSurface1,
-      color: darkInkSubtle,
-    },
+    optionGroup: { background: darkSurface1, color: darkInkSubtle },
   },
   navigation: {
     item: {
@@ -144,15 +126,8 @@ const darkColorScheme = {
       focusColor: darkInk,
       activeColor: darkInk,
     },
-    submenuLabel: {
-      background: darkSurface1,
-      color: darkInkSubtle,
-    },
-    submenuIcon: {
-      color: darkInkSubtle,
-      focusColor: darkInk,
-      activeColor: darkInk,
-    },
+    submenuLabel: { background: darkSurface1, color: darkInkSubtle },
+    submenuIcon: { color: darkInkSubtle, focusColor: darkInk, activeColor: darkInk },
   },
 }
 
@@ -170,10 +145,7 @@ const lightColorScheme = {
     color: lightInk,
     focusColor: lightInk,
   },
-  mask: {
-    background: 'rgba(15, 17, 23, 0.42)',
-    color: lightInk,
-  },
+  mask: { background: 'rgba(15, 17, 23, 0.42)', color: lightInk },
   formField: {
     background: lightSurface1,
     disabledBackground: lightSurface2,
@@ -206,21 +178,9 @@ const lightColorScheme = {
     hoverColor: lightInk,
   },
   overlay: {
-    select: {
-      background: lightSurface1,
-      borderColor: lightHairlineStrong,
-      color: lightInk,
-    },
-    popover: {
-      background: lightSurface1,
-      borderColor: lightHairlineStrong,
-      color: lightInk,
-    },
-    modal: {
-      background: lightSurface1,
-      borderColor: lightHairlineStrong,
-      color: lightInk,
-    },
+    select: { background: lightSurface1, borderColor: lightHairlineStrong, color: lightInk },
+    popover: { background: lightSurface1, borderColor: lightHairlineStrong, color: lightInk },
+    modal: { background: lightSurface1, borderColor: lightHairlineStrong, color: lightInk },
   },
   list: {
     option: {
@@ -232,10 +192,7 @@ const lightColorScheme = {
       selectedColor: lightInk,
       selectedFocusColor: lightInk,
     },
-    optionGroup: {
-      background: lightSurface1,
-      color: lightInkSubtle,
-    },
+    optionGroup: { background: lightSurface1, color: lightInkSubtle },
   },
   navigation: {
     item: {
@@ -245,28 +202,13 @@ const lightColorScheme = {
       focusColor: lightInk,
       activeColor: lightInk,
     },
-    submenuLabel: {
-      background: lightSurface1,
-      color: lightInkSubtle,
-    },
-    submenuIcon: {
-      color: lightInkSubtle,
-      focusColor: lightInk,
-      activeColor: lightInk,
-    },
+    submenuLabel: { background: lightSurface1, color: lightInkSubtle },
+    submenuIcon: { color: lightInkSubtle, focusColor: lightInk, activeColor: lightInk },
   },
 }
 
 export const reviewInboxTheme = definePreset(Aura, {
-  primitive: {
-    borderRadius: {
-      xs: '4px',
-      sm: '6px',
-      md: '8px',
-      lg: '12px',
-      xl: '16px',
-    },
-  },
+  primitive: { borderRadius: { xs: '4px', sm: '6px', md: '8px', lg: '12px', xl: '16px' } },
   semantic: {
     transitionDuration: '150ms',
     primary: {
@@ -301,30 +243,14 @@ export const reviewInboxTheme = definePreset(Aura, {
         shadow: 'none',
       },
     },
-    content: {
-      borderRadius: '12px',
-    },
+    content: { borderRadius: '12px' },
     overlay: {
-      select: {
-        borderRadius: '12px',
-        shadow: 'none',
-      },
-      popover: {
-        borderRadius: '12px',
-        shadow: 'none',
-      },
-      modal: {
-        borderRadius: '16px',
-        shadow: 'none',
-      },
-      navigation: {
-        shadow: 'none',
-      },
+      select: { borderRadius: '12px', shadow: 'none' },
+      popover: { borderRadius: '12px', shadow: 'none' },
+      modal: { borderRadius: '16px', shadow: 'none' },
+      navigation: { shadow: 'none' },
     },
-    colorScheme: {
-      light: lightColorScheme,
-      dark: darkColorScheme,
-    },
+    colorScheme: { light: lightColorScheme, dark: darkColorScheme },
   },
   components: {
     button: {
@@ -333,9 +259,7 @@ export const reviewInboxTheme = definePreset(Aura, {
         roundedBorderRadius: '9999px',
         paddingX: '14px',
         paddingY: '8px',
-        label: {
-          fontWeight: '500',
-        },
+        label: { fontWeight: '500' },
         raisedShadow: 'none',
         primary: {
           background: primary,
@@ -347,10 +271,7 @@ export const reviewInboxTheme = definePreset(Aura, {
           color: '#ffffff',
           hoverColor: '#ffffff',
           activeColor: '#ffffff',
-          focusRing: {
-            color: 'color-mix(in srgb, #5e69d1 50%, transparent)',
-            shadow: 'none',
-          },
+          focusRing: { color: 'color-mix(in srgb, #5e69d1 50%, transparent)', shadow: 'none' },
         },
         secondary: {
           background: '{content.background}',
@@ -372,9 +293,7 @@ export const reviewInboxTheme = definePreset(Aura, {
         borderRadius: '12px',
         shadow: 'none',
       },
-      body: {
-        padding: '24px',
-      },
+      body: { padding: '24px' },
     },
   },
 })

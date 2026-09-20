@@ -1,10 +1,8 @@
+import { z } from 'zod'
+
 import type { ReviewSyncCheckpoint, StoreCredentialVerificationResult } from '../index'
 
-export type AppleAppStoreCredential = {
-  issuerId: string
-  keyId: string
-  privateKey: string
-}
+export type AppleAppStoreCredential = { issuerId: string; keyId: string; privateKey: string }
 
 export type AppleReviewSyncRequest = {
   appStoreAppId: string
@@ -31,20 +29,39 @@ export type AppleStoreAdapterErrorCode =
   | 'apple_unavailable'
   | 'apple_invalid_response'
 
-export type AppleCredentialVerificationResult = StoreCredentialVerificationResult<AppleStoreAdapterErrorCode>
+export type AppleCredentialVerificationResult =
+  StoreCredentialVerificationResult<AppleStoreAdapterErrorCode>
 
-export type AppleCustomerReviewsResponse = {
-  data: AppleCustomerReviewResource[]
-  links?: {
-    next?: string
-  }
-}
+const appleCustomerReviewAttributesSchema = z
+  .object({
+    appVersion: z.string().optional(),
+    appVersionString: z.string().optional(),
+    body: z.string().optional(),
+    createdDate: z.string().optional(),
+    rating: z.number().optional(),
+    reviewerNickname: z.string().optional(),
+    territory: z.string().optional(),
+    title: z.string().optional(),
+  })
+  .loose()
 
-export type AppleCustomerReviewResource = {
-  id: string
-  attributes?: Record<string, unknown>
-}
+const appleCustomerReviewResourceSchema = z
+  .object({ id: z.string(), attributes: appleCustomerReviewAttributesSchema.optional() })
+  .loose()
 
-export type AppleCustomerReviewResponseResource = {
-  id?: string
-}
+export const appleCustomerReviewsResponseSchema = z.object({
+  data: z.array(appleCustomerReviewResourceSchema),
+  links: z.object({ next: z.string().optional() }).optional(),
+})
+
+export const appleCustomerReviewResponseSchema = z.object({
+  data: z.object({ id: z.string().optional() }),
+})
+
+export type AppleCustomerReviewsResponse = z.infer<typeof appleCustomerReviewsResponseSchema>
+
+export type AppleCustomerReviewAttributes = z.infer<typeof appleCustomerReviewAttributesSchema>
+
+export type AppleCustomerReviewResource = z.infer<typeof appleCustomerReviewResourceSchema>
+
+export type AppleCustomerReviewResponseResource = { id?: string }

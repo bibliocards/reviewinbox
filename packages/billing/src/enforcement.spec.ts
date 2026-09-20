@@ -9,14 +9,15 @@ import {
   type OrganizationLimitContext,
 } from './enforcement'
 
-const freeCloudContext: OrganizationLimitContext = {
-  deploymentMode: 'cloud',
-  planName: 'free',
-}
+const freeCloudContext: OrganizationLimitContext = { deploymentMode: 'cloud', planName: 'free' }
 
 describe('cloud enforcement', () => {
   it('blocks structural actions when free tier limits are reached', () => {
-    expect(canCreateApp(freeCloudContext, 1)).toEqual({ allowed: false, reason: 'app_limit_reached', remaining: 0 })
+    expect(canCreateApp(freeCloudContext, 1)).toEqual({
+      allowed: false,
+      reason: 'app_limit_reached',
+      remaining: 0,
+    })
     expect(canCreateStoreConnection(freeCloudContext, 2)).toEqual({
       allowed: false,
       reason: 'store_connection_limit_reached',
@@ -45,7 +46,10 @@ describe('cloud enforcement', () => {
   })
 
   it('blocks managed AI reply draft generation after the monthly cap', () => {
-    expect(canGenerateManagedAiReplyDraft(freeCloudContext, 4)).toEqual({ allowed: true, remaining: 1 })
+    expect(canGenerateManagedAiReplyDraft(freeCloudContext, 4)).toEqual({
+      allowed: true,
+      remaining: 1,
+    })
     expect(canGenerateManagedAiReplyDraft(freeCloudContext, 5)).toEqual({
       allowed: false,
       reason: 'monthly_managed_ai_reply_draft_cap_reached',
@@ -57,9 +61,7 @@ describe('cloud enforcement', () => {
     const context: OrganizationLimitContext = {
       deploymentMode: 'cloud',
       planName: 'starter',
-      overrides: {
-        monthlyManagedAiReplyDraftCap: 300,
-      },
+      overrides: { monthlyManagedAiReplyDraftCap: 300 },
     }
 
     expect(canGenerateManagedAiReplyDraft(context, 299)).toEqual({ allowed: true, remaining: 1 })
@@ -73,13 +75,13 @@ describe('cloud enforcement', () => {
 
 describe('self-hosted enforcement', () => {
   it('does not enforce billing limits', () => {
-    const context: OrganizationLimitContext = {
-      deploymentMode: 'self-hosted',
-      planName: 'free',
-    }
+    const context: OrganizationLimitContext = { deploymentMode: 'self-hosted', planName: 'free' }
 
     expect(canCreateApp(context, 999)).toEqual({ allowed: true, remaining: 'unlimited' })
     expect(canImportNewReview(context, 999)).toEqual({ allowed: true, remaining: 'unlimited' })
-    expect(canGenerateManagedAiReplyDraft(context, 999)).toEqual({ allowed: true, remaining: 'unlimited' })
+    expect(canGenerateManagedAiReplyDraft(context, 999)).toEqual({
+      allowed: true,
+      remaining: 'unlimited',
+    })
   })
 })

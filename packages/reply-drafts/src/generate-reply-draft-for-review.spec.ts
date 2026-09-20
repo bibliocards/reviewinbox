@@ -1,11 +1,16 @@
+import { AiDraftingError } from '@reviewinbox/ai'
 import { describe, expect, it, vi } from 'vitest'
 
-import { AiDraftingError } from '@reviewinbox/ai'
-import type { Database } from '@reviewinbox/db'
+import {
+  generateReplyDraftForReview,
+  type GenerateReplyDraftForReviewInput,
+  type ReplyDraftGenerationTransaction,
+} from './generate-reply-draft-for-review'
 
-import { generateReplyDraftForReview } from './generate-reply-draft-for-review'
+type DraftableReview = Parameters<ReplyDraftGenerationTransaction['selectLatestDraftableReview']>[0]
+type DraftGenerator = GenerateReplyDraftForReviewInput['generateDraft']
 
-const reviewRow = {
+const reviewRow: DraftableReview = {
   review: {
     id: 'review-1',
     organizationId: 'org-1',
@@ -38,71 +43,46 @@ const generatedDraft = {
   promptVersion: 'test-prompt',
 }
 
-type QueryBuilder = {
-  from: (value: unknown) => QueryBuilder
-  innerJoin: (value: unknown, on: unknown) => QueryBuilder
-  leftJoin: (value: unknown, on: unknown) => QueryBuilder
-  where: (value: unknown) => QueryBuilder
-  limit: (value: number) => Promise<unknown>
+function createDraftGenerator() {
+  return vi.fn<DraftGenerator>().mockResolvedValue(generatedDraft)
 }
 
-function createQuery(result: unknown): QueryBuilder {
-  const query = {} as QueryBuilder
-  query.from = vi.fn(() => query)
-  query.innerJoin = vi.fn(() => query)
-  query.leftJoin = vi.fn(() => query)
-  query.where = vi.fn(() => query)
-  query.limit = vi.fn().mockResolvedValue(result)
-  Object.defineProperty(query, 'then', {
-    value: (onFulfilled: (value: unknown) => unknown, onRejected?: (reason: unknown) => unknown) =>
-      Promise.resolve(result).then(onFulfilled, onRejected),
-  })
-  return query
-}
-
-function createDatabase(input: { usageQuantity?: number; usageEventInsert?: ReturnType<typeof vi.fn> } = {}) {
-  const initialQuery = createQuery([reviewRow])
-  const usageQuery = createQuery([{ quantity: input.usageQuantity ?? 0 }])
-  const latestQuery = createQuery([reviewRow])
-  const updateChain = {
-    set: vi.fn(() => updateChain),
-    where: vi.fn(() => updateChain),
-    returning: vi.fn().mockResolvedValue([{ id: 'review-1', organizationId: 'org-1', appId: 'app-1' }]),
-  }
-  const replyDraftInsert = {
-    values: vi.fn(() => replyDraftInsert),
-    onConflictDoNothing: vi.fn(() => replyDraftInsert),
-    returning: vi.fn().mockResolvedValue([{ id: 'draft-1' }]),
-  }
-  const usageEventInsert = input.usageEventInsert ?? vi.fn().mockResolvedValue(undefined)
-  const transaction = {
-    select:
-      input.usageQuantity === undefined
-        ? vi.fn().mockReturnValueOnce(initialQuery).mockReturnValueOnce(latestQuery)
-        : vi.fn().mockReturnValueOnce(initialQuery).mockReturnValueOnce(usageQuery).mockReturnValueOnce(latestQuery),
-    execute: vi.fn().mockResolvedValue(undefined),
-    query: {
-      organization: {
-        findFirst: vi.fn().mockResolvedValue({ planName: 'free', billingOverrides: {} }),
-      },
-    },
-    update: vi.fn().mockReturnValue(updateChain),
-    insert: vi.fn().mockReturnValueOnce(replyDraftInsert).mockReturnValueOnce({ values: usageEventInsert }),
-  }
-  const database = {
-    transaction: vi.fn(async (callback: (value: typeof transaction) => Promise<unknown>) => callback(transaction)),
-  }
-
-  return { database: database as unknown as Database, transaction, updateChain, usageEventInsert }
+function createTransaction(allowed = true) {
+  return {
+    lockUsagePeriod: vi
+      .fn<ReplyDraftGenerationTransaction['lockUsagePeriod']>()
+      .mockResolvedValue(),
+    selectDraftableReview: vi
+      .fn<ReplyDraftGenerationTransaction['selectDraftableReview']>()
+      .mockResolvedValue(reviewRow),
+    canGenerateCloudAiReplyDraftForOrganization: vi
+      .fn<ReplyDraftGenerationTransaction['canGenerateCloudAiReplyDraftForOrganization']>()
+      .mockResolvedValue({ allowed }),
+    selectLatestDraftableReview: vi
+      .fn<ReplyDraftGenerationTransaction['selectLatestDraftableReview']>()
+      .mockResolvedValue(reviewRow),
+    updateReviewWithDraft: vi
+      .fn<ReplyDraftGenerationTransaction['updateReviewWithDraft']>()
+      .mockResolvedValue({ id: 'review-1', organizationId: 'org-1', appId: 'app-1' }),
+    insertGeneratedDraft: vi
+      .fn<ReplyDraftGenerationTransaction['insertGeneratedDraft']>()
+      .mockResolvedValue({ id: 'draft-1' }),
+    recordManagedDraftUsage: vi
+      .fn<ReplyDraftGenerationTransaction['recordManagedDraftUsage']>()
+      .mockResolvedValue(),
+    recordDraftFailure: vi
+      .fn<ReplyDraftGenerationTransaction['recordDraftFailure']>()
+      .mockResolvedValue(),
+  } satisfies ReplyDraftGenerationTransaction
 }
 
 describe('generateReplyDraftForReview', () => {
   it('meters a successful Cloud OpenAI-compatible generation', async () => {
-    const { database, transaction, usageEventInsert } = createDatabase({ usageQuantity: 0 })
-    const generateDraft = vi.fn().mockResolvedValue(generatedDraft)
+    const transaction = createTransaction()
+    const generateDraft = createDraftGenerator()
 
     const result = await generateReplyDraftForReview({
-      database,
+      transaction,
       organizationId: 'org-1',
       reviewId: 'review-1',
       deploymentMode: 'cloud',
@@ -112,28 +92,21 @@ describe('generateReplyDraftForReview', () => {
 
     expect(result).toEqual({ status: 'drafted', replyDraftId: 'draft-1' })
     expect(generateDraft).toHaveBeenCalledOnce()
-    expect(transaction.execute).toHaveBeenCalledOnce()
-    expect(transaction.insert).toHaveBeenCalledTimes(2)
-    expect(usageEventInsert).toHaveBeenCalledWith({
-      organizationId: 'org-1',
-      type: 'managed_ai_reply_draft_generated',
-      quantity: 1,
-      occurredAt: expect.any(Date),
-    })
+    expect(transaction.lockUsagePeriod).toHaveBeenCalledOnce()
+    expect(transaction.recordManagedDraftUsage).toHaveBeenCalledOnce()
+    expect(transaction.recordManagedDraftUsage).toHaveBeenCalledWith('org-1')
   })
+})
 
+describe('generateReplyDraftForReview', () => {
   it('does not meter a failed Cloud generation', async () => {
-    const usageEventInsert = vi.fn().mockResolvedValue(undefined)
-    const { database, transaction, usageEventInsert: recordedUsageEventInsert } = createDatabase({ usageEventInsert, usageQuantity: 0 })
-    const generateDraft = vi.fn().mockRejectedValue(new AiDraftingError('provider_unavailable', 'Provider unavailable.'))
-    const failureUpdate = {
-      set: vi.fn(() => failureUpdate),
-      where: vi.fn().mockResolvedValue(undefined),
-    }
-    transaction.update.mockReturnValue(failureUpdate)
+    const transaction = createTransaction()
+    const generateDraft = createDraftGenerator().mockRejectedValue(
+      new AiDraftingError('provider_unavailable', 'Provider unavailable.'),
+    )
 
     const result = await generateReplyDraftForReview({
-      database,
+      transaction,
       organizationId: 'org-1',
       reviewId: 'review-1',
       deploymentMode: 'cloud',
@@ -142,41 +115,43 @@ describe('generateReplyDraftForReview', () => {
     })
 
     expect(result).toEqual({ status: 'failed', errorCode: 'provider_unavailable' })
-    expect(recordedUsageEventInsert).not.toHaveBeenCalled()
-    expect(failureUpdate.set).toHaveBeenCalledWith(expect.objectContaining({ replyStatus: 'failed' }))
+    expect(transaction.recordManagedDraftUsage).not.toHaveBeenCalled()
+    expect(transaction.recordDraftFailure).toHaveBeenCalledWith(
+      'org-1',
+      'review-1',
+      'provider_unavailable',
+    )
   })
+})
 
+describe('generateReplyDraftForReview', () => {
   it('propagates persistence failures so the transaction can roll back', async () => {
-    const { database, transaction, updateChain } = createDatabase({ usageQuantity: 0 })
+    const transaction = createTransaction()
     const persistenceError = new Error('Reply Draft insert failed.')
-    const failingReplyDraftInsert = {
-      values: vi.fn(() => failingReplyDraftInsert),
-      onConflictDoNothing: vi.fn(() => failingReplyDraftInsert),
-      returning: vi.fn().mockRejectedValue(persistenceError),
-    }
-    transaction.insert.mockReset()
-    transaction.insert.mockReturnValue(failingReplyDraftInsert)
+    transaction.insertGeneratedDraft.mockRejectedValue(persistenceError)
 
     await expect(
       generateReplyDraftForReview({
-        database,
+        transaction,
         organizationId: 'org-1',
         reviewId: 'review-1',
         deploymentMode: 'cloud',
         aiProvider: 'openai-compatible',
-        generateDraft: vi.fn().mockResolvedValue(generatedDraft),
+        generateDraft: createDraftGenerator(),
       }),
     ).rejects.toThrow(persistenceError)
-    expect(updateChain.set).toHaveBeenCalledWith(expect.objectContaining({ replyStatus: 'drafted' }))
-    expect(updateChain.set).not.toHaveBeenCalledWith(expect.objectContaining({ replyStatus: 'failed' }))
+    expect(transaction.updateReviewWithDraft).toHaveBeenCalledOnce()
+    expect(transaction.recordDraftFailure).not.toHaveBeenCalled()
   })
+})
 
+describe('generateReplyDraftForReview', () => {
   it('blocks Cloud generation at the monthly quota before calling the provider', async () => {
-    const { database } = createDatabase({ usageQuantity: 5 })
-    const generateDraft = vi.fn()
+    const transaction = createTransaction(false)
+    const generateDraft = vi.fn<DraftGenerator>()
 
     const result = await generateReplyDraftForReview({
-      database,
+      transaction,
       organizationId: 'org-1',
       reviewId: 'review-1',
       deploymentMode: 'cloud',
@@ -184,16 +159,21 @@ describe('generateReplyDraftForReview', () => {
       generateDraft,
     })
 
-    expect(result).toEqual({ status: 'skipped', reason: 'monthly_managed_ai_reply_draft_cap_reached' })
+    expect(result).toEqual({
+      status: 'skipped',
+      reason: 'monthly_managed_ai_reply_draft_cap_reached',
+    })
     expect(generateDraft).not.toHaveBeenCalled()
   })
+})
 
+describe('generateReplyDraftForReview', () => {
   it('keeps self-hosted generation outside billing usage', async () => {
-    const { database, transaction, usageEventInsert } = createDatabase()
-    const generateDraft = vi.fn().mockResolvedValue(generatedDraft)
+    const transaction = createTransaction()
+    const generateDraft = createDraftGenerator()
 
     const result = await generateReplyDraftForReview({
-      database,
+      transaction,
       organizationId: 'org-1',
       reviewId: 'review-1',
       deploymentMode: 'self-hosted',
@@ -202,8 +182,32 @@ describe('generateReplyDraftForReview', () => {
     })
 
     expect(result).toEqual({ status: 'drafted', replyDraftId: 'draft-1' })
-    expect(transaction.execute).not.toHaveBeenCalled()
-    expect(transaction.insert).toHaveBeenCalledOnce()
-    expect(usageEventInsert).not.toHaveBeenCalled()
+    expect(transaction.lockUsagePeriod).not.toHaveBeenCalled()
+    expect(transaction.recordManagedDraftUsage).not.toHaveBeenCalled()
+  })
+})
+
+describe('concurrent Reply Draft generation', () => {
+  it('does not replace or meter a draft created while the provider was running', async () => {
+    const transaction = createTransaction()
+    transaction.selectLatestDraftableReview.mockResolvedValue({
+      ...reviewRow,
+      replyDraft: { id: 'another-draft' },
+    })
+    const generateDraft = createDraftGenerator()
+
+    const result = await generateReplyDraftForReview({
+      transaction,
+      organizationId: 'org-1',
+      reviewId: 'review-1',
+      deploymentMode: 'cloud',
+      aiProvider: 'managed',
+      generateDraft,
+    })
+
+    expect(result).toEqual({ status: 'skipped', reason: 'draft_exists' })
+    expect(generateDraft).toHaveBeenCalledOnce()
+    expect(transaction.updateReviewWithDraft).not.toHaveBeenCalled()
+    expect(transaction.recordManagedDraftUsage).not.toHaveBeenCalled()
   })
 })

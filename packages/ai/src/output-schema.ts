@@ -6,8 +6,12 @@ export const replyDraftOutputSchema = z.object({
 })
 
 export type ReplyDraftModelOutput = z.infer<typeof replyDraftOutputSchema>
+export type ReplyDraftModelOutputInput = Parameters<typeof replyDraftOutputSchema.parse>[0]
 
-export function parseReplyDraftOutput(output: unknown, maxDraftTextLength: number): ReplyDraftModelOutput {
+export function parseReplyDraftOutput(
+  output: ReplyDraftModelOutputInput,
+  maxDraftTextLength: number,
+): ReplyDraftModelOutput {
   const parsed = replyDraftOutputSchema.parse(output)
 
   if (parsed.draftText.length > maxDraftTextLength) {

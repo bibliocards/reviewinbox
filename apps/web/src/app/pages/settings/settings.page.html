@@ -1,22 +1,22 @@
-<section
-  class="grid gap-8 p-6 sm:p-8"
-  *transloco="let t">
+<section class="grid gap-8 p-6 sm:p-8" *transloco="let t">
   <header class="grid gap-2 border-b border-hairline pb-6">
-    <h1 class="m-0 text-2xl font-semibold tracking-[-0.8px] text-ink">{{ t('accountSettings.title') }}</h1>
-    <p class="m-0 max-w-2xl text-sm leading-6 text-ink-subtle">{{ t('accountSettings.description') }}</p>
+    <h1 class="m-0 text-2xl font-semibold tracking-[-0.8px] text-ink">
+      {{ t('accountSettings.title') }}
+    </h1>
+    <p class="m-0 max-w-2xl text-sm leading-6 text-ink-subtle">
+      {{ t('accountSettings.description') }}
+    </p>
   </header>
 
   <section class="grid gap-6 border-b border-hairline pb-8">
     <header class="grid gap-1">
       <h2 class="m-0 text-lg font-semibold text-ink">{{ t('accountSettings.profile.title') }}</h2>
       <p class="m-0 mt-1 text-sm text-ink-subtle">
-        {{ t('accountSettings.profile.email', { email: user()?.email }) }}
+        {{ t('accountSettings.profile.email', { email: $safeNavigationMigration(user()?.email) }) }}
       </p>
     </header>
 
-    <form
-      class="grid max-w-[32rem] gap-5"
-      (submit)="saveProfile($event)">
+    <form class="grid max-w-[32rem] gap-5" (submit)="saveProfile($event)">
       <label class="grid gap-1.5 text-sm font-medium text-ink">
         {{ t('accountSettings.profile.nameLabel') }}
         <input
@@ -25,18 +25,21 @@
           autocomplete="name"
           [placeholder]="t('accountSettings.profile.namePlaceholder')"
           [attr.aria-label]="t('accountSettings.profile.nameLabel')"
-          [formField]="profileForm.name" />
+          [formField]="profileForm.name"
+        />
       </label>
       @if (profileError()) {
       <p
         class="m-0 rounded-lg border border-red-400/60 px-3 py-2 text-sm text-ink-muted"
-        role="alert">
+        role="alert"
+      >
         {{ t(profileError()!) }}
       </p>
       } @if (profileSuccess()) {
       <p
         class="m-0 rounded-lg border border-green-500/40 px-3 py-2 text-sm text-ink-muted"
-        role="status">
+        role="status"
+      >
         {{ t(profileSuccess()!) }}
       </p>
       }
@@ -45,21 +48,24 @@
         [label]="t('accountSettings.profile.save')"
         class="w-fit"
         [loading]="isSavingProfile()"
-        [disabled]="isSavingProfile()" />
+        [disabled]="isSavingProfile()"
+      />
     </form>
   </section>
 
   <section class="grid gap-6">
     <header class="grid gap-1">
       <h2 class="m-0 text-lg font-semibold text-ink">{{ t('accountSettings.password.title') }}</h2>
-      <p class="m-0 mt-1 text-sm text-ink-subtle">{{ t('accountSettings.password.description') }}</p>
+      <p class="m-0 mt-1 text-sm text-ink-subtle">
+        {{ t('accountSettings.password.description') }}
+      </p>
     </header>
 
-    <form
-      class="grid max-w-[32rem] gap-5"
-      (submit)="changePassword($event)">
+    <form class="grid max-w-[32rem] gap-5" (submit)="changePassword($event)">
       <div class="grid gap-1.5 text-sm font-medium text-ink">
-        <label for="settings-current-password">{{ t('accountSettings.password.currentLabel') }}</label>
+        <label for="settings-current-password"
+          >{{ t('accountSettings.password.currentLabel') }}</label
+        >
         <p-password
           class="settings-password-field"
           inputId="settings-current-password"
@@ -74,9 +80,12 @@
           [feedback]="false"
           [toggleMask]="true"
           [fluid]="true"
-          inputStyleClass="w-full" />
+          inputStyleClass="w-full"
+        />
         @if (passwordForm.currentPassword().touched() && passwordForm.currentPassword().invalid()) {
-        <p class="m-0 text-sm font-normal text-red-600">{{ t('accountSettings.password.validation.currentRequired') }}</p>
+        <p class="m-0 text-sm font-normal text-red-600">
+          {{ t('accountSettings.password.validation.currentRequired') }}
+        </p>
         }
       </div>
       <div class="grid gap-1.5 text-sm font-medium text-ink">
@@ -94,13 +103,16 @@
           [ariaLabel]="t('accountSettings.password.newLabel')"
           [toggleMask]="true"
           [fluid]="true"
-          inputStyleClass="w-full" />
+          inputStyleClass="w-full"
+        />
         @if (passwordForm.newPassword().touched() && passwordForm.newPassword().invalid()) {
         <p class="m-0 text-sm font-normal text-red-600">{{ t('auth.validation.newPassword') }}</p>
         }
       </div>
       <div class="grid gap-1.5 text-sm font-medium text-ink">
-        <label for="settings-confirm-password">{{ t('accountSettings.password.confirmLabel') }}</label>
+        <label for="settings-confirm-password"
+          >{{ t('accountSettings.password.confirmLabel') }}</label
+        >
         <p-password
           class="settings-password-field"
           inputId="settings-confirm-password"
@@ -111,23 +123,31 @@
           [feedback]="false"
           [toggleMask]="true"
           [fluid]="true"
-          inputStyleClass="w-full" />
+          inputStyleClass="w-full"
+        />
         @if (passwordForm.confirmPassword().touched() && passwordForm.confirmPassword().invalid()) {
-        <p class="m-0 text-sm font-normal text-red-600">{{ t('auth.validation.confirmPasswordRequired') }}</p>
-        } @if (passwordForm.confirmPassword().touched() && passwordForm().value().newPassword !== passwordForm().value().confirmPassword) {
-        <p class="m-0 text-sm font-normal text-red-600">{{ t('auth.validation.passwordsDoNotMatch') }}</p>
+        <p class="m-0 text-sm font-normal text-red-600">
+          {{ t('auth.validation.confirmPasswordRequired') }}
+        </p>
+        } @if (passwordForm.confirmPassword().touched() && passwordForm().value().newPassword !==
+        passwordForm().value().confirmPassword) {
+        <p class="m-0 text-sm font-normal text-red-600">
+          {{ t('auth.validation.passwordsDoNotMatch') }}
+        </p>
         }
       </div>
       @if (passwordError()) {
       <p
         class="m-0 rounded-lg border border-red-400/60 px-3 py-2 text-sm text-ink-muted"
-        role="alert">
+        role="alert"
+      >
         {{ t(passwordError()!) }}
       </p>
       } @if (passwordSuccess()) {
       <p
         class="m-0 rounded-lg border border-green-500/40 px-3 py-2 text-sm text-ink-muted"
-        role="status">
+        role="status"
+      >
         {{ t(passwordSuccess()!) }}
       </p>
       }
@@ -136,7 +156,8 @@
         [label]="t('accountSettings.password.change')"
         class="w-fit"
         [loading]="isChangingPassword()"
-        [disabled]="!canSavePassword()" />
+        [disabled]="!canSavePassword()"
+      />
     </form>
   </section>
 </section>

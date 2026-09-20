@@ -1,29 +1,23 @@
 <main class="min-h-screen bg-canvas px-5 py-6 text-ink">
   <header class="mx-auto flex max-w-[1920px] items-center justify-between gap-4">
-    <a
-      class="inline-flex items-center gap-3 text-ink no-underline"
-      routerLink="/sign-up">
-      <img
-        class="size-12 rounded-xl"
-        src="/icon.png"
-        alt=""
-        aria-hidden="true" />
+    <a class="inline-flex items-center gap-3 text-ink no-underline" routerLink="/sign-up">
+      <img class="size-12 rounded-xl" src="/icon.png" alt="" aria-hidden="true" />
       <span class="sr-only">ReviewInbox</span>
     </a>
 
     <div class="flex items-center gap-3">
       <ri-theme-toggle />
 
-      <p-button
-        variant="outlined"
-        routerLink="/login">
-        Sign in
-      </p-button>
+      <p-button variant="outlined" routerLink="/login"> Sign in </p-button>
     </div>
   </header>
 
-  <section class="mx-auto mt-10 w-full max-w-153 rounded-3xl border border-hairline bg-surface-1 px-6 py-8 sm:mt-14 sm:px-14 sm:py-10">
-    <h1 class="m-0 text-xl font-semibold tracking-[-0.8px] text-ink sm:text-2xl">Create your ReviewInbox account</h1>
+  <section
+    class="mx-auto mt-10 w-full max-w-153 rounded-3xl border border-hairline bg-surface-1 px-6 py-8 sm:mt-14 sm:px-14 sm:py-10"
+  >
+    <h1 class="m-0 text-xl font-semibold tracking-[-0.8px] text-ink sm:text-2xl">
+      Create your ReviewInbox account
+    </h1>
     @if (isInvitationSignUp) {
     <p class="mt-2 text-sm leading-5 text-ink-subtle">
       Create an account with the invited email address, then we will return you to the invitation.
@@ -34,7 +28,8 @@
     </p>
     @if (selectedPlan !== 'free') {
     <p class="mt-4 rounded-xl border border-hairline bg-surface-2 px-3 py-2 text-sm text-ink-muted">
-      Selected plan: <span class="font-semibold text-ink">{{ selectedPlan }}</span>. You can confirm billing after account setup.
+      Selected plan: <span class="font-semibold text-ink">{{ selectedPlan }}</span>. You can confirm
+      billing after account setup.
     </p>
     } } @if (capabilities().externalProviders) {
     <div class="mt-6 grid gap-2 sm:grid-cols-3">
@@ -43,19 +38,22 @@
         icon="pi pi-google"
         severity="secondary"
         [disabled]="!capabilities().google"
-        styleClass="w-full justify-center" />
+        styleClass="w-full justify-center"
+      />
       <p-button
         label="Apple"
         icon="pi pi-apple"
         severity="secondary"
         [disabled]="true"
-        styleClass="w-full justify-center" />
+        styleClass="w-full justify-center"
+      />
       <p-button
         label="GitHub"
         icon="pi pi-github"
         severity="secondary"
         [disabled]="true"
-        styleClass="w-full justify-center" />
+        styleClass="w-full justify-center"
+      />
     </div>
 
     <div class="mt-2">
@@ -64,7 +62,8 @@
         icon="pi pi-lock"
         severity="secondary"
         [disabled]="!capabilities().enterpriseSso"
-        styleClass="w-full justify-center" />
+        styleClass="w-full justify-center"
+      />
     </div>
 
     <div class="my-6 flex items-center gap-4 text-sm text-ink-tertiary">
@@ -74,25 +73,15 @@
     </div>
     }
 
-    <form
-      class="grid gap-4"
-      (submit)="createAccount($event)">
+    <form class="grid gap-4" (submit)="createAccount($event)">
       <label class="grid gap-1.5 text-sm font-medium text-ink">
         Name
-        <input
-          pInputText
-          type="text"
-          autocomplete="name"
-          [formField]="signUpForm.name" />
+        <input pInputText type="text" autocomplete="name" [formField]="signUpForm.name" />
       </label>
 
       <label class="grid gap-1.5 text-sm font-medium text-ink">
         Work email
-        <input
-          pInputText
-          type="email"
-          autocomplete="email"
-          [formField]="signUpForm.email" />
+        <input pInputText type="email" autocomplete="email" [formField]="signUpForm.email" />
       </label>
 
       <div class="grid gap-1.5 text-sm font-medium text-ink">
@@ -103,7 +92,8 @@
           autocomplete="new-password"
           [toggleMask]="true"
           [fluid]="true"
-          inputStyleClass="w-full" />
+          inputStyleClass="w-full"
+        />
       </div>
       @if (createsOrganizationDuringSignUp()) {
       <label class="grid gap-1.5 text-sm font-medium text-ink">
@@ -112,10 +102,13 @@
           pInputText
           type="text"
           autocomplete="organization"
-          [formField]="signUpForm.organizationName" />
+          [formField]="signUpForm.organizationName"
+        />
       </label>
       } @if (errorMessage()) {
-      <p class="m-0 rounded-xl border border-red-400 bg-surface-2 px-3 py-2 text-sm text-ink-muted">{{ errorMessage() }}</p>
+      <p class="m-0 rounded-xl border border-red-400 bg-surface-2 px-3 py-2 text-sm text-ink-muted">
+        {{ errorMessage() }}
+      </p>
       }
 
       <p-button
@@ -124,7 +117,8 @@
         class="mt-1"
         [fluid]="true"
         [loading]="isSubmitting()"
-        [disabled]="!canSubmit()" />
+        [disabled]="!canSubmit()"
+      />
     </form>
 
     <p class="mt-7 text-center text-sm text-ink-subtle">

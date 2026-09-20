@@ -1,3 +1,4 @@
+import type { QueueClient } from '@reviewinbox/queue'
 import { describe, expect, it, vi } from 'vitest'
 
 import {
@@ -6,9 +7,13 @@ import {
   shouldQueueInitialStoreConnectionSync,
 } from './initial-sync'
 
+type EnqueueSyncStoreConnection = QueueClient['enqueueSyncStoreConnection']
+
+const createEnqueueMock = () => vi.fn<EnqueueSyncStoreConnection>()
+
 describe('enqueueInitialStoreConnectionSync', () => {
   it('queues one deterministic first import per Store Connection', async () => {
-    const enqueueSyncStoreConnection = vi.fn().mockResolvedValue('job-id')
+    const enqueueSyncStoreConnection = createEnqueueMock().mockResolvedValue('job-id')
 
     const result = await enqueueInitialStoreConnectionSync({
       queue: { enqueueSyncStoreConnection },
@@ -41,7 +46,9 @@ describe('enqueueInitialStoreConnectionSync', () => {
   })
 
   it('keeps persistence independent when one enqueue fails', async () => {
-    const enqueueSyncStoreConnection = vi.fn().mockResolvedValueOnce('job-id').mockRejectedValueOnce(new Error('pg-boss unavailable'))
+    const enqueueSyncStoreConnection = createEnqueueMock()
+      .mockResolvedValueOnce('job-id')
+      .mockRejectedValueOnce(new Error('pg-boss unavailable'))
 
     const result = await enqueueInitialStoreConnectionSync({
       queue: { enqueueSyncStoreConnection },
@@ -60,7 +67,7 @@ describe('enqueueInitialStoreConnectionSync', () => {
   })
 
   it('treats an existing singleton job as an idempotent queue success', async () => {
-    const enqueueSyncStoreConnection = vi.fn().mockResolvedValue(null)
+    const enqueueSyncStoreConnection = createEnqueueMock().mockResolvedValue(null)
 
     const result = await enqueueInitialStoreConnectionSync({
       queue: { enqueueSyncStoreConnection },
@@ -74,9 +81,11 @@ describe('enqueueInitialStoreConnectionSync', () => {
       failedStoreConnectionIds: [],
     })
   })
+})
 
+describe('enqueueInitialStoreConnectionSync retries', () => {
   it('does not enqueue when no verified connection was created', async () => {
-    const enqueueSyncStoreConnection = vi.fn()
+    const enqueueSyncStoreConnection = createEnqueueMock()
 
     await expect(
       enqueueInitialStoreConnectionSync({
@@ -93,7 +102,7 @@ describe('enqueueInitialStoreConnectionSync', () => {
   })
 
   it('uses a new queue window for a replaced credential revision', async () => {
-    const enqueueSyncStoreConnection = vi.fn().mockResolvedValue('job-id')
+    const enqueueSyncStoreConnection = createEnqueueMock().mockResolvedValue('job-id')
 
     await enqueueInitialStoreConnectionSync({
       queue: { enqueueSyncStoreConnection },
@@ -121,7 +130,9 @@ describe('enqueueInitialStoreConnectionSync', () => {
   })
 
   it('retries the same revision after the first enqueue fails', async () => {
-    const enqueueSyncStoreConnection = vi.fn().mockRejectedValueOnce(new Error('pg-boss unavailable')).mockResolvedValueOnce('job-id')
+    const enqueueSyncStoreConnection = createEnqueueMock()
+      .mockRejectedValueOnce(new Error('pg-boss unavailable'))
+      .mockResolvedValueOnce('job-id')
     const revisionAt = '2026-09-20T10:00:00.000Z'
     const connection = { storeConnectionId: 'connection-a', revisionAt }
 
@@ -156,7 +167,9 @@ describe('enqueueInitialStoreConnectionSync', () => {
       trigger: 'initial',
     })
   })
+})
 
+describe('initial Store Connection sync revisions', () => {
   it('does not retry a revision after a later terminal Sync Run', () => {
     expect(
       shouldQueueInitialStoreConnectionSync({

@@ -1,5 +1,9 @@
 export { googlePlayReviewAdapter } from './adapter'
-export { publishGooglePlayReply, syncGooglePlayReviews, verifyGooglePlayCredentialForApp } from './client'
+export {
+  publishGooglePlayReply,
+  syncGooglePlayReviews,
+  verifyGooglePlayCredentialForApp,
+} from './client'
 export { GooglePlayStoreAdapterError } from './errors'
 export type {
   GooglePlayCredentialVerificationResult,

@@ -5,10 +5,7 @@ export type WebEnvironment = {
   apiUrl: string
   authBasePath: string
   deploymentMode: string
-  auth: {
-    google: string | boolean
-    enterpriseSso: string | boolean
-  }
+  auth: { google: string | boolean; enterpriseSso: string | boolean }
 }
 
 export function isPlaceholder(value: string): boolean {
@@ -28,7 +25,7 @@ export function resolveDeploymentMode(value: string): DeploymentMode {
 }
 
 export function resolveBoolean(value: string | boolean): boolean {
-  if (typeof value === 'boolean') {
+  if (value === true || value === false) {
     return value
   }
 

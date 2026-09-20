@@ -9,6 +9,7 @@ import type {
   SaveReplyDraftRequest,
 } from '@reviewinbox/contracts'
 import type { Observable } from 'rxjs'
+
 import { environment } from '../../../environments/environment'
 import { resolveOptionalString } from '../../../environments/environment.model'
 
@@ -17,47 +18,74 @@ export class ReplyInboxService {
   private readonly http = inject(HttpClient)
   private readonly apiUrl = resolveOptionalString(environment.apiUrl) ?? ''
 
-  replyInboxResource(params: () => { appId?: string; filter: string }): HttpResourceRef<ListReplyInboxResponse> {
-    return httpResource<ListReplyInboxResponse>(() => `${this.apiUrl}/api/reply-inbox?${toQueryString(params())}`, {
-      defaultValue: { reviews: [] },
-    })
+  replyInboxResource(
+    params: () => { appId?: string; filter: string },
+  ): HttpResourceRef<ListReplyInboxResponse> {
+    return httpResource<ListReplyInboxResponse>(
+      () => `${this.apiUrl}/api/reply-inbox?${toQueryString(params())}`,
+      { defaultValue: { reviews: [] } },
+    )
   }
 
   replyAuditEventsResource(
     params: () => { page: number; pageSize: number; appId?: string; action?: string },
   ): HttpResourceRef<ListReplyAuditEventsResponse> {
-    return httpResource<ListReplyAuditEventsResponse>(() => `${this.apiUrl}/api/reply-audit-events?${toAuditQueryString(params())}`, {
-      defaultValue: { events: [], page: 1, pageSize: 100, total: 0 },
-    })
+    return httpResource<ListReplyAuditEventsResponse>(
+      () => `${this.apiUrl}/api/reply-audit-events?${toAuditQueryString(params())}`,
+      { defaultValue: { events: [], page: 1, pageSize: 100, total: 0 } },
+    )
   }
 
   queueDraft(reviewId: string): Observable<QueueReplyDraftResponse> {
-    return this.http.post<QueueReplyDraftResponse>(`${this.apiUrl}/api/reply-inbox/${reviewId}/draft/queue`, {})
+    return this.http.post<QueueReplyDraftResponse>(
+      `${this.apiUrl}/api/reply-inbox/${reviewId}/draft/queue`,
+      {},
+    )
   }
 
   saveDraft(reviewId: string, input: SaveReplyDraftRequest): Observable<ReplyActionResponse> {
-    return this.http.put<ReplyActionResponse>(`${this.apiUrl}/api/reply-inbox/${reviewId}/draft`, input)
+    return this.http.put<ReplyActionResponse>(
+      `${this.apiUrl}/api/reply-inbox/${reviewId}/draft`,
+      input,
+    )
   }
 
   publishReply(reviewId: string, input: PublishReplyRequest = {}): Observable<ReplyActionResponse> {
-    return this.http.post<ReplyActionResponse>(`${this.apiUrl}/api/reply-inbox/${reviewId}/publish`, input)
+    return this.http.post<ReplyActionResponse>(
+      `${this.apiUrl}/api/reply-inbox/${reviewId}/publish`,
+      input,
+    )
   }
 
   ignoreReview(reviewId: string): Observable<ReplyActionResponse> {
-    return this.http.post<ReplyActionResponse>(`${this.apiUrl}/api/reply-inbox/${reviewId}/ignore`, {})
+    return this.http.post<ReplyActionResponse>(
+      `${this.apiUrl}/api/reply-inbox/${reviewId}/ignore`,
+      {},
+    )
   }
 
   unignoreReview(reviewId: string): Observable<ReplyActionResponse> {
-    return this.http.post<ReplyActionResponse>(`${this.apiUrl}/api/reply-inbox/${reviewId}/unignore`, {})
+    return this.http.post<ReplyActionResponse>(
+      `${this.apiUrl}/api/reply-inbox/${reviewId}/unignore`,
+      {},
+    )
   }
 }
 
-function toAuditQueryString(params: { page: number; pageSize: number; appId?: string; action?: string }) {
-  const query = new URLSearchParams({ page: params.page.toString(), pageSize: params.pageSize.toString() })
-  if (params.appId) {
+function toAuditQueryString(params: {
+  page: number
+  pageSize: number
+  appId?: string
+  action?: string
+}) {
+  const query = new URLSearchParams({
+    page: params.page.toString(),
+    pageSize: params.pageSize.toString(),
+  })
+  if (params.appId !== undefined && params.appId !== '') {
     query.set('appId', params.appId)
   }
-  if (params.action) {
+  if (params.action !== undefined && params.action !== '') {
     query.set('action', params.action)
   }
   return query.toString()
@@ -65,7 +93,7 @@ function toAuditQueryString(params: { page: number; pageSize: number; appId?: st
 
 function toQueryString(params: { appId?: string; filter: string }) {
   const query = new URLSearchParams({ filter: params.filter })
-  if (params.appId) {
+  if (params.appId !== undefined && params.appId !== '') {
     query.set('appId', params.appId)
   }
   return query.toString()

@@ -4,23 +4,14 @@
   "projectType": "application",
   "sourceRoot": "scripts",
   "targets": {
-    "test": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "vitest run scripts"
-      }
-    },
+    "test": { "executor": "nx:run-commands", "options": { "command": "vitest run scripts" } },
     "typecheck": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "tsc -p scripts/tsconfig.json --noEmit"
-      }
+      "options": { "command": "tsc -p scripts/tsconfig.json --noEmit" }
     },
     "lint": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "biome lint scripts"
-      }
+      "options": { "command": "tsx node_modules/oxlint/bin/oxlint scripts" }
     }
   },
   "tags": ["scope:operations", "type:tool"]

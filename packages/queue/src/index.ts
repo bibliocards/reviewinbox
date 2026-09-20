@@ -1,6 +1,7 @@
 export type {
   GenerateReplyDraftJobPayload,
   QueueClient,
+  QueueClientBoss,
   QueueClientOptions,
   QueueJobHandler,
   QueueJobOptions,

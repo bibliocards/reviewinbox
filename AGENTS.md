@@ -2,10 +2,10 @@
 
 ## Commands
 
-- Package manager is `pnpm@11.5.3`; install with `pnpm install`.
+- Package manager is the version pinned in `package.json`; install with `pnpm install`.
 - Full checks from `CONTRIBUTING.md`: `pnpm format`, `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
 - Nx owns monorepo task orchestration. Prefer `pnpm nx <target> <project>` or `pnpm nx affected -t <target>` once the workspace is initialized.
-- Formatting and linting use Biome. Do not add oxfmt or oxlint configuration.
+- Formatting uses Oxfmt; linting uses Oxlint with type-aware, SonarJS, and anti-slop rules.
 
 ## Local Runtime
 
@@ -26,7 +26,7 @@
 
 ## Generated And Database Files
 
-- Drizzle schema changes require `pnpm db:generate`; commit the generated migration in `packages/db/migrations` with the schema change.
+- Drizzle schema changes require `pnpm db:generate --name <description>`; commit the new SQL, `meta/_journal.json`, and the single `meta/snapshot.json` in `packages/db/migrations`. The wrapper preserves SQL history and replaces the schema snapshot; see `CONTRIBUTING.md` for the workflow.
 - `packages/db/drizzle.config.ts` defaults to the local Postgres URL when `DATABASE_URL` is unset.
 
 ## UI Direction

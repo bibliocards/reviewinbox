@@ -4,9 +4,7 @@ export interface TypedTemplateContext<T> {
   $implicit: T
 }
 
-@Directive({
-  selector: 'ng-template[typedTemplate]',
-})
+@Directive({ selector: 'ng-template[typedTemplate]' })
 export class TypedTemplateDirective<T> {
   @Input('typedTemplate')
   value!: T | readonly T[] | null | undefined

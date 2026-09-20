@@ -1,5 +1,13 @@
 import { JsonPipe } from '@angular/common'
-import { Component, computed, effect, HostListener, inject, signal } from '@angular/core'
+import {
+  Component,
+  computed,
+  effect,
+  HostListener,
+  inject,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
 import type { ListReplyAuditEventResponse } from '@reviewinbox/contracts'
@@ -7,7 +15,11 @@ import { format } from 'date-fns/format'
 import { enUS, fr } from 'date-fns/locale'
 import { SelectModule } from 'primeng/select'
 import { type TableLazyLoadEvent, TableModule } from 'primeng/table'
-import { AppSelectComponent, type AppSelectOption } from '../../shared/components/app-select/app-select.component'
+
+import {
+  AppSelectComponent,
+  type AppSelectOption,
+} from '../../shared/components/app-select/app-select.component'
 import { TypedTemplateDirective } from '../../shared/directives/typed-template.directive'
 import { AppIconsService } from '../../shared/services/app-icons.service'
 import { AppsService } from '../../shared/services/apps.service'
@@ -27,7 +39,16 @@ const actionValues: readonly ListReplyAuditEventResponse['action'][] = [
 
 @Component({
   selector: 'ri-audit-history-page',
-  imports: [AppSelectComponent, FormsModule, SelectModule, TableModule, TranslocoDirective, JsonPipe, TypedTemplateDirective],
+  imports: [
+    AppSelectComponent,
+    FormsModule,
+    SelectModule,
+    TableModule,
+    TranslocoDirective,
+    JsonPipe,
+    TypedTemplateDirective,
+  ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './audit-history.page.html',
 })
 export class AuditHistoryPageComponent {
@@ -44,11 +65,18 @@ export class AuditHistoryPageComponent {
   protected readonly apps = computed(() => this.appsResource.value().apps)
   protected readonly appOptions = computed<SelectOption[]>(() => [
     { label: this.transloco.translate('replyInbox.filters.allApps'), value: '' },
-    ...this.apps().map((app) => ({ label: app.name, value: app.id, imageUrl: this.appIcons.iconUrl(app.id) })),
+    ...this.apps().map((app) => ({
+      label: app.name,
+      value: app.id,
+      imageUrl: this.appIcons.iconUrl(app.id),
+    })),
   ])
   protected readonly actionOptions = computed<SelectOption[]>(() => [
     { label: this.transloco.translate('auditHistory.filters.allActions'), value: '' },
-    ...actionValues.map((action) => ({ label: this.transloco.translate(`auditHistory.actions.${action}`), value: action })),
+    ...actionValues.map((action) => ({
+      label: this.transloco.translate(`auditHistory.actions.${action}`),
+      value: action,
+    })),
   ])
   protected readonly auditResource = this.replyInboxService.replyAuditEventsResource(() => ({
     page: this.page(),
@@ -86,7 +114,15 @@ export class AuditHistoryPageComponent {
   }
 
   protected reviewLabel(event: ListReplyAuditEventResponse): string {
-    return event.reviewTitle || event.reviewAuthorDisplayName || this.transloco.translate('replyInbox.untitledReview')
+    if (event.reviewTitle !== null && event.reviewTitle !== '') {
+      return event.reviewTitle
+    }
+
+    if (event.reviewAuthorDisplayName !== null && event.reviewAuthorDisplayName !== '') {
+      return event.reviewAuthorDisplayName
+    }
+
+    return this.transloco.translate('replyInbox.untitledReview')
   }
 
   protected actorLabel(event: ListReplyAuditEventResponse): string {

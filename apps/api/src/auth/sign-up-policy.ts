@@ -1,49 +1,78 @@
 import { invitation, user } from '@reviewinbox/db'
 import { and, count, eq, gt } from 'drizzle-orm'
 import type { MiddlewareHandler } from 'hono'
+import { z } from 'zod'
 
 import { database, serverConfig } from '../db'
 
-export const requireInvitationForSelfHostedSignUp: MiddlewareHandler = async (context, next) => {
-  if (context.req.method !== 'POST' || serverConfig.deploymentMode === 'cloud') {
-    await next()
-    return
+const signUpRequestSchema = z.object({
+  email: z
+    .string()
+    .min(1)
+    .transform((email) => email.toLowerCase()),
+  invitationId: z.string().min(1),
+})
+
+type SignUpRequest = z.infer<typeof signUpRequestSchema>
+type AuthContext = Parameters<MiddlewareHandler>[0]
+
+export const requireInvitationForSelfHostedSignUp: MiddlewareHandler = async (
+  context,
+  next,
+): Promise<Response | void> => {
+  if (shouldBypassSignUpPolicy(context.req.method)) {
+    return next()
   }
 
+  if (!(await hasExistingUsers())) {
+    return next()
+  }
+
+  const signUpRequest = await parseSignUpRequest(context)
+  if (signUpRequest === null || !(await hasValidInvitation(signUpRequest))) {
+    return denySignUp(context)
+  }
+
+  return next()
+}
+
+function shouldBypassSignUpPolicy(method: string): boolean {
+  return method !== 'POST' || serverConfig.deploymentMode === 'cloud'
+}
+
+async function hasExistingUsers(): Promise<boolean> {
   const [result] = await database.select({ count: count() }).from(user)
+  return (result?.count ?? 0) > 0
+}
 
-  if ((result?.count ?? 0) === 0) {
-    await next()
-    return
-  }
-
-  const body = await context.req.raw
+async function parseSignUpRequest(context: AuthContext): Promise<SignUpRequest | null> {
+  const body: unknown = await context.req.raw
     .clone()
     .json()
     .catch(() => null)
-  const email = typeof body?.email === 'string' ? body.email.toLowerCase() : ''
-  const invitationId = typeof body?.invitationId === 'string' ? body.invitationId : ''
+  const result = signUpRequestSchema.safeParse(body)
+  return result.success ? result.data : null
+}
 
-  if (!email || !invitationId) {
-    return context.json({ error: 'Sign-up is only available with a valid invitation.' }, 403)
-  }
-
+async function hasValidInvitation(request: SignUpRequest): Promise<boolean> {
   const [existingInvitation] = await database
     .select({ id: invitation.id })
     .from(invitation)
     .where(
       and(
-        eq(invitation.id, invitationId),
-        eq(invitation.email, email),
+        eq(invitation.id, request.invitationId),
+        eq(invitation.email, request.email),
         eq(invitation.status, 'pending'),
         gt(invitation.expiresAt, new Date()),
       ),
     )
     .limit(1)
 
-  if (!existingInvitation) {
-    return context.json({ error: 'Sign-up is only available with a valid invitation.' }, 403)
-  }
+  return existingInvitation !== undefined
+}
 
-  await next()
+function denySignUp(context: AuthContext): Promise<Response> {
+  return Promise.resolve(
+    context.json({ error: 'Sign-up is only available with a valid invitation.' }, 403),
+  )
 }

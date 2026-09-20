@@ -1,4 +1,12 @@
+import { z } from 'zod'
+
 export type StoreProvider = 'apple_app_store' | 'google_play'
+
+export const reviewSyncCheckpointSchema = z.object({
+  lastReviewedAt: z.string().nullable().optional(),
+})
+
+export type ReviewSyncCheckpoint = z.infer<typeof reviewSyncCheckpointSchema>
 
 export type NormalizedStoreReview = {
   externalReviewId: string
@@ -13,8 +21,6 @@ export type NormalizedStoreReview = {
   reviewedAt: string
   rawPayload?: unknown
 }
-
-export type ReviewSyncCheckpoint = Record<string, unknown>
 
 export type StoreReviewSyncOptions = {
   checkpoint: ReviewSyncCheckpoint | null
@@ -51,14 +57,13 @@ export type StoreReplyPublishRequest<TCredential> = {
   timeoutMs?: number
 }
 
-export type StoreReplyPublishResult = {
-  externalReplyId: string | null
-  publishedAt: string
-}
+export type StoreReplyPublishResult = { externalReplyId: string | null; publishedAt: string }
 
 export type StoreReviewAdapter<TCredential, TErrorCode extends string = string> = {
   provider: StoreProvider
-  verifyCredential(request: StoreCredentialVerificationRequest<TCredential>): Promise<StoreCredentialVerificationResult<TErrorCode>>
+  verifyCredential(
+    request: StoreCredentialVerificationRequest<TCredential>,
+  ): Promise<StoreCredentialVerificationResult<TErrorCode>>
   syncReviews(request: StoreReviewSyncRequest<TCredential>): Promise<StoreReviewSyncResult>
   publishReply(request: StoreReplyPublishRequest<TCredential>): Promise<StoreReplyPublishResult>
 }

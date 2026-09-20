@@ -11,14 +11,16 @@ invitationsRoutes.get('/api/invitations/:invitationId', async (context) => {
   const invitationId = context.req.param('invitationId')
 
   const [row] = await database
-    .select({
-      id: invitation.id,
-      email: invitation.email,
-      organizationName: organization.name,
-    })
+    .select({ id: invitation.id, email: invitation.email, organizationName: organization.name })
     .from(invitation)
     .innerJoin(organization, eq(organization.id, invitation.organizationId))
-    .where(and(eq(invitation.id, invitationId), eq(invitation.status, 'pending'), gt(invitation.expiresAt, new Date())))
+    .where(
+      and(
+        eq(invitation.id, invitationId),
+        eq(invitation.status, 'pending'),
+        gt(invitation.expiresAt, new Date()),
+      ),
+    )
     .limit(1)
 
   if (!row) {

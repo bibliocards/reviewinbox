@@ -1,17 +1,15 @@
-import { Component, input, model } from '@angular/core'
+import { Component, input, model, ChangeDetectionStrategy } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { SelectModule } from 'primeng/select'
+
 import { TypedTemplateDirective } from '../../directives/typed-template.directive'
 
-export type AppSelectOption = {
-  label: string
-  value: string
-  imageUrl?: string | null
-}
+export type AppSelectOption = { label: string; value: string; imageUrl?: string | null }
 
 @Component({
   selector: 'ri-app-select',
   imports: [FormsModule, SelectModule, TypedTemplateDirective],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './app-select.component.html',
 })
 export class AppSelectComponent {

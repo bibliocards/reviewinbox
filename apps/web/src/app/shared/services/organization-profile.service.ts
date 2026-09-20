@@ -1,7 +1,12 @@
 import { HttpClient, httpResource } from '@angular/common/http'
 import { Injectable, inject } from '@angular/core'
-import type { DeleteOrganizationResponse, OrganizationProfileResponse, OrganizationUsageResponse } from '@reviewinbox/contracts'
+import type {
+  DeleteOrganizationResponse,
+  OrganizationProfileResponse,
+  OrganizationUsageResponse,
+} from '@reviewinbox/contracts'
 import type { Observable } from 'rxjs'
+
 import { environment } from '../../../environments/environment'
 import { resolveOptionalString } from '../../../environments/environment.model'
 
@@ -19,21 +24,31 @@ export class OrganizationProfileService {
   }
 
   usageResource(enabled: () => boolean = () => true) {
-    return httpResource<OrganizationUsageResponse>(() => (enabled() ? `${this.apiUrl}/api/organization/usage` : undefined))
+    return httpResource<OrganizationUsageResponse>(() =>
+      enabled() ? `${this.apiUrl}/api/organization/usage` : undefined,
+    )
   }
 
   updateProfile(input: { name: string }): Observable<OrganizationProfileResponse> {
-    return this.http.patch<OrganizationProfileResponse>(`${this.apiUrl}/api/organization/profile`, input)
+    return this.http.patch<OrganizationProfileResponse>(
+      `${this.apiUrl}/api/organization/profile`,
+      input,
+    )
   }
 
   uploadLogo(file: File): Observable<OrganizationProfileResponse> {
     const formData = new FormData()
     formData.append('logo', file)
 
-    return this.http.put<OrganizationProfileResponse>(`${this.apiUrl}/api/organization/profile/logo`, formData)
+    return this.http.put<OrganizationProfileResponse>(
+      `${this.apiUrl}/api/organization/profile/logo`,
+      formData,
+    )
   }
 
   deleteOrganization(input: { name: string }): Observable<DeleteOrganizationResponse> {
-    return this.http.delete<DeleteOrganizationResponse>(`${this.apiUrl}/api/organization`, { body: input })
+    return this.http.delete<DeleteOrganizationResponse>(`${this.apiUrl}/api/organization`, {
+      body: input,
+    })
   }
 }

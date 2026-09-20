@@ -1,4 +1,12 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core'
+import {
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core'
 import { FormField, form, required, submit } from '@angular/forms/signals'
 import { OrganizationService } from 'ngx-better-auth'
 import { ButtonModule } from 'primeng/button'
@@ -7,14 +15,10 @@ import { firstValueFrom } from 'rxjs'
 
 export type SelectedPlan = 'free' | 'starter' | 'pro' | 'business'
 
-type CreatedOrganization = {
-  id: string
-  name: string
-}
-
 @Component({
   selector: 'ri-organization-create-form',
   imports: [ButtonModule, FormField, InputTextModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './organization-create-form.component.html',
 })
 export class OrganizationCreateFormComponent {
@@ -27,11 +31,11 @@ export class OrganizationCreateFormComponent {
 
   protected readonly errorMessage = signal<string | null>(null)
   protected readonly isSubmitting = signal(false)
-  protected readonly canSubmit = computed(() => this.organizationForm().valid() && !this.isSubmitting())
+  protected readonly canSubmit = computed(
+    () => this.organizationForm().valid() && !this.isSubmitting(),
+  )
 
-  private readonly organizationModel = signal({
-    name: '',
-  })
+  private readonly organizationModel = signal({ name: '' })
 
   protected readonly organizationForm = form(this.organizationModel, (schema) => {
     required(schema.name)
@@ -48,22 +52,21 @@ export class OrganizationCreateFormComponent {
     this.errorMessage.set(null)
     this.isSubmitting.set(true)
 
-    submit(this.organizationForm, async () => {
+    void submit(this.organizationForm, async () => {
       const value = this.organizationForm().value()
 
       try {
-        const organization = (await firstValueFrom(
-          this.organizations.create({
-            name: value.name,
-            slug: this.slugify(value.name),
-          }),
-        )) as CreatedOrganization
+        const organization = await firstValueFrom(
+          this.organizations.create({ name: value.name, slug: this.slugify(value.name) }),
+        )
 
         await firstValueFrom(this.organizations.setActive({ organizationId: organization.id }))
         dispatchEvent(new CustomEvent('reviewinbox:organizations-changed'))
         this.created.emit({ organizationId: organization.id, selectedPlan: this.selectedPlan() })
       } catch {
-        this.errorMessage.set('We could not create this Organization. Try another name or try again.')
+        this.errorMessage.set(
+          'We could not create this Organization. Try another name or try again.',
+        )
       } finally {
         this.isSubmitting.set(false)
       }
@@ -74,8 +77,8 @@ export class OrganizationCreateFormComponent {
     const slug = value
       .trim()
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '')
+      .replaceAll(/[^a-z0-9]+/gu, '-')
+      .replaceAll(/^-|-$/gu, '')
 
     return slug || 'organization'
   }

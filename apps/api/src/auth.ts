@@ -1,16 +1,26 @@
-import { getEffectiveOrganizationLimits, planDefinitions, type PlanName } from '@reviewinbox/billing'
 import type { StripePlan } from '@better-auth/stripe'
-import { databaseSchema, member, organization as organizationTable } from '@reviewinbox/db'
 import { stripe, type Subscription } from '@better-auth/stripe'
-import { and, eq } from 'drizzle-orm'
-import { APIError } from 'better-auth/api'
-import { betterAuth } from 'better-auth'
+import {
+  getEffectiveOrganizationLimits,
+  planDefinitions,
+  type PlanName,
+} from '@reviewinbox/billing'
+import { databaseSchema, member, organization as organizationTable } from '@reviewinbox/db'
+import { betterAuth, type Auth, type BetterAuthOptions } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { APIError } from 'better-auth/api'
 import { organization } from 'better-auth/plugins/organization'
-import Stripe from 'stripe'
+import { and, eq } from 'drizzle-orm'
+import { Stripe as StripeClient } from 'stripe'
+import { z } from 'zod'
 
 import { database, serverConfig } from './db'
-import { dispatchPasswordResetEmail, invitationLink, passwordResetEmailEnabled, sendInvitationEmail } from './mail'
+import {
+  dispatchPasswordResetEmail,
+  invitationLink,
+  passwordResetEmailEnabled,
+  sendInvitationEmail,
+} from './mail'
 
 const rateLimitStorage = process.env['NODE_ENV'] === 'test' ? 'memory' : 'database'
 type StripeRuntimeConfig = {
@@ -56,34 +66,29 @@ const authPlugins = [
   ...createStripePlugins(),
 ]
 
-export const auth = betterAuth({
+const authDatabase: ReturnType<typeof drizzleAdapter> = drizzleAdapter(database, {
+  provider: 'pg',
+  schema: databaseSchema,
+})
+
+type ReviewInboxAuthOptions = BetterAuthOptions & {
+  plugins: typeof authPlugins
+  emailAndPassword: ReturnType<typeof createEmailAndPasswordConfig>
+}
+
+const authOptions: ReviewInboxAuthOptions = {
   appName: 'ReviewInbox',
   basePath: '/api/auth',
   baseURL: serverConfig.betterAuthUrl,
-  database: drizzleAdapter(database, {
-    provider: 'pg',
-    schema: databaseSchema,
-  }),
-  emailAndPassword: {
-    enabled: true,
-    ...(passwordResetEmailEnabled(serverConfig)
-      ? {
-          sendResetPassword({ user, url }: { user: { email: string }; url: string }) {
-            dispatchPasswordResetEmail({ email: user.email, resetLink: url }, serverConfig)
-            return Promise.resolve()
-          },
-        }
-      : {}),
-    revokeSessionsOnPasswordReset: true,
-  },
+  database: authDatabase,
+  emailAndPassword: createEmailAndPasswordConfig(),
   plugins: authPlugins,
-  rateLimit: {
-    enabled: true,
-    storage: rateLimitStorage,
-  },
+  rateLimit: { enabled: true, storage: rateLimitStorage },
   secret: serverConfig.betterAuthSecret,
   trustedOrigins: serverConfig.betterAuthTrustedOrigins,
-})
+}
+
+export const auth: Auth<typeof authOptions> = betterAuth(authOptions)
 
 export type AuthSession = typeof auth.$Infer.Session
 
@@ -93,8 +98,8 @@ function createStripePlugins() {
     return []
   }
 
-  const stripeClient = new Stripe(stripeConfig.stripeSecretKey, {
-    apiVersion: '2026-05-27.dahlia',
+  const stripeClient = new StripeClient(stripeConfig.stripeSecretKey, {
+    apiVersion: '2026-08-26.dahlia',
   })
 
   return [
@@ -102,9 +107,7 @@ function createStripePlugins() {
       stripeClient,
       stripeWebhookSecret: stripeConfig.stripeWebhookSecret,
       createCustomerOnSignUp: false,
-      organization: {
-        enabled: true,
-      },
+      organization: { enabled: true },
       subscription: {
         enabled: true,
         plans: stripeConfig.plans,
@@ -131,16 +134,9 @@ function createStripePlugins() {
         getCheckoutSessionParams() {
           return {
             params: {
-              automatic_tax: {
-                enabled: true,
-              },
-              customer_update: {
-                address: 'auto',
-                name: 'auto',
-              },
-              tax_id_collection: {
-                enabled: true,
-              },
+              automatic_tax: { enabled: true },
+              customer_update: { address: 'auto', name: 'auto' },
+              tax_id_collection: { enabled: true },
             },
           }
         },
@@ -150,14 +146,22 @@ function createStripePlugins() {
 }
 
 function getStripeConfig(): StripeRuntimeConfig | null {
-  if (!serverConfig.stripeSecretKey || !serverConfig.stripeWebhookSecret) {
+  if (!hasText(serverConfig.stripeSecretKey) || !hasText(serverConfig.stripeWebhookSecret)) {
     return null
   }
 
   const plans = [
-    stripePlan('starter', serverConfig.stripeStarterPriceId, serverConfig.stripeStarterAnnualPriceId),
+    stripePlan(
+      'starter',
+      serverConfig.stripeStarterPriceId,
+      serverConfig.stripeStarterAnnualPriceId,
+    ),
     stripePlan('pro', serverConfig.stripeProPriceId, serverConfig.stripeProAnnualPriceId),
-    stripePlan('business', serverConfig.stripeBusinessPriceId, serverConfig.stripeBusinessAnnualPriceId),
+    stripePlan(
+      'business',
+      serverConfig.stripeBusinessPriceId,
+      serverConfig.stripeBusinessAnnualPriceId,
+    ),
   ].filter((plan): plan is StripePlan => Boolean(plan))
 
   if (plans.length === 0) {
@@ -171,17 +175,16 @@ function getStripeConfig(): StripeRuntimeConfig | null {
   }
 }
 
-function stripePlan(planName: Exclude<PlanName, 'free'>, priceId?: string, annualDiscountPriceId?: string): StripePlan | null {
-  if (!priceId || !annualDiscountPriceId) {
+function stripePlan(
+  planName: Exclude<PlanName, 'free'>,
+  priceId?: string,
+  annualDiscountPriceId?: string,
+): StripePlan | null {
+  if (!hasText(priceId) || !hasText(annualDiscountPriceId)) {
     return null
   }
 
-  return {
-    name: planName,
-    priceId,
-    annualDiscountPriceId,
-    limits: planDefinitions[planName],
-  }
+  return { name: planName, priceId, annualDiscountPriceId, limits: planDefinitions[planName] }
 }
 
 function organizationBillingOnlyPlugin() {
@@ -198,21 +201,23 @@ function organizationBillingOnlyPlugin() {
     hooks: {
       before: [
         {
-          matcher(context: { path?: string }) {
-            return typeof context.path === 'string' && subscriptionPaths.has(context.path)
+          matcher(context: BillingHookInput) {
+            return context.path !== undefined && subscriptionPaths.has(context.path)
           },
-          handler: async (context: unknown) => {
-            if (!isOrganizationBillingRequest(context)) {
+          handler: (context: BillingHookInput) => {
+            const parsedContext = parseBillingHookContext(context)
+            if (!parsedContext.ok || !isOrganizationBillingRequest(parsedContext.context)) {
               throw new APIError('BAD_REQUEST', {
                 message: 'ReviewInbox billing is only available for Organizations.',
               })
             }
 
-            if (!hasSafeBillingRedirectUrls(context)) {
+            if (!hasSafeBillingRedirectUrls(parsedContext.context)) {
               throw new APIError('BAD_REQUEST', {
                 message: 'Billing redirects must stay within ReviewInbox.',
               })
             }
+            return Promise.resolve()
           },
         },
       ],
@@ -220,27 +225,43 @@ function organizationBillingOnlyPlugin() {
   }
 }
 
-function isOrganizationBillingRequest(context: unknown): boolean {
-  const data = context as { path?: string; body?: { customerType?: unknown }; query?: { customerType?: unknown } }
-  if (data.path === '/subscription/list') {
-    return data.query?.customerType === 'organization' && !data.body?.customerType
+function createEmailAndPasswordConfig() {
+  if (passwordResetEmailEnabled(serverConfig)) {
+    return {
+      enabled: true,
+      revokeSessionsOnPasswordReset: true,
+      sendResetPassword: ({ user, url }: { user: { email: string }; url: string }) => {
+        dispatchPasswordResetEmail({ email: user.email, resetLink: url }, serverConfig)
+        return Promise.resolve()
+      },
+    }
+  }
+  return { enabled: true, revokeSessionsOnPasswordReset: true }
+}
+
+function isOrganizationBillingRequest(context: BillingHookContext): boolean {
+  const bodyCustomerType = context.body?.customerType
+  const queryCustomerType = context.query?.customerType
+  if (context.path === '/subscription/list') {
+    return queryCustomerType === 'organization' && !hasText(bodyCustomerType)
   }
 
-  return data.body?.customerType === 'organization' && (!data.query?.customerType || data.query.customerType === 'organization')
+  return (
+    bodyCustomerType === 'organization'
+    && (!hasText(queryCustomerType) || queryCustomerType === 'organization')
+  )
 }
 
-function hasSafeBillingRedirectUrls(context: unknown): boolean {
-  const body = (context as { body?: { successUrl?: unknown; cancelUrl?: unknown; returnUrl?: unknown } }).body
-  return [body?.successUrl, body?.cancelUrl, body?.returnUrl].every(isSafeBillingRedirectUrl)
+function hasSafeBillingRedirectUrls(context: BillingHookContext): boolean {
+  const body = context.body
+  return [body?.successUrl, body?.cancelUrl, body?.returnUrl].every((value) =>
+    isSafeBillingRedirectUrl(value),
+  )
 }
 
-function isSafeBillingRedirectUrl(value: unknown): boolean {
+function isSafeBillingRedirectUrl(value: string | undefined): boolean {
   if (value === undefined) {
     return true
-  }
-
-  if (typeof value !== 'string') {
-    return false
   }
 
   if (value.startsWith('/') && !value.startsWith('//')) {
@@ -256,18 +277,71 @@ function isSafeBillingRedirectUrl(value: unknown): boolean {
 
 async function syncOrganizationPlan(subscription: Subscription): Promise<void> {
   if (subscription.status !== 'active' && subscription.status !== 'trialing') {
-    await database.update(organizationTable).set({ planName: 'free' }).where(eq(organizationTable.id, subscription.referenceId))
+    await database
+      .update(organizationTable)
+      .set({ planName: 'free' })
+      .where(eq(organizationTable.id, subscription.referenceId))
     return
   }
 
   if (!isPlanName(subscription.plan) || subscription.plan === 'free') {
-    await database.update(organizationTable).set({ planName: 'free' }).where(eq(organizationTable.id, subscription.referenceId))
+    await database
+      .update(organizationTable)
+      .set({ planName: 'free' })
+      .where(eq(organizationTable.id, subscription.referenceId))
     return
   }
 
-  await database.update(organizationTable).set({ planName: subscription.plan }).where(eq(organizationTable.id, subscription.referenceId))
+  await database
+    .update(organizationTable)
+    .set({ planName: subscription.plan })
+    .where(eq(organizationTable.id, subscription.referenceId))
+}
+
+const billingBodySchema = z.looseObject({
+  customerType: z.string().optional(),
+  successUrl: z.string().optional(),
+  cancelUrl: z.string().optional(),
+  returnUrl: z.string().optional(),
+})
+const billingQuerySchema = z.looseObject({ customerType: z.string().optional() })
+
+type BillingHookContext = {
+  path?: string | undefined
+  body?: z.infer<typeof billingBodySchema> | undefined
+  query?: z.infer<typeof billingQuerySchema> | undefined
+}
+
+type BillingHookInput = { path?: string; body?: unknown; query?: unknown }
+
+function parseBillingHookContext(
+  context: BillingHookInput,
+): { ok: true; context: BillingHookContext } | { ok: false } {
+  // SAFETY: Better Auth exposes hook payloads as any; these schemas validate their runtime shape.
+  const bodyResult =
+    context.body === undefined
+      ? { success: true as const, data: undefined }
+      : billingBodySchema.safeParse(context.body)
+  // SAFETY: Better Auth exposes hook payloads as any; these schemas validate their runtime shape.
+  const queryResult =
+    context.query === undefined
+      ? { success: true as const, data: undefined }
+      : billingQuerySchema.safeParse(context.query)
+  if (!bodyResult.success || !queryResult.success) {
+    return { ok: false }
+  }
+  return {
+    ok: true,
+    context: { path: context.path, body: bodyResult.data, query: queryResult.data },
+  }
+}
+
+function hasText(value: string | null | undefined): value is string {
+  return value !== undefined && value !== null && value !== ''
 }
 
 function isPlanName(planName: string): planName is PlanName {
-  return planName === 'free' || planName === 'starter' || planName === 'pro' || planName === 'business'
+  return (
+    planName === 'free' || planName === 'starter' || planName === 'pro' || planName === 'business'
+  )
 }

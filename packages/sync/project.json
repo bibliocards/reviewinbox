@@ -6,28 +6,20 @@
   "targets": {
     "build": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "swc packages/sync/src -d dist/packages/sync --strip-leading-paths"
-      },
+      "options": { "command": "swc packages/sync/src -d dist/packages/sync --strip-leading-paths" },
       "outputs": ["{workspaceRoot}/dist/packages/sync"]
     },
     "typecheck": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "tsc -p packages/sync/tsconfig.lib.json --noEmit"
-      }
+      "options": { "command": "tsc -p packages/sync/tsconfig.lib.json --noEmit" }
     },
     "test": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "vitest run packages/sync/src --passWithNoTests"
-      }
+      "options": { "command": "vitest run packages/sync/src --passWithNoTests" }
     },
     "lint": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "biome lint packages/sync"
-      }
+      "options": { "command": "tsx node_modules/oxlint/bin/oxlint packages/sync" }
     }
   },
   "tags": ["scope:shared", "type:sync"]

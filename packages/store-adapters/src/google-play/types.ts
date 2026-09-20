@@ -1,9 +1,8 @@
+import { z } from 'zod'
+
 import type { ReviewSyncCheckpoint, StoreCredentialVerificationResult } from '../index'
 
-export type GooglePlayServiceAccountCredential = {
-  client_email: string
-  private_key: string
-}
+export type GooglePlayServiceAccountCredential = { client_email: string; private_key: string }
 
 export type GooglePlayReviewSyncRequest = {
   packageName: string
@@ -30,38 +29,54 @@ export type GooglePlayStoreAdapterErrorCode =
   | 'google_unavailable'
   | 'google_invalid_response'
 
-export type GooglePlayCredentialVerificationResult = StoreCredentialVerificationResult<GooglePlayStoreAdapterErrorCode>
+export type GooglePlayCredentialVerificationResult =
+  StoreCredentialVerificationResult<GooglePlayStoreAdapterErrorCode>
 
-export type GooglePlayReviewsResponse = {
-  reviews?: GooglePlayReviewResource[]
-  tokenPagination?: {
-    nextPageToken?: string
-  }
-}
+const googleTimestampSchema = z
+  .object({ seconds: z.union([z.string(), z.number()]).optional(), nanos: z.number().optional() })
+  .loose()
 
-export type GooglePlayReplyPublishResponse = {
-  result?: {
-    replyText?: string
-    lastEdited?: GoogleTimestamp
-  }
-}
+const googlePlayReviewResourceSchema = z
+  .object({
+    reviewId: z.string().optional(),
+    authorName: z.string().optional(),
+    comments: z
+      .array(
+        z
+          .object({
+            userComment: z
+              .object({
+                text: z.string().optional(),
+                lastModified: googleTimestampSchema.optional(),
+                starRating: z.number().optional(),
+                reviewerLanguage: z.string().optional(),
+                appVersionName: z.string().optional(),
+                appVersionCode: z.number().optional(),
+              })
+              .loose()
+              .optional(),
+          })
+          .loose(),
+      )
+      .optional(),
+  })
+  .loose()
 
-export type GooglePlayReviewResource = {
-  reviewId?: string
-  authorName?: string
-  comments?: Array<{
-    userComment?: {
-      text?: string
-      lastModified?: GoogleTimestamp
-      starRating?: number
-      reviewerLanguage?: string
-      appVersionName?: string
-      appVersionCode?: number
-    }
-  }>
-}
+export const googlePlayReviewsResponseSchema = z.object({
+  reviews: z.array(googlePlayReviewResourceSchema).optional(),
+  tokenPagination: z.object({ nextPageToken: z.string().optional() }).optional(),
+})
 
-export type GoogleTimestamp = {
-  seconds?: string | number
-  nanos?: number
-}
+export const googlePlayReplyPublishResponseSchema = z.object({
+  result: z
+    .object({ replyText: z.string().optional(), lastEdited: googleTimestampSchema.optional() })
+    .optional(),
+})
+
+export type GooglePlayReviewsResponse = z.infer<typeof googlePlayReviewsResponseSchema>
+
+export type GooglePlayReplyPublishResponse = z.infer<typeof googlePlayReplyPublishResponseSchema>
+
+export type GooglePlayReviewResource = z.infer<typeof googlePlayReviewResourceSchema>
+
+export type GoogleTimestamp = z.infer<typeof googleTimestampSchema>

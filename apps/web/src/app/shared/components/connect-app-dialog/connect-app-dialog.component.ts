@@ -1,39 +1,59 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, computed, inject, signal } from '@angular/core'
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FormField, form, required } from '@angular/forms/signals'
 import { TranslocoDirective } from '@jsverse/transloco'
-import type { AppListItemResponse, ConnectAppRequest, ConnectAppResponse, UpdateAppRequest } from '@reviewinbox/contracts'
+import type {
+  AppListItemResponse,
+  ConnectAppRequest,
+  ConnectAppResponse,
+  UpdateAppRequest,
+} from '@reviewinbox/contracts'
 import { ButtonModule } from 'primeng/button'
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog'
 import { InputTextModule } from 'primeng/inputtext'
 import { Step, StepList, StepPanel, StepPanels, Stepper } from 'primeng/stepper'
 import { finalize } from 'rxjs'
+
+import { connectAppErrorMessageKey } from '../../connect-app-errors'
 import { AppsService } from '../../services/apps.service'
 
-type ConnectAppDialogData = {
-  app?: AppListItemResponse
-}
+type ConnectAppDialogData = { app?: AppListItemResponse }
 
 @Component({
   selector: 'ri-connect-app-dialog',
-  imports: [ButtonModule, FormField, FormsModule, InputTextModule, Step, StepList, StepPanel, StepPanels, Stepper, TranslocoDirective],
+  imports: [
+    ButtonModule,
+    FormField,
+    FormsModule,
+    InputTextModule,
+    Step,
+    StepList,
+    StepPanel,
+    StepPanels,
+    Stepper,
+    TranslocoDirective,
+  ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './connect-app-dialog.component.html',
 })
 export class ConnectAppDialogComponent {
   private readonly apps = inject(AppsService)
   private readonly dialogRef = inject(DynamicDialogRef)
-  private readonly dialogConfig = inject(DynamicDialogConfig<ConnectAppDialogData>)
-  private readonly editableApp = (this.dialogConfig.data as ConnectAppDialogData | undefined)?.app
+  private readonly dialogConfig =
+    inject<DynamicDialogConfig<ConnectAppDialogData>>(DynamicDialogConfig)
+  private readonly editableApp = this.dialogConfig.data?.app
   private readonly existingAppleConnection = this.editableApp?.storeConnections.find(
     (connection) => connection.provider === 'apple_app_store',
   )
-  private readonly existingGoogleConnection = this.editableApp?.storeConnections.find((connection) => connection.provider === 'google_play')
+  private readonly existingGoogleConnection = this.editableApp?.storeConnections.find(
+    (connection) => connection.provider === 'google_play',
+  )
 
   protected readonly activeStep = signal(1)
   protected readonly isSaving = signal(false)
   protected readonly errorMessageKey = signal<string | null>(null)
-  protected readonly isEditing = computed(() => this.editableApp != null)
+  protected readonly isEditing = computed(() => this.editableApp !== undefined)
 
   private readonly model = signal({
     appName: this.editableApp?.name ?? '',
@@ -49,20 +69,26 @@ export class ConnectAppDialogComponent {
     required(schema.appName)
   })
 
-  protected readonly submitLabelKey = computed(() =>
-    this.isEditing()
-      ? 'apps.connectDialog.actions.save'
-      : this.hasCompleteAppleConnection() || this.hasCompleteGoogleConnection()
-        ? 'apps.connectDialog.actions.createAndConnect'
-        : 'apps.connectDialog.actions.create',
-  )
+  protected readonly submitLabelKey = computed(() => {
+    if (this.isEditing()) {
+      return 'apps.connectDialog.actions.save'
+    }
+
+    return this.hasCompleteAppleConnection() || this.hasCompleteGoogleConnection()
+      ? 'apps.connectDialog.actions.createAndConnect'
+      : 'apps.connectDialog.actions.create'
+  })
 
   protected readonly appleCredentialPlaceholderKey = computed(() =>
-    this.existingAppleConnection?.credential.hasCredential ? 'apps.connectDialog.credentials.keepExistingPlaceholder' : null,
+    this.existingAppleConnection?.credential.hasCredential === true
+      ? 'apps.connectDialog.credentials.keepExistingPlaceholder'
+      : null,
   )
 
   protected readonly googleCredentialPlaceholderKey = computed(() =>
-    this.existingGoogleConnection?.credential.hasCredential ? 'apps.connectDialog.credentials.keepExistingPlaceholder' : null,
+    this.existingGoogleConnection?.credential.hasCredential === true
+      ? 'apps.connectDialog.credentials.keepExistingPlaceholder'
+      : null,
   )
 
   protected nextStep(): void {
@@ -91,18 +117,31 @@ export class ConnectAppDialogComponent {
     this.isSaving.set(true)
 
     const editableApp = this.editableApp
-    const request = editableApp ? this.apps.updateApp(editableApp.id, this.toUpdateRequest()) : this.apps.connectApp(this.toCreateRequest())
+    const request = editableApp
+      ? this.apps.updateApp(editableApp.id, this.toUpdateRequest())
+      : this.apps.connectApp(this.toCreateRequest())
 
-    request.pipe(finalize(() => this.isSaving.set(false))).subscribe({
-      next: (result) => this.close(result),
-      error: (error: unknown) =>
-        this.errorMessageKey.set(
-          connectAppErrorMessageKey(
-            error,
-            this.isEditing() ? 'apps.connectDialog.errors.updateFailed' : 'apps.connectDialog.errors.createFailed',
-          ),
-        ),
-    })
+    request
+      .pipe(
+        finalize(() => {
+          this.isSaving.set(false)
+        }),
+      )
+      .subscribe({
+        next: (result) => {
+          this.close(result)
+        },
+        error: (error: HttpErrorResponse) => {
+          this.errorMessageKey.set(
+            connectAppErrorMessageKey(
+              error,
+              this.isEditing()
+                ? 'apps.connectDialog.errors.updateFailed'
+                : 'apps.connectDialog.errors.createFailed',
+            ),
+          )
+        },
+      })
   }
 
   private providerFieldsAreValid(): boolean {
@@ -129,10 +168,7 @@ export class ConnectAppDialogComponent {
       }
     }
 
-    return {
-      app: { name: value.appName.trim() },
-      connections,
-    }
+    return { app: { name: value.appName.trim() }, connections }
   }
 
   private toUpdateRequest(): UpdateAppRequest {
@@ -152,19 +188,14 @@ export class ConnectAppDialogComponent {
     }
 
     if (value.googlePackageName.trim()) {
-      connections.google = {
-        packageName: value.googlePackageName.trim(),
-      }
+      connections.google = { packageName: value.googlePackageName.trim() }
 
       if (value.googleServiceAccountJson.trim()) {
         connections.google.serviceAccountJson = value.googleServiceAccountJson.trim()
       }
     }
 
-    return {
-      app: { name: value.appName.trim() },
-      connections,
-    }
+    return { app: { name: value.appName.trim() }, connections }
   }
 
   private close(result: ConnectAppResponse): void {
@@ -173,7 +204,12 @@ export class ConnectAppDialogComponent {
 
   private hasCompleteAppleConnection(): boolean {
     const value = this.connectAppForm().value()
-    return Boolean(value.appleAppStoreAppId.trim() && value.appleIssuerId.trim() && value.appleKeyId.trim() && value.applePrivateKey.trim())
+    return Boolean(
+      value.appleAppStoreAppId.trim()
+      && value.appleIssuerId.trim()
+      && value.appleKeyId.trim()
+      && value.applePrivateKey.trim(),
+    )
   }
 
   private hasCompleteApplePublicFields(): boolean {
@@ -188,7 +224,12 @@ export class ConnectAppDialogComponent {
 
   private hasPartialAppleConnection(): boolean {
     const value = this.connectAppForm().value()
-    const fields = [value.appleAppStoreAppId, value.appleIssuerId, value.appleKeyId, value.applePrivateKey]
+    const fields = [
+      value.appleAppStoreAppId,
+      value.appleIssuerId,
+      value.appleKeyId,
+      value.applePrivateKey,
+    ]
     return fields.some((field) => field.trim()) && !this.hasCompleteAppleConnection()
   }
 
@@ -208,8 +249,9 @@ export class ConnectAppDialogComponent {
     const hasAnyCredentialField = Boolean(value.appleKeyId.trim() || value.applePrivateKey.trim())
 
     return (
-      (!hasAnyPublicField && !hasAnyCredentialField) ||
-      (this.hasCompleteApplePublicFields() && (!hasAnyCredentialField || this.hasCompleteAppleConnection()))
+      (!hasAnyPublicField && !hasAnyCredentialField)
+      || (this.hasCompleteApplePublicFields()
+        && (!hasAnyCredentialField || this.hasCompleteAppleConnection()))
     )
   }
 
@@ -221,52 +263,4 @@ export class ConnectAppDialogComponent {
     const value = this.connectAppForm().value()
     return !value.googleServiceAccountJson.trim() || Boolean(value.googlePackageName.trim())
   }
-}
-
-const connectAppErrorKeys: Record<string, string> = {
-  apple_app_id_required_for_verification: 'apps.connectDialog.errors.appleAppIdRequiredForVerification',
-  apple_auth_failed: 'apps.connectDialog.errors.appleAuthFailed',
-  apple_credential_replacement_incomplete: 'apps.connectDialog.errors.appleCredentialReplacementIncomplete',
-  apple_credential_required_for_verification: 'apps.connectDialog.errors.appleCredentialRequiredForVerification',
-  apple_forbidden: 'apps.connectDialog.errors.appleForbidden',
-  apple_invalid_response: 'apps.connectDialog.errors.appleUnavailable',
-  apple_issuer_change_requires_credential_replacement: 'apps.connectDialog.errors.appleIssuerChangeRequiresCredentialReplacement',
-  apple_not_found: 'apps.connectDialog.errors.appleNotFound',
-  apple_rate_limited: 'apps.connectDialog.errors.appleRateLimited',
-  apple_unavailable: 'apps.connectDialog.errors.appleUnavailable',
-  google_auth_failed: 'apps.connectDialog.errors.googleAuthFailed',
-  google_credential_invalid_json: 'apps.connectDialog.errors.googleCredentialInvalidJson',
-  google_credential_not_object: 'apps.connectDialog.errors.googleCredentialNotObject',
-  google_credential_required_for_verification: 'apps.connectDialog.errors.googleCredentialRequiredForVerification',
-  google_forbidden: 'apps.connectDialog.errors.googleForbidden',
-  google_invalid_response: 'apps.connectDialog.errors.googleUnavailable',
-  google_not_found: 'apps.connectDialog.errors.googleNotFound',
-  google_package_name_required_for_verification: 'apps.connectDialog.errors.googlePackageNameRequiredForVerification',
-  google_rate_limited: 'apps.connectDialog.errors.googleRateLimited',
-  google_unavailable: 'apps.connectDialog.errors.googleUnavailable',
-  invalid_credential_format: 'apps.connectDialog.errors.appleCredentialInvalidFormat',
-  invalid_google_credential_format: 'apps.connectDialog.errors.googleCredentialInvalidFormat',
-}
-
-function connectAppErrorMessageKey(error: unknown, fallback: string): string {
-  const errorCode = apiErrorCode(error)
-
-  return errorCode ? (connectAppErrorKeys[errorCode] ?? fallback) : fallback
-}
-
-function apiErrorCode(error: unknown): string | null {
-  if (error instanceof HttpErrorResponse) {
-    return readErrorCode(error.error)
-  }
-
-  return readErrorCode(error)
-}
-
-function readErrorCode(value: unknown): string | null {
-  if (!value || typeof value !== 'object') {
-    return null
-  }
-
-  const errorCode = (value as Record<string, unknown>)['errorCode']
-  return typeof errorCode === 'string' ? errorCode : null
 }

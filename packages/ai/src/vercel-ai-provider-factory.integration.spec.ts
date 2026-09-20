@@ -1,19 +1,19 @@
+import { generateText } from 'ai'
 import { MockLanguageModelV3 } from 'ai/test'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
 
-const { createOpenAiMock } = vi.hoisted(() => ({
-  createOpenAiMock: vi.fn(),
-}))
-
-vi.mock('@ai-sdk/openai', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@ai-sdk/openai')>()
-  return { ...actual, createOpenAI: createOpenAiMock }
-})
-
-import { createOpenAiCompatibleReplyDraftProvider } from './vercel-ai-provider-factory'
+import {
+  createOpenAiCompatibleReplyDraftProvider,
+  type OpenAiCompatibleReplyDraftProviderDependencies,
+} from './vercel-ai-provider-factory'
 
 const outputSchema = z.object({ draftText: z.string() })
+const createOpenAiMock = vi.fn<OpenAiCompatibleReplyDraftProviderDependencies['createOpenAI']>()
+const dependencies: OpenAiCompatibleReplyDraftProviderDependencies = {
+  createOpenAI: createOpenAiMock,
+  generateText,
+}
 
 type TestModelResult = {
   content: Array<{ type: 'text'; text: string }>
@@ -26,7 +26,10 @@ type TestModelResult = {
   warnings: []
 }
 
-function createModelResult(input: { finishReason: TestModelResult['finishReason']; text?: string }): TestModelResult {
+function createModelResult(input: {
+  finishReason: TestModelResult['finishReason']
+  text?: string
+}): TestModelResult {
   return {
     content: input.text === undefined ? [] : [{ type: 'text', text: input.text }],
     finishReason: input.finishReason,
@@ -43,7 +46,10 @@ function createProvider(result: TestModelResult) {
   const model = new MockLanguageModelV3({ doGenerate: result })
   createOpenAiMock.mockReturnValue(() => model)
 
-  return createOpenAiCompatibleReplyDraftProvider({ apiKey: 'test-key', model: 'test-model' })
+  return createOpenAiCompatibleReplyDraftProvider(
+    { apiKey: 'test-key', model: 'test-model' },
+    dependencies,
+  )
 }
 
 describe('createOpenAiCompatibleReplyDraftProvider with the installed AI SDK', () => {

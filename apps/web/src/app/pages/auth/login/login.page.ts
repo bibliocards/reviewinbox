@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal } from '@angular/core'
+import { Component, computed, effect, inject, signal, ChangeDetectionStrategy } from '@angular/core'
 import { toSignal } from '@angular/core/rxjs-interop'
 import { email, FormField, form, required, submit } from '@angular/forms/signals'
 import { ActivatedRoute, Router, RouterLink } from '@angular/router'
@@ -8,12 +8,22 @@ import { ButtonModule } from 'primeng/button'
 import { InputTextModule } from 'primeng/inputtext'
 import { PasswordModule } from 'primeng/password'
 import { firstValueFrom } from 'rxjs'
+
 import { ThemeToggleComponent } from '../../../shared/components/theme-toggle/theme-toggle.component'
 import { AuthCapabilitiesService } from '../../../shared/services/auth-capabilities.service'
 
 @Component({
   selector: 'ri-login-page',
-  imports: [ButtonModule, FormField, InputTextModule, PasswordModule, RouterLink, ThemeToggleComponent, TranslocoDirective],
+  imports: [
+    ButtonModule,
+    FormField,
+    InputTextModule,
+    PasswordModule,
+    RouterLink,
+    ThemeToggleComponent,
+    TranslocoDirective,
+  ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './login.page.html',
 })
 export class LoginPageComponent {
@@ -29,13 +39,14 @@ export class LoginPageComponent {
   protected readonly errorMessage = signal<string | null>(null)
   protected readonly isSubmitting = signal(false)
   protected readonly canSubmit = computed(() => this.loginForm().valid() && !this.isSubmitting())
-  protected readonly redirectUrl = this.safeRedirect(this.route.snapshot.queryParamMap.get('redirect'))
-  protected readonly signUpQueryParams = computed(() => (this.redirectUrl ? { redirect: this.redirectUrl } : {}))
+  protected readonly redirectUrl = this.safeRedirect(
+    this.route.snapshot.queryParamMap.get('redirect'),
+  )
+  protected readonly signUpQueryParams = computed(() =>
+    this.redirectUrl === null ? {} : { redirect: this.redirectUrl },
+  )
 
-  private readonly loginModel = signal({
-    email: '',
-    password: '',
-  })
+  private readonly loginModel = signal({ email: '', password: '' })
 
   protected readonly loginForm = form(this.loginModel, (schema) => {
     required(schema.email)
@@ -62,7 +73,7 @@ export class LoginPageComponent {
     this.errorMessage.set(null)
     this.isSubmitting.set(true)
 
-    submit(this.loginForm, async () => {
+    void submit(this.loginForm, async () => {
       try {
         await firstValueFrom(this.auth.signInEmail(this.loginForm().value()))
         await this.router.navigateByUrl(this.redirectUrl ?? '/')
@@ -75,6 +86,8 @@ export class LoginPageComponent {
   }
 
   private safeRedirect(redirect: string | null): string | null {
-    return redirect?.startsWith('/') && !redirect.startsWith('//') ? redirect : null
+    return redirect !== null && redirect.startsWith('/') && !redirect.startsWith('//')
+      ? redirect
+      : null
   }
 }

@@ -5,8 +5,5 @@ export const environment: WebEnvironment = {
   apiUrl: '',
   authBasePath: '/api/auth',
   deploymentMode: 'self-hosted',
-  auth: {
-    google: false,
-    enterpriseSso: false,
-  },
+  auth: { google: false, enterpriseSso: false },
 }

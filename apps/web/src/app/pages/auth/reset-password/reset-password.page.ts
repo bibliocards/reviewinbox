@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core'
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core'
 import { FormField, form, minLength, required, submit } from '@angular/forms/signals'
 import { ActivatedRoute, RouterLink } from '@angular/router'
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
@@ -6,11 +6,20 @@ import { AuthService } from 'ngx-better-auth'
 import { ButtonModule } from 'primeng/button'
 import { PasswordModule } from 'primeng/password'
 import { firstValueFrom } from 'rxjs'
+
 import { ThemeToggleComponent } from '../../../shared/components/theme-toggle/theme-toggle.component'
 
 @Component({
   selector: 'ri-reset-password-page',
-  imports: [ButtonModule, FormField, PasswordModule, RouterLink, ThemeToggleComponent, TranslocoDirective],
+  imports: [
+    ButtonModule,
+    FormField,
+    PasswordModule,
+    RouterLink,
+    ThemeToggleComponent,
+    TranslocoDirective,
+  ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './reset-password.page.html',
 })
 export class ResetPasswordPageComponent {
@@ -19,12 +28,17 @@ export class ResetPasswordPageComponent {
   private readonly transloco = inject(TranslocoService)
 
   protected readonly token = this.route.snapshot.queryParamMap.get('token')
-  protected readonly resetLanguage = this.supportedLanguage(this.route.snapshot.queryParamMap.get('lang'))
-  protected readonly hasInvalidToken = this.route.snapshot.queryParamMap.has('error') || !this.token
+  protected readonly resetLanguage = this.supportedLanguage(
+    this.route.snapshot.queryParamMap.get('lang'),
+  )
+  protected readonly hasInvalidToken =
+    this.route.snapshot.queryParamMap.has('error') || this.token === null || this.token === ''
   protected readonly errorMessage = signal<string | null>(null)
   protected readonly completed = signal(false)
   protected readonly isSubmitting = signal(false)
-  protected readonly canSubmit = computed(() => this.resetPasswordForm().valid() && !this.isSubmitting())
+  protected readonly canSubmit = computed(
+    () => this.resetPasswordForm().valid() && !this.isSubmitting(),
+  )
 
   private readonly resetPasswordModel = signal({ newPassword: '', confirmPassword: '' })
 
@@ -49,7 +63,12 @@ export class ResetPasswordPageComponent {
 
     const value = this.resetPasswordForm().value()
     const token = this.token
-    if (!token || !this.resetPasswordForm().valid() || value.newPassword !== value.confirmPassword) {
+    if (
+      token === null
+      || token === ''
+      || !this.resetPasswordForm().valid()
+      || value.newPassword !== value.confirmPassword
+    ) {
       this.resetPasswordForm().markAsTouched()
       return
     }
@@ -57,7 +76,7 @@ export class ResetPasswordPageComponent {
     this.errorMessage.set(null)
     this.isSubmitting.set(true)
 
-    submit(this.resetPasswordForm, async () => {
+    void submit(this.resetPasswordForm, async () => {
       try {
         await firstValueFrom(this.auth.resetPassword({ newPassword: value.newPassword, token }))
         this.completed.set(true)

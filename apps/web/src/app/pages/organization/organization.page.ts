@@ -1,10 +1,12 @@
-import { Component, computed, inject } from '@angular/core'
+import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core'
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router'
+
 import { AuthCapabilitiesService } from '../../shared/services/auth-capabilities.service'
 
 @Component({
   selector: 'ri-organization-page',
   imports: [RouterLink, RouterLinkActive, RouterOutlet],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './organization.page.html',
 })
 export class OrganizationPageComponent {

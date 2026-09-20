@@ -1,4 +1,5 @@
 import { z } from 'zod'
+
 import { initialSyncResponseSchema, storeConnectionResponseSchema } from './store'
 
 export const appResponseSchema = z.object({
@@ -15,16 +16,10 @@ export const appListItemResponseSchema = appResponseSchema.extend({
 })
 export type AppListItemResponse = z.infer<typeof appListItemResponseSchema>
 
-export const listAppsResponseSchema = z.object({
-  apps: z.array(appListItemResponseSchema),
-})
+export const listAppsResponseSchema = z.object({ apps: z.array(appListItemResponseSchema) })
 export type ListAppsResponse = z.infer<typeof listAppsResponseSchema>
 
-export const createAppRequestSchema = z
-  .object({
-    name: z.string().trim().min(1).max(120),
-  })
-  .strict()
+export const createAppRequestSchema = z.object({ name: z.string().trim().min(1).max(120) }).strict()
 export type CreateAppRequest = z.infer<typeof createAppRequestSchema>
 
 export const connectAppRequestSchema = z
@@ -111,9 +106,7 @@ export type ConnectAppResponse = z.infer<typeof connectAppResponseSchema>
 export const updateAppResponseSchema = connectAppResponseSchema
 export type UpdateAppResponse = z.infer<typeof updateAppResponseSchema>
 
-export const deleteAppResponseSchema = z.object({
-  id: z.uuid(),
-})
+export const deleteAppResponseSchema = z.object({ id: z.uuid() })
 export type DeleteAppResponse = z.infer<typeof deleteAppResponseSchema>
 
 export const queueMissingReplyDraftsResponseSchema = z.object({

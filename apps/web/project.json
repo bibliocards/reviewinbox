@@ -12,12 +12,7 @@
         "index": "apps/web/src/index.html",
         "serviceWorker": "apps/web/ngsw-config.json",
         "tsConfig": "apps/web/tsconfig.app.json",
-        "assets": [
-          {
-            "glob": "**/*",
-            "input": "apps/web/public"
-          }
-        ],
+        "assets": [{ "glob": "**/*", "input": "apps/web/public" }],
         "styles": ["apps/web/src/styles.css"]
       },
       "configurations": {
@@ -30,10 +25,7 @@
           ],
           "outputHashing": "all"
         },
-        "development": {
-          "optimization": false,
-          "sourceMap": true
-        }
+        "development": { "optimization": false, "sourceMap": true }
       },
       "defaultConfiguration": "production",
       "outputs": ["{workspaceRoot}/dist/apps/web"]
@@ -48,15 +40,15 @@
     },
     "typecheck": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "tsc -p apps/web/tsconfig.app.json --noEmit"
-      }
+      "options": { "command": "tsc -p apps/web/tsconfig.app.json --noEmit" }
     },
     "lint": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "biome lint apps/web"
-      }
+      "options": { "command": "tsx node_modules/oxlint/bin/oxlint apps/web" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "vitest run apps/web/src --passWithNoTests" }
     }
   },
   "tags": ["scope:web", "type:app"]

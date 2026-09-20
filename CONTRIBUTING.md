@@ -4,6 +4,12 @@ ReviewInbox is a pnpm and Nx monorepo. Keep package boundaries explicit: `apps/w
 
 ## Local Setup
 
+Use `mise install` to install the Node.js version pinned in `mise.toml`. Activate mise in your shell, or prefix commands with `mise exec --`. The pnpm version is pinned by the root `package.json` `packageManager` field; install that exact version before running workspace commands:
+
+```bash
+npm install --global "$(node --print 'require("./package.json").packageManager')"
+```
+
 Install dependencies:
 
 ```bash
@@ -63,7 +69,7 @@ pnpm build
 ```
 
 Nx owns task orchestration for the monorepo. Prefer `pnpm nx affected -t <target>` for focused checks once the workspace is initialized.
-Biome owns formatting and linting for the repo. Do not add separate oxfmt or oxlint configuration.
+Oxfmt owns formatting (`.oxfmtrc.json`); Oxlint owns linting (`oxlint.config.ts`), including type-aware, SonarJS, and anti-slop rules. Run `pnpm lint:fix` for automatic lint fixes followed by formatting. Markdown and generated database migrations are excluded from formatting.
 
 ## Docker Images
 
@@ -82,10 +88,14 @@ Image publishing CI is intentionally separate from this local development flow a
 Generate migrations after schema changes:
 
 ```bash
-pnpm db:generate
+pnpm db:generate --name add_review_field
 ```
 
-Migrations live in `packages/db/migrations` and should be committed with schema changes.
+Migrations live in `packages/db/migrations`. Like Hermes, this repository keeps the complete SQL history and journal, but only the latest schema snapshot at `meta/snapshot.json`.
+
+`pnpm db:generate` runs Drizzle Kit in a temporary directory, validates that generation only appends to the journal, then publishes the new SQL, journal, and snapshot together with rollback on publication failure. An unchanged schema leaves these files untouched. Commit all three generated files with the schema change. Use this wrapper instead of calling `drizzle-kit generate` directly; `--out`, `--config`, and `--prefix` are managed by the wrapper.
+
+Existing SQL migrations and their journal entries remain unchanged, so this metadata layout also works with databases that have already applied them. `pnpm db:migrate` and startup migration execution keep their existing behavior.
 
 Clear the local Docker Postgres database, including Drizzle migration history:
 

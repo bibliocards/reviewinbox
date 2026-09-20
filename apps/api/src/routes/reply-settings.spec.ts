@@ -1,11 +1,23 @@
+import { apps, createDatabase } from '@reviewinbox/db'
+import { and, eq } from 'drizzle-orm'
 import { describe, expect, it, vi } from 'vitest'
 
-import { createReplySettingsRoutes } from './reply-settings'
+import { createReplySettingsRoutes, type ReplySettingsRouteDependencies } from './reply-settings'
 
 const appId = '11111111-1111-4111-8111-111111111111'
 const organizationId = 'organization-1'
+const testDatabase = createDatabase('postgres://reply-settings-test')
 
-function appRow(overrides: Record<string, unknown> = {}) {
+type AppRow = typeof apps.$inferSelect
+type RouteDatabase = ReplySettingsRouteDependencies['database']
+type UpdateBuilder = ReturnType<RouteDatabase['update']>
+type SetValues = UpdateBuilder['set']
+type WhereBuilder = ReturnType<SetValues>
+type Where = WhereBuilder['where']
+type ReturningBuilder = ReturnType<Where>
+type Returning = ReturningBuilder['returning']
+
+function appRow(overrides: Partial<AppRow> = {}): AppRow {
   return {
     id: appId,
     organizationId,
@@ -21,34 +33,53 @@ function appRow(overrides: Record<string, unknown> = {}) {
 }
 
 function routeHarness(
-  options: { app?: Record<string, unknown> | null; ownerAllowed?: boolean; updated?: Record<string, unknown> | null } = {},
+  options: { app?: AppRow | null; ownerAllowed?: boolean; updated?: AppRow | null } = {},
 ) {
-  const findFirst = vi.fn().mockResolvedValue(options.app === null ? undefined : (options.app ?? appRow()))
-  const returning = vi.fn().mockResolvedValue(options.updated === null ? [] : [options.updated ?? appRow()])
-  const where = vi.fn().mockReturnValue({ returning })
-  const set = vi.fn().mockReturnValue({ where })
-  const update = vi.fn().mockReturnValue({ set })
-  const database = {
-    query: { apps: { findFirst } },
-    update,
-  }
-  const requireSession = vi.fn().mockResolvedValue({
-    ok: true,
-    session: { userId: 'user-1', organizationId, role: 'member' },
+  const findFirst = vi
+    .fn<() => Promise<AppRow | undefined>>()
+    .mockResolvedValue(options.app === null ? undefined : (options.app ?? appRow()))
+  const returning = vi
+    .fn<Returning>()
+    .mockResolvedValue(options.updated === null ? [] : [options.updated ?? appRow()])
+  const whereConditions: Parameters<Where>[0][] = []
+  const where = vi.fn<Where>((condition) => {
+    whereConditions.push(condition)
+    return { returning }
   })
+  const set = vi.fn<SetValues>().mockReturnValue({ where })
+  const update = vi.fn<RouteDatabase['update']>().mockReturnValue({ set })
+  Object.defineProperty(testDatabase.query.apps, 'findFirst', {
+    configurable: true,
+    value: findFirst,
+  })
+  Object.defineProperty(testDatabase, 'update', { configurable: true, value: update })
+  const requireSession = vi
+    .fn<ReplySettingsRouteDependencies['requireSession']>()
+    .mockResolvedValue({ ok: true, session: { userId: 'user-1', organizationId, role: 'member' } })
   const requireOwnerSession = vi
-    .fn()
+    .fn<ReplySettingsRouteDependencies['requireOwnerSession']>()
     .mockResolvedValue(
       options.ownerAllowed === false
-        ? { ok: false, response: new Response(JSON.stringify({ error: 'Organization Owner permission required.' }), { status: 403 }) }
+        ? {
+            ok: false,
+            response: new Response(
+              JSON.stringify({ error: 'Organization Owner permission required.' }),
+              { status: 403 },
+            ),
+          }
         : { ok: true, session: { userId: 'user-1', organizationId, role: 'owner' } },
     )
 
   return {
-    routes: createReplySettingsRoutes({ database: database as never, requireSession, requireOwnerSession }),
+    routes: createReplySettingsRoutes({
+      database: testDatabase,
+      requireSession,
+      requireOwnerSession,
+    }),
     findFirst,
     update,
     set,
+    whereConditions,
     requireOwnerSession,
   }
 }
@@ -65,7 +96,7 @@ describe('reply settings routes', () => {
   })
 
   it('allows an Organization Owner to update settings without exposing unrelated App fields', async () => {
-    const { routes, set } = routeHarness()
+    const { routes, set, whereConditions } = routeHarness()
 
     const response = await routes.request(`http://localhost/api/apps/${appId}/reply-settings`, {
       method: 'PATCH',
@@ -78,8 +109,19 @@ describe('reply settings routes', () => {
     })
 
     expect(response.status).toBe(200)
-    expect(set).toHaveBeenCalledWith({ replyContext: 'Be warm.', defaultLanguage: 'fr', mappedLanguages: ['en'] })
-    expect(await response.json()).toMatchObject({ appId, replyContext: 'Be concise.', defaultLanguage: 'en' })
+    expect(set).toHaveBeenCalledWith({
+      replyContext: 'Be warm.',
+      defaultLanguage: 'fr',
+      mappedLanguages: ['en'],
+    })
+    expect(whereConditions[0]?.queryChunks).toEqual(
+      and(eq(apps.id, appId), eq(apps.organizationId, organizationId))?.queryChunks,
+    )
+    expect(await response.json()).toMatchObject({
+      appId,
+      replyContext: 'Be concise.',
+      defaultLanguage: 'en',
+    })
   })
 
   it('rejects settings changes from non-Owners', async () => {
@@ -97,7 +139,7 @@ describe('reply settings routes', () => {
   })
 
   it('rejects oversized or privileged settings payloads before persistence', async () => {
-    const { routes, update } = routeHarness()
+    const { routes, findFirst, update } = routeHarness()
 
     const response = await routes.request(`http://localhost/api/apps/${appId}/reply-settings`, {
       method: 'PATCH',
@@ -111,6 +153,7 @@ describe('reply settings routes', () => {
     })
 
     expect(response.status).toBe(400)
+    expect(findFirst).not.toHaveBeenCalled()
     expect(update).not.toHaveBeenCalled()
   })
 

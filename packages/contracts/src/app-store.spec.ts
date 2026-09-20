@@ -16,11 +16,8 @@ const storeConnectionId = '22222222-2222-4222-8222-222222222222'
 describe('App and Store Connection contracts', () => {
   it('rejects Organization input on App creation', () => {
     expect(() =>
-      createAppRequestSchema.parse({
-        name: 'My App',
-        organizationId: 'org_123',
-      }),
-    ).toThrow()
+      createAppRequestSchema.parse({ name: 'My App', organizationId: 'org_123' }),
+    ).toThrow('Unrecognized key')
   })
 
   it('accepts only safe Store Connection fields', () => {
@@ -29,17 +26,14 @@ describe('App and Store Connection contracts', () => {
         provider: 'apple_app_store',
         displayName: 'Production App Store',
       }),
-    ).toEqual({
-      provider: 'apple_app_store',
-      displayName: 'Production App Store',
-    })
+    ).toEqual({ provider: 'apple_app_store', displayName: 'Production App Store' })
 
     expect(() =>
       createStoreConnectionRequestSchema.parse({
         provider: 'apple_app_store',
         organizationId: 'org_123',
       }),
-    ).toThrow()
+    ).toThrow('Unrecognized key')
   })
 
   it('does not model plaintext or ciphertext in Store Connection responses', () => {
@@ -53,11 +47,7 @@ describe('App and Store Connection contracts', () => {
       displayName: null,
       createdAt: isoDate,
       updatedAt: isoDate,
-      credential: {
-        hasCredential: false,
-        updatedAt: null,
-        keyId: null,
-      },
+      credential: { hasCredential: false, updatedAt: null, keyId: null },
     })
 
     expect(JSON.stringify(response)).not.toContain('plaintext')
@@ -71,11 +61,7 @@ describe('App and Store Connection contracts', () => {
 
     const response = storeCredentialResponseSchema.parse({
       storeConnectionId,
-      credential: {
-        hasCredential: true,
-        updatedAt: isoDate,
-        keyId: 'abc123',
-      },
+      credential: { hasCredential: true, updatedAt: isoDate, keyId: 'abc123' },
     })
 
     expect(response.credential).toEqual({
@@ -90,25 +76,15 @@ describe('App and Store Connection contracts', () => {
       updateAppRequestSchema.parse({
         app: { name: 'Updated App' },
         connections: {
-          apple: {
-            appStoreAppId: '123456789',
-            issuerId: 'issuer-123',
-          },
-          google: {
-            packageName: 'com.example.app',
-          },
+          apple: { appStoreAppId: '123456789', issuerId: 'issuer-123' },
+          google: { packageName: 'com.example.app' },
         },
       }),
     ).toEqual({
       app: { name: 'Updated App' },
       connections: {
-        apple: {
-          appStoreAppId: '123456789',
-          issuerId: 'issuer-123',
-        },
-        google: {
-          packageName: 'com.example.app',
-        },
+        apple: { appStoreAppId: '123456789', issuerId: 'issuer-123' },
+        google: { packageName: 'com.example.app' },
       },
     })
   })

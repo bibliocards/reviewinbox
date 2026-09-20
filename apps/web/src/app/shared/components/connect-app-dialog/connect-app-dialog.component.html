@@ -1,15 +1,16 @@
-<form
-  class="grid gap-5"
-  (submit)="submit($event)"
-  *transloco="let t">
-  <p-stepper
-    [value]="activeStep()"
-    [linear]="true">
+<form class="grid gap-5" (submit)="submit($event)" *transloco="let t">
+  <p-stepper [value]="activeStep()" [linear]="true">
     <p-step-list>
-      <p-step [value]="1">{{ t(isEditing() ? 'apps.connectDialog.steps.editApp' : 'apps.connectDialog.steps.createApp') }}</p-step>
-      <p-step [value]="2"
-        >{{ t(isEditing() ? 'apps.connectDialog.steps.editStoreConnections' : 'apps.connectDialog.steps.addStoreConnections') }}</p-step
-      >
+      <p-step [value]="1">{{
+        t(isEditing() ? 'apps.connectDialog.steps.editApp' : 'apps.connectDialog.steps.createApp')
+      }}</p-step>
+      <p-step [value]="2">{{
+        t(
+          isEditing()
+            ? 'apps.connectDialog.steps.editStoreConnections'
+            : 'apps.connectDialog.steps.addStoreConnections'
+        )
+      }}</p-step>
     </p-step-list>
 
     <p-step-panels>
@@ -18,10 +19,22 @@
           <div class="grid gap-4 pt-4">
             <div>
               <h2 class="m-0 text-lg font-semibold text-ink">
-                {{ t(isEditing() ? 'apps.connectDialog.editApp.title' : 'apps.connectDialog.createApp.title') }}
+                {{
+                  t(
+                    isEditing()
+                      ? 'apps.connectDialog.editApp.title'
+                      : 'apps.connectDialog.createApp.title'
+                  )
+                }}
               </h2>
               <p class="m-0 mt-1 text-sm text-ink-subtle">
-                {{ t(isEditing() ? 'apps.connectDialog.editApp.description' : 'apps.connectDialog.createApp.description') }}
+                {{
+                  t(
+                    isEditing()
+                      ? 'apps.connectDialog.editApp.description'
+                      : 'apps.connectDialog.createApp.description'
+                  )
+                }}
               </p>
             </div>
 
@@ -32,7 +45,8 @@
                 type="text"
                 autocomplete="off"
                 [attr.aria-label]="t('apps.connectDialog.createApp.nameLabel')"
-                [formField]="connectAppForm.appName" />
+                [formField]="connectAppForm.appName"
+              />
             </label>
           </div>
         </ng-template>
@@ -43,33 +57,48 @@
           <div class="grid gap-4 pt-4">
             <div>
               <h2 class="m-0 text-lg font-semibold text-ink">
-                {{ t(isEditing() ? 'apps.connectDialog.editStoreConnections.title' : 'apps.connectDialog.storeConnections.title') }}
+                {{
+                  t(
+                    isEditing()
+                      ? 'apps.connectDialog.editStoreConnections.title'
+                      : 'apps.connectDialog.storeConnections.title'
+                  )
+                }}
               </h2>
               <p class="m-0 mt-1 text-sm text-ink-subtle">
-                {{ t(isEditing() ? 'apps.connectDialog.editStoreConnections.description' : 'apps.connectDialog.storeConnections.description') }}
+                {{
+                  t(
+                    isEditing()
+                      ? 'apps.connectDialog.editStoreConnections.description'
+                      : 'apps.connectDialog.storeConnections.description'
+                  )
+                }}
               </p>
             </div>
 
             <section class="grid gap-3 rounded-2xl border border-hairline bg-surface-1 p-4">
               <div>
                 <h3 class="m-0 font-semibold text-ink flex gap-2 items-center">
-                  <i
-                    class="pi pi-apple"
-                    aria-hidden="true"></i>
+                  <i class="pi pi-apple" aria-hidden="true"></i>
                   <span>{{ t('apps.stores.apple') }}</span>
                 </h3>
                 <p class="m-0 mt-1 text-xs text-ink-tertiary">
-                  {{ t(isEditing() ? 'apps.connectDialog.apple.editHint' : 'apps.connectDialog.apple.skipHint') }}
+                  {{
+                    t(
+                      isEditing()
+                        ? 'apps.connectDialog.apple.editHint'
+                        : 'apps.connectDialog.apple.skipHint'
+                    )
+                  }}
                 </p>
                 <a
                   class="inline-flex w-fit items-center gap-1 text-xs font-medium text-primary-700 hover:underline dark:text-primary-300"
                   href="https://reviewinbox.app/docs/connect-app-store/"
                   target="_blank"
-                  rel="noreferrer">
+                  rel="noreferrer"
+                >
                   {{ t('apps.connectDialog.apple.guide') }}
-                  <i
-                    class="pi pi-external-link text-[0.7rem]"
-                    aria-hidden="true"></i>
+                  <i class="pi pi-external-link text-[0.7rem]" aria-hidden="true"></i>
                 </a>
               </div>
               <div class="grid gap-3 md:grid-cols-2">
@@ -80,7 +109,8 @@
                     type="text"
                     autocomplete="off"
                     [attr.aria-label]="t('apps.connectDialog.apple.appStoreAppIdLabel')"
-                    [formField]="connectAppForm.appleAppStoreAppId" />
+                    [formField]="connectAppForm.appleAppStoreAppId"
+                  />
                 </label>
                 <label class="grid gap-1.5 text-sm font-medium text-ink">
                   <span>{{ t('apps.connectDialog.apple.issuerIdLabel') }}</span>
@@ -89,7 +119,8 @@
                     type="text"
                     autocomplete="off"
                     [attr.aria-label]="t('apps.connectDialog.apple.issuerIdLabel')"
-                    [formField]="connectAppForm.appleIssuerId" />
+                    [formField]="connectAppForm.appleIssuerId"
+                  />
                 </label>
                 <label class="grid gap-1.5 text-sm font-medium text-ink md:col-span-2">
                   <span>{{ t('apps.connectDialog.apple.keyIdLabel') }}</span>
@@ -97,9 +128,12 @@
                     pInputText
                     type="text"
                     autocomplete="off"
-                    [attr.placeholder]="appleCredentialPlaceholderKey() ? t(appleCredentialPlaceholderKey()!) : null"
+                    [attr.placeholder]="
+                      appleCredentialPlaceholderKey() ? t(appleCredentialPlaceholderKey()!) : null
+                    "
                     [attr.aria-label]="t('apps.connectDialog.apple.keyIdLabel')"
-                    [formField]="connectAppForm.appleKeyId" />
+                    [formField]="connectAppForm.appleKeyId"
+                  />
                 </label>
                 <label class="grid gap-1.5 text-sm font-medium text-ink md:col-span-2">
                   <span>{{ t('apps.connectDialog.apple.privateKeyLabel') }}</span>
@@ -107,9 +141,12 @@
                     class="w-full rounded-md border border-hairline-strong bg-canvas px-3 py-2 text-sm text-ink outline-none transition focus:border-primary"
                     rows="6"
                     autocomplete="off"
-                    [attr.placeholder]="appleCredentialPlaceholderKey() ? t(appleCredentialPlaceholderKey()!) : null"
+                    [attr.placeholder]="
+                      appleCredentialPlaceholderKey() ? t(appleCredentialPlaceholderKey()!) : null
+                    "
                     [attr.aria-label]="t('apps.connectDialog.apple.privateKeyLabel')"
-                    [formField]="connectAppForm.applePrivateKey"></textarea>
+                    [formField]="connectAppForm.applePrivateKey"
+                  ></textarea>
                 </label>
               </div>
             </section>
@@ -117,23 +154,26 @@
             <section class="grid gap-3 rounded-2xl border border-hairline bg-surface-1 p-4">
               <div>
                 <h3 class="m-0 font-semibold text-ink flex gap-2 items-center">
-                  <i
-                    class="pi pi-google"
-                    aria-hidden="true"></i>
+                  <i class="pi pi-google" aria-hidden="true"></i>
                   <span>{{ t('apps.stores.google') }}</span>
                 </h3>
                 <p class="m-0 mt-1 text-xs text-ink-tertiary">
-                  {{ t(isEditing() ? 'apps.connectDialog.google.editHint' : 'apps.connectDialog.google.skipHint') }}
+                  {{
+                    t(
+                      isEditing()
+                        ? 'apps.connectDialog.google.editHint'
+                        : 'apps.connectDialog.google.skipHint'
+                    )
+                  }}
                 </p>
                 <a
                   class="inline-flex w-fit items-center gap-1 text-xs font-medium text-primary-700 hover:underline dark:text-primary-300"
                   href="https://reviewinbox.app/docs/connect-google-play/"
                   target="_blank"
-                  rel="noreferrer">
+                  rel="noreferrer"
+                >
                   {{ t('apps.connectDialog.google.guide') }}
-                  <i
-                    class="pi pi-external-link text-[0.7rem]"
-                    aria-hidden="true"></i>
+                  <i class="pi pi-external-link text-[0.7rem]" aria-hidden="true"></i>
                 </a>
               </div>
               <div class="grid gap-3">
@@ -144,7 +184,8 @@
                     type="text"
                     autocomplete="off"
                     [attr.aria-label]="t('apps.connectDialog.google.packageNameLabel')"
-                    [formField]="connectAppForm.googlePackageName" />
+                    [formField]="connectAppForm.googlePackageName"
+                  />
                 </label>
                 <label class="grid gap-1.5 text-sm font-medium text-ink">
                   <span>{{ t('apps.connectDialog.google.serviceAccountJsonLabel') }}</span>
@@ -152,9 +193,12 @@
                     class="w-full rounded-md border border-hairline-strong bg-canvas px-3 py-2 text-sm text-ink outline-none transition focus:border-primary"
                     rows="6"
                     autocomplete="off"
-                    [attr.placeholder]="googleCredentialPlaceholderKey() ? t(googleCredentialPlaceholderKey()!) : null"
+                    [attr.placeholder]="
+                      googleCredentialPlaceholderKey() ? t(googleCredentialPlaceholderKey()!) : null
+                    "
                     [attr.aria-label]="t('apps.connectDialog.google.serviceAccountJsonLabel')"
-                    [formField]="connectAppForm.googleServiceAccountJson"></textarea>
+                    [formField]="connectAppForm.googleServiceAccountJson"
+                  ></textarea>
                 </label>
               </div>
             </section>
@@ -164,29 +208,35 @@
     </p-step-panels>
   </p-stepper>
   @if (errorMessageKey(); as messageKey) {
-  <p class="m-0 rounded-xl border border-red-400 bg-surface-2 px-3 py-2 text-sm text-ink-muted">{{ t(messageKey) }}</p>
+    <p class="m-0 rounded-xl border border-red-400 bg-surface-2 px-3 py-2 text-sm text-ink-muted">
+      {{ t(messageKey) }}
+    </p>
   }
 
   <div class="flex flex-wrap justify-end gap-2">
     @if (activeStep() === 2) {
-    <p-button
-      type="button"
-      severity="secondary"
-      [outlined]="true"
-      [label]="t('apps.connectDialog.actions.back')"
-      [disabled]="isSaving()"
-      (onClick)="previousStep()" />
-    } @if (activeStep() === 1) {
-    <p-button
-      type="button"
-      [label]="t('apps.connectDialog.actions.continue')"
-      (onClick)="nextStep()" />
+      <p-button
+        type="button"
+        severity="secondary"
+        [outlined]="true"
+        [label]="t('apps.connectDialog.actions.back')"
+        [disabled]="isSaving()"
+        (onClick)="previousStep()"
+      />
+    }
+    @if (activeStep() === 1) {
+      <p-button
+        type="button"
+        [label]="t('apps.connectDialog.actions.continue')"
+        (onClick)="nextStep()"
+      />
     } @else {
-    <p-button
-      type="submit"
-      [label]="t(submitLabelKey())"
-      [loading]="isSaving()"
-      [disabled]="isSaving()" />
+      <p-button
+        type="submit"
+        [label]="t(submitLabelKey())"
+        [loading]="isSaving()"
+        [disabled]="isSaving()"
+      />
     }
   </div>
 </form>

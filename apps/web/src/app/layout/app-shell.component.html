@@ -1,88 +1,79 @@
-<div
-  class="app-shell"
-  *transloco="let t">
-  <aside
-    class="sidebar"
-    [attr.aria-label]="t('shell.navigation.primary')">
-    @let organizationOptions = organizationList(); @if (organizationOptions.length > 1) {
-    <div>
-      <p-select
-        [fluid]="true"
-        [options]="organizationOptions"
-        optionLabel="name"
-        optionValue="id"
-        size="small"
-        [ngModel]="organizationSelectValue()"
-        [disabled]="isChangingOrganization()"
-        [ariaLabel]="t('shell.organization.selectAria')"
-        (onChange)="switchOrganization($event)">
-        <ng-template
-          #item
-          #selectedItem
-          [typedTemplate]="organizationOptions"
-          let-item>
-          <div class="flex min-w-0 items-center gap-2">
-            @if (item.logo) {
-            <img
-              class="size-6 rounded-md object-cover"
-              [src]="item.logo"
-              [alt]="item.name" />
-            } @else if (item.id) {
-            <span
-              class="grid size-6 shrink-0 place-items-center rounded-md border border-hairline bg-surface-2 text-[0.65rem] font-semibold text-ink-subtle">
-              {{ initialsFrom(item.name) }}
-            </span>
-            }
-            <span class="truncate">{{ item.name }}</span>
-          </div>
-        </ng-template>
-      </p-select>
-    </div>
-    } @else if (organizationOptions.length == 1) { @let organization = organizationOptions[0]!;
-    <div class="organization-switcher">
-      @if (organization.logo) {
-      <img
-        [src]="organization.logo"
-        [alt]="organization.name" />
-      } @else {
-      <span class="organization-mark">{{ initialsFrom(organization.name) }}</span>
-      }
-      <span class="organization-name">{{ organization.name }}</span>
-    </div>
+<div class="app-shell" *transloco="let t">
+  <aside class="sidebar" [attr.aria-label]="t('shell.navigation.primary')">
+    @let organizationOptions = organizationList();
+    @if (organizationOptions.length > 1) {
+      <div>
+        <p-select
+          [fluid]="true"
+          [options]="organizationOptions"
+          optionLabel="name"
+          optionValue="id"
+          size="small"
+          [ngModel]="organizationSelectValue()"
+          [disabled]="isChangingOrganization()"
+          [ariaLabel]="t('shell.organization.selectAria')"
+          (onChange)="switchOrganization($event)"
+        >
+          <ng-template #item #selectedItem [typedTemplate]="organizationOptions" let-item>
+            <div class="flex min-w-0 items-center gap-2">
+              @if (item.logo) {
+                <img class="size-6 rounded-md object-cover" [src]="item.logo" [alt]="item.name" />
+              } @else if (item.id) {
+                <span
+                  class="grid size-6 shrink-0 place-items-center rounded-md border border-hairline bg-surface-2 text-[0.65rem] font-semibold text-ink-subtle"
+                >
+                  {{ initialsFrom(item.name) }}
+                </span>
+              }
+              <span class="truncate">{{ item.name }}</span>
+            </div>
+          </ng-template>
+        </p-select>
+      </div>
+    } @else if (organizationOptions.length == 1) {
+      @let organization = organizationOptions[0]!;
+      <div class="organization-switcher">
+        @if (organization.logo) {
+          <img [src]="organization.logo" [alt]="organization.name" />
+        } @else {
+          <span class="organization-mark">{{ initialsFrom(organization.name) }}</span>
+        }
+        <span class="organization-name">{{ organization.name }}</span>
+      </div>
     }
 
     <nav class="nav-list">
-      @for (item of navItems(); track item.route) { @if (item.visible !== false) {
-      <a
-        class="nav-item"
-        [routerLink]="item.route"
-        routerLinkActive="is-active"
-        [routerLinkActiveOptions]="{ exact: item.exact ?? true }">
-        <i
-          class="pi {{ item.icon }}"
-          aria-hidden="true"></i>
-        <span>{{ t(item.labelKey) }}</span>
-      </a>
-      } }
+      @for (item of navItems(); track item.route) {
+        @if (item.visible !== false) {
+          <a
+            class="nav-item"
+            [routerLink]="item.route"
+            routerLinkActive="is-active"
+            [routerLinkActiveOptions]="{ exact: item.exact ?? true }"
+          >
+            <i class="pi {{ item.icon }}" aria-hidden="true"></i>
+            <span>{{ t(item.labelKey) }}</span>
+          </a>
+        }
+      }
     </nav>
     <div class="mt-auto flex flex-col items-center">
       @if (autoSyncStatus(); as autoSync) {
-      <span class="ri-chip">{{ t('shell.autoSync.label') }}</span>
-      <span class="text-xs">{{ t(autoSync.key, autoSync.params) }}</span>
+        <span class="ri-chip">{{ t('shell.autoSync.label') }}</span>
+        <span class="text-xs">{{ t(autoSync.key, autoSync.params) }}</span>
       }
       <div class="mt-2 flex items-center justify-center gap-3">
         @if (isCloud()) {
-        <a
-          class="sidebar-link-icon"
-          href="https://status.reviewinbox.app"
-          target="_blank"
-          rel="noreferrer"
-          [attr.aria-label]="t('shell.links.statusAria')"
-          [title]="t('shell.links.statusTitle')">
-          <i
-            class="pi pi-heart text-xl"
-            aria-hidden="true"></i>
-        </a>
+          <a
+            class="sidebar-link-icon"
+            href="https://status.reviewinbox.app"
+            target="_blank"
+            rel="noreferrer"
+            [attr.aria-label]="t('shell.links.statusAria')"
+            [title]="t('shell.links.statusTitle')"
+          >
+            <i class="pi pi-heart text-xl" aria-hidden="true"></i>
+          </a>
         }
         <a
           class="sidebar-link-icon"
@@ -90,10 +81,9 @@
           target="_blank"
           rel="noreferrer"
           [attr.aria-label]="t('shell.links.githubAria')"
-          [title]="t('shell.links.githubTitle')">
-          <i
-            class="pi pi-github text-xl"
-            aria-hidden="true"></i>
+          [title]="t('shell.links.githubTitle')"
+        >
+          <i class="pi pi-github text-xl" aria-hidden="true"></i>
         </a>
         <a
           class="sidebar-link-icon"
@@ -101,10 +91,9 @@
           target="_blank"
           rel="noreferrer"
           [attr.aria-label]="t('shell.links.websiteAria')"
-          [title]="t('shell.links.websiteTitle')">
-          <i
-            class="pi pi-link text-xl"
-            aria-hidden="true"></i>
+          [title]="t('shell.links.websiteTitle')"
+        >
+          <i class="pi pi-link text-xl" aria-hidden="true"></i>
         </a>
       </div>
     </div>
@@ -125,73 +114,62 @@
           [label]="t('shell.actions.connectApp')"
           size="small"
           [disabled]="!organizationReady()"
-          (onClick)="openConnectAppDialog()" />
+          (onClick)="openConnectAppDialog()"
+        />
 
         <ri-theme-toggle />
 
-        <p-menu
-          #ownerMenu
-          [model]="ownerMenuItems()"
-          [popup]="true"
-          appendTo="body" />
+        <p-menu #ownerMenu [model]="ownerMenuItems()" [popup]="true" appendTo="body" />
 
         <p-button
           [label]="ownerInitials()"
           severity="secondary"
           class="owner-button"
           [attr.aria-label]="t('shell.menu.ownerAria')"
-          (onClick)="ownerMenu.toggle($event)" />
+          (onClick)="ownerMenu.toggle($event)"
+        />
       </div>
     </header>
 
     <main class="content-shell">
-      <section
-        class="content-container"
-        [attr.aria-label]="t('shell.navigation.currentPage')">
-        @if (organizationReady() || isUserScopedRoute()) { @if (organizationError() || organizations.error()) {
-        <div
-          role="alert"
-          class="shell-state">
-          <p>{{ t('shell.states.organizationError') }}</p>
-          <p-button
-            [label]="t('shell.states.retry')"
-            (onClick)="retryOrganization()" />
-          @if (previousReadyOrganizationId()) {
-          <p-button
-            [label]="t('shell.states.returnToPreviousOrganization')"
-            severity="secondary"
-            (onClick)="returnToPreviousOrganization()" />
+      <section class="content-container" [attr.aria-label]="t('shell.navigation.currentPage')">
+        @if (organizationReady() || isUserScopedRoute()) {
+          @if (organizationError() || organizations.error()) {
+            <div role="alert" class="shell-state">
+              <p>{{ t('shell.states.organizationError') }}</p>
+              <p-button [label]="t('shell.states.retry')" (onClick)="retryOrganization()" />
+              @if (previousReadyOrganizationId()) {
+                <p-button
+                  [label]="t('shell.states.returnToPreviousOrganization')"
+                  severity="secondary"
+                  (onClick)="returnToPreviousOrganization()"
+                />
+              }
+            </div>
           }
-        </div>
-        }
-        <router-outlet />
+          <router-outlet />
         } @else if (organizationError() || organizations.error()) {
-        <div
-          role="alert"
-          class="shell-state">
-          <p>{{ t('shell.states.organizationError') }}</p>
-          <p-button
-            [label]="t('shell.states.retry')"
-            (onClick)="retryOrganization()" />
-          @if (previousReadyOrganizationId()) {
-          <p-button
-            [label]="t('shell.states.returnToPreviousOrganization')"
-            severity="secondary"
-            (onClick)="returnToPreviousOrganization()" />
-          }
-        </div>
+          <div role="alert" class="shell-state">
+            <p>{{ t('shell.states.organizationError') }}</p>
+            <p-button [label]="t('shell.states.retry')" (onClick)="retryOrganization()" />
+            @if (previousReadyOrganizationId()) {
+              <p-button
+                [label]="t('shell.states.returnToPreviousOrganization')"
+                severity="secondary"
+                (onClick)="returnToPreviousOrganization()"
+              />
+            }
+          </div>
         } @else if (!organizations.isLoading() && organizationList().length === 0) {
-        <div class="shell-state">
-          <h1 class="text-xl font-semibold">{{ t('shell.states.finishSetup') }}</h1>
-          <p>{{ t('shell.states.createOrganizationDescription') }}</p>
-          <a
-            pButton
-            routerLink="/organizations/new"
-            >{{ t('shell.states.createOrganizationLink') }}</a
-          >
-        </div>
+          <div class="shell-state">
+            <h1 class="text-xl font-semibold">{{ t('shell.states.finishSetup') }}</h1>
+            <p>{{ t('shell.states.createOrganizationDescription') }}</p>
+            <a pButton routerLink="/organizations/new">{{
+              t('shell.states.createOrganizationLink')
+            }}</a>
+          </div>
         } @else {
-        <p role="status">{{ t('shell.states.openingOrganization') }}</p>
+          <p role="status">{{ t('shell.states.openingOrganization') }}</p>
         }
       </section>
     </main>

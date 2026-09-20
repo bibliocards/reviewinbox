@@ -2,8 +2,10 @@ import { readRating, readString } from '../common'
 import type { NormalizedStoreReview } from '../index'
 import type { GooglePlayReviewResource, GoogleTimestamp } from './types'
 
-export function normalizeGooglePlayReview(resource: GooglePlayReviewResource): NormalizedStoreReview | null {
-  if (!resource.reviewId) {
+export function normalizeGooglePlayReview(
+  resource: GooglePlayReviewResource,
+): NormalizedStoreReview | null {
+  if (resource.reviewId === undefined || resource.reviewId.length === 0) {
     return null
   }
 
@@ -27,12 +29,12 @@ export function normalizeGooglePlayReview(resource: GooglePlayReviewResource): N
   }
 }
 
-function readVersionCode(value: unknown) {
-  return typeof value === 'number' && Number.isInteger(value) ? String(value) : null
+function readVersionCode(value: number | undefined) {
+  return value !== undefined && Number.isInteger(value) ? String(value) : null
 }
 
 function readGoogleTimestamp(value: GoogleTimestamp | undefined) {
   const seconds = Number(value?.seconds ?? 0)
-  const nanos = Number(value?.nanos ?? 0)
+  const nanos = value?.nanos ?? 0
   return new Date(seconds * 1000 + Math.floor(nanos / 1_000_000)).toISOString()
 }

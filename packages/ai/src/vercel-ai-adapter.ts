@@ -1,12 +1,17 @@
-import type { LanguageModel } from 'ai'
-import type { ReplyDraftProvider, ReplyDraftProviderRequest, ReplyDraftProviderResult } from './provider'
+import type { FlexibleSchema, LanguageModel } from 'ai'
+
 import { translateVercelAiError } from './errors'
+import type {
+  ReplyDraftProvider,
+  ReplyDraftProviderRequest,
+  ReplyDraftProviderResult,
+} from './provider'
 
 export type VercelAiGenerateObject = (request: {
   model: LanguageModel
   system: string
   prompt: string
-  schema: unknown
+  schema: FlexibleSchema<unknown>
   temperature: number
   maxOutputTokens: number
 }) => Promise<{ output: unknown }>
@@ -17,9 +22,13 @@ export type VercelAiReplyDraftAdapterOptions = {
   generateText: VercelAiGenerateObject
 }
 
-export function createVercelAiReplyDraftProvider(options: VercelAiReplyDraftAdapterOptions): ReplyDraftProvider {
+export function createVercelAiReplyDraftProvider(
+  options: VercelAiReplyDraftAdapterOptions,
+): ReplyDraftProvider {
   return {
-    async generateReplyDraftCompletion(request: ReplyDraftProviderRequest): Promise<ReplyDraftProviderResult> {
+    async generateReplyDraftCompletion(
+      request: ReplyDraftProviderRequest,
+    ): Promise<ReplyDraftProviderResult> {
       let result: Awaited<ReturnType<VercelAiGenerateObject>>
       try {
         result = await options.generateText({
@@ -31,13 +40,10 @@ export function createVercelAiReplyDraftProvider(options: VercelAiReplyDraftAdap
           maxOutputTokens: request.maxOutputTokens,
         })
       } catch (error) {
-        throw translateVercelAiError(error) ?? error
+        throw (error instanceof Error ? translateVercelAiError(error) : null) ?? error
       }
 
-      return {
-        output: result.output,
-        model: options.modelName,
-      }
+      return { output: result.output, model: options.modelName }
     },
   }
 }

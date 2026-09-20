@@ -8,10 +8,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'ReviewInbox',
-      logo: {
-        src: './public/icons/icon-192x192.png',
-        alt: 'ReviewInbox app icon',
-      },
+      logo: { src: './public/icons/icon-192x192.png', alt: 'ReviewInbox app icon' },
       customCss: ['./src/styles.css'],
       head: [
         {
@@ -36,10 +33,10 @@ export default defineConfig({
           ],
         },
       ],
-      social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/bibliocards/reviewinbox' }],
+      social: [
+        { icon: 'github', label: 'GitHub', href: 'https://github.com/bibliocards/reviewinbox' },
+      ],
     }),
   ],
-  vite: {
-    plugins: [tailwindcss()],
-  },
+  vite: { plugins: [tailwindcss()] },
 })

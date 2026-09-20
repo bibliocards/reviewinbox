@@ -1,11 +1,9 @@
-ARG NODE_VERSION=24
+ARG NODE_VERSION=26.9.0
 ARG NGINX_VERSION=stable-alpine
 
 FROM node:${NODE_VERSION}-alpine AS base
 
 WORKDIR /usr/src/app
-
-RUN corepack enable
 
 FROM base AS deps
 
@@ -13,7 +11,11 @@ ENV HUSKY=0
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
-RUN pnpm fetch --frozen-lockfile --store-dir=/pnpm/store
+RUN chmod a+r package.json pnpm-lock.yaml pnpm-workspace.yaml
+
+RUN npm install --global "$(node --print 'require("./package.json").packageManager')"
+
+RUN pnpm fetch --store-dir=/pnpm/store
 
 COPY nx.json tsconfig.base.json .postcssrc.json ./
 COPY apps/web ./apps/web

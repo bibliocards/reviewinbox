@@ -11,17 +11,13 @@ export const clientConfigResponseSchema = z.object({
     enterpriseSso: z.boolean(),
     signUpAvailable: z.boolean(),
   }),
-  mail: z.object({
-    invitationEmailEnabled: z.boolean(),
-  }),
+  mail: z.object({ invitationEmailEnabled: z.boolean() }),
   autoSync: z.object({
     reviewsEnabled: z.boolean(),
     nextWindowStartsAt: z.iso.datetime(),
     spreadWindowMinutes: z.number().int().positive(),
   }),
-  billing: z.object({
-    availablePlans: z.array(z.enum(['starter', 'pro', 'business'])),
-  }),
+  billing: z.object({ availablePlans: z.array(z.enum(['starter', 'pro', 'business'])) }),
 })
 
 export type ClientConfigResponse = z.infer<typeof clientConfigResponseSchema>

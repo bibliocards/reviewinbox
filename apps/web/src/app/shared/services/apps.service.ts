@@ -11,6 +11,7 @@ import type {
   UpdateAppResponse,
 } from '@reviewinbox/contracts'
 import type { Observable } from 'rxjs'
+
 import { environment } from '../../../environments/environment'
 import { resolveOptionalString } from '../../../environments/environment.model'
 
@@ -20,7 +21,9 @@ export class AppsService {
   private readonly apiUrl = resolveOptionalString(environment.apiUrl) ?? ''
 
   appsResource() {
-    return httpResource<ListAppsResponse>(() => `${this.apiUrl}/api/apps`, { defaultValue: { apps: [] } })
+    return httpResource<ListAppsResponse>(() => `${this.apiUrl}/api/apps`, {
+      defaultValue: { apps: [] },
+    })
   }
 
   connectApp(input: ConnectAppRequest): Observable<ConnectAppResponse> {
@@ -36,10 +39,16 @@ export class AppsService {
   }
 
   syncStoreConnectionReviews(storeConnectionId: string): Observable<SyncRunResponse> {
-    return this.http.post<SyncRunResponse>(`${this.apiUrl}/api/store-connections/${storeConnectionId}/sync-reviews`, {})
+    return this.http.post<SyncRunResponse>(
+      `${this.apiUrl}/api/store-connections/${storeConnectionId}/sync-reviews`,
+      {},
+    )
   }
 
   queueMissingReplyDrafts(appId: string): Observable<QueueMissingReplyDraftsResponse> {
-    return this.http.post<QueueMissingReplyDraftsResponse>(`${this.apiUrl}/api/apps/${appId}/reply-drafts/queue-missing`, {})
+    return this.http.post<QueueMissingReplyDraftsResponse>(
+      `${this.apiUrl}/api/apps/${appId}/reply-drafts/queue-missing`,
+      {},
+    )
   }
 }

@@ -4,17 +4,23 @@ description: Install Node.js, pnpm, and workspace dependencies
 runs:
   using: composite
   steps:
-    - name: Enable Corepack
-      run: corepack enable
-      shell: bash
-
     - name: Setup pnpm
       uses: pnpm/action-setup@v4
 
-    - name: Use Node.js 24
+    - name: Read Node.js version
+      id: node-version
+      shell: bash
+      run: |
+        python3 - <<'PY' >> "$GITHUB_OUTPUT"
+        import tomllib
+        with open('mise.toml', 'rb') as config:
+            print(f"version={tomllib.load(config)['tools']['node']}")
+        PY
+
+    - name: Use Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: 24
+        node-version: ${{ steps.node-version.outputs.version }}
         cache: pnpm
 
     - name: Install dependencies

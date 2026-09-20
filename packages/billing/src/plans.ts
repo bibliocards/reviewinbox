@@ -22,19 +22,11 @@ export type PlanDefinition = PlanLimits & {
   autoSyncIntervalHours: number
 }
 
-export const managedAiReplyDraftOveragePack = {
-  size: 100,
-  priceCents: 499,
-} as const
+export const managedAiReplyDraftOveragePack = { size: 100, priceCents: 499 } as const
 
-export const reviewImportOveragePack = {
-  size: 1_000,
-  priceCents: 499,
-} as const
+export const reviewImportOveragePack = { size: 1_000, priceCents: 499 } as const
 
-export const extraMemberSeat = {
-  priceCents: 499,
-} as const
+export const extraMemberSeat = { priceCents: 499 } as const
 
 export const planDefinitions = {
   free: {

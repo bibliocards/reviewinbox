@@ -22,18 +22,25 @@ const syncStoreConnectionJobPayloadSchema = z.object({
 export type GenerateReplyDraftJobPayload = z.infer<typeof generateReplyDraftJobPayloadSchema>
 export type SyncStoreConnectionJobPayload = z.infer<typeof syncStoreConnectionJobPayloadSchema>
 
-export type QueueJobOptions = {
-  priority?: number
-  startAfter?: number | string | Date
-}
+export type QueueJobOptions = { priority?: number; startAfter?: number | string | Date }
 
-export type QueueJobHandler<TPayload> = (job: { id: string; payload: TPayload; signal: AbortSignal }) => Promise<void>
+export type QueueJobHandler<TPayload> = (job: {
+  id: string
+  payload: TPayload
+  signal: AbortSignal
+}) => Promise<void>
 
 export type QueueClient = {
   start(): Promise<void>
   stop(): Promise<void>
-  enqueueGenerateReplyDraft(payload: GenerateReplyDraftJobPayload, options?: QueueJobOptions): Promise<string>
-  enqueueSyncStoreConnection(payload: SyncStoreConnectionJobPayload, options?: QueueJobOptions): Promise<string | null>
+  enqueueGenerateReplyDraft(
+    payload: GenerateReplyDraftJobPayload,
+    options?: QueueJobOptions,
+  ): Promise<string>
+  enqueueSyncStoreConnection(
+    payload: SyncStoreConnectionJobPayload,
+    options?: QueueJobOptions,
+  ): Promise<string | null>
   workGenerateReplyDraft(handler: QueueJobHandler<GenerateReplyDraftJobPayload>): Promise<string>
   workSyncStoreConnection(handler: QueueJobHandler<SyncStoreConnectionJobPayload>): Promise<string>
 }
@@ -42,72 +49,127 @@ export type QueueClientOptions = {
   databaseUrl: string
   schema?: string
   onError?: (error: Error) => void
+  boss?: QueueClientBoss
+}
+
+type QueuePayload = GenerateReplyDraftJobPayload | SyncStoreConnectionJobPayload
+
+type QueueCreationOptions = {
+  retryLimit?: number
+  retryDelay?: number
+  retryBackoff?: boolean
+  expireInSeconds?: number
+}
+
+export type QueueClientBoss = {
+  on(event: 'error', listener: (error: Error) => void): QueueClientBoss
+  start(): Promise<QueueClientBoss>
+  stop(options?: { graceful?: boolean }): Promise<void>
+  send(name: string, data: QueuePayload, options: SendOptions): Promise<string | null>
+  work<TPayload>(
+    name: string,
+    options: WorkOptions,
+    handler: (jobs: Job<TPayload>[]) => Promise<void>,
+  ): Promise<string>
+  createQueue(name: string, options?: QueueCreationOptions): Promise<void>
 }
 
 export function createQueueClient(options: QueueClientOptions): QueueClient {
-  const boss = new PgBoss({
-    connectionString: options.databaseUrl,
-    schema: options.schema ?? 'pgboss',
-  })
+  const boss =
+    options.boss
+    ?? new PgBoss({ connectionString: options.databaseUrl, schema: options.schema ?? 'pgboss' })
 
   if (options.onError) {
     boss.on('error', options.onError)
   }
 
+  return createQueueClientMethods(boss)
+}
+
+function createQueueClientMethods(boss: QueueClientBoss): QueueClient {
   return {
-    async start() {
+    start: async () => {
       await boss.start()
       await ensureQueues(boss)
     },
-    async stop() {
-      await boss.stop({ graceful: true })
-    },
-    async enqueueGenerateReplyDraft(payload, jobOptions) {
-      const parsedPayload = generateReplyDraftJobPayloadSchema.parse(payload)
-      const jobId = await boss.send(generateReplyDraftJobName, parsedPayload, {
-        ...defaultGenerateReplyDraftJobOptions,
-        ...jobOptions,
-        singletonKey: parsedPayload.reviewId,
-      })
-
-      if (jobId === null) {
-        throw new Error('pg-boss did not create a generate-reply-draft job.')
-      }
-
-      return jobId
-    },
-    async enqueueSyncStoreConnection(payload, jobOptions) {
-      const parsedPayload = syncStoreConnectionJobPayloadSchema.parse(payload)
-      const jobId = await boss.send(syncStoreConnectionJobName, parsedPayload, {
-        ...defaultSyncStoreConnectionJobOptions,
-        ...jobOptions,
-        singletonKey: `${parsedPayload.windowStartsAt}:${parsedPayload.storeConnectionId}`,
-      })
-      return jobId
-    },
-    async workGenerateReplyDraft(handler) {
-      return boss.work<GenerateReplyDraftJobPayload>(generateReplyDraftJobName, defaultGenerateReplyDraftWorkOptions, async (jobs) => {
-        for (const job of jobs) {
-          await handler({
-            id: job.id,
-            payload: parseGenerateReplyDraftJob(job),
-            signal: job.signal,
-          })
-        }
-      })
-    },
-    async workSyncStoreConnection(handler) {
-      return boss.work<SyncStoreConnectionJobPayload>(syncStoreConnectionJobName, defaultSyncStoreConnectionWorkOptions, async (jobs) => {
-        for (const job of jobs) {
-          await handler({
-            id: job.id,
-            payload: parseSyncStoreConnectionJob(job),
-            signal: job.signal,
-          })
-        }
-      })
-    },
+    stop: () => boss.stop({ graceful: true }),
+    enqueueGenerateReplyDraft: (payload, jobOptions) =>
+      enqueueGenerateReplyDraft(boss, payload, jobOptions),
+    enqueueSyncStoreConnection: (payload, jobOptions) =>
+      enqueueSyncStoreConnection(boss, payload, jobOptions),
+    workGenerateReplyDraft: (handler) => workGenerateReplyDraft(boss, handler),
+    workSyncStoreConnection: (handler) => workSyncStoreConnection(boss, handler),
   }
+}
+
+async function enqueueGenerateReplyDraft(
+  boss: QueueClientBoss,
+  payload: GenerateReplyDraftJobPayload,
+  jobOptions?: QueueJobOptions,
+): Promise<string> {
+  const parsedPayload = generateReplyDraftJobPayloadSchema.parse(payload)
+  const jobId = await boss.send(generateReplyDraftJobName, parsedPayload, {
+    ...defaultGenerateReplyDraftJobOptions,
+    ...jobOptions,
+    singletonKey: parsedPayload.reviewId,
+  })
+
+  if (jobId === null) {
+    throw new Error('pg-boss did not create a generate-reply-draft job.')
+  }
+
+  return jobId
+}
+
+function enqueueSyncStoreConnection(
+  boss: QueueClientBoss,
+  payload: SyncStoreConnectionJobPayload,
+  jobOptions?: QueueJobOptions,
+): Promise<string | null> {
+  return Promise.resolve().then(() => {
+    const parsedPayload = syncStoreConnectionJobPayloadSchema.parse(payload)
+    return boss.send(syncStoreConnectionJobName, parsedPayload, {
+      ...defaultSyncStoreConnectionJobOptions,
+      ...jobOptions,
+      singletonKey: `${parsedPayload.windowStartsAt}:${parsedPayload.storeConnectionId}`,
+    })
+  })
+}
+
+function workGenerateReplyDraft(
+  boss: QueueClientBoss,
+  handler: QueueJobHandler<GenerateReplyDraftJobPayload>,
+): Promise<string> {
+  return boss.work<GenerateReplyDraftJobPayload>(
+    generateReplyDraftJobName,
+    defaultGenerateReplyDraftWorkOptions,
+    (jobs) => handleJobsSequentially(jobs, handler, parseGenerateReplyDraftJob),
+  )
+}
+
+function workSyncStoreConnection(
+  boss: QueueClientBoss,
+  handler: QueueJobHandler<SyncStoreConnectionJobPayload>,
+): Promise<string> {
+  return boss.work<SyncStoreConnectionJobPayload>(
+    syncStoreConnectionJobName,
+    defaultSyncStoreConnectionWorkOptions,
+    (jobs) => handleJobsSequentially(jobs, handler, parseSyncStoreConnectionJob),
+  )
+}
+
+async function handleJobsSequentially<TPayload>(
+  jobs: Job<TPayload>[],
+  handler: QueueJobHandler<TPayload>,
+  parsePayload: (job: Job<TPayload>) => TPayload,
+): Promise<void> {
+  let sequence = Promise.resolve()
+  for (const job of jobs) {
+    sequence = sequence.then(() =>
+      handler({ id: job.id, payload: parsePayload(job), signal: job.signal }),
+    )
+  }
+  await sequence
 }
 
 const defaultGenerateReplyDraftJobOptions = {
@@ -134,7 +196,7 @@ const defaultSyncStoreConnectionWorkOptions = {
   pollingIntervalSeconds: 1,
 } satisfies WorkOptions
 
-async function ensureQueues(boss: PgBoss): Promise<void> {
+async function ensureQueues(boss: QueueClientBoss): Promise<void> {
   await boss.createQueue(generateReplyDraftJobName, {
     retryLimit: defaultGenerateReplyDraftJobOptions.retryLimit,
     retryDelay: defaultGenerateReplyDraftJobOptions.retryDelay,
@@ -147,10 +209,14 @@ async function ensureQueues(boss: PgBoss): Promise<void> {
   })
 }
 
-function parseGenerateReplyDraftJob(job: Job<GenerateReplyDraftJobPayload>): GenerateReplyDraftJobPayload {
+function parseGenerateReplyDraftJob(
+  job: Job<GenerateReplyDraftJobPayload>,
+): GenerateReplyDraftJobPayload {
   return generateReplyDraftJobPayloadSchema.parse(job.data)
 }
 
-function parseSyncStoreConnectionJob(job: Job<SyncStoreConnectionJobPayload>): SyncStoreConnectionJobPayload {
+function parseSyncStoreConnectionJob(
+  job: Job<SyncStoreConnectionJobPayload>,
+): SyncStoreConnectionJobPayload {
   return syncStoreConnectionJobPayloadSchema.parse(job.data)
 }

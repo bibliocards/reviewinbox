@@ -1,34 +1,32 @@
-import { Component, computed, inject, signal } from '@angular/core'
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core'
 import { FormField, form, required } from '@angular/forms/signals'
 import { TranslocoDirective } from '@jsverse/transloco'
 import { ButtonModule } from 'primeng/button'
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog'
 
-export type ReplyDraftDialogData = {
-  draftText: string
-  mode: 'manual' | 'edit'
-}
+export type ReplyDraftDialogData = { draftText: string; mode: 'manual' | 'edit' }
 
-export type ReplyDraftDialogResult = {
-  action: 'save' | 'publish'
-  draftText: string
-}
+export type ReplyDraftDialogResult = { action: 'save' | 'publish'; draftText: string }
 
 @Component({
   selector: 'ri-reply-draft-dialog',
   imports: [ButtonModule, FormField, TranslocoDirective],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './reply-draft-dialog.component.html',
 })
 export class ReplyDraftDialogComponent {
   private readonly ref = inject(DynamicDialogRef)
-  private readonly config = inject(DynamicDialogConfig)
+  private readonly config = inject<DynamicDialogConfig<ReplyDraftDialogData>>(DynamicDialogConfig)
 
-  protected readonly data: ReplyDraftDialogData = this.config.data
-  protected readonly canSubmit = computed(() => this.draftForm().valid() && this.draftForm().value().draftText.trim().length > 0)
+  protected readonly data: ReplyDraftDialogData = this.config.data ?? {
+    draftText: '',
+    mode: 'manual',
+  }
+  protected readonly canSubmit = computed(
+    () => this.draftForm().valid() && this.draftForm().value().draftText.trim().length > 0,
+  )
 
-  private readonly model = signal({
-    draftText: this.data.draftText,
-  })
+  private readonly model = signal({ draftText: this.data.draftText })
 
   protected readonly draftForm = form(this.model, (schema) => {
     required(schema.draftText)

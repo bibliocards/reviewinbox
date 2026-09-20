@@ -1,10 +1,11 @@
 import type { OpenAIProviderSettings } from '@ai-sdk/openai'
 import { createOpenAI } from '@ai-sdk/openai'
-import type { FlexibleSchema } from 'ai'
 import { generateText, Output } from 'ai'
+import type { LanguageModel } from 'ai'
+import type { FinishReason } from 'ai'
 
-import { createVercelAiReplyDraftProvider } from './vercel-ai-adapter'
 import { translateVercelAiError } from './errors'
+import { createVercelAiReplyDraftProvider } from './vercel-ai-adapter'
 
 export type OpenAiCompatibleReplyDraftProviderOptions = {
   apiKey: string
@@ -13,29 +14,48 @@ export type OpenAiCompatibleReplyDraftProviderOptions = {
   providerName?: string
 }
 
+type OpenAiModelProvider = (modelId: string) => LanguageModel
+type CreateOpenAiDependency = (settings: OpenAIProviderSettings) => OpenAiModelProvider
+type GenerateTextRequest = Parameters<typeof generateText>[0]
+type GenerateTextResult = { output: unknown; finishReason: FinishReason }
+type GenerateTextDependency = (request: GenerateTextRequest) => Promise<GenerateTextResult>
+
+export type OpenAiCompatibleReplyDraftProviderDependencies = {
+  createOpenAI: CreateOpenAiDependency
+  generateText: GenerateTextDependency
+}
+
+const defaultDependencies: OpenAiCompatibleReplyDraftProviderDependencies = {
+  createOpenAI,
+  generateText,
+}
+
 export const replyDraftProviderTimeoutMs = 60_000
 
-export function createOpenAiCompatibleReplyDraftProvider(options: OpenAiCompatibleReplyDraftProviderOptions) {
+export function createOpenAiCompatibleReplyDraftProvider(
+  options: OpenAiCompatibleReplyDraftProviderOptions,
+  dependencies: OpenAiCompatibleReplyDraftProviderDependencies = defaultDependencies,
+) {
   const providerSettings: OpenAIProviderSettings = {
     apiKey: options.apiKey,
     name: options.providerName ?? 'openai-compatible',
   }
 
-  if (options.baseUrl) {
+  if (options.baseUrl !== undefined && options.baseUrl !== '') {
     providerSettings.baseURL = options.baseUrl
   }
 
-  const provider = createOpenAI(providerSettings)
+  const provider = dependencies.createOpenAI(providerSettings)
 
   return createVercelAiReplyDraftProvider({
     model: provider(options.model),
     modelName: options.model,
     async generateText(request) {
-      const result = await generateText({
+      const result = await dependencies.generateText({
         model: request.model,
-        system: request.system,
+        instructions: request.system,
         prompt: request.prompt,
-        output: Output.object({ schema: request.schema as FlexibleSchema<unknown> }),
+        output: Output.object({ schema: request.schema }),
         temperature: request.temperature,
         maxOutputTokens: request.maxOutputTokens,
         maxRetries: 0,
@@ -45,7 +65,11 @@ export function createOpenAiCompatibleReplyDraftProvider(options: OpenAiCompatib
       try {
         return { output: result.output }
       } catch (error) {
-        throw translateVercelAiError(error, { finishReason: result.finishReason }) ?? error
+        throw (
+          (error instanceof Error
+            ? translateVercelAiError(error, { finishReason: result.finishReason })
+            : null) ?? error
+        )
       }
     },
   })

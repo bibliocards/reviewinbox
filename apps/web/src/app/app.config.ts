@@ -1,5 +1,10 @@
-import { provideHttpClient } from '@angular/common/http'
-import { type ApplicationConfig, isDevMode, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from '@angular/core'
+import { provideHttpClient, withXhr } from '@angular/common/http'
+import {
+  type ApplicationConfig,
+  isDevMode,
+  provideBrowserGlobalErrorListeners,
+  provideZonelessChangeDetection,
+} from '@angular/core'
 import { provideRouter } from '@angular/router'
 import { provideServiceWorker } from '@angular/service-worker'
 import { stripeClient } from '@better-auth/stripe/client'
@@ -8,6 +13,7 @@ import { organizationClient } from 'better-auth/client/plugins'
 import { provideBetterAuth } from 'ngx-better-auth'
 import { providePrimeNG } from 'primeng/config'
 import { DialogService } from 'primeng/dynamicdialog'
+
 import { environment } from '../environments/environment'
 import { resolveOptionalString } from '../environments/environment.model'
 import { appRoutes } from './app.routes'
@@ -23,10 +29,7 @@ export const appConfig: ApplicationConfig = {
         preset: reviewInboxTheme,
         options: {
           darkModeSelector: '.dark',
-          cssLayer: {
-            name: 'primeng',
-            order: 'theme, base, primeng, utilities',
-          },
+          cssLayer: { name: 'primeng', order: 'theme, base, primeng, utilities' },
         },
       },
     }),
@@ -40,7 +43,7 @@ export const appConfig: ApplicationConfig = {
       enabled: environment.production || !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000',
     }),
-    provideHttpClient(),
+    provideHttpClient(withXhr()),
     provideTransloco({
       config: {
         availableLangs: ['en', 'fr'],

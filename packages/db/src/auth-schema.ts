@@ -1,5 +1,15 @@
 import { relations } from 'drizzle-orm'
-import { bigint, boolean, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
+import {
+  bigint,
+  boolean,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core'
 
 type OrganizationPlanName = 'free' | 'starter' | 'pro' | 'business'
 type OrganizationBillingOverrides = Partial<{
@@ -25,7 +35,7 @@ export const user = pgTable('user', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at')
     .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .$onUpdate(() => new Date())
     .notNull(),
 })
 
@@ -37,7 +47,7 @@ export const session = pgTable(
     token: text('token').notNull().unique(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at')
-      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .$onUpdate(() => new Date())
       .notNull(),
     ipAddress: text('ip_address'),
     userAgent: text('user_agent'),
@@ -67,7 +77,7 @@ export const account = pgTable(
     password: text('password'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at')
-      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .$onUpdate(() => new Date())
       .notNull(),
   },
   (table) => [index('account_userId_idx').on(table.userId)],
@@ -83,7 +93,7 @@ export const verification = pgTable(
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at')
       .defaultNow()
-      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .$onUpdate(() => new Date())
       .notNull(),
   },
   (table) => [index('verification_identifier_idx').on(table.identifier)],
@@ -98,7 +108,10 @@ export const organization = pgTable(
     logo: text('logo'),
     stripeCustomerId: text('stripe_customer_id'),
     planName: text('plan_name').$type<OrganizationPlanName>().default('free').notNull(),
-    billingOverrides: jsonb('billing_overrides').$type<OrganizationBillingOverrides>().default({}).notNull(),
+    billingOverrides: jsonb('billing_overrides')
+      .$type<OrganizationBillingOverrides>()
+      .default({})
+      .notNull(),
     createdAt: timestamp('created_at').notNull(),
     metadata: text('metadata'),
   },
@@ -118,7 +131,10 @@ export const member = pgTable(
     role: text('role').default('member').notNull(),
     createdAt: timestamp('created_at').notNull(),
   },
-  (table) => [index('member_organizationId_idx').on(table.organizationId), index('member_userId_idx').on(table.userId)],
+  (table) => [
+    index('member_organizationId_idx').on(table.organizationId),
+    index('member_userId_idx').on(table.userId),
+  ],
 )
 
 export const invitation = pgTable(
@@ -137,7 +153,10 @@ export const invitation = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
   },
-  (table) => [index('invitation_organizationId_idx').on(table.organizationId), index('invitation_email_idx').on(table.email)],
+  (table) => [
+    index('invitation_organizationId_idx').on(table.organizationId),
+    index('invitation_email_idx').on(table.email),
+  ],
 )
 
 export const rateLimit = pgTable('rate_limit', {
@@ -183,17 +202,11 @@ export const userRelations = relations(user, ({ many }) => ({
 }))
 
 export const sessionRelations = relations(session, ({ one }) => ({
-  user: one(user, {
-    fields: [session.userId],
-    references: [user.id],
-  }),
+  user: one(user, { fields: [session.userId], references: [user.id] }),
 }))
 
 export const accountRelations = relations(account, ({ one }) => ({
-  user: one(user, {
-    fields: [account.userId],
-    references: [user.id],
-  }),
+  user: one(user, { fields: [account.userId], references: [user.id] }),
 }))
 
 export const organizationRelations = relations(organization, ({ many }) => ({
@@ -206,10 +219,7 @@ export const memberRelations = relations(member, ({ one }) => ({
     fields: [member.organizationId],
     references: [organization.id],
   }),
-  user: one(user, {
-    fields: [member.userId],
-    references: [user.id],
-  }),
+  user: one(user, { fields: [member.userId], references: [user.id] }),
 }))
 
 export const invitationRelations = relations(invitation, ({ one }) => ({
@@ -217,8 +227,5 @@ export const invitationRelations = relations(invitation, ({ one }) => ({
     fields: [invitation.organizationId],
     references: [organization.id],
   }),
-  user: one(user, {
-    fields: [invitation.inviterId],
-    references: [user.id],
-  }),
+  user: one(user, { fields: [invitation.inviterId], references: [user.id] }),
 }))

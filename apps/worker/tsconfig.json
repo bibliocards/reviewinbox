@@ -4,8 +4,8 @@
     "composite": true,
     "rootDir": "../../",
     "outDir": "../../dist/apps/worker",
-    "types": ["node"]
+    "types": ["node"],
+    "ignoreDeprecations": "6.0"
   },
-  "include": ["src/**/*.ts", "../../packages/*/src/**/*.ts"],
-  "exclude": ["src/**/*.spec.ts"]
+  "include": ["src/**/*.ts", "../../packages/*/src/**/*.ts"]
 }

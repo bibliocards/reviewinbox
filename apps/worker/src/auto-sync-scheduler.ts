@@ -30,15 +30,19 @@ export function isAutoSyncDueAt(input: {
   // when a queue starts a job a little late or the spread changes because the
   // number of active connections changes.
   if (
-    input.lastAutomaticWindowStartsAt &&
-    input.windowStartsAt.getTime() - input.lastAutomaticWindowStartsAt.getTime() < input.intervalMs
+    input.lastAutomaticWindowStartsAt
+    && input.windowStartsAt.getTime() - input.lastAutomaticWindowStartsAt.getTime()
+      < input.intervalMs
   ) {
     return false
   }
 
   // Manual and initial imports do not have a logical automatic window. Keep
   // their existing cooldown based on the actual scheduled start instead.
-  if (input.lastNonAutomaticRunAt && input.scheduledStartsAt.getTime() - input.lastNonAutomaticRunAt.getTime() < input.intervalMs) {
+  if (
+    input.lastNonAutomaticRunAt
+    && input.scheduledStartsAt.getTime() - input.lastNonAutomaticRunAt.getTime() < input.intervalMs
+  ) {
     return false
   }
 

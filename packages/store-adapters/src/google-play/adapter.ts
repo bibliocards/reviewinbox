@@ -1,30 +1,53 @@
 import type { StoreReviewAdapter } from '../index'
-import { publishGooglePlayReply, syncGooglePlayReviews, verifyGooglePlayCredentialForApp } from './client'
+import {
+  publishGooglePlayReply,
+  syncGooglePlayReviews,
+  verifyGooglePlayCredentialForApp,
+} from './client'
 import type { GooglePlayServiceAccountCredential, GooglePlayStoreAdapterErrorCode } from './types'
 
-export const googlePlayReviewAdapter: StoreReviewAdapter<GooglePlayServiceAccountCredential, GooglePlayStoreAdapterErrorCode> = {
+export const googlePlayReviewAdapter: StoreReviewAdapter<
+  GooglePlayServiceAccountCredential,
+  GooglePlayStoreAdapterErrorCode
+> = {
   provider: 'google_play',
-  verifyCredential: (request) =>
-    verifyGooglePlayCredentialForApp({
+  verifyCredential: (request) => {
+    const input: Parameters<typeof verifyGooglePlayCredentialForApp>[0] = {
       packageName: request.externalAppId,
       credential: request.credential,
-      ...(request.timeoutMs !== undefined ? { timeoutMs: request.timeoutMs } : {}),
-    }),
-  syncReviews: (request) =>
-    syncGooglePlayReviews({
+    }
+    if (request.timeoutMs !== undefined) {
+      input.timeoutMs = request.timeoutMs
+    }
+    return verifyGooglePlayCredentialForApp(input)
+  },
+  syncReviews: (request) => {
+    const input: Parameters<typeof syncGooglePlayReviews>[0] = {
       packageName: request.externalAppId,
       credential: request.credential,
       checkpoint: request.checkpoint,
-      ...(request.maxPages !== undefined ? { maxPages: request.maxPages } : {}),
-      ...(request.pageLimit !== undefined ? { pageLimit: request.pageLimit } : {}),
-      ...(request.timeoutMs !== undefined ? { timeoutMs: request.timeoutMs } : {}),
-    }),
-  publishReply: (request) =>
-    publishGooglePlayReply({
+    }
+    if (request.maxPages !== undefined) {
+      input.maxPages = request.maxPages
+    }
+    if (request.pageLimit !== undefined) {
+      input.pageLimit = request.pageLimit
+    }
+    if (request.timeoutMs !== undefined) {
+      input.timeoutMs = request.timeoutMs
+    }
+    return syncGooglePlayReviews(input)
+  },
+  publishReply: (request) => {
+    const input: Parameters<typeof publishGooglePlayReply>[0] = {
       packageName: request.externalAppId,
       externalReviewId: request.externalReviewId,
       replyText: request.replyText,
       credential: request.credential,
-      ...(request.timeoutMs !== undefined ? { timeoutMs: request.timeoutMs } : {}),
-    }),
+    }
+    if (request.timeoutMs !== undefined) {
+      input.timeoutMs = request.timeoutMs
+    }
+    return publishGooglePlayReply(input)
+  },
 }

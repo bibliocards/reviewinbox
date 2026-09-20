@@ -1,4 +1,14 @@
-import { ChangeDetectorRef, Component, computed, DestroyRef, effect, HostListener, inject, signal } from '@angular/core'
+import {
+  ChangeDetectorRef,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  HostListener,
+  inject,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core'
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop'
 import { FormsModule } from '@angular/forms'
 import {
@@ -11,6 +21,7 @@ import {
   RouterLink,
   RouterLinkActive,
   RouterOutlet,
+  type Event as RouterEvent,
 } from '@angular/router'
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
 import type { ConnectAppResponse } from '@reviewinbox/contracts'
@@ -21,6 +32,8 @@ import { ButtonModule } from 'primeng/button'
 import { DialogService } from 'primeng/dynamicdialog'
 import { MenuModule } from 'primeng/menu'
 import { type SelectChangeEvent, SelectModule } from 'primeng/select'
+import { z } from 'zod'
+
 import { ConnectAppDialogComponent } from '../shared/components/connect-app-dialog/connect-app-dialog.component'
 import { ThemeToggleComponent } from '../shared/components/theme-toggle/theme-toggle.component'
 import { TypedTemplateDirective } from '../shared/directives/typed-template.directive'
@@ -34,6 +47,8 @@ type ShellNavItem = {
   exact?: boolean
   visible?: boolean
 }
+
+const activeOrganizationSessionSchema = z.object({ activeOrganizationId: z.string().optional() })
 
 @Component({
   selector: 'ri-app-shell',
@@ -50,6 +65,7 @@ type ShellNavItem = {
     TypedTemplateDirective,
   ],
   templateUrl: './app-shell.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './app-shell.component.css',
 })
 export class AppShellComponent {
@@ -64,25 +80,33 @@ export class AppShellComponent {
   private readonly capabilities = this.authCapabilities.capabilities
   private readonly destroyRef = inject(DestroyRef)
 
-  private readonly session = this.authService.session
-  private readonly selectedOrganizationId = signal<string | undefined>(undefined)
-  private readonly organizationActivationTarget = signal<string | undefined>(undefined)
-  private readonly sessionActiveOrganizationId = computed(
-    () => (this.session()?.session as { activeOrganizationId?: string } | undefined)?.activeOrganizationId,
+  private readonly session = toSignal(this.authService.sessionState$, { initialValue: null })
+  private readonly selectedOrganizationId = signal<string | null>(null)
+  private readonly organizationActivationTarget = signal<string | null>(null)
+  private readonly sessionActiveOrganizationId = computed(() =>
+    this.activeOrganizationIdFromSession(),
   )
   private readonly didInitializeActiveOrganization = signal(false)
-  private readonly activeMemberRole = signal<string | string[] | undefined>(undefined)
+  private readonly activeMemberRole = signal<string | string[] | null>(null)
   private readonly now = signal(new Date())
-  private readonly clientConfig = toSignal(this.authCapabilities.clientConfig(), { initialValue: null })
-  private readonly activeLanguage = toSignal(this.transloco.langChanges$, { initialValue: this.transloco.getActiveLang() })
-  private readonly currentTranslation = toSignal(this.transloco.selectTranslation(), { initialValue: null })
+  private readonly clientConfig = toSignal(this.authCapabilities.clientConfig(), {
+    initialValue: null,
+  })
+  private readonly activeLanguage = toSignal(this.transloco.langChanges$, {
+    initialValue: this.transloco.getActiveLang(),
+  })
+  private readonly currentTranslation = toSignal(this.transloco.selectTranslation(), {
+    initialValue: null,
+  })
   private readonly routeUrl = signal(this.router.url)
   private readonly committedRouteUrl = signal(this.router.url)
   protected readonly organizationReady = signal(false)
   protected readonly organizationError = signal(false)
-  protected readonly previousReadyOrganizationId = signal<string | undefined>(undefined)
+  protected readonly previousReadyOrganizationId = signal<string | null>(null)
   protected readonly isChangingOrganization = signal(false)
-  protected readonly organizationUsageResource = this.organizationProfile.usageResource(() => this.organizationReady())
+  protected readonly organizationUsageResource = this.organizationProfile.usageResource(() =>
+    this.organizationReady(),
+  )
   protected readonly ownerInitials = computed(() => this.initialsFrom(this.session()?.user?.name))
   protected readonly isCloud = computed(() => this.capabilities().isCloud)
   protected readonly organizations = this.organizationService.organizationsResource()
@@ -95,12 +119,16 @@ export class AppShellComponent {
   })
   protected readonly activeOrganizationId = computed(
     () =>
-      this.selectedOrganizationId() ??
-      this.organizationList().find((organization) => organization.id === this.sessionActiveOrganizationId())?.id ??
-      this.organizationList()[0]?.id,
+      this.selectedOrganizationId()
+      ?? this.organizationList().find(
+        (organization) => organization.id === this.sessionActiveOrganizationId(),
+      )?.id
+      ?? this.organizationList()[0]?.id,
   )
   protected readonly organizationSelectValue = computed(() =>
-    this.organizationError() ? this.activeOrganizationId() : (this.organizationActivationTarget() ?? this.activeOrganizationId()),
+    this.organizationError()
+      ? this.activeOrganizationId()
+      : (this.organizationActivationTarget() ?? this.activeOrganizationId()),
   )
   protected readonly canManageOrganization = computed(() => {
     const role = this.roleLabel(this.activeMemberRole()).toLowerCase()
@@ -122,32 +150,20 @@ export class AppShellComponent {
       routerLink: ['/organizations/new'],
       visible: this.capabilities().isCloud,
     },
-    {
-      separator: true,
-    },
+    { separator: true },
     {
       label: this.translate('shell.menu.logout'),
       icon: 'pi pi-power-off',
-      command: () => this.logout(),
+      command: () => {
+        this.logout()
+      },
     },
   ])
 
   protected readonly navItems = computed<ShellNavItem[]>(() => [
-    {
-      labelKey: 'shell.navigation.replyInbox',
-      route: '/',
-      icon: 'pi-inbox',
-    },
-    {
-      labelKey: 'shell.navigation.apps',
-      route: '/apps',
-      icon: 'pi-mobile',
-    },
-    {
-      labelKey: 'shell.navigation.auditHistory',
-      route: '/audit-history',
-      icon: 'pi-history',
-    },
+    { labelKey: 'shell.navigation.replyInbox', route: '/', icon: 'pi-inbox' },
+    { labelKey: 'shell.navigation.apps', route: '/apps', icon: 'pi-mobile' },
+    { labelKey: 'shell.navigation.auditHistory', route: '/audit-history', icon: 'pi-history' },
     {
       labelKey: 'shell.navigation.organization',
       route: '/organization',
@@ -158,15 +174,15 @@ export class AppShellComponent {
   ])
   protected readonly autoSyncStatus = computed(() => {
     const autoSync = this.clientConfig()?.autoSync
-    if (!autoSync?.reviewsEnabled) {
+    if (autoSync?.reviewsEnabled !== true) {
       return null
     }
 
-    const usage = this.organizationUsageResource.hasValue() ? this.organizationUsageResource.value() : undefined
-    if (usage?.limitsEnforced && usage.planName === 'free') {
-      return {
-        key: 'shell.autoSync.free',
-      }
+    const usage = this.organizationUsageResource.hasValue()
+      ? this.organizationUsageResource.value()
+      : undefined
+    if (usage?.limitsEnforced === true && usage.planName === 'free') {
+      return { key: 'shell.autoSync.free' }
     }
 
     const nextWindow = this.nextWindowAfter(autoSync.nextWindowStartsAt, this.now())
@@ -177,50 +193,37 @@ export class AppShellComponent {
     return {
       key: 'shell.autoSync.nextWindow',
       params: {
-        time: new Intl.DateTimeFormat(this.activeLanguage() || undefined, { hour: '2-digit', minute: '2-digit' }).format(nextWindow),
+        time: new Intl.DateTimeFormat(this.activeLanguage(), {
+          hour: '2-digit',
+          minute: '2-digit',
+        }).format(nextWindow),
       },
     }
   })
 
   constructor() {
-    const clock = setInterval(() => this.now.set(new Date()), 60_000)
-    this.destroyRef.onDestroy(() => clearInterval(clock))
+    const clock = setInterval(() => {
+      this.now.set(new Date())
+    }, 60_000)
+    this.destroyRef.onDestroy(() => {
+      clearInterval(clock)
+    })
 
     this.router.events.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
-      if (event instanceof NavigationStart) {
-        if (this.isUserScopedUrl(event.url)) {
-          // Wait until NavigationEnd before opening an outlet for Settings;
-          // opening it now could mount the previous page context.
-          return
-        }
-
-        // NavigationEnd is emitted after the destination outlet is activated. Close
-        // the shell outlet immediately for Organization-scoped destinations so their
-        // components cannot start resources before the Organization is ready.
-        this.routeUrl.set(event.url)
-        this.changeDetector.detectChanges()
-        return
-      }
-
-      if (event instanceof NavigationEnd) {
-        this.committedRouteUrl.set(event.urlAfterRedirects)
-        this.routeUrl.set(event.urlAfterRedirects)
-        return
-      }
-
-      if (event instanceof NavigationCancel || event instanceof NavigationError || event instanceof NavigationSkipped) {
-        this.routeUrl.set(this.committedRouteUrl())
-        this.changeDetector.detectChanges()
-      }
+      this.handleRouterEvent(event)
     })
 
     effect(() => {
-      if (this.didInitializeActiveOrganization() || this.organizations.isLoading() || this.organizations.error()) {
+      if (
+        this.didInitializeActiveOrganization()
+        || this.organizations.isLoading()
+        || this.organizations.error()
+      ) {
         return
       }
 
       const organizationId = this.activeOrganizationId()
-      if (!organizationId) {
+      if (organizationId === undefined) {
         return
       }
 
@@ -235,8 +238,17 @@ export class AppShellComponent {
   }
 
   protected switchOrganization(event: SelectChangeEvent): void {
-    const organizationId = event.value as string | undefined
-    if (!organizationId || (organizationId === this.activeOrganizationId() && !this.organizationError()) || this.isChangingOrganization()) {
+    const parsedOrganizationId = z.string().safeParse(event.value)
+    if (!parsedOrganizationId.success) {
+      return
+    }
+
+    const organizationId = parsedOrganizationId.data
+    if (
+      organizationId === ''
+      || (organizationId === this.activeOrganizationId() && !this.organizationError())
+      || this.isChangingOrganization()
+    ) {
       return
     }
 
@@ -245,7 +257,7 @@ export class AppShellComponent {
 
   protected retryOrganization(): void {
     const organizationId = this.organizationActivationTarget() ?? this.activeOrganizationId()
-    if (organizationId && this.organizationError()) {
+    if (organizationId !== undefined && this.organizationError()) {
       this.activateOrganization(organizationId)
     } else {
       this.organizations.reload()
@@ -254,26 +266,26 @@ export class AppShellComponent {
 
   protected returnToPreviousOrganization(): void {
     const organizationId = this.previousReadyOrganizationId()
-    if (organizationId && !this.isChangingOrganization()) {
+    if (organizationId !== null && !this.isChangingOrganization()) {
       this.activateOrganization(organizationId)
     }
   }
 
   private activateOrganization(organizationId: string): void {
     if (this.organizationReady()) {
-      this.previousReadyOrganizationId.set(this.activeOrganizationId())
+      this.previousReadyOrganizationId.set(this.activeOrganizationId() ?? null)
     }
     this.organizationReady.set(false)
     this.organizationError.set(false)
     this.isChangingOrganization.set(true)
-    this.activeMemberRole.set(undefined)
+    this.activeMemberRole.set(null)
     this.organizationActivationTarget.set(organizationId)
     this.organizationService.setActive({ organizationId }).subscribe({
       next: () => {
         this.isChangingOrganization.set(false)
         this.selectedOrganizationId.set(organizationId)
-        this.organizationActivationTarget.set(undefined)
-        this.previousReadyOrganizationId.set(undefined)
+        this.organizationActivationTarget.set(null)
+        this.previousReadyOrganizationId.set(null)
         this.organizationReady.set(true)
         this.loadActiveMember()
         this.notifyActiveOrganizationChanged(organizationId)
@@ -298,9 +310,7 @@ export class AppShellComponent {
       dismissableMask: true,
       width: 'min(920px, 94vw)',
       contentStyle: { overflow: 'auto' },
-      breakpoints: {
-        '640px': '94vw',
-      },
+      breakpoints: { '640px': '94vw' },
     })
 
     dialog?.onClose.subscribe((result?: ConnectAppResponse) => {
@@ -309,19 +319,27 @@ export class AppShellComponent {
       }
 
       dispatchEvent(new CustomEvent('reviewinbox:apps-changed'))
-      void this.router.navigate(['/apps'], { state: { appCreated: result.app.name, initialSyncStatus: result.initialSync?.status } })
+      void this.router.navigate(['/apps'], {
+        state: { appCreated: result.app.name, initialSyncStatus: result.initialSync?.status },
+      })
     })
   }
 
   private loadActiveMember(): void {
     this.organizationService.getActiveMember().subscribe({
-      next: (member) => this.activeMemberRole.set(member.role),
-      error: () => this.activeMemberRole.set(undefined),
+      next: (member) => {
+        this.activeMemberRole.set(member.role)
+      },
+      error: () => {
+        this.activeMemberRole.set(null)
+      },
     })
   }
 
   private notifyActiveOrganizationChanged(organizationId: string): void {
-    dispatchEvent(new CustomEvent('reviewinbox:active-organization-changed', { detail: { organizationId } }))
+    dispatchEvent(
+      new CustomEvent('reviewinbox:active-organization-changed', { detail: { organizationId } }),
+    )
   }
 
   private translate(key: string): string {
@@ -335,14 +353,48 @@ export class AppShellComponent {
     return primarySegments[0]?.path === 'settings'
   }
 
-  private roleLabel(role: string | string[] | undefined): string {
+  private roleLabel(role: string | string[] | null): string {
     return Array.isArray(role) ? role.join(', ') : (role ?? 'member')
   }
 
   private logout(): void {
-    this.authService.signOut().subscribe({
-      next: () => void this.router.navigate(['/login']),
-    })
+    this.authService.signOut().subscribe({ next: () => void this.router.navigate(['/login']) })
+  }
+
+  private handleRouterEvent(event: RouterEvent): void {
+    if (event instanceof NavigationStart) {
+      this.handleNavigationStart(event)
+      return
+    }
+
+    if (event instanceof NavigationEnd) {
+      this.committedRouteUrl.set(event.urlAfterRedirects)
+      this.routeUrl.set(event.urlAfterRedirects)
+      return
+    }
+
+    if (
+      event instanceof NavigationCancel
+      || event instanceof NavigationError
+      || event instanceof NavigationSkipped
+    ) {
+      this.routeUrl.set(this.committedRouteUrl())
+      this.changeDetector.detectChanges()
+    }
+  }
+
+  private handleNavigationStart(event: NavigationStart): void {
+    if (this.isUserScopedUrl(event.url)) {
+      return
+    }
+
+    this.routeUrl.set(event.url)
+    this.changeDetector.detectChanges()
+  }
+
+  private activeOrganizationIdFromSession(): string | undefined {
+    const parsed = activeOrganizationSessionSchema.safeParse(this.session()?.session)
+    return parsed.success ? parsed.data.activeOrganizationId : undefined
   }
 
   protected initialsFrom(name: string | undefined): string {

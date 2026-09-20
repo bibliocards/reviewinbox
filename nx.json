@@ -6,21 +6,20 @@
     "sharedGlobals": ["{workspaceRoot}/tsconfig.base.json"]
   },
   "targetDefaults": {
-    "build": {
-      "inputs": ["production", "^production"],
-      "dependsOn": ["^build"],
-      "cache": true
-    },
-    "typecheck": {
-      "inputs": ["default", "^default"],
-      "cache": true
-    },
+    "build": { "inputs": ["production", "^production"], "dependsOn": ["^build"], "cache": true },
+    "typecheck": { "inputs": ["default", "^default"], "cache": true },
     "test": {
-      "inputs": ["default", "^production"],
+      "inputs": ["default", "^production", "{workspaceRoot}/vitest.config.ts"],
       "cache": true
     },
     "lint": {
-      "inputs": ["default"],
+      "inputs": [
+        "default",
+        "^default",
+        "{workspaceRoot}/oxlint.config.ts",
+        "{workspaceRoot}/package.json",
+        "{workspaceRoot}/pnpm-lock.yaml"
+      ],
       "cache": true
     }
   },

@@ -1,46 +1,54 @@
+import { z } from 'zod'
+
 const defaultErrorKey = 'errors.generic'
 
-const betterAuthErrorKeys: Record<string, string> = {
+const betterAuthErrorKeys = {
   USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION: 'organization.members.errors.alreadyMember',
-}
+} satisfies Record<string, string>
 
-export function betterAuthErrorKey(error: unknown, fallback = defaultErrorKey): string {
+const betterAuthErrorEnvelopeSchema = z.object({
+  code: z.unknown().optional(),
+  body: z.unknown().optional(),
+  error: z.unknown().optional(),
+})
+const betterAuthErrorCodeSchema = z.object({ code: z.string().optional() })
+type BetterAuthErrorInput = Parameters<typeof betterAuthErrorEnvelopeSchema.safeParse>[0]
+type BetterAuthErrorCodeInput = Parameters<typeof betterAuthErrorCodeSchema.safeParse>[0]
+
+export function betterAuthErrorKey(
+  error: BetterAuthErrorInput,
+  fallback = defaultErrorKey,
+): string {
   const code = betterAuthErrorCode(error)
 
-  return code ? (betterAuthErrorKeys[code] ?? fallback) : fallback
+  return code !== undefined && code !== '' && isBetterAuthErrorCode(code)
+    ? betterAuthErrorKeys[code]
+    : fallback
 }
 
-function betterAuthErrorCode(error: unknown): string | undefined {
-  if (!error || typeof error !== 'object') {
+function isBetterAuthErrorCode(value: string): value is keyof typeof betterAuthErrorKeys {
+  return Object.hasOwn(betterAuthErrorKeys, value)
+}
+
+function betterAuthErrorCode(error: BetterAuthErrorInput): string | undefined {
+  const parsed = betterAuthErrorEnvelopeSchema.safeParse(error)
+  if (!parsed.success) {
     return undefined
   }
 
-  const record = error as Record<string, unknown>
-  const code = record['code']
+  return (
+    readStringCode(parsed.data.code)
+    ?? readErrorCode(parsed.data.body)
+    ?? readErrorCode(parsed.data.error)
+  )
+}
 
-  if (typeof code === 'string') {
-    return code
-  }
+function readStringCode(value: BetterAuthErrorCodeInput): string | undefined {
+  const parsed = z.string().safeParse(value)
+  return parsed.success ? parsed.data : undefined
+}
 
-  const body = record['body']
-
-  if (body && typeof body === 'object') {
-    const bodyCode = (body as Record<string, unknown>)['code']
-
-    if (typeof bodyCode === 'string') {
-      return bodyCode
-    }
-  }
-
-  const errorValue = record['error']
-
-  if (errorValue && typeof errorValue === 'object') {
-    const errorCode = (errorValue as Record<string, unknown>)['code']
-
-    if (typeof errorCode === 'string') {
-      return errorCode
-    }
-  }
-
-  return undefined
+function readErrorCode(value: BetterAuthErrorCodeInput): string | undefined {
+  const parsed = betterAuthErrorCodeSchema.safeParse(value)
+  return parsed.success ? parsed.data.code : undefined
 }

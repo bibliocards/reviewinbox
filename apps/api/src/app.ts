@@ -1,9 +1,11 @@
+import { mkdirSync } from 'node:fs'
+import { join } from 'node:path'
+
 import { serveStatic } from '@hono/node-server/serve-static'
 import { healthResponseSchema } from '@reviewinbox/contracts'
 import { Hono } from 'hono'
+import type { Context, Env, Input, Next } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
-import { mkdirSync } from 'node:fs'
-import { join } from 'node:path'
 
 import { auth } from './auth'
 import { requireInvitationForSelfHostedSignUp } from './auth/sign-up-policy'
@@ -12,20 +14,37 @@ import { appsRoutes } from './routes/apps'
 import { clientConfigRoutes } from './routes/client-config'
 import { invitationsRoutes } from './routes/invitations'
 import { organizationProfileRoutes } from './routes/organization-profile'
-import { replySettingsRoutes } from './routes/reply-settings'
 import { replyInboxRoutes } from './routes/reply-inbox'
+import { replySettingsRoutes } from './routes/reply-settings'
 import { storeConnectionsRoutes } from './routes/store-connections'
 
 export function createApp() {
   const app = new Hono()
   const organizationLogosDir = join(serverConfig.uploadLocalDir, 'organization-logos')
-  const jsonBodyLimit = bodyLimit({
-    maxSize: 128 * 1024,
-    onError: (context) => context.json({ error: 'Request body too large.' }, 413),
-  })
-
   mkdirSync(organizationLogosDir, { recursive: true })
-  app.use('/api/uploads/organization-logos/*', async (context, next) => {
+  configureStaticAssets(app, organizationLogosDir)
+  configureRequestGuards(app)
+  registerRoutes(app)
+
+  return app
+}
+
+export type ApiApp = ReturnType<typeof createApp>
+
+function parseOrigin(origin: string | undefined): string | null {
+  if (origin === undefined || origin === '') {
+    return null
+  }
+
+  try {
+    return new URL(origin).origin
+  } catch {
+    return null
+  }
+}
+
+function configureStaticAssets(app: ApiApp, organizationLogosDir: string): void {
+  app.use('/api/uploads/organization-logos/*', (context, next) => {
     context.header('X-Content-Type-Options', 'nosniff')
     return next()
   })
@@ -33,31 +52,46 @@ export function createApp() {
     '/api/uploads/organization-logos/*',
     serveStatic({
       root: organizationLogosDir,
-      rewriteRequestPath: (path) => path.replace(/^\/api\/uploads\/organization-logos/, ''),
+      rewriteRequestPath: (path) => path.replace(/^\/api\/uploads\/organization-logos/u, ''),
     }),
   )
-  app.use('/api/*', async (context, next) => {
-    if (!['DELETE', 'PATCH', 'POST', 'PUT'].includes(context.req.method) || context.req.path.startsWith('/api/auth/')) {
+}
+
+function configureRequestGuards(app: ApiApp): void {
+  app.use('/api/*', (context: Context<Env, string, Input>, next: Next) => {
+    if (
+      !['DELETE', 'PATCH', 'POST', 'PUT'].includes(context.req.method)
+      || context.req.path.startsWith('/api/auth/')
+    ) {
       return next()
     }
 
     const origin = parseOrigin(context.req.header('origin'))
-    const allowedOrigins = new Set([...serverConfig.betterAuthTrustedOrigins, new URL(serverConfig.betterAuthUrl).origin])
-    if (!origin || !allowedOrigins.has(origin)) {
-      return context.json({ error: 'Request origin is not trusted.' }, 403)
+    const allowedOrigins = new Set([
+      ...serverConfig.betterAuthTrustedOrigins,
+      new URL(serverConfig.betterAuthUrl).origin,
+    ])
+    if (origin === null || !allowedOrigins.has(origin)) {
+      return Promise.resolve(context.json({ error: 'Request origin is not trusted.' }, 403))
     }
 
     return next()
   })
   app.use('/api/organization/profile/logo', bodyLimit({ maxSize: 6 * 1024 * 1024 }))
-  app.use('/api/*', async (context, next) => {
+  const jsonBodyLimit = bodyLimit({
+    maxSize: 128 * 1024,
+    onError: (context) => context.json({ error: 'Request body too large.' }, 413),
+  })
+  app.use('/api/*', (context: Context<Env, string, Input>, next: Next) => {
     if (context.req.path === '/api/organization/profile/logo') {
       return next()
     }
 
     return jsonBodyLimit(context, next)
   })
+}
 
+function registerRoutes(app: ApiApp): void {
   app.get('/api/health', (context) => {
     const health = healthResponseSchema.parse({
       ok: true,
@@ -67,7 +101,6 @@ export function createApp() {
 
     return context.json(health)
   })
-
   app.route('/', clientConfigRoutes)
   app.route('/', invitationsRoutes)
   app.use('/api/auth/sign-up/email', requireInvitationForSelfHostedSignUp)
@@ -77,20 +110,4 @@ export function createApp() {
   app.route('/', replyInboxRoutes)
   app.route('/', replySettingsRoutes)
   app.route('/', storeConnectionsRoutes)
-
-  return app
-}
-
-export type ApiApp = ReturnType<typeof createApp>
-
-function parseOrigin(origin: string | undefined): string | null {
-  if (!origin) {
-    return null
-  }
-
-  try {
-    return new URL(origin).origin
-  } catch {
-    return null
-  }
 }

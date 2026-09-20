@@ -1,8 +1,23 @@
 import { z } from 'zod'
+
 import { replyStatusSchema } from './store'
 
-export const replyInboxFilterSchema = z.enum(['actionable', 'pending', 'drafted', 'failed', 'ignored', 'published'])
-export const replyAuditActionSchema = z.enum(['draft_created', 'draft_edited', 'ignored', 'unignored', 'publish_failed', 'published'])
+export const replyInboxFilterSchema = z.enum([
+  'actionable',
+  'pending',
+  'drafted',
+  'failed',
+  'ignored',
+  'published',
+])
+export const replyAuditActionSchema = z.enum([
+  'draft_created',
+  'draft_edited',
+  'ignored',
+  'unignored',
+  'publish_failed',
+  'published',
+])
 export const listReplyAuditEventsQuerySchema = z
   .object({
     page: z.coerce.number().int().min(1).max(1000).default(1),
@@ -58,9 +73,7 @@ export const replyInboxReviewSchema = z.object({
 })
 export type ReplyInboxReview = z.infer<typeof replyInboxReviewSchema>
 
-export const listReplyInboxResponseSchema = z.object({
-  reviews: z.array(replyInboxReviewSchema),
-})
+export const listReplyInboxResponseSchema = z.object({ reviews: z.array(replyInboxReviewSchema) })
 export type ListReplyInboxResponse = z.infer<typeof listReplyInboxResponseSchema>
 
 export const replyAuditEventResponseSchema = z.object({
@@ -98,9 +111,7 @@ export const listReplyAuditEventsResponseSchema = z.object({
 export type ListReplyAuditEventsResponse = z.infer<typeof listReplyAuditEventsResponseSchema>
 
 export const saveReplyDraftRequestSchema = z
-  .object({
-    draftText: z.string().trim().min(1).max(4000),
-  })
+  .object({ draftText: z.string().trim().min(1).max(4000) })
   .strict()
 export type SaveReplyDraftRequest = z.infer<typeof saveReplyDraftRequestSchema>
 
@@ -113,12 +124,8 @@ export const publishReplyRequestSchema = z
   .strict()
 export type PublishReplyRequest = z.infer<typeof publishReplyRequestSchema>
 
-export const queueReplyDraftResponseSchema = z.object({
-  queued: z.boolean(),
-})
+export const queueReplyDraftResponseSchema = z.object({ queued: z.boolean() })
 export type QueueReplyDraftResponse = z.infer<typeof queueReplyDraftResponseSchema>
 
-export const replyActionResponseSchema = z.object({
-  review: replyInboxReviewSchema,
-})
+export const replyActionResponseSchema = z.object({ review: replyInboxReviewSchema })
 export type ReplyActionResponse = z.infer<typeof replyActionResponseSchema>

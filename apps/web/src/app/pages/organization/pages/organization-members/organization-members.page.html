@@ -1,22 +1,27 @@
-<section
-  class="grid gap-6"
-  *transloco="let t">
+<section class="grid gap-6" *transloco="let t">
   <div class="grid gap-4 rounded-2xl border border-hairline bg-surface-1 p-5">
     <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
       <div>
         <h2 class="m-0 text-lg font-semibold text-ink">Invite member</h2>
         @if (clientConfig()?.mail?.invitationEmailEnabled) {
-        <p class="m-0 mt-1 text-sm text-ink-subtle">Send an email invitation, or copy the invitation link after creating it.</p>
+        <p class="m-0 mt-1 text-sm text-ink-subtle">
+          Send an email invitation, or copy the invitation link after creating it.
+        </p>
         } @else {
-        <p class="m-0 mt-1 text-sm text-ink-subtle">Email delivery is not configured. Create an invitation, then copy its link.</p>
+        <p class="m-0 mt-1 text-sm text-ink-subtle">
+          Email delivery is not configured. Create an invitation, then copy its link.
+        </p>
         }
-        <p class="m-0 mt-1 text-xs text-ink-tertiary">Invitation links should only be shared with the invited email owner.</p>
+        <p class="m-0 mt-1 text-xs text-ink-tertiary">
+          Invitation links should only be shared with the invited email owner.
+        </p>
       </div>
     </div>
 
     <form
       class="grid gap-3 md:grid-cols-[minmax(0,1fr)_160px_auto] md:items-end"
-      (submit)="inviteMember($event)">
+      (submit)="inviteMember($event)"
+    >
       <label class="grid gap-1.5 text-sm font-medium text-ink">
         Email
         <input
@@ -24,7 +29,8 @@
           type="email"
           autocomplete="email"
           placeholder="teammate@example.com"
-          [formField]="inviteForm.email" />
+          [formField]="inviteForm.email"
+        />
       </label>
 
       <div class="grid gap-1.5 text-sm font-medium text-ink">
@@ -34,28 +40,38 @@
           [options]="roleOptions"
           optionLabel="label"
           optionValue="value"
-          [formField]="inviteForm.role" />
+          [formField]="inviteForm.role"
+        />
       </div>
 
       <p-button
         type="submit"
         label="Send invite"
         [loading]="isSubmitting()"
-        [disabled]="inviteForm().invalid()" />
+        [disabled]="inviteForm().invalid()"
+      />
     </form>
     @if (errorMessageKey(); as messageKey) {
-    <p class="m-0 rounded-xl border border-red-400 bg-surface-2 px-3 py-2 text-sm text-ink-muted">{{ t(messageKey) }}</p>
+    <p class="m-0 rounded-xl border border-red-400 bg-surface-2 px-3 py-2 text-sm text-ink-muted">
+      {{ t(messageKey) }}
+    </p>
     } @if (successMessageKey(); as messageKey) {
-    <p class="m-0 rounded-xl border border-green-500/40 bg-surface-2 px-3 py-2 text-sm text-ink-muted">{{ t(messageKey) }}</p>
+    <p
+      class="m-0 rounded-xl border border-green-500/40 bg-surface-2 px-3 py-2 text-sm text-ink-muted"
+    >
+      {{ t(messageKey) }}
+    </p>
     } @if (latestInvitationLink(); as link) {
     <div
-      class="grid gap-2 rounded-xl border border-hairline bg-surface-2 px-3 py-2 text-sm text-ink-muted sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+      class="grid gap-2 rounded-xl border border-hairline bg-surface-2 px-3 py-2 text-sm text-ink-muted sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+    >
       <span class="truncate">{{ link }}</span>
       <p-button
         label="Copy link"
         size="small"
         [outlined]="true"
-        (onClick)="copyInvitationLink(latestInvitationId() || '')" />
+        (onClick)="copyInvitationLink(latestInvitationId() || '')"
+      />
     </div>
     }
   </div>
@@ -78,12 +94,15 @@
         <div class="flex min-w-0 items-center gap-3">
           <span
             class="grid size-9 shrink-0 place-items-center rounded-xl border border-hairline-strong bg-surface-2 text-sm font-semibold text-ink"
-            aria-hidden="true">
+            aria-hidden="true"
+          >
             {{ initialsFrom(member) }}
           </span>
           <div class="min-w-0">
             <div class="flex min-w-0 items-center gap-2">
-              <p class="m-0 truncate text-sm font-medium text-ink">{{ member.user?.name || member.user?.email || 'Member' }}</p>
+              <p class="m-0 truncate text-sm font-medium text-ink">
+                {{ member.user?.name || member.user?.email || 'Member' }}
+              </p>
               @if (isCurrentUser(member)) {
               <span class="ri-chip ri-chip-primary shrink-0">You</span>
               }
@@ -103,7 +122,9 @@
   <div class="grid gap-4 rounded-2xl border border-hairline bg-surface-1 p-5">
     <div>
       <h2 class="m-0 text-lg font-semibold text-ink">Pending invitations</h2>
-      <p class="m-0 mt-1 text-sm text-ink-subtle">Invitations that have been sent but not accepted yet.</p>
+      <p class="m-0 mt-1 text-sm text-ink-subtle">
+        Invitations that have been sent but not accepted yet.
+      </p>
     </div>
     @if (invitations.isLoading()) {
     <p class="m-0 text-sm text-ink-subtle">Loading invitations...</p>
@@ -125,13 +146,15 @@
           severity="secondary"
           [outlined]="true"
           size="small"
-          (onClick)="copyInvitationLink(invitation.id)" />
+          (onClick)="copyInvitationLink(invitation.id)"
+        />
         <p-button
           label="Cancel"
           severity="danger"
           [outlined]="true"
           size="small"
-          (onClick)="cancelInvitation(invitation.id)" />
+          (onClick)="cancelInvitation(invitation.id)"
+        />
       </article>
       }
     </div>

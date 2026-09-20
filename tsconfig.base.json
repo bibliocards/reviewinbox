@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "target": "ES2022",
@@ -14,16 +13,18 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "paths": {
-      "@reviewinbox/ai": ["packages/ai/src/index.ts"],
-      "@reviewinbox/billing": ["packages/billing/src/index.ts"],
-      "@reviewinbox/config": ["packages/config/src/index.ts"],
-      "@reviewinbox/contracts": ["packages/contracts/src/index.ts"],
-      "@reviewinbox/core": ["packages/core/src/index.ts"],
-      "@reviewinbox/db": ["packages/db/src/index.ts"],
-      "@reviewinbox/queue": ["packages/queue/src/index.ts"],
-      "@reviewinbox/reply-drafts": ["packages/reply-drafts/src/index.ts"],
-      "@reviewinbox/sync": ["packages/sync/src/index.ts"],
-      "@reviewinbox/store-adapters": ["packages/store-adapters/src/index.ts"]
-    }
+      "@reviewinbox/ai": ["./packages/ai/src/index.ts"],
+      "@reviewinbox/billing": ["./packages/billing/src/index.ts"],
+      "@reviewinbox/config": ["./packages/config/src/index.ts"],
+      "@reviewinbox/contracts": ["./packages/contracts/src/index.ts"],
+      "@reviewinbox/core": ["./packages/core/src/index.ts"],
+      "@reviewinbox/db": ["./packages/db/src/index.ts"],
+      "@reviewinbox/queue": ["./packages/queue/src/index.ts"],
+      "@reviewinbox/reply-drafts": ["./packages/reply-drafts/src/index.ts"],
+      "@reviewinbox/sync": ["./packages/sync/src/index.ts"],
+      "@reviewinbox/store-adapters": ["./packages/store-adapters/src/index.ts"]
+    },
+    "noUncheckedSideEffectImports": false,
+    "types": ["*"]
   }
 }

@@ -14,3 +14,4 @@ apps/web/.env.example
 .idea/
 .humanlayer/
 volumes/
+.drizzle-generate-*/

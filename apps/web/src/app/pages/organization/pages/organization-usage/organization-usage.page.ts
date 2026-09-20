@@ -1,9 +1,17 @@
 import { DatePipe } from '@angular/common'
-import { Component, computed, HostListener, inject, signal } from '@angular/core'
+import {
+  Component,
+  computed,
+  HostListener,
+  inject,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core'
 import { RouterLink } from '@angular/router'
 import type { OrganizationUsageItem, OrganizationUsageResponse } from '@reviewinbox/contracts'
 import { ButtonModule } from 'primeng/button'
 import { MeterGroupModule } from 'primeng/metergroup'
+
 import { OrganizationProfileService } from '../../../../shared/services/organization-profile.service'
 
 type UsageCard = {
@@ -17,6 +25,7 @@ type UsageCard = {
 @Component({
   selector: 'ri-organization-usage-page',
   imports: [ButtonModule, DatePipe, MeterGroupModule, RouterLink],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: 'organization-usage.page.html',
 })
 export class OrganizationUsagePageComponent {
@@ -112,7 +121,10 @@ export class OrganizationUsagePageComponent {
   protected shouldShowUpgradeCta(usage: OrganizationUsageItem): boolean {
     const organizationUsage = this.usage()
     return (
-      organizationUsage?.limitsEnforced === true && organizationUsage.planName === 'free' && usage.limit !== null && usage.severity !== 'ok'
+      organizationUsage?.limitsEnforced === true
+      && organizationUsage.planName === 'free'
+      && usage.limit !== null
+      && usage.severity !== 'ok'
     )
   }
 

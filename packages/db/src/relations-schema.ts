@@ -10,10 +10,7 @@ import { storeConnections, storeCredentials } from './store-schema'
 import { syncRuns } from './sync-run-schema'
 
 export const appRelations = relations(apps, ({ one, many }) => ({
-  organization: one(organization, {
-    fields: [apps.organizationId],
-    references: [organization.id],
-  }),
+  organization: one(organization, { fields: [apps.organizationId], references: [organization.id] }),
   storeConnections: many(storeConnections),
   reviews: many(reviews),
   replyDrafts: many(replyDrafts),
@@ -34,10 +31,7 @@ export const storeConnectionRelations = relations(storeConnections, ({ one, many
     fields: [storeConnections.organizationId],
     references: [organization.id],
   }),
-  app: one(apps, {
-    fields: [storeConnections.appId],
-    references: [apps.id],
-  }),
+  app: one(apps, { fields: [storeConnections.appId], references: [apps.id] }),
   credential: one(storeCredentials, {
     fields: [storeConnections.id],
     references: [storeCredentials.storeConnectionId],
@@ -58,18 +52,12 @@ export const reviewRelations = relations(reviews, ({ one, many }) => ({
     fields: [reviews.organizationId],
     references: [organization.id],
   }),
-  app: one(apps, {
-    fields: [reviews.appId],
-    references: [apps.id],
-  }),
+  app: one(apps, { fields: [reviews.appId], references: [apps.id] }),
   storeConnection: one(storeConnections, {
     fields: [reviews.storeConnectionId],
     references: [storeConnections.id],
   }),
-  replyDraft: one(replyDrafts, {
-    fields: [reviews.id],
-    references: [replyDrafts.reviewId],
-  }),
+  replyDraft: one(replyDrafts, { fields: [reviews.id], references: [replyDrafts.reviewId] }),
   publishedReply: one(publishedReplies, {
     fields: [reviews.id],
     references: [publishedReplies.reviewId],
@@ -82,14 +70,8 @@ export const replyDraftRelations = relations(replyDrafts, ({ one, many }) => ({
     fields: [replyDrafts.organizationId],
     references: [organization.id],
   }),
-  app: one(apps, {
-    fields: [replyDrafts.appId],
-    references: [apps.id],
-  }),
-  review: one(reviews, {
-    fields: [replyDrafts.reviewId],
-    references: [reviews.id],
-  }),
+  app: one(apps, { fields: [replyDrafts.appId], references: [apps.id] }),
+  review: one(reviews, { fields: [replyDrafts.reviewId], references: [reviews.id] }),
   publishedReplies: many(publishedReplies),
 }))
 
@@ -98,18 +80,12 @@ export const publishedReplyRelations = relations(publishedReplies, ({ one }) => 
     fields: [publishedReplies.organizationId],
     references: [organization.id],
   }),
-  app: one(apps, {
-    fields: [publishedReplies.appId],
-    references: [apps.id],
-  }),
+  app: one(apps, { fields: [publishedReplies.appId], references: [apps.id] }),
   storeConnection: one(storeConnections, {
     fields: [publishedReplies.storeConnectionId],
     references: [storeConnections.id],
   }),
-  review: one(reviews, {
-    fields: [publishedReplies.reviewId],
-    references: [reviews.id],
-  }),
+  review: one(reviews, { fields: [publishedReplies.reviewId], references: [reviews.id] }),
   replyDraft: one(replyDrafts, {
     fields: [publishedReplies.replyDraftId],
     references: [replyDrafts.id],
@@ -121,14 +97,8 @@ export const replyAuditEventRelations = relations(replyAuditEvents, ({ one }) =>
     fields: [replyAuditEvents.organizationId],
     references: [organization.id],
   }),
-  app: one(apps, {
-    fields: [replyAuditEvents.appId],
-    references: [apps.id],
-  }),
-  review: one(reviews, {
-    fields: [replyAuditEvents.reviewId],
-    references: [reviews.id],
-  }),
+  app: one(apps, { fields: [replyAuditEvents.appId], references: [apps.id] }),
+  review: one(reviews, { fields: [replyAuditEvents.reviewId], references: [reviews.id] }),
 }))
 
 export const syncRunRelations = relations(syncRuns, ({ one }) => ({
@@ -136,10 +106,7 @@ export const syncRunRelations = relations(syncRuns, ({ one }) => ({
     fields: [syncRuns.organizationId],
     references: [organization.id],
   }),
-  app: one(apps, {
-    fields: [syncRuns.appId],
-    references: [apps.id],
-  }),
+  app: one(apps, { fields: [syncRuns.appId], references: [apps.id] }),
   storeConnection: one(storeConnections, {
     fields: [syncRuns.storeConnectionId],
     references: [storeConnections.id],

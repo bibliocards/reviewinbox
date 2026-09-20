@@ -2,7 +2,11 @@ import { index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-c
 
 import { organization } from './auth-schema'
 
-type StoredUsageEventType = 'review_imported' | 'managed_ai_reply_draft_generated' | 'published_reply_created' | 'weekly_digest_generated'
+type StoredUsageEventType =
+  | 'review_imported'
+  | 'managed_ai_reply_draft_generated'
+  | 'published_reply_created'
+  | 'weekly_digest_generated'
 
 export const usageEvents = pgTable(
   'usage_events',

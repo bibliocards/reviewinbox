@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { maxLanguageTagLength, maxMappedLanguages, maxReplyContextLength, updateReplySettingsRequestSchema } from './reply-settings'
+import {
+  maxLanguageTagLength,
+  maxMappedLanguages,
+  maxReplyContextLength,
+  updateReplySettingsRequestSchema,
+} from './reply-settings'
 
 describe('updateReplySettingsRequestSchema', () => {
   it('trims editable guidance and language values', () => {

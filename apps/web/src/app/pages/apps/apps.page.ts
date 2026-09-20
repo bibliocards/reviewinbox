@@ -1,7 +1,15 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, computed, effect, HostListener, inject, signal } from '@angular/core'
-import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
+import {
+  Component,
+  computed,
+  effect,
+  HostListener,
+  inject,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core'
 import { RouterLink } from '@angular/router'
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
 import type {
   AppListItemResponse,
   ConnectAppResponse,
@@ -12,12 +20,15 @@ import type {
   SyncRunResponse,
   UpdateAppResponse,
 } from '@reviewinbox/contracts'
+import { syncRunResponseSchema } from '@reviewinbox/contracts'
 import { formatDistanceToNow } from 'date-fns/formatDistanceToNow'
 import { enUS, fr } from 'date-fns/locale'
 import { OrganizationService } from 'ngx-better-auth'
 import { ButtonModule } from 'primeng/button'
-import { DialogService } from 'primeng/dynamicdialog'
+import { DialogService, type DynamicDialogConfig } from 'primeng/dynamicdialog'
 import { TableModule } from 'primeng/table'
+import { z } from 'zod'
+
 import { ConnectAppDialogComponent } from '../../shared/components/connect-app-dialog/connect-app-dialog.component'
 import { ReplySettingsDialogComponent } from '../../shared/components/reply-settings-dialog/reply-settings-dialog.component'
 import { TypedTemplateDirective } from '../../shared/directives/typed-template.directive'
@@ -33,9 +44,16 @@ type ReplyDraftQueueMessage = {
 
 type InitialSyncStatus = 'not_requested' | 'queued' | 'partial' | 'failed'
 
+const appNavigationStateSchema = z.object({
+  appCreated: z.string().optional(),
+  initialSyncStatus: z.enum(['not_requested', 'queued', 'partial', 'failed']).optional(),
+})
+const appNavigationState = appNavigationStateSchema.safeParse(history.state).data
+
 @Component({
   selector: 'ri-apps-page',
   imports: [ButtonModule, RouterLink, TableModule, TranslocoDirective, TypedTemplateDirective],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './apps.page.html',
 })
 export class AppsPageComponent {
@@ -48,23 +66,35 @@ export class AppsPageComponent {
 
   protected readonly appsResource = this.appsService.appsResource()
   protected readonly organizationUsageResource = this.organizationProfile.usageResource()
-  protected readonly apps = computed(() => (this.appsResource.hasValue() ? this.appsResource.value().apps : []))
+  protected readonly apps = computed(() =>
+    this.appsResource.hasValue() ? this.appsResource.value().apps : [],
+  )
   protected readonly errorMessage = computed(() => this.appsResource.error())
-  protected readonly successAppName = signal<string | null>(history.state?.appCreated ?? null)
+  protected readonly successAppName = signal<string | null>(appNavigationState?.appCreated ?? null)
   protected readonly successMessageKey = signal<string | null>(null)
-  protected readonly initialSyncStatus = signal<InitialSyncStatus | null>(history.state?.initialSyncStatus ?? null)
-  protected readonly activeMemberRole = signal<string | string[] | undefined>(undefined)
+  protected readonly initialSyncStatus = signal<InitialSyncStatus | null>(
+    appNavigationState?.initialSyncStatus ?? null,
+  )
+  protected readonly activeMemberRole = signal<string | string[] | null>(null)
   protected readonly syncingStoreConnectionId = signal<string | null>(null)
   protected readonly syncRunByStoreConnectionId = signal<Record<string, SyncRunResponse>>({})
   protected readonly queueingReplyDraftsAppId = signal<string | null>(null)
-  protected readonly replyDraftQueueMessageByAppId = signal<Record<string, ReplyDraftQueueMessage>>({})
+  protected readonly replyDraftQueueMessageByAppId = signal<Record<string, ReplyDraftQueueMessage>>(
+    {},
+  )
   protected readonly canManageApps = computed(() => {
     const role = this.roleLabel(this.activeMemberRole()).toLowerCase()
     return ['owner', 'admin'].includes(role)
   })
-  protected readonly canEditReplySettings = computed(() => this.roleLabel(this.activeMemberRole()).toLowerCase() === 'owner')
+  protected readonly canEditReplySettings = computed(
+    () => this.roleLabel(this.activeMemberRole()).toLowerCase() === 'owner',
+  )
   protected readonly manualSyncAvailable = computed(() =>
-    isManualSyncAvailable(this.organizationUsageResource.hasValue() ? this.organizationUsageResource.value() : undefined),
+    isManualSyncAvailable(
+      this.organizationUsageResource.hasValue()
+        ? this.organizationUsageResource.value()
+        : undefined,
+    ),
   )
 
   constructor() {
@@ -133,9 +163,7 @@ export class AppsPageComponent {
       width: 'min(680px, 94vw)',
       contentStyle: { overflow: 'auto' },
       data: { appId: app.id },
-      breakpoints: {
-        '640px': '94vw',
-      },
+      breakpoints: { '640px': '94vw' },
     })
 
     dialog?.onClose.subscribe((result?: ReplySettingsResponse) => {
@@ -150,7 +178,9 @@ export class AppsPageComponent {
   }
 
   protected deleteApp(app: AppListItemResponse): void {
-    const confirmed = confirm(this.transloco.translate('apps.list.deleteConfirm', { name: app.name }))
+    const confirmed = confirm(
+      this.transloco.translate('apps.list.deleteConfirm', { name: app.name }),
+    )
     if (!confirmed) {
       return
     }
@@ -178,7 +208,7 @@ export class AppsPageComponent {
   }
 
   protected queueMissingReplyDrafts(app: AppListItemResponse): void {
-    if (!app.autoDraftEnabled || this.queueingReplyDraftsAppId()) {
+    if (!app.autoDraftEnabled || this.queueingReplyDraftsAppId() !== null) {
       return
     }
 
@@ -192,22 +222,33 @@ export class AppsPageComponent {
         })
       },
       error: () => {
-        this.setReplyDraftQueueMessage(app.id, { key: 'apps.list.replyDrafts.errors.queueFailed', status: 'error' })
+        this.setReplyDraftQueueMessage(app.id, {
+          key: 'apps.list.replyDrafts.errors.queueFailed',
+          status: 'error',
+        })
       },
-      complete: () => this.queueingReplyDraftsAppId.set(null),
+      complete: () => {
+        this.queueingReplyDraftsAppId.set(null)
+      },
     })
   }
 
   private syncReviews(connection: StoreConnectionResponse | null): void {
-    if (!connection || this.syncingStoreConnectionId()) {
+    if (connection === null || this.syncingStoreConnectionId() !== null) {
       return
     }
 
     this.syncingStoreConnectionId.set(connection.id)
     this.appsService.syncStoreConnectionReviews(connection.id).subscribe({
-      next: (syncRun) => this.setSyncRunResult(syncRun),
-      error: (error: unknown) => this.setSyncRunResult(syncRunFromError(error, connection.id)),
-      complete: () => this.syncingStoreConnectionId.set(null),
+      next: (syncRun) => {
+        this.setSyncRunResult(syncRun)
+      },
+      error: (error: HttpErrorResponse) => {
+        this.setSyncRunResult(syncRunFromError(error, connection.id))
+      },
+      complete: () => {
+        this.syncingStoreConnectionId.set(null)
+      },
     })
   }
 
@@ -274,10 +315,10 @@ export class AppsPageComponent {
     }
 
     if (syncRun.status === 'partial') {
-      return syncRunErrorMessageKeys[syncRun.errorCode ?? ''] ?? 'apps.list.sync.partial'
+      return syncRunErrorMessageKeys.get(syncRun.errorCode ?? '') ?? 'apps.list.sync.partial'
     }
 
-    return syncRunErrorMessageKeys[syncRun.errorCode ?? ''] ?? 'apps.list.sync.failed'
+    return syncRunErrorMessageKeys.get(syncRun.errorCode ?? '') ?? 'apps.list.sync.failed'
   }
 
   protected storeStatusClass(app: AppListItemResponse, provider: StoreProvider): string {
@@ -307,48 +348,62 @@ export class AppsPageComponent {
       .toUpperCase()
   }
 
-  private storeConnection(app: AppListItemResponse, provider: StoreProvider): StoreConnectionResponse | null {
+  private storeConnection(
+    app: AppListItemResponse,
+    provider: StoreProvider,
+  ): StoreConnectionResponse | null {
     return (
       app.storeConnections.find(
-        (connection) => connection.provider === provider && connection.status === 'active' && connection.credential.hasCredential,
+        (connection) =>
+          connection.provider === provider
+          && connection.status === 'active'
+          && connection.credential.hasCredential,
       ) ?? null
     )
   }
 
   private isSyncingStore(app: AppListItemResponse, provider: StoreProvider): boolean {
     const connection = this.storeConnection(app, provider)
-    return connection != null && this.syncingStoreConnectionId() === connection.id
+    return connection !== null && this.syncingStoreConnectionId() === connection.id
   }
 
-  private syncRunForStore(app: AppListItemResponse, provider: StoreProvider): SyncRunResponse | null {
+  private syncRunForStore(
+    app: AppListItemResponse,
+    provider: StoreProvider,
+  ): SyncRunResponse | null {
     const connection = this.storeConnection(app, provider)
     return connection ? (this.syncRunByStoreConnectionId()[connection.id] ?? null) : null
   }
 
-  private roleLabel(role: string | string[] | undefined): string {
+  private roleLabel(role: string | string[] | null): string {
     return Array.isArray(role) ? role.join(', ') : (role ?? 'member')
   }
 
   private loadActiveMemberRole(): void {
     this.organizationService.getActiveMember().subscribe({
-      next: (member) => this.activeMemberRole.set(member.role),
-      error: () => this.activeMemberRole.set(undefined),
+      next: (member) => {
+        this.activeMemberRole.set(member.role)
+      },
+      error: () => {
+        this.activeMemberRole.set(null)
+      },
     })
   }
 
   private openAppDialog(headerKey: string, data?: { app: AppListItemResponse }) {
-    return this.dialogService.open(ConnectAppDialogComponent, {
+    const dialogConfig: DynamicDialogConfig<{ app: AppListItemResponse }> = {
       header: this.transloco.translate(headerKey),
       modal: true,
       closable: true,
       dismissableMask: true,
       width: 'min(920px, 94vw)',
       contentStyle: { overflow: 'auto' },
-      ...(data ? { data } : {}),
-      breakpoints: {
-        '640px': '94vw',
-      },
-    })
+      breakpoints: { '640px': '94vw' },
+    }
+    if (data) {
+      dialogConfig.data = data
+    }
+    return this.dialogService.open(ConnectAppDialogComponent, dialogConfig)
   }
 
   private setSyncRunResult(syncRun: SyncRunResponse): void {
@@ -360,48 +415,47 @@ export class AppsPageComponent {
   }
 
   private setReplyDraftQueueMessage(appId: string, message: ReplyDraftQueueMessage): void {
-    this.replyDraftQueueMessageByAppId.update((messages) => ({
-      ...messages,
-      [appId]: message,
-    }))
+    this.replyDraftQueueMessageByAppId.update((messages) => ({ ...messages, [appId]: message }))
     this.queueingReplyDraftsAppId.set(null)
   }
 
-  private initialSyncStatusFrom(result: ConnectAppResponse | UpdateAppResponse): InitialSyncStatus | null {
+  private initialSyncStatusFrom(result: ConnectAppResponse): InitialSyncStatus | null {
     return result.initialSync?.status ?? null
   }
 }
 
 function isManualSyncAvailable(usage: OrganizationUsageResponse | undefined): boolean {
-  return !usage?.limitsEnforced || usage.planName !== 'free'
+  return usage?.limitsEnforced !== true || usage?.planName !== 'free'
 }
 
-const syncRunErrorMessageKeys: Record<string, string> = {
-  apple_auth_failed: 'apps.list.sync.errors.appleAuthFailed',
-  apple_forbidden: 'apps.list.sync.errors.appleForbidden',
-  apple_invalid_response: 'apps.list.sync.errors.appleUnavailable',
-  apple_not_found: 'apps.list.sync.errors.appleNotFound',
-  apple_rate_limited: 'apps.list.sync.errors.appleRateLimited',
-  apple_unavailable: 'apps.list.sync.errors.appleUnavailable',
-  google_auth_failed: 'apps.list.sync.errors.googleAuthFailed',
-  google_forbidden: 'apps.list.sync.errors.googleForbidden',
-  google_invalid_response: 'apps.list.sync.errors.googleUnavailable',
-  google_not_found: 'apps.list.sync.errors.googleNotFound',
-  google_rate_limited: 'apps.list.sync.errors.googleRateLimited',
-  google_unavailable: 'apps.list.sync.errors.googleUnavailable',
-  invalid_credential_format: 'apps.list.sync.errors.invalidCredentialFormat',
-  invalid_google_credential_format: 'apps.list.sync.errors.invalidGoogleCredentialFormat',
-  missing_credential: 'apps.list.sync.errors.missingCredential',
-  missing_external_app_id: 'apps.list.sync.errors.missingExternalAppId',
-  monthly_review_import_cap_reached: 'apps.list.sync.errors.monthlyReviewImportCapReached',
-  store_connection_disabled: 'apps.list.sync.errors.storeConnectionDisabled',
-  unsupported_store_provider: 'apps.list.sync.errors.unsupportedStoreProvider',
-}
+const syncRunErrorMessageKeys = new Map<string, string>(
+  Object.entries({
+    apple_auth_failed: 'apps.list.sync.errors.appleAuthFailed',
+    apple_forbidden: 'apps.list.sync.errors.appleForbidden',
+    apple_invalid_response: 'apps.list.sync.errors.appleUnavailable',
+    apple_not_found: 'apps.list.sync.errors.appleNotFound',
+    apple_rate_limited: 'apps.list.sync.errors.appleRateLimited',
+    apple_unavailable: 'apps.list.sync.errors.appleUnavailable',
+    google_auth_failed: 'apps.list.sync.errors.googleAuthFailed',
+    google_forbidden: 'apps.list.sync.errors.googleForbidden',
+    google_invalid_response: 'apps.list.sync.errors.googleUnavailable',
+    google_not_found: 'apps.list.sync.errors.googleNotFound',
+    google_rate_limited: 'apps.list.sync.errors.googleRateLimited',
+    google_unavailable: 'apps.list.sync.errors.googleUnavailable',
+    invalid_credential_format: 'apps.list.sync.errors.invalidCredentialFormat',
+    invalid_google_credential_format: 'apps.list.sync.errors.invalidGoogleCredentialFormat',
+    missing_credential: 'apps.list.sync.errors.missingCredential',
+    missing_external_app_id: 'apps.list.sync.errors.missingExternalAppId',
+    monthly_review_import_cap_reached: 'apps.list.sync.errors.monthlyReviewImportCapReached',
+    store_connection_disabled: 'apps.list.sync.errors.storeConnectionDisabled',
+    unsupported_store_provider: 'apps.list.sync.errors.unsupportedStoreProvider',
+  }),
+)
 
-function syncRunFromError(error: unknown, storeConnectionId: string): SyncRunResponse {
-  const body = error instanceof HttpErrorResponse ? error.error : null
-  if (isSyncRunResponse(body)) {
-    return body
+function syncRunFromError(error: HttpErrorResponse, storeConnectionId: string): SyncRunResponse {
+  const parsed = syncRunResponseSchema.safeParse(error.error)
+  if (parsed.success) {
+    return parsed.data
   }
 
   const now = new Date().toISOString()
@@ -421,8 +475,4 @@ function syncRunFromError(error: unknown, storeConnectionId: string): SyncRunRes
     createdAt: now,
     updatedAt: now,
   }
-}
-
-function isSyncRunResponse(value: unknown): value is SyncRunResponse {
-  return Boolean(value && typeof value === 'object' && (value as Partial<SyncRunResponse>).storeConnectionId)
 }

@@ -8,10 +8,7 @@
       "replySettings": "Reply settings",
       "viewUsage": "View usage and limits"
     },
-    "stores": {
-      "apple": "Apple App Store",
-      "google": "Google Play"
-    },
+    "stores": { "apple": "Apple App Store", "google": "Google Play" },
     "list": {
       "title": "Apps",
       "description": "Create Apps and connect them to Apple App Store or Google Play.",
@@ -29,15 +26,8 @@
         "title": "No Apps connected yet",
         "description": "Create your first App now. Store Connections can be added in the same flow."
       },
-      "table": {
-        "app": "App",
-        "created": "Created",
-        "actions": "Actions"
-      },
-      "status": {
-        "configured": "Configured",
-        "missing": "Missing"
-      },
+      "table": { "app": "App", "created": "Created", "actions": "Actions" },
+      "status": { "configured": "Configured", "missing": "Missing" },
       "sync": {
         "action": "Sync",
         "succeeded": "Sync finished: {{fetchedCount}} Reviews fetched, {{storedCount}} stored.",
@@ -66,9 +56,7 @@
       "replyDrafts": {
         "queued": "Queued {{queuedCount}} Reply Drafts. Skipped {{skippedCount}}.",
         "autoDraftDisabled": "Enable auto-drafting first.",
-        "errors": {
-          "queueFailed": "We could not queue missing Reply Drafts yet."
-        }
+        "errors": { "queueFailed": "We could not queue missing Reply Drafts yet." }
       },
       "errors": {
         "loadFailed": "We could not load Apps yet.",
@@ -87,10 +75,7 @@
       "defaultLanguageLabel": "Default language",
       "mappedLanguagesLabel": "Allowed mapped languages",
       "mappedLanguagesHelp": "Enter one language tag per line or separate tags with commas. Up to {{maxLanguages}} languages.",
-      "actions": {
-        "cancel": "Cancel",
-        "save": "Save settings"
-      },
+      "actions": { "cancel": "Cancel", "save": "Save settings" },
       "errors": {
         "loadFailed": "We could not load Reply settings yet.",
         "updateFailed": "We could not save Reply settings yet.",
@@ -189,10 +174,7 @@
     "untitledReview": "Untitled Review",
     "replyDraft": "Reply Draft",
     "publishedReply": "Published Reply",
-    "filters": {
-      "allApps": "All Apps",
-      "actionable": "Actionable"
-    },
+    "filters": { "allApps": "All Apps", "actionable": "Actionable" },
     "status": {
       "pending": "Pending",
       "drafted": "Drafted",
@@ -240,9 +222,7 @@
     "title": "Audit History",
     "description": "Track draft creation, edits, ignores, failures, and publishing across this Organization.",
     "loading": "Loading audit history...",
-    "filters": {
-      "allActions": "All actions"
-    },
+    "filters": { "allActions": "All actions" },
     "actions": {
       "draft_created": "Draft created",
       "draft_edited": "Draft edited",
@@ -265,9 +245,7 @@
       "description": "Change the App or action filter, or come back after Reply Inbox activity."
     }
   },
-  "errors": {
-    "generic": "Something went wrong. Please try again."
-  },
+  "errors": { "generic": "Something went wrong. Please try again." },
   "organization": {
     "members": {
       "inviteCanceled": "Invitation canceled.",
@@ -322,10 +300,7 @@
     }
   },
   "auth": {
-    "common": {
-      "productName": "ReviewInbox",
-      "or": "or"
-    },
+    "common": { "productName": "ReviewInbox", "or": "or" },
     "actions": {
       "signIn": "Sign in",
       "signUp": "Sign up",
@@ -364,9 +339,7 @@
       "title": "Sign in to ReviewInbox",
       "noAccount": "Don't have an account?",
       "forgotPassword": "Forgot your password?",
-      "errors": {
-        "invalidCredentials": "We could not sign you in with these credentials."
-      }
+      "errors": { "invalidCredentials": "We could not sign you in with these credentials." }
     },
     "forgotPassword": {
       "title": "Reset your password",
@@ -412,9 +385,7 @@
       "confirmLabel": "Confirm new password",
       "change": "Change password",
       "changed": "Your password has been changed. Other sessions were signed out.",
-      "validation": {
-        "currentRequired": "Enter your current password."
-      },
+      "validation": { "currentRequired": "Enter your current password." },
       "errors": {
         "changeFailed": "We could not change your password. Check your current password and try again."
       }
@@ -432,10 +403,7 @@
     "auditHistory": "Audit History",
     "settings": "Settings"
   },
-  "common": {
-    "useLightTheme": "Use light theme",
-    "useDarkTheme": "Use dark theme"
-  },
+  "common": { "useLightTheme": "Use light theme", "useDarkTheme": "Use dark theme" },
   "shell": {
     "navigation": {
       "primary": "Primary navigation",
@@ -445,18 +413,14 @@
       "auditHistory": "Audit History",
       "organization": "Organization"
     },
-    "organization": {
-      "selectAria": "Organization"
-    },
+    "organization": { "selectAria": "Organization" },
     "menu": {
       "accountSettings": "Account settings",
       "newOrganization": "New organization",
       "logout": "Log out",
       "ownerAria": "Owner menu"
     },
-    "actions": {
-      "connectApp": "Connect app"
-    },
+    "actions": { "connectApp": "Connect app" },
     "autoSync": {
       "label": "Auto-sync",
       "free": "Every 24h on Free",

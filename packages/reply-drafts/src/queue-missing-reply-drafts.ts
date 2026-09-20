@@ -37,7 +37,10 @@ export async function selectMissingReplyDraftReviews(input: {
     .from(reviews)
     .innerJoin(
       storeConnections,
-      and(eq(reviews.storeConnectionId, storeConnections.id), eq(storeConnections.organizationId, input.organizationId)),
+      and(
+        eq(reviews.storeConnectionId, storeConnections.id),
+        eq(storeConnections.organizationId, input.organizationId),
+      ),
     )
     .leftJoin(replyDrafts, eq(reviews.id, replyDrafts.reviewId))
     .where(
@@ -53,11 +56,7 @@ export async function selectMissingReplyDraftReviews(input: {
   const reviewIds = eligibleRows.map((row) => row.reviewId)
   const draftableReviewCount = draftableCount?.count ?? 0
 
-  return {
-    status: 'selected',
-    reviewIds,
-    skippedCount: draftableReviewCount - reviewIds.length,
-  }
+  return { status: 'selected', reviewIds, skippedCount: draftableReviewCount - reviewIds.length }
 }
 
 function baseReviewScope(organizationId: string, appId: string) {

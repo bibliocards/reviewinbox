@@ -1,24 +1,31 @@
 import type { EncryptedStoreCredential } from '@reviewinbox/core'
 import { storeCredentials } from '@reviewinbox/db'
-import type { database } from './db'
 
-type DatabaseTransaction = Parameters<Parameters<typeof database.transaction>[0]>[0]
+type StoreCredentialRow = typeof storeCredentials.$inferSelect
+type StoreCredentialInsert = typeof storeCredentials.$inferInsert
+type StoreCredentialTransaction = {
+  insert: (table: typeof storeCredentials) => {
+    values: (values: StoreCredentialInsert) => {
+      onConflictDoUpdate: (input: {
+        target: typeof storeCredentials.storeConnectionId
+        set: Partial<StoreCredentialInsert>
+      }) => { returning: () => Promise<StoreCredentialRow[]> }
+    }
+  }
+}
 
 /**
  * Replace the encrypted material while keeping the credential's original
  * creation timestamp as the durable verification fact.
  */
 export async function replaceStoreCredential(
-  transaction: DatabaseTransaction,
+  transaction: StoreCredentialTransaction,
   storeConnectionId: string,
   encrypted: EncryptedStoreCredential,
 ) {
   const [credential] = await transaction
     .insert(storeCredentials)
-    .values({
-      storeConnectionId,
-      ...encrypted,
-    })
+    .values({ storeConnectionId, ...encrypted })
     .onConflictDoUpdate({
       target: storeCredentials.storeConnectionId,
       set: { ...encrypted, updatedAt: new Date() },

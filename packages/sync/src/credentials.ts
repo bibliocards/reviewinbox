@@ -1,5 +1,11 @@
 import { loadEncryptionConfig } from '@reviewinbox/config'
-import { decodeStoreCredentialEncryptionKey, decryptStoreCredential, type EncryptedStoreCredential } from '@reviewinbox/core'
+import {
+  decodeStoreCredentialEncryptionKey,
+  decryptStoreCredential,
+  storeCredentialEncryptionAlgorithm,
+  storeCredentialEncryptionVersion,
+  type EncryptedStoreCredential,
+} from '@reviewinbox/core'
 import type { storeCredentials } from '@reviewinbox/db'
 import {
   type AppleAppStoreCredential,
@@ -7,32 +13,34 @@ import {
   type GooglePlayServiceAccountCredential,
   googlePlayReviewAdapter,
 } from '@reviewinbox/store-adapters'
+import { z } from 'zod'
 
 import { toSafeGoogleVerificationError, toSafeVerificationError } from './sync-errors'
 
-export type AppleCredentialParseResult = { ok: true; credential: AppleAppStoreCredential } | { ok: false; error: string }
-export type GooglePlayCredentialParseResult = { ok: true; credential: GooglePlayServiceAccountCredential } | { ok: false; error: string }
+const appleCredentialSchema = z.object({
+  issuerId: z.string().min(1),
+  keyId: z.string().min(1),
+  privateKey: z.string().min(1),
+})
+const googlePlayCredentialSchema = z.object({
+  client_email: z.string().min(1),
+  private_key: z.string().min(1),
+})
+
+export type AppleCredentialParseResult =
+  | { ok: true; credential: AppleAppStoreCredential }
+  | { ok: false; error: string }
+export type GooglePlayCredentialParseResult =
+  | { ok: true; credential: GooglePlayServiceAccountCredential }
+  | { ok: false; error: string }
 
 export function parseAppleCredentialPlaintext(value: string): AppleCredentialParseResult {
   try {
-    const parsed = JSON.parse(value) as unknown
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return { ok: false, error: 'Apple Store Credential must be a JSON object.' }
+    const parsed = appleCredentialSchema.safeParse(JSON.parse(value))
+    if (parsed.success) {
+      return { ok: true, credential: parsed.data }
     }
-
-    const credential = parsed as Partial<AppleAppStoreCredential>
-    if (!credential.issuerId || !credential.keyId || !credential.privateKey) {
-      return { ok: false, error: 'Apple Store Credential requires issuerId, keyId, and privateKey.' }
-    }
-
-    return {
-      ok: true,
-      credential: {
-        issuerId: credential.issuerId,
-        keyId: credential.keyId,
-        privateKey: credential.privateKey,
-      },
-    }
+    return { ok: false, error: 'Apple Store Credential requires issuerId, keyId, and privateKey.' }
   } catch {
     return { ok: false, error: 'Apple Store Credential must be valid JSON.' }
   }
@@ -40,22 +48,13 @@ export function parseAppleCredentialPlaintext(value: string): AppleCredentialPar
 
 export function parseGooglePlayCredentialPlaintext(value: string): GooglePlayCredentialParseResult {
   try {
-    const parsed = JSON.parse(value) as unknown
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return { ok: false, error: 'Google Play Store Credential must be a JSON object.' }
+    const parsed = googlePlayCredentialSchema.safeParse(JSON.parse(value))
+    if (parsed.success) {
+      return { ok: true, credential: parsed.data }
     }
-
-    const credential = parsed as Partial<GooglePlayServiceAccountCredential>
-    if (typeof credential.client_email !== 'string' || typeof credential.private_key !== 'string') {
-      return { ok: false, error: 'Google Play Store Credential requires client_email and private_key.' }
-    }
-
     return {
-      ok: true,
-      credential: {
-        client_email: credential.client_email,
-        private_key: credential.private_key,
-      },
+      ok: false,
+      error: 'Google Play Store Credential requires client_email and private_key.',
     }
   } catch {
     return { ok: false, error: 'Google Play Store Credential must be valid JSON.' }
@@ -68,7 +67,11 @@ export async function verifyAppleStoreCredentialForApp(input: {
 }): Promise<{ ok: true } | { ok: false; errorCode: string; errorMessage: string }> {
   const credentialResult = parseAppleCredentialPlaintext(input.plaintext)
   if (!credentialResult.ok) {
-    return { ok: false, errorCode: 'invalid_credential_format', errorMessage: credentialResult.error }
+    return {
+      ok: false,
+      errorCode: 'invalid_credential_format',
+      errorMessage: credentialResult.error,
+    }
   }
 
   const verification = await appleAppStoreReviewAdapter.verifyCredential({
@@ -89,7 +92,11 @@ export async function verifyGooglePlayStoreCredentialForApp(input: {
 }): Promise<{ ok: true } | { ok: false; errorCode: string; errorMessage: string }> {
   const credentialResult = parseGooglePlayCredentialPlaintext(input.plaintext)
   if (!credentialResult.ok) {
-    return { ok: false, errorCode: 'invalid_google_credential_format', errorMessage: credentialResult.error }
+    return {
+      ok: false,
+      errorCode: 'invalid_google_credential_format',
+      errorMessage: credentialResult.error,
+    }
   }
 
   const verification = await googlePlayReviewAdapter.verifyCredential({
@@ -112,13 +119,21 @@ function getEncryptionKey() {
   return decodeStoreCredentialEncryptionKey(loadEncryptionConfig().appEncryptionKey)
 }
 
-function toEncryptedStoreCredential(row: typeof storeCredentials.$inferSelect): EncryptedStoreCredential {
+function toEncryptedStoreCredential(
+  row: typeof storeCredentials.$inferSelect,
+): EncryptedStoreCredential {
+  if (row.algorithm !== storeCredentialEncryptionAlgorithm) {
+    throw new Error('Unsupported Store Credential encryption metadata.')
+  }
+  if (row.version !== storeCredentialEncryptionVersion) {
+    throw new Error('Unsupported Store Credential encryption metadata.')
+  }
   return {
     ciphertext: row.ciphertext,
     nonce: row.nonce,
     authTag: row.authTag,
-    algorithm: row.algorithm as EncryptedStoreCredential['algorithm'],
-    version: row.version as EncryptedStoreCredential['version'],
+    algorithm: storeCredentialEncryptionAlgorithm,
+    version: storeCredentialEncryptionVersion,
     keyId: row.keyId,
   }
 }

@@ -1,6 +1,5 @@
-import { describe, expect, it } from 'vitest'
-
 import { loadAiConfig } from '@reviewinbox/config'
+import { describe, expect, it } from 'vitest'
 
 import { createWorkerReplyDraftProvider } from './ai-provider'
 

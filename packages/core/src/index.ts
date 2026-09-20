@@ -45,14 +45,24 @@ export function encryptStoreCredential(plaintext: string, key: Buffer): Encrypte
 export function decryptStoreCredential(encrypted: EncryptedStoreCredential, key: Buffer): string {
   assertStoreCredentialEncryptionKey(key)
 
-  if (encrypted.algorithm !== storeCredentialEncryptionAlgorithm || encrypted.version !== storeCredentialEncryptionVersion) {
+  if (
+    encrypted.algorithm !== storeCredentialEncryptionAlgorithm
+    || encrypted.version !== storeCredentialEncryptionVersion
+  ) {
     throw new Error('Unsupported Store Credential encryption metadata.')
   }
 
-  const decipher = createDecipheriv(storeCredentialEncryptionAlgorithm, key, Buffer.from(encrypted.nonce, 'base64'))
+  const decipher = createDecipheriv(
+    storeCredentialEncryptionAlgorithm,
+    key,
+    Buffer.from(encrypted.nonce, 'base64'),
+  )
   decipher.setAuthTag(Buffer.from(encrypted.authTag, 'base64'))
 
-  return Buffer.concat([decipher.update(Buffer.from(encrypted.ciphertext, 'base64')), decipher.final()]).toString('utf8')
+  return Buffer.concat([
+    decipher.update(Buffer.from(encrypted.ciphertext, 'base64')),
+    decipher.final(),
+  ]).toString('utf8')
 }
 
 function assertStoreCredentialEncryptionKey(key: Buffer) {

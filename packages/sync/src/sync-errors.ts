@@ -1,4 +1,7 @@
-import type { AppleStoreAdapterErrorCode, GooglePlayStoreAdapterErrorCode } from '@reviewinbox/store-adapters'
+import type {
+  AppleStoreAdapterErrorCode,
+  GooglePlayStoreAdapterErrorCode,
+} from '@reviewinbox/store-adapters'
 
 export class SyncStoreConnectionNotFoundError extends Error {
   constructor() {
@@ -23,46 +26,27 @@ export function toSafeGoogleVerificationError(errorCode: GooglePlayStoreAdapterE
 }
 
 export function getSafeSyncErrorMessage(errorCode: string) {
-  switch (errorCode) {
-    case 'apple_auth_failed':
-      return 'Apple App Store credential is invalid.'
-    case 'apple_forbidden':
-      return 'Apple App Store credential cannot access reviews for this app.'
-    case 'apple_not_found':
-      return 'Apple App Store app was not found for this credential.'
-    case 'apple_rate_limited':
-      return 'Apple App Store review API rate limit was reached.'
-    case 'apple_invalid_response':
-      return 'Apple App Store review API returned an invalid response.'
-    case 'apple_unavailable':
-      return 'Apple App Store review API is unavailable.'
-    case 'google_auth_failed':
-      return 'Google Play Store Credential is invalid.'
-    case 'google_forbidden':
-      return 'Google Play Store Credential cannot access reviews for this app.'
-    case 'google_not_found':
-      return 'Google Play app was not found for this credential.'
-    case 'google_rate_limited':
-      return 'Google Play review API rate limit was reached.'
-    case 'google_invalid_response':
-      return 'Google Play review API returned an invalid response.'
-    case 'google_unavailable':
-      return 'Google Play review API is unavailable.'
-    case 'invalid_credential_format':
-      return 'Apple Store Credential format is invalid.'
-    case 'invalid_google_credential_format':
-      return 'Google Play Store Credential format is invalid.'
-    case 'missing_credential':
-      return 'Store Connection has no Store Credential.'
-    case 'missing_external_app_id':
-      return 'Store Connection has no Apple App Store app identifier.'
-    case 'store_connection_disabled':
-      return 'Store Connection is disabled.'
-    case 'unsupported_store_provider':
-      return 'Store Connection provider is not supported by this sync.'
-    case 'monthly_review_import_cap_reached':
-      return 'Monthly Review import limit reached.'
-    default:
-      return 'Review sync failed.'
-  }
+  return safeSyncErrorMessages.get(errorCode) ?? 'Review sync failed.'
 }
+
+const safeSyncErrorMessages = new Map<string, string>([
+  ['apple_auth_failed', 'Apple App Store credential is invalid.'],
+  ['apple_forbidden', 'Apple App Store credential cannot access reviews for this app.'],
+  ['apple_not_found', 'Apple App Store app was not found for this credential.'],
+  ['apple_rate_limited', 'Apple App Store review API rate limit was reached.'],
+  ['apple_invalid_response', 'Apple App Store review API returned an invalid response.'],
+  ['apple_unavailable', 'Apple App Store review API is unavailable.'],
+  ['google_auth_failed', 'Google Play Store Credential is invalid.'],
+  ['google_forbidden', 'Google Play Store Credential cannot access reviews for this app.'],
+  ['google_not_found', 'Google Play app was not found for this credential.'],
+  ['google_rate_limited', 'Google Play review API rate limit was reached.'],
+  ['google_invalid_response', 'Google Play review API returned an invalid response.'],
+  ['google_unavailable', 'Google Play review API is unavailable.'],
+  ['invalid_credential_format', 'Apple Store Credential format is invalid.'],
+  ['invalid_google_credential_format', 'Google Play Store Credential format is invalid.'],
+  ['missing_credential', 'Store Connection has no Store Credential.'],
+  ['missing_external_app_id', 'Store Connection has no Apple App Store app identifier.'],
+  ['store_connection_disabled', 'Store Connection is disabled.'],
+  ['unsupported_store_provider', 'Store Connection provider is not supported by this sync.'],
+  ['monthly_review_import_cap_reached', 'Monthly Review import limit reached.'],
+])

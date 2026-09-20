@@ -4,7 +4,8 @@
     "composite": true,
     "rootDir": "src",
     "outDir": "../../dist/packages/contracts",
-    "types": []
+    "types": [],
+    "ignoreDeprecations": "6.0"
   },
   "include": ["src/**/*.ts"]
 }

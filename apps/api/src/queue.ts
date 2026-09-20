@@ -1,38 +1,48 @@
 import { createQueueClient } from '@reviewinbox/queue'
 
 import { serverConfig } from './db'
-import { enqueueInitialStoreConnectionSync, type InitialSyncConnection, type InitialSyncEnqueueResult } from './initial-sync'
+import {
+  enqueueInitialStoreConnectionSync,
+  type InitialSyncConnection,
+  type InitialSyncEnqueueResult,
+} from './initial-sync'
 
 const queue = createQueueClient({
   databaseUrl: serverConfig.databaseUrl,
   onError: (error) => {
-    console.error('ReviewInbox API queue error', serializeErrorForLog(error))
+    process.stderr.write(
+      `ReviewInbox API queue error: ${formatError(error instanceof Error ? error : null)}\n`,
+    )
   },
 })
 
 let queueStartPromise: Promise<void> | null = null
 
-export async function enqueueGenerateReplyDraftJobs(input: { organizationId: string; reviewIds: string[] }): Promise<number> {
+export async function enqueueGenerateReplyDraftJobs(input: {
+  organizationId: string
+  reviewIds: string[]
+}): Promise<number> {
   if (!serverConfig.replyDraftWorkerEnabled || input.reviewIds.length === 0) {
     return 0
   }
 
   await ensureQueueStarted()
 
-  let queuedCount = 0
-  for (const reviewId of input.reviewIds) {
-    try {
-      await queue.enqueueGenerateReplyDraft({ organizationId: input.organizationId, reviewId })
-      queuedCount += 1
-    } catch (error) {
-      console.error('ReviewInbox draft job enqueue failed for Review', {
-        reviewId,
-        error: serializeErrorForLog(error),
-      })
-    }
-  }
+  const results = await Promise.all(
+    input.reviewIds.map(async (reviewId) => {
+      try {
+        await queue.enqueueGenerateReplyDraft({ organizationId: input.organizationId, reviewId })
+        return true
+      } catch (error) {
+        process.stderr.write(
+          `ReviewInbox draft job enqueue failed for Review ${reviewId}: ${formatError(error instanceof Error ? error : null)}\n`,
+        )
+        return false
+      }
+    }),
+  )
 
-  return queuedCount
+  return results.filter(Boolean).length
 }
 
 export async function enqueueInitialStoreConnectionSyncJobs(input: {
@@ -40,17 +50,15 @@ export async function enqueueInitialStoreConnectionSyncJobs(input: {
   connections: InitialSyncConnection[]
 }): Promise<InitialSyncEnqueueResult> {
   if (input.connections.length === 0) {
-    return {
-      status: 'not_requested',
-      queuedStoreConnectionIds: [],
-      failedStoreConnectionIds: [],
-    }
+    return { status: 'not_requested', queuedStoreConnectionIds: [], failedStoreConnectionIds: [] }
   }
 
   try {
     await ensureQueueStarted()
   } catch (error) {
-    console.error('ReviewInbox initial Store Connection sync queue could not start', serializeErrorForLog(error))
+    process.stderr.write(
+      `ReviewInbox initial Store Connection sync queue could not start: ${formatError(error instanceof Error ? error : null)}\n`,
+    )
     return {
       status: 'failed',
       queuedStoreConnectionIds: [],
@@ -65,12 +73,9 @@ export async function enqueueInitialStoreConnectionSyncJobs(input: {
   })
 
   if (result.failedStoreConnectionIds.length > 0) {
-    console.error('ReviewInbox initial Store Connection sync enqueue failed', {
-      organizationId: input.organizationId,
-      status: result.status,
-      queuedStoreConnectionIds: result.queuedStoreConnectionIds,
-      failedStoreConnectionIds: result.failedStoreConnectionIds,
-    })
+    process.stderr.write(
+      `ReviewInbox initial Store Connection sync enqueue failed for ${input.organizationId}: ${result.status}\n`,
+    )
   }
 
   return result
@@ -86,10 +91,10 @@ async function ensureQueueStarted(): Promise<void> {
   }
 }
 
-function serializeErrorForLog(error: unknown): { name: string; message: string } {
+function formatError(error: Error | null): string {
   if (error instanceof Error) {
-    return { name: error.name, message: error.message }
+    return `${error.name}: ${error.message}`
   }
 
-  return { name: 'UnknownError', message: 'Unknown API queue error' }
+  return 'Unknown API queue error'
 }

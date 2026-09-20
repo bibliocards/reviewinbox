@@ -1,6 +1,4 @@
-<section
-  class="grid gap-6"
-  *transloco="let t">
+<section class="grid gap-6" *transloco="let t">
   @if (isLoading()) {
   <div class="rounded-2xl border border-hairline bg-surface-1 p-5">
     <p class="m-0 text-sm text-ink-subtle">{{ t('organization.profile.loading') }}</p>
@@ -8,21 +6,28 @@
   } @else {
   <form
     class="grid gap-4 rounded-2xl border border-hairline bg-surface-1 p-5"
-    (submit)="saveProfile($event)">
+    (submit)="saveProfile($event)"
+  >
     <div>
-      <h2 class="m-0 text-lg font-semibold text-ink">{{ t('organization.profile.identity.title') }}</h2>
-      <p class="m-0 mt-1 text-sm text-ink-subtle">{{ t('organization.profile.identity.description') }}</p>
+      <h2 class="m-0 text-lg font-semibold text-ink">
+        {{ t('organization.profile.identity.title') }}
+      </h2>
+      <p class="m-0 mt-1 text-sm text-ink-subtle">
+        {{ t('organization.profile.identity.description') }}
+      </p>
     </div>
 
     <div class="grid gap-4 md:grid-cols-[auto_minmax(0,1fr)] md:items-center">
       <div class="grid gap-3">
         <div
-          class="grid size-24 place-items-center overflow-hidden rounded-2xl border border-hairline-strong bg-surface-2 text-2xl font-semibold text-ink">
+          class="grid size-24 place-items-center overflow-hidden rounded-2xl border border-hairline-strong bg-surface-2 text-2xl font-semibold text-ink"
+        >
           @if (profile()?.logo; as logo) {
           <img
             class="h-full w-full object-cover"
             [src]="logo"
-            [alt]="t('organization.profile.logoAlt', { name: profile()?.name })" />
+            [alt]="t('organization.profile.logoAlt', { name: $safeNavigationMigration(profile()?.name) })"
+          />
           } @else {
           <span>{{ initials() }}</span>
           }
@@ -34,7 +39,8 @@
           accept="image/png,image/jpeg,image/webp"
           [attr.aria-label]="t('organization.profile.uploadLogo')"
           [disabled]="isUploadingLogo()"
-          (change)="uploadLogo($event)" />
+          (change)="uploadLogo($event)"
+        />
         <p-button
           type="button"
           size="small"
@@ -42,7 +48,8 @@
           [outlined]="true"
           [label]="isUploadingLogo() ? t('organization.profile.uploadingLogo') : t('organization.profile.uploadLogo')"
           [disabled]="isUploadingLogo()"
-          (onClick)="logoInput.click()" />
+          (onClick)="logoInput.click()"
+        />
       </div>
 
       <div class="grid gap-3">
@@ -53,15 +60,22 @@
             type="text"
             autocomplete="organization"
             aria-labelledby="organization-name-label"
-            [formField]="profileForm.name" />
+            [formField]="profileForm.name"
+          />
         </div>
         <p class="m-0 text-xs text-ink-tertiary">{{ t('organization.profile.logoHint') }}</p>
       </div>
     </div>
     @if (errorMessageKey(); as messageKey) {
-    <p class="m-0 rounded-xl border border-red-400 bg-surface-2 px-3 py-2 text-sm text-ink-muted">{{ t(messageKey) }}</p>
+    <p class="m-0 rounded-xl border border-red-400 bg-surface-2 px-3 py-2 text-sm text-ink-muted">
+      {{ t(messageKey) }}
+    </p>
     } @if (successMessageKey(); as messageKey) {
-    <p class="m-0 rounded-xl border border-green-500/40 bg-surface-2 px-3 py-2 text-sm text-ink-muted">{{ t(messageKey) }}</p>
+    <p
+      class="m-0 rounded-xl border border-green-500/40 bg-surface-2 px-3 py-2 text-sm text-ink-muted"
+    >
+      {{ t(messageKey) }}
+    </p>
     }
 
     <div>
@@ -69,32 +83,45 @@
         type="submit"
         [label]="t('organization.profile.save')"
         [loading]="isSaving()"
-        [disabled]="!hasNameChanges() || profileForm().invalid() || isSaving()" />
+        [disabled]="!hasNameChanges() || profileForm().invalid() || isSaving()"
+      />
     </div>
   </form>
 
   <div class="grid gap-4 rounded-2xl border border-red-500/40 bg-surface-1 p-5">
     <div>
-      <h2 class="m-0 text-lg font-semibold text-ink">{{ t('organization.profile.danger.title') }}</h2>
+      <h2 class="m-0 text-lg font-semibold text-ink">
+        {{ t('organization.profile.danger.title') }}
+      </h2>
       @if (!profile()?.deletionAvailable) {
-      <p class="m-0 mt-1 text-sm text-ink-subtle">{{ t('organization.profile.danger.selfHostedUnavailable') }}</p>
+      <p class="m-0 mt-1 text-sm text-ink-subtle">
+        {{ t('organization.profile.danger.selfHostedUnavailable') }}
+      </p>
       } @else if (!profile()?.canDelete) {
-      <p class="m-0 mt-1 text-sm text-ink-subtle">{{ t('organization.profile.danger.ownerOnly') }}</p>
+      <p class="m-0 mt-1 text-sm text-ink-subtle">
+        {{ t('organization.profile.danger.ownerOnly') }}
+      </p>
       } @else {
-      <p class="m-0 mt-1 text-sm text-ink-subtle">{{ t('organization.profile.danger.description') }}</p>
+      <p class="m-0 mt-1 text-sm text-ink-subtle">
+        {{ t('organization.profile.danger.description') }}
+      </p>
       }
     </div>
     @if (profile()?.canDelete && profile()?.deletionAvailable) {
     <div class="grid gap-3">
       <p class="m-0 text-sm text-ink-muted">{{ t('organization.profile.danger.consequences') }}</p>
       <div class="grid gap-1.5 text-sm font-medium text-ink">
-        <span id="delete-confirmation-name-label">{{ t('organization.profile.danger.confirmLabel', { name: profile()?.name }) }}</span>
+        <span id="delete-confirmation-name-label"
+          >{{ t('organization.profile.danger.confirmLabel', { name:
+          $safeNavigationMigration(profile()?.name) }) }}</span
+        >
         <input
           pInputText
           type="text"
           autocomplete="off"
           aria-labelledby="delete-confirmation-name-label"
-          [formField]="profileForm.confirmationName" />
+          [formField]="profileForm.confirmationName"
+        />
       </div>
       <div>
         <p-button
@@ -102,7 +129,8 @@
           severity="danger"
           [loading]="isDeleting()"
           [disabled]="!canSubmitDelete() || isDeleting()"
-          (onClick)="deleteOrganization()" />
+          (onClick)="deleteOrganization()"
+        />
       </div>
     </div>
     }

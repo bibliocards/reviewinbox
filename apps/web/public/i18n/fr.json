@@ -8,10 +8,7 @@
       "replySettings": "Paramètres de reply",
       "viewUsage": "Voir l’usage et les limites"
     },
-    "stores": {
-      "apple": "Apple App Store",
-      "google": "Google Play"
-    },
+    "stores": { "apple": "Apple App Store", "google": "Google Play" },
     "list": {
       "title": "Apps",
       "description": "Créez des Apps et connectez-les à Apple App Store ou Google Play.",
@@ -29,15 +26,8 @@
         "title": "Aucune App connectée pour le moment",
         "description": "Créez votre première App maintenant. Les Store Connections peuvent être ajoutées dans le même flux."
       },
-      "table": {
-        "app": "App",
-        "created": "Créée",
-        "actions": "Actions"
-      },
-      "status": {
-        "configured": "Configurée",
-        "missing": "Manquante"
-      },
+      "table": { "app": "App", "created": "Créée", "actions": "Actions" },
+      "status": { "configured": "Configurée", "missing": "Manquante" },
       "sync": {
         "action": "Synchroniser",
         "succeeded": "Sync terminée : {{fetchedCount}} Reviews récupérées, {{storedCount}} stockées.",
@@ -87,10 +77,7 @@
       "defaultLanguageLabel": "Langue par défaut",
       "mappedLanguagesLabel": "Langues mappées autorisées",
       "mappedLanguagesHelp": "Saisissez un tag de langue par ligne ou séparez-les par des virgules. {{maxLanguages}} langues maximum.",
-      "actions": {
-        "cancel": "Annuler",
-        "save": "Enregistrer les paramètres"
-      },
+      "actions": { "cancel": "Annuler", "save": "Enregistrer les paramètres" },
       "errors": {
         "loadFailed": "Impossible de charger les paramètres de reply pour le moment.",
         "updateFailed": "Impossible d’enregistrer les paramètres de reply pour le moment.",
@@ -189,10 +176,7 @@
     "untitledReview": "Review sans titre",
     "replyDraft": "Reply Draft",
     "publishedReply": "Published Reply",
-    "filters": {
-      "allApps": "Toutes les Apps",
-      "actionable": "À traiter"
-    },
+    "filters": { "allApps": "Toutes les Apps", "actionable": "À traiter" },
     "status": {
       "pending": "Pending",
       "drafted": "Drafted",
@@ -240,9 +224,7 @@
     "title": "Audit History",
     "description": "Suivez les créations de draft, modifications, ignores, échecs et publications dans cette Organization.",
     "loading": "Chargement de l’audit history...",
-    "filters": {
-      "allActions": "Toutes les actions"
-    },
+    "filters": { "allActions": "Toutes les actions" },
     "actions": {
       "draft_created": "Draft créé",
       "draft_edited": "Draft modifié",
@@ -265,9 +247,7 @@
       "description": "Changez le filtre d’App ou d’action, ou revenez après une activité dans la Reply Inbox."
     }
   },
-  "errors": {
-    "generic": "Une erreur est survenue. Réessayez."
-  },
+  "errors": { "generic": "Une erreur est survenue. Réessayez." },
   "organization": {
     "members": {
       "inviteCanceled": "Invitation annulée.",
@@ -322,10 +302,7 @@
     }
   },
   "auth": {
-    "common": {
-      "productName": "ReviewInbox",
-      "or": "ou"
-    },
+    "common": { "productName": "ReviewInbox", "or": "ou" },
     "actions": {
       "signIn": "Se connecter",
       "signUp": "Créer un compte",
@@ -364,9 +341,7 @@
       "title": "Se connecter à ReviewInbox",
       "noAccount": "Vous n’avez pas encore de compte ?",
       "forgotPassword": "Mot de passe oublié ?",
-      "errors": {
-        "invalidCredentials": "Impossible de vous connecter avec ces identifiants."
-      }
+      "errors": { "invalidCredentials": "Impossible de vous connecter avec ces identifiants." }
     },
     "forgotPassword": {
       "title": "Réinitialiser votre mot de passe",
@@ -412,9 +387,7 @@
       "confirmLabel": "Confirmer le nouveau mot de passe",
       "change": "Modifier le mot de passe",
       "changed": "Votre mot de passe a été modifié. Les autres sessions ont été déconnectées.",
-      "validation": {
-        "currentRequired": "Saisissez votre mot de passe actuel."
-      },
+      "validation": { "currentRequired": "Saisissez votre mot de passe actuel." },
       "errors": {
         "changeFailed": "Impossible de modifier votre mot de passe. Vérifiez votre mot de passe actuel et réessayez."
       }
@@ -445,18 +418,14 @@
       "auditHistory": "Historique d’audit",
       "organization": "Organization"
     },
-    "organization": {
-      "selectAria": "Organization"
-    },
+    "organization": { "selectAria": "Organization" },
     "menu": {
       "accountSettings": "Paramètres du compte",
       "newOrganization": "Nouvelle Organization",
       "logout": "Se déconnecter",
       "ownerAria": "Menu du propriétaire"
     },
-    "actions": {
-      "connectApp": "Connecter une App"
-    },
+    "actions": { "connectApp": "Connecter une App" },
     "autoSync": {
       "label": "Sync automatique",
       "free": "Toutes les 24 h avec le plan Free",

@@ -1,43 +1,51 @@
 <section class="grid gap-5">
   <div class="rounded-2xl border border-hairline bg-surface-1 p-5">
     <h2 class="m-0 text-lg font-semibold text-ink">Manage subscription</h2>
-    <p class="m-0 mt-2 max-w-2xl text-sm text-ink-subtle">Compare plans, activate billing, and manage your subscription through Stripe.</p>
+    <p class="m-0 mt-2 max-w-2xl text-sm text-ink-subtle">
+      Compare plans, activate billing, and manage your subscription through Stripe.
+    </p>
   </div>
   @if (billingMessage()) {
   <div
     class="rounded-2xl border border-primary/30 bg-primary/10 p-4 text-sm text-ink"
     role="status"
-    [attr.aria-busy]="isConfirmingCheckout()">
+    [attr.aria-busy]="isConfirmingCheckout()"
+  >
     {{ billingMessage() }}
   </div>
   } @if (billingError()) {
   <div
     class="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700"
-    role="alert">
+    role="alert"
+  >
     {{ billingError() }}
   </div>
   } @if (unavailablePlanMessage()) {
   <div
     class="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-700"
-    role="status">
+    role="status"
+  >
     {{ unavailablePlanMessage() }}
   </div>
   } @if (isLoading()) {
   <div
     class="rounded-2xl border border-hairline bg-surface-1 p-5 text-sm text-ink-subtle"
     role="status"
-    aria-busy="true">
+    aria-busy="true"
+  >
     Loading billing...
   </div>
   } @else if (errorMessage()) {
   <div
     class="flex flex-col gap-3 rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-sm text-red-700"
-    role="alert">
+    role="alert"
+  >
     <span>{{ errorMessage() }}</span>
     <button
       class="w-fit rounded-lg border border-red-500/30 px-3 py-2 font-semibold"
       type="button"
-      (click)="loadUsage()">
+      (click)="loadUsage()"
+    >
       Try again
     </button>
   </div>
@@ -54,15 +62,16 @@
       <div>
         <h3 class="m-0 text-xl font-semibold text-ink">{{ currentPlanLabel() }}</h3>
         <p class="m-0 mt-2 max-w-2xl text-sm text-ink-subtle">
-          Your subscription is managed by Stripe. Open the billing portal to update payment details, change your subscription, or view
-          invoices.
+          Your subscription is managed by Stripe. Open the billing portal to update payment details,
+          change your subscription, or view invoices.
         </p>
       </div>
       <p-button
         label="Manage subscription"
         [loading]="isOpeningPortal()"
         [disabled]="isOpeningPortal()"
-        (onClick)="openBillingPortal()" />
+        (onClick)="openBillingPortal()"
+      />
     </div>
   </article>
   } @else {
@@ -73,7 +82,9 @@
           <h3 class="m-0 text-lg font-semibold text-ink">Choose a plan</h3>
           <p class="m-0 mt-2 max-w-2xl text-sm text-ink-subtle">{{ reasonMessage() }}</p>
         </div>
-        <fieldset class="grid w-fit grid-cols-2 gap-1 rounded-xl border border-hairline bg-surface-2 p-1">
+        <fieldset
+          class="grid w-fit grid-cols-2 gap-1 rounded-xl border border-hairline bg-surface-2 p-1"
+        >
           <legend class="sr-only">Billing interval</legend>
           <button
             type="button"
@@ -81,7 +92,8 @@
             [class.bg-surface-1]="billingInterval() === 'monthly'"
             [class.text-ink]="billingInterval() === 'monthly'"
             [attr.aria-pressed]="billingInterval() === 'monthly'"
-            (click)="selectBillingInterval('monthly')">
+            (click)="selectBillingInterval('monthly')"
+          >
             Monthly
           </button>
           <button
@@ -90,7 +102,8 @@
             [class.bg-surface-1]="billingInterval() === 'annual'"
             [class.text-ink]="billingInterval() === 'annual'"
             [attr.aria-pressed]="billingInterval() === 'annual'"
-            (click)="selectBillingInterval('annual')">
+            (click)="selectBillingInterval('annual')"
+          >
             Annual
           </button>
         </fieldset>
@@ -105,7 +118,8 @@
       @for (plan of billingPlanCards(); track plan.name) {
       <article
         class="flex flex-col rounded-2xl border p-5 shadow-sm"
-        [class]="planCardClass(plan.selected)">
+        [class]="planCardClass(plan.selected)"
+      >
         <div class="flex items-start justify-between gap-3">
           <div>
             <h3 class="m-0 text-lg font-semibold text-ink">{{ plan.label }}</h3>
@@ -125,7 +139,9 @@
 
         <ul class="m-0 mt-5 grid list-none gap-2 p-0 text-sm text-ink-subtle">
           @for (highlight of plan.highlights; track highlight) {
-          <li class="flex gap-2"><span class="text-primary">•</span><span>{{ highlight }}</span></li>
+          <li class="flex gap-2">
+            <span class="text-primary">•</span><span>{{ highlight }}</span>
+          </li>
           }
         </ul>
 
@@ -134,7 +150,8 @@
           [label]="isCurrentPlan(plan.name) ? 'Current plan' : 'Activate ' + plan.label"
           [loading]="isStartingCheckout() && plan.selected"
           [disabled]="isStartingCheckout() || isConfirmingCheckout() || isCurrentPlan(plan.name)"
-          (onClick)="continueBillingSetup(plan.name)" />
+          (onClick)="continueBillingSetup(plan.name)"
+        />
       </article>
       }
     </div>

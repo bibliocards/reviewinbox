@@ -13,12 +13,7 @@ describe('createUsageEvent', () => {
         quantity: 1,
         occurredAt,
       }),
-    ).toEqual({
-      organizationId: 'org_1',
-      type: 'review_imported',
-      quantity: 1,
-      occurredAt,
-    })
+    ).toEqual({ organizationId: 'org_1', type: 'review_imported', quantity: 1, occurredAt })
   })
 
   it('rejects zero and fractional quantities', () => {
@@ -29,7 +24,7 @@ describe('createUsageEvent', () => {
         quantity: 0,
         occurredAt: new Date(),
       }),
-    ).toThrow(/positive integer/)
+    ).toThrow(/positive integer/u)
     expect(() =>
       createUsageEvent({
         organizationId: 'org_1',
@@ -37,6 +32,6 @@ describe('createUsageEvent', () => {
         quantity: 1.5,
         occurredAt: new Date(),
       }),
-    ).toThrow(/positive integer/)
+    ).toThrow(/positive integer/u)
   })
 })

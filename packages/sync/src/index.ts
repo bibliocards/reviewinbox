@@ -8,4 +8,8 @@ export {
   verifyGooglePlayStoreCredentialForApp,
 } from './credentials'
 export { SyncStoreConnectionNotFoundError } from './sync-errors'
-export { type SyncReviewsForStoreConnectionInput, type SyncRunResult, syncReviewsForStoreConnection } from './sync-run'
+export {
+  type SyncReviewsForStoreConnectionInput,
+  type SyncRunResult,
+  syncReviewsForStoreConnection,
+} from './sync-run'

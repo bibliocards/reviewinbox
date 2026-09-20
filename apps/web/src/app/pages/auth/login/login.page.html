@@ -1,33 +1,26 @@
-<main
-  class="min-h-screen bg-canvas px-5 py-6 text-ink"
-  *transloco="let t">
+<main class="min-h-screen bg-canvas px-5 py-6 text-ink" *transloco="let t">
   <header class="mx-auto flex max-w-[1920px] items-center justify-between gap-4">
-    <a
-      class="inline-flex items-center gap-3 text-ink no-underline"
-      routerLink="/login">
-      <img
-        class="size-12 rounded-xl"
-        src="/icon.png"
-        alt=""
-        aria-hidden="true" />
+    <a class="inline-flex items-center gap-3 text-ink no-underline" routerLink="/login">
+      <img class="size-12 rounded-xl" src="/icon.png" alt="" aria-hidden="true" />
       <span class="sr-only">{{ t('auth.common.productName') }}</span>
     </a>
 
     <div class="flex items-center gap-3">
       <ri-theme-toggle />
       @if (signUpAvailable()) {
-      <p-button
-        variant="outlined"
-        routerLink="/sign-up"
-        [queryParams]="signUpQueryParams()">
+      <p-button variant="outlined" routerLink="/sign-up" [queryParams]="signUpQueryParams()">
         {{ t('auth.actions.signUp') }}
       </p-button>
       }
     </div>
   </header>
 
-  <section class="mx-auto mt-14 w-full max-w-153 rounded-3xl border border-hairline bg-surface-1 px-6 py-8 sm:mt-20 sm:px-14 sm:py-10">
-    <h1 class="m-0 text-xl font-semibold tracking-[-0.8px] text-ink sm:text-2xl">{{ t('auth.login.title') }}</h1>
+  <section
+    class="mx-auto mt-14 w-full max-w-153 rounded-3xl border border-hairline bg-surface-1 px-6 py-8 sm:mt-20 sm:px-14 sm:py-10"
+  >
+    <h1 class="m-0 text-xl font-semibold tracking-[-0.8px] text-ink sm:text-2xl">
+      {{ t('auth.login.title') }}
+    </h1>
     @if (capabilities().externalProviders) {
     <div class="mt-6 grid gap-2 sm:grid-cols-3">
       <p-button
@@ -35,19 +28,22 @@
         icon="pi pi-google"
         severity="secondary"
         [disabled]="!capabilities().google"
-        styleClass="w-full justify-center" />
+        styleClass="w-full justify-center"
+      />
       <p-button
         [label]="t('auth.providers.apple')"
         icon="pi pi-apple"
         severity="secondary"
         [disabled]="true"
-        styleClass="w-full justify-center" />
+        styleClass="w-full justify-center"
+      />
       <p-button
         [label]="t('auth.providers.github')"
         icon="pi pi-github"
         severity="secondary"
         [disabled]="true"
-        styleClass="w-full justify-center" />
+        styleClass="w-full justify-center"
+      />
     </div>
 
     <div class="mt-2">
@@ -56,7 +52,8 @@
         icon="pi pi-lock"
         severity="secondary"
         [disabled]="!capabilities().enterpriseSso"
-        styleClass="w-full justify-center" />
+        styleClass="w-full justify-center"
+      />
     </div>
 
     <div class="my-6 flex items-center gap-4 text-sm text-ink-tertiary">
@@ -66,9 +63,7 @@
     </div>
     }
 
-    <form
-      class="grid gap-4"
-      (submit)="signIn($event)">
+    <form class="grid gap-4" (submit)="signIn($event)">
       <label class="grid gap-1.5 text-sm font-medium text-ink">
         {{ t('auth.fields.email') }}
         <input
@@ -78,7 +73,8 @@
           autocomplete="email"
           [placeholder]="t('auth.fields.emailPlaceholder')"
           [attr.aria-label]="t('auth.fields.email')"
-          [formField]="loginForm.email" />
+          [formField]="loginForm.email"
+        />
       </label>
       @if (loginForm.email().touched() && loginForm.email().invalid()) {
       <p class="-mt-3 m-0 text-sm text-red-600">{{ t('auth.validation.email') }}</p>
@@ -98,12 +94,15 @@
           [feedback]="false"
           [toggleMask]="true"
           [fluid]="true"
-          inputStyleClass="w-full" />
+          inputStyleClass="w-full"
+        />
       </div>
       @if (loginForm.password().touched() && loginForm.password().invalid()) {
       <p class="-mt-3 m-0 text-sm text-red-600">{{ t('auth.validation.passwordRequired') }}</p>
       } @if (errorMessage()) {
-      <p class="m-0 rounded-xl border border-red-400 bg-surface-2 px-3 py-2 text-sm text-ink-muted">{{ t(errorMessage()!) }}</p>
+      <p class="m-0 rounded-xl border border-red-400 bg-surface-2 px-3 py-2 text-sm text-ink-muted">
+        {{ t(errorMessage()!) }}
+      </p>
       }
 
       <p-button
@@ -112,7 +111,8 @@
         class="mt-1"
         [fluid]="true"
         [loading]="isSubmitting()"
-        [disabled]="!canSubmit()" />
+        [disabled]="!canSubmit()"
+      />
     </form>
 
     <div class="mt-7 grid gap-2 text-center text-sm text-ink-subtle">

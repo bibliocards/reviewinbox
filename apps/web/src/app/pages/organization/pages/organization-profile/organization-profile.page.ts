@@ -1,17 +1,26 @@
-import { Component, computed, HostListener, inject, signal } from '@angular/core'
-import { FormField, form, required } from '@angular/forms/signals'
 import { HttpErrorResponse } from '@angular/common/http'
+import {
+  Component,
+  computed,
+  HostListener,
+  inject,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core'
+import { FormField, form, required } from '@angular/forms/signals'
 import { TranslocoDirective } from '@jsverse/transloco'
 import type { OrganizationProfileResponse } from '@reviewinbox/contracts'
 import { OrganizationService } from 'ngx-better-auth'
 import { ButtonModule } from 'primeng/button'
 import { InputTextModule } from 'primeng/inputtext'
 import { finalize, of, switchMap } from 'rxjs'
+
 import { OrganizationProfileService } from '../../../../shared/services/organization-profile.service'
 
 @Component({
   selector: 'ri-organization-profile-page',
   imports: [ButtonModule, FormField, InputTextModule, TranslocoDirective],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './organization-profile.page.html',
 })
 export class OrganizationProfilePageComponent {
@@ -26,23 +35,27 @@ export class OrganizationProfilePageComponent {
   protected readonly isUploadingLogo = signal(false)
   protected readonly isDeleting = signal(false)
 
-  private readonly profileModel = signal({
-    name: '',
-    confirmationName: '',
-  })
+  private readonly profileModel = signal({ name: '', confirmationName: '' })
 
   protected readonly profileForm = form(this.profileModel, (schema) => {
     required(schema.name)
   })
 
-  protected readonly initials = computed(() => this.initialsFrom(this.profile()?.name ?? this.profileForm().value().name))
+  protected readonly initials = computed(() =>
+    this.initialsFrom(this.profile()?.name ?? this.profileForm().value().name),
+  )
   protected readonly hasNameChanges = computed(() => {
     const profile = this.profile()
     return Boolean(profile && this.profileForm().value().name.trim() !== profile.name)
   })
   protected readonly canSubmitDelete = computed(() => {
     const profile = this.profile()
-    return Boolean(profile?.canDelete && profile.deletionAvailable && this.profileForm().value().confirmationName === profile.name)
+    return (
+      profile !== null
+      && profile.canDelete
+      && profile.deletionAvailable
+      && this.profileForm().value().confirmationName === profile.name
+    )
   })
 
   constructor() {
@@ -72,50 +85,53 @@ export class OrganizationProfilePageComponent {
 
     this.organizationProfile
       .updateProfile({ name })
-      .pipe(finalize(() => this.isSaving.set(false)))
+      .pipe(
+        finalize(() => {
+          this.isSaving.set(false)
+        }),
+      )
       .subscribe({
         next: (profile) => {
           this.setProfile(profile)
           this.successMessageKey.set('organization.profile.saved')
           this.notifyOrganizationsChanged()
         },
-        error: () => this.errorMessageKey.set('organization.profile.errors.saveFailed'),
+        error: () => {
+          this.errorMessageKey.set('organization.profile.errors.saveFailed')
+        },
       })
   }
 
   protected uploadLogo(event: Event): void {
-    const input = event.target as HTMLInputElement
-    const file = input.files?.[0]
-    input.value = ''
-
-    if (!file) {
+    const file = this.logoFileFromEvent(event)
+    if (file === null) {
       return
     }
 
-    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
-      this.errorMessageKey.set('organization.profile.errors.logoType')
+    const validationError = this.logoValidationError(file)
+    if (validationError !== null) {
+      this.errorMessageKey.set(validationError)
       return
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      this.errorMessageKey.set('organization.profile.errors.logoSize')
-      return
-    }
-
-    this.errorMessageKey.set(null)
-    this.successMessageKey.set(null)
-    this.isUploadingLogo.set(true)
+    this.prepareLogoUpload()
 
     this.organizationProfile
       .uploadLogo(file)
-      .pipe(finalize(() => this.isUploadingLogo.set(false)))
+      .pipe(
+        finalize(() => {
+          this.isUploadingLogo.set(false)
+        }),
+      )
       .subscribe({
         next: (profile) => {
           this.setProfile(profile)
           this.successMessageKey.set('organization.profile.logoSaved')
           this.notifyOrganizationsChanged()
         },
-        error: () => this.errorMessageKey.set('organization.profile.errors.logoFailed'),
+        error: () => {
+          this.errorMessageKey.set('organization.profile.errors.logoFailed')
+        },
       })
   }
 
@@ -133,30 +149,36 @@ export class OrganizationProfilePageComponent {
       .deleteOrganization({ name: profile.name })
       .pipe(
         switchMap((result) => {
-          if (!result.nextOrganizationId) {
+          if (result.nextOrganizationId === null || result.nextOrganizationId === '') {
             return of(result)
           }
 
-          return this.organizations.setActive({ organizationId: result.nextOrganizationId }).pipe(switchMap(() => of(result)))
+          return this.organizations
+            .setActive({ organizationId: result.nextOrganizationId })
+            .pipe(switchMap(() => of(result)))
         }),
-        finalize(() => this.isDeleting.set(false)),
+        finalize(() => {
+          this.isDeleting.set(false)
+        }),
       )
       .subscribe({
         next: ({ nextOrganizationId }) => {
           this.notifyOrganizationsChanged()
 
-          if (nextOrganizationId) {
+          if (nextOrganizationId !== null && nextOrganizationId !== '') {
             location.assign('/')
             return
           }
 
           location.assign('/organizations/new')
         },
-        error: (error: unknown) => this.errorMessageKey.set(this.deleteOrganizationErrorKey(error)),
+        error: (error: HttpErrorResponse) => {
+          this.errorMessageKey.set(this.deleteOrganizationErrorKey(error))
+        },
       })
   }
 
-  private deleteOrganizationErrorKey(error: unknown): string {
+  private deleteOrganizationErrorKey(error: HttpErrorResponse): string {
     if (error instanceof HttpErrorResponse && error.status === 409) {
       return 'organization.profile.errors.activeSubscription'
     }
@@ -169,10 +191,18 @@ export class OrganizationProfilePageComponent {
 
     this.organizationProfile
       .getProfile()
-      .pipe(finalize(() => this.isLoading.set(false)))
+      .pipe(
+        finalize(() => {
+          this.isLoading.set(false)
+        }),
+      )
       .subscribe({
-        next: (profile) => this.setProfile(profile),
-        error: () => this.errorMessageKey.set('organization.profile.errors.loadFailed'),
+        next: (profile) => {
+          this.setProfile(profile)
+        },
+        error: () => {
+          this.errorMessageKey.set('organization.profile.errors.loadFailed')
+        },
       })
   }
 
@@ -181,9 +211,37 @@ export class OrganizationProfilePageComponent {
     this.profileModel.set({ name: profile.name, confirmationName: '' })
   }
 
+  private logoValidationError(file: File): string | null {
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      return 'organization.profile.errors.logoType'
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      return 'organization.profile.errors.logoSize'
+    }
+
+    return null
+  }
+
+  private logoFileFromEvent(event: Event): File | null {
+    if (!(event.target instanceof HTMLInputElement)) {
+      return null
+    }
+
+    const file = event.target.files?.[0] ?? null
+    event.target.value = ''
+    return file
+  }
+
+  private prepareLogoUpload(): void {
+    this.errorMessageKey.set(null)
+    this.successMessageKey.set(null)
+    this.isUploadingLogo.set(true)
+  }
+
   private initialsFrom(name: string): string {
     return name
-      .split(/[ ._-]/)
+      .split(/[ ._-]/u)
       .filter(Boolean)
       .slice(0, 2)
       .map((part) => part[0])

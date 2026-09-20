@@ -6,28 +6,20 @@
   "targets": {
     "build": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "swc packages/core/src -d dist/packages/core --strip-leading-paths"
-      },
+      "options": { "command": "swc packages/core/src -d dist/packages/core --strip-leading-paths" },
       "outputs": ["{workspaceRoot}/dist/packages/core"]
     },
     "typecheck": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "tsc -p packages/core/tsconfig.lib.json --noEmit"
-      }
+      "options": { "command": "tsc -p packages/core/tsconfig.lib.json --noEmit" }
     },
     "test": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "vitest run packages/core/src --passWithNoTests"
-      }
+      "options": { "command": "vitest run packages/core/src --passWithNoTests" }
     },
     "lint": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "biome lint packages/core"
-      }
+      "options": { "command": "tsx node_modules/oxlint/bin/oxlint packages/core" }
     }
   },
   "tags": ["scope:shared", "type:core"]

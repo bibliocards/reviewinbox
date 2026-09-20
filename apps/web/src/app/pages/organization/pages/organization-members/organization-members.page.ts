@@ -1,4 +1,11 @@
-import { Component, computed, HostListener, inject, signal } from '@angular/core'
+import {
+  Component,
+  computed,
+  HostListener,
+  inject,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core'
 import { toSignal } from '@angular/core/rxjs-interop'
 import { email, FormField, form, required, submit } from '@angular/forms/signals'
 import { TranslocoDirective } from '@jsverse/transloco'
@@ -7,6 +14,8 @@ import { ButtonModule } from 'primeng/button'
 import { InputTextModule } from 'primeng/inputtext'
 import { SelectModule } from 'primeng/select'
 import { firstValueFrom } from 'rxjs'
+import { z } from 'zod'
+
 import { betterAuthErrorKey } from '../../../../shared/better-auth-errors'
 import { AuthCapabilitiesService } from '../../../../shared/services/auth-capabilities.service'
 
@@ -14,29 +23,29 @@ type MemberView = {
   id: string
   role: string | string[]
   createdAt?: Date | string
-  user?: {
-    id?: string
-    name?: string | null
-    email?: string | null
-  }
+  user?: { id?: string; name?: string | null; email?: string | null }
   userId?: string
 }
 
-type InvitationView = {
-  id: string
-  email: string
-  role?: string | string[]
-  status?: string
-  expiresAt?: Date | string
-}
-
-type FullOrganizationView = {
-  members?: MemberView[]
-}
+const memberViewSchema = z.object({
+  id: z.string(),
+  role: z.union([z.string(), z.array(z.string())]),
+  createdAt: z.union([z.date(), z.string()]).optional(),
+  user: z
+    .object({
+      id: z.string().optional(),
+      name: z.string().nullable().optional(),
+      email: z.string().nullable().optional(),
+    })
+    .optional(),
+  userId: z.string().optional(),
+})
+const fullOrganizationViewSchema = z.object({ members: z.array(memberViewSchema).optional() })
 
 @Component({
   selector: 'ri-organization-members-page',
   imports: [ButtonModule, FormField, InputTextModule, SelectModule, TranslocoDirective],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './organization-members.page.html',
 })
 export class OrganizationMembersPageComponent {
@@ -44,9 +53,14 @@ export class OrganizationMembersPageComponent {
   private readonly organizations = inject(OrganizationService)
   private readonly authCapabilities = inject(AuthCapabilitiesService)
 
-  protected readonly fullOrganization = this.organizations.fullOrganizationResource(() => ({ membersLimit: 100 }))
+  protected readonly fullOrganization = this.organizations.fullOrganizationResource(() => ({
+    membersLimit: 100,
+  }))
   protected readonly invitations = this.organizations.invitationsResource(() => ({}))
-  protected readonly clientConfig = toSignal(this.authCapabilities.clientConfig(), { initialValue: null })
+  protected readonly clientConfig = toSignal(this.authCapabilities.clientConfig(), {
+    initialValue: null,
+  })
+  private readonly sessionState = toSignal(this.auth.sessionState$, { initialValue: null })
   protected readonly errorMessageKey = signal<string | null>(null)
   protected readonly successMessageKey = signal<string | null>(null)
   protected readonly copiedInvitationId = signal<string | null>(null)
@@ -59,10 +73,7 @@ export class OrganizationMembersPageComponent {
     { label: 'Admin', value: 'admin' },
   ]
 
-  private readonly inviteModel = signal({
-    email: '',
-    role: 'member',
-  })
+  private readonly inviteModel = signal({ email: '', role: 'member' })
 
   protected readonly inviteForm = form(this.inviteModel, (schema) => {
     required(schema.email)
@@ -75,12 +86,13 @@ export class OrganizationMembersPageComponent {
       return []
     }
 
-    return (this.fullOrganization.value() as FullOrganizationView | undefined)?.members ?? []
+    const parsed = fullOrganizationViewSchema.safeParse(this.fullOrganization.value())
+    return parsed.success ? (parsed.data.members ?? []) : []
   })
   protected readonly pendingInvitations = computed(() =>
     this.invitations.error()
       ? []
-      : ((this.invitations.value() as InvitationView[] | undefined) ?? []).filter((invitation) => invitation.status === 'pending'),
+      : (this.invitations.value() ?? []).filter((invitation) => invitation.status === 'pending'),
   )
 
   @HostListener('window:reviewinbox:active-organization-changed')
@@ -106,18 +118,22 @@ export class OrganizationMembersPageComponent {
     this.successMessageKey.set(null)
     this.isSubmitting.set(true)
 
-    submit(this.inviteForm, async () => {
+    void submit(this.inviteForm, async () => {
       const value = this.inviteForm().value()
 
       try {
-        const invitation = await firstValueFrom(this.organizations.inviteMember({ email: value.email, role: value.role }))
+        const invitation = await firstValueFrom(
+          this.organizations.inviteMember({ email: value.email, role: value.role }),
+        )
         this.inviteModel.set({ email: '', role: 'member' })
         this.latestInvitationId.set(invitation.id)
         this.latestInvitationLink.set(this.invitationLink(invitation.id))
         this.invitations.reload()
         this.successMessageKey.set('organization.members.inviteSent')
       } catch (error) {
-        this.errorMessageKey.set(betterAuthErrorKey(error, 'organization.members.errors.inviteFailed'))
+        this.errorMessageKey.set(
+          betterAuthErrorKey(error, 'organization.members.errors.inviteFailed'),
+        )
       } finally {
         this.isSubmitting.set(false)
       }
@@ -132,8 +148,12 @@ export class OrganizationMembersPageComponent {
       .then(() => {
         this.invitations.reload()
         this.successMessageKey.set('organization.members.inviteCanceled')
+        return null
       })
-      .catch(() => this.errorMessageKey.set('organization.members.errors.cancelFailed'))
+      .catch(() => {
+        this.errorMessageKey.set('organization.members.errors.cancelFailed')
+        return null
+      })
   }
 
   protected roleLabel(role: string | string[] | undefined): string {
@@ -150,15 +170,21 @@ export class OrganizationMembersPageComponent {
 
     navigator.clipboard
       .writeText(link)
-      .then(() => this.copiedInvitationId.set(invitationId))
-      .catch(() => this.errorMessageKey.set('organization.members.errors.copyFailed'))
+      .then(() => {
+        this.copiedInvitationId.set(invitationId)
+        return null
+      })
+      .catch(() => {
+        this.errorMessageKey.set('organization.members.errors.copyFailed')
+        return null
+      })
   }
 
   protected initialsFrom(member: MemberView): string {
     const label = member.user?.name ?? member.user?.email ?? 'Member'
 
     return label
-      .split(/[ @._-]/)
+      .split(/[ @._-]/u)
       .filter(Boolean)
       .slice(0, 2)
       .map((part) => part[0])
@@ -167,7 +193,10 @@ export class OrganizationMembersPageComponent {
   }
 
   protected isCurrentUser(member: MemberView): boolean {
-    const sessionUser = this.auth.session()?.user
-    return Boolean(sessionUser?.id && (member.userId === sessionUser.id || member.user?.id === sessionUser.id))
+    const sessionUser = this.sessionState()?.user
+    return (
+      sessionUser !== undefined
+      && (member.userId === sessionUser.id || member.user?.id === sessionUser.id)
+    )
   }
 }

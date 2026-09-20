@@ -5,6 +5,8 @@ export default defineConfig({
   schema: './packages/db/src/schema.ts',
   out: './packages/db/migrations',
   dbCredentials: {
-    url: process.env['DATABASE_URL'] ?? 'postgres://reviewinbox:reviewinbox@localhost:5432/reviewinbox',
+    url:
+      process.env['DATABASE_URL']
+      ?? 'postgres://reviewinbox:reviewinbox@localhost:5432/reviewinbox',
   },
 })

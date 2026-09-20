@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core'
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core'
 import { email, FormField, form, required, submit } from '@angular/forms/signals'
 import { RouterLink } from '@angular/router'
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
@@ -6,11 +6,20 @@ import { AuthService } from 'ngx-better-auth'
 import { ButtonModule } from 'primeng/button'
 import { InputTextModule } from 'primeng/inputtext'
 import { firstValueFrom } from 'rxjs'
+
 import { ThemeToggleComponent } from '../../../shared/components/theme-toggle/theme-toggle.component'
 
 @Component({
   selector: 'ri-forgot-password-page',
-  imports: [ButtonModule, FormField, InputTextModule, RouterLink, ThemeToggleComponent, TranslocoDirective],
+  imports: [
+    ButtonModule,
+    FormField,
+    InputTextModule,
+    RouterLink,
+    ThemeToggleComponent,
+    TranslocoDirective,
+  ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './forgot-password.page.html',
 })
 export class ForgotPasswordPageComponent {
@@ -20,7 +29,9 @@ export class ForgotPasswordPageComponent {
   protected readonly errorMessage = signal<string | null>(null)
   protected readonly requestSent = signal(false)
   protected readonly isSubmitting = signal(false)
-  protected readonly canSubmit = computed(() => this.forgotPasswordForm().valid() && !this.isSubmitting())
+  protected readonly canSubmit = computed(
+    () => this.forgotPasswordForm().valid() && !this.isSubmitting(),
+  )
 
   private readonly forgotPasswordModel = signal({ email: '' })
 
@@ -44,7 +55,7 @@ export class ForgotPasswordPageComponent {
     this.errorMessage.set(null)
     this.isSubmitting.set(true)
 
-    submit(this.forgotPasswordForm, async () => {
+    void submit(this.forgotPasswordForm, async () => {
       try {
         await firstValueFrom(
           this.auth.requestPasswordReset({

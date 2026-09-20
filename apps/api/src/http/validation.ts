@@ -30,7 +30,7 @@ export async function parseJsonBody<TSchema extends z.ZodType>(context: Context,
     }
   }
 
-  return { ok: true as const, data: result.data as z.infer<TSchema> }
+  return { ok: true as const, data: result.data }
 }
 
 export function parseUuidParam(context: Context, name: string, label: string) {

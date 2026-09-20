@@ -27,7 +27,7 @@ export function shouldQueueInitialStoreConnectionSync(input: {
     return false
   }
 
-  if (!input.latestSettledAt) {
+  if (input.latestSettledAt === null || input.latestSettledAt === undefined) {
     return true
   }
 
@@ -44,12 +44,18 @@ export function latestStoreConnectionSyncRevisionAt(input: {
     throw new Error('Store Connection sync requires a valid connection revision timestamp.')
   }
 
-  const credentialRevision = input.credentialUpdatedAt ? toDate(input.credentialUpdatedAt) : null
-  return credentialRevision && credentialRevision.getTime() > connectionRevision.getTime() ? credentialRevision : connectionRevision
+  const credentialRevision =
+    input.credentialUpdatedAt === null || input.credentialUpdatedAt === undefined
+      ? null
+      : toDate(input.credentialUpdatedAt)
+  if (credentialRevision !== null && credentialRevision.getTime() > connectionRevision.getTime()) {
+    return credentialRevision
+  }
+  return connectionRevision
 }
 
 export async function selectLatestSettledStoreConnectionSyncStartedAt(
-  database: Database,
+  database: Pick<Database, 'select'>,
   input: { storeConnectionId: string; organizationId: string },
 ): Promise<Date | null> {
   const [syncRun] = await database
@@ -59,7 +65,11 @@ export async function selectLatestSettledStoreConnectionSyncStartedAt(
       and(
         eq(syncRuns.storeConnectionId, input.storeConnectionId),
         eq(syncRuns.organizationId, input.organizationId),
-        or(eq(syncRuns.status, 'succeeded'), eq(syncRuns.status, 'partial'), eq(syncRuns.status, 'failed')),
+        or(
+          eq(syncRuns.status, 'succeeded'),
+          eq(syncRuns.status, 'partial'),
+          eq(syncRuns.status, 'failed'),
+        ),
       ),
     )
     .orderBy(desc(syncRuns.startedAt))
@@ -85,35 +95,50 @@ export async function enqueueInitialStoreConnectionSync(input: {
 }): Promise<InitialSyncEnqueueResult> {
   const connections = uniqueConnections(input.connections)
   if (connections.length === 0) {
-    return {
-      status: 'not_requested',
-      queuedStoreConnectionIds: [],
-      failedStoreConnectionIds: [],
-    }
+    return { status: 'not_requested', queuedStoreConnectionIds: [], failedStoreConnectionIds: [] }
   }
 
   const queuedStoreConnectionIds: string[] = []
   const failedStoreConnectionIds: string[] = []
 
-  for (const connection of connections) {
-    try {
-      await input.queue.enqueueSyncStoreConnection({
-        organizationId: input.organizationId,
-        storeConnectionId: connection.storeConnectionId,
-        windowStartsAt: toIsoDateTime(connection.revisionAt),
-        trigger: 'initial',
-      })
-      queuedStoreConnectionIds.push(connection.storeConnectionId)
-    } catch {
-      failedStoreConnectionIds.push(connection.storeConnectionId)
+  const results = await Promise.all(
+    connections.map(async (connection) => {
+      try {
+        await input.queue.enqueueSyncStoreConnection({
+          organizationId: input.organizationId,
+          storeConnectionId: connection.storeConnectionId,
+          windowStartsAt: toIsoDateTime(connection.revisionAt),
+          trigger: 'initial',
+        })
+        return { id: connection.storeConnectionId, queued: true }
+      } catch {
+        return { id: connection.storeConnectionId, queued: false }
+      }
+    }),
+  )
+  for (const result of results) {
+    if (result.queued) {
+      queuedStoreConnectionIds.push(result.id)
+    } else {
+      failedStoreConnectionIds.push(result.id)
     }
   }
 
   return {
-    status: failedStoreConnectionIds.length === 0 ? 'queued' : queuedStoreConnectionIds.length === 0 ? 'failed' : 'partial',
+    status: syncEnqueueStatus(queuedStoreConnectionIds, failedStoreConnectionIds),
     queuedStoreConnectionIds,
     failedStoreConnectionIds,
   }
+}
+
+function syncEnqueueStatus(
+  queuedStoreConnectionIds: string[],
+  failedStoreConnectionIds: string[],
+): InitialSyncEnqueueResult['status'] {
+  if (failedStoreConnectionIds.length === 0) {
+    return 'queued'
+  }
+  return queuedStoreConnectionIds.length === 0 ? 'failed' : 'partial'
 }
 
 function uniqueConnections(connections: InitialSyncConnection[]): InitialSyncConnection[] {

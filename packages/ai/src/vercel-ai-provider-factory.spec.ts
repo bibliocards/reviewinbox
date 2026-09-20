@@ -1,102 +1,126 @@
-import { describe, expect, it, vi } from 'vitest'
-
-const { generateTextMock, outputObjectMock } = vi.hoisted(() => ({
-  generateTextMock: vi.fn(),
-  outputObjectMock: vi.fn((input: unknown) => input),
-}))
-
-vi.mock('ai', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('ai')>()
-  return {
-    ...actual,
-    Output: { object: outputObjectMock },
-    generateText: generateTextMock,
-  }
-})
-
 import { APICallError, NoObjectGeneratedError, RetryError } from 'ai'
-import { createOpenAiCompatibleReplyDraftProvider, replyDraftProviderTimeoutMs } from './vercel-ai-provider-factory'
+import { MockLanguageModelV3 } from 'ai/test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-function createApiCallError(statusCode?: number, data?: unknown): APICallError {
-  return new APICallError({
+import { replyDraftOutputSchema } from './output-schema'
+import type {
+  OpenAiCompatibleReplyDraftProviderDependencies,
+  OpenAiCompatibleReplyDraftProviderOptions,
+} from './vercel-ai-provider-factory'
+import {
+  createOpenAiCompatibleReplyDraftProvider,
+  replyDraftProviderTimeoutMs,
+} from './vercel-ai-provider-factory'
+
+type ProviderErrorData = { error?: { code?: string } }
+
+const createOpenAiMock = vi.fn<OpenAiCompatibleReplyDraftProviderDependencies['createOpenAI']>()
+const generateTextMock = vi.fn<OpenAiCompatibleReplyDraftProviderDependencies['generateText']>()
+const dependencies: OpenAiCompatibleReplyDraftProviderDependencies = {
+  createOpenAI: createOpenAiMock,
+  generateText: generateTextMock,
+}
+
+beforeEach(() => {
+  createOpenAiMock.mockReset()
+  generateTextMock.mockReset()
+})
+const providerOptions: OpenAiCompatibleReplyDraftProviderOptions = {
+  apiKey: 'test-key',
+  model: 'test-model',
+}
+
+function createApiCallError(statusCode?: number, data?: ProviderErrorData): APICallError {
+  const base = {
     message: 'Provider request failed.',
     url: 'https://provider.example.test/v1/chat/completions',
     requestBodyValues: {},
-    ...(statusCode === undefined ? { isRetryable: true } : { statusCode }),
-    ...(data === undefined ? {} : { data }),
-  })
+  }
+
+  if (statusCode === undefined) {
+    return new APICallError({ ...base, isRetryable: true })
+  }
+
+  return data === undefined
+    ? new APICallError({ ...base, statusCode })
+    : new APICallError({ ...base, statusCode, data })
+}
+
+function createProvider() {
+  createOpenAiMock.mockReturnValue(() => new MockLanguageModelV3())
+  return createOpenAiCompatibleReplyDraftProvider(providerOptions, dependencies)
+}
+
+async function expectProviderError(error: Error, code: string): Promise<void> {
+  generateTextMock.mockRejectedValueOnce(error)
+  await expect(
+    createProvider().generateReplyDraftCompletion({
+      system: 'system',
+      prompt: 'prompt',
+      schema: replyDraftOutputSchema,
+      temperature: 0.3,
+      maxOutputTokens: 100,
+    }),
+  ).rejects.toMatchObject({ name: 'AiDraftingError', code })
 }
 
 describe('createOpenAiCompatibleReplyDraftProvider', () => {
   it('bounds provider calls and disables implicit retries while the worker holds its quota transaction', async () => {
-    generateTextMock.mockResolvedValueOnce({ output: { draftText: 'Thanks for your review.' } })
-    const provider = createOpenAiCompatibleReplyDraftProvider({ apiKey: 'test-key', model: 'test-model' })
+    generateTextMock.mockResolvedValueOnce({
+      output: { draftText: 'Thanks for your review.' },
+      finishReason: 'stop',
+    })
+    const provider = createProvider()
 
     await provider.generateReplyDraftCompletion({
       system: 'system',
       prompt: 'prompt',
-      schema: {},
+      schema: replyDraftOutputSchema,
       temperature: 0.3,
       maxOutputTokens: 100,
     })
 
     expect(generateTextMock).toHaveBeenCalledWith(
       expect.objectContaining({
+        instructions: 'system',
         maxRetries: 0,
         timeout: replyDraftProviderTimeoutMs,
       }),
     )
   })
+})
 
+describe('createOpenAiCompatibleReplyDraftProvider', () => {
   it('translates a rate-limited SDK error into a retryable domain error', async () => {
-    generateTextMock.mockRejectedValueOnce(createApiCallError(429))
-    const provider = createOpenAiCompatibleReplyDraftProvider({ apiKey: 'test-key', model: 'test-model' })
-
-    await expect(
-      provider.generateReplyDraftCompletion({
-        system: 'system',
-        prompt: 'prompt',
-        schema: {},
-        temperature: 0.3,
-        maxOutputTokens: 100,
-      }),
-    ).rejects.toMatchObject({ name: 'AiDraftingError', code: 'provider_rate_limited' })
+    await expectProviderError(createApiCallError(429), 'provider_rate_limited')
+    expect(generateTextMock).toHaveBeenCalledOnce()
   })
+})
 
+describe('createOpenAiCompatibleReplyDraftProvider', () => {
   it('classifies provider context limits separately from provider configuration errors', async () => {
-    for (const error of [createApiCallError(413), createApiCallError(400, { error: { code: 'context_length_exceeded' } })]) {
-      generateTextMock.mockRejectedValueOnce(error)
-      const provider = createOpenAiCompatibleReplyDraftProvider({ apiKey: 'test-key', model: 'test-model' })
-
-      await expect(
-        provider.generateReplyDraftCompletion({
-          system: 'system',
-          prompt: 'prompt',
-          schema: {},
-          temperature: 0.3,
-          maxOutputTokens: 100,
-        }),
-      ).rejects.toMatchObject({ name: 'AiDraftingError', code: 'context_too_large' })
-    }
+    await expectProviderError(createApiCallError(413), 'context_too_large')
+    await expectProviderError(
+      createApiCallError(400, { error: { code: 'context_length_exceeded' } }),
+      'context_too_large',
+    )
+    expect(generateTextMock).toHaveBeenCalledTimes(2)
   })
+})
 
+describe('createOpenAiCompatibleReplyDraftProvider', () => {
   it('translates transient SDK failures and timeout errors into provider unavailable', async () => {
-    for (const error of [createApiCallError(503), createApiCallError(), new DOMException('Timed out.', 'TimeoutError')]) {
-      generateTextMock.mockRejectedValueOnce(error)
-      const provider = createOpenAiCompatibleReplyDraftProvider({ apiKey: 'test-key', model: 'test-model' })
-
-      await expect(
-        provider.generateReplyDraftCompletion({
-          system: 'system',
-          prompt: 'prompt',
-          schema: {},
-          temperature: 0.3,
-          maxOutputTokens: 100,
-        }),
-      ).rejects.toMatchObject({ name: 'AiDraftingError', code: 'provider_unavailable' })
-    }
+    await expectProviderError(createApiCallError(503), 'provider_unavailable')
+    await expectProviderError(createApiCallError(), 'provider_unavailable')
+    await expectProviderError(
+      new DOMException('Timed out.', 'TimeoutError'),
+      'provider_unavailable',
+    )
+    expect(generateTextMock).toHaveBeenCalledTimes(3)
   })
+})
 
+describe('createOpenAiCompatibleReplyDraftProvider', () => {
   it('classifies a provider content filter as a safety rejection', async () => {
     generateTextMock.mockRejectedValueOnce(
       new NoObjectGeneratedError({
@@ -111,19 +135,21 @@ describe('createOpenAiCompatibleReplyDraftProvider', () => {
         finishReason: 'content-filter',
       }),
     )
-    const provider = createOpenAiCompatibleReplyDraftProvider({ apiKey: 'test-key', model: 'test-model' })
+    const provider = createProvider()
 
     await expect(
       provider.generateReplyDraftCompletion({
         system: 'system',
         prompt: 'prompt',
-        schema: {},
+        schema: replyDraftOutputSchema,
         temperature: 0.3,
         maxOutputTokens: 100,
       }),
     ).rejects.toMatchObject({ name: 'AiDraftingError', code: 'safety_rejected' })
   })
+})
 
+describe('createOpenAiCompatibleReplyDraftProvider', () => {
   it('preserves a transient provider cause nested in an invalid output error', async () => {
     generateTextMock.mockRejectedValueOnce(
       new NoObjectGeneratedError({
@@ -139,28 +165,30 @@ describe('createOpenAiCompatibleReplyDraftProvider', () => {
         cause: createApiCallError(503),
       }),
     )
-    const provider = createOpenAiCompatibleReplyDraftProvider({ apiKey: 'test-key', model: 'test-model' })
+    const provider = createProvider()
 
     await expect(
       provider.generateReplyDraftCompletion({
         system: 'system',
         prompt: 'prompt',
-        schema: {},
+        schema: replyDraftOutputSchema,
         temperature: 0.3,
         maxOutputTokens: 100,
       }),
     ).rejects.toMatchObject({ name: 'AiDraftingError', code: 'provider_unavailable' })
   })
+})
 
+describe('createOpenAiCompatibleReplyDraftProvider', () => {
   it('keeps permanent provider configuration and invalid output failures distinct', async () => {
     generateTextMock.mockRejectedValueOnce(createApiCallError(401))
-    const provider = createOpenAiCompatibleReplyDraftProvider({ apiKey: 'test-key', model: 'test-model' })
+    const provider = createProvider()
 
     await expect(
       provider.generateReplyDraftCompletion({
         system: 'system',
         prompt: 'prompt',
-        schema: {},
+        schema: replyDraftOutputSchema,
         temperature: 0.3,
         maxOutputTokens: 100,
       }),
@@ -189,7 +217,7 @@ describe('createOpenAiCompatibleReplyDraftProvider', () => {
       provider.generateReplyDraftCompletion({
         system: 'system',
         prompt: 'prompt',
-        schema: {},
+        schema: replyDraftOutputSchema,
         temperature: 0.3,
         maxOutputTokens: 100,
       }),

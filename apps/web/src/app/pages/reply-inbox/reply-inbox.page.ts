@@ -1,5 +1,13 @@
 import { NgClass } from '@angular/common'
-import { Component, computed, effect, HostListener, inject, signal } from '@angular/core'
+import {
+  Component,
+  computed,
+  effect,
+  HostListener,
+  inject,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { RouterLink } from '@angular/router'
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
@@ -9,21 +17,45 @@ import { enUS, fr } from 'date-fns/locale'
 import { ButtonModule } from 'primeng/button'
 import { DialogService } from 'primeng/dynamicdialog'
 import { SelectModule } from 'primeng/select'
-import { AppSelectComponent, type AppSelectOption } from '../../shared/components/app-select/app-select.component'
+import { type Observable } from 'rxjs'
+
+import {
+  AppSelectComponent,
+  type AppSelectOption,
+} from '../../shared/components/app-select/app-select.component'
 import { AppIconsService } from '../../shared/services/app-icons.service'
 import { AppsService } from '../../shared/services/apps.service'
 import { ReplyInboxService } from '../../shared/services/reply-inbox.service'
-import { ReplyDraftDialogComponent, type ReplyDraftDialogResult } from './components/reply-draft-dialog.component'
+import {
+  ReplyDraftDialogComponent,
+  type ReplyDraftDialogResult,
+} from './components/reply-draft-dialog.component'
 
 type ReplyInboxFilter = 'actionable' | ReplyInboxReview['replyStatus']
 
 type SelectOption = AppSelectOption
 
-const filterValues: readonly ReplyInboxFilter[] = ['actionable', 'drafted', 'failed', 'pending', 'ignored', 'published']
+const filterValues: readonly ReplyInboxFilter[] = [
+  'actionable',
+  'drafted',
+  'failed',
+  'pending',
+  'ignored',
+  'published',
+]
 
 @Component({
   selector: 'ri-reply-inbox-page',
-  imports: [RouterLink, AppSelectComponent, ButtonModule, FormsModule, SelectModule, TranslocoDirective, NgClass],
+  imports: [
+    RouterLink,
+    AppSelectComponent,
+    ButtonModule,
+    FormsModule,
+    SelectModule,
+    TranslocoDirective,
+    NgClass,
+  ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './reply-inbox.page.html',
 })
 export class ReplyInboxPageComponent {
@@ -38,19 +70,30 @@ export class ReplyInboxPageComponent {
   protected readonly activeReviewId = signal<string | null>(null)
   protected readonly message = signal<{ status: 'success' | 'error'; key: string } | null>(null)
   protected readonly appsResource = this.appsService.appsResource()
-  protected readonly apps = computed(() => (this.appsResource.hasValue() ? this.appsResource.value().apps : []))
+  protected readonly apps = computed(() =>
+    this.appsResource.hasValue() ? this.appsResource.value().apps : [],
+  )
   protected readonly appOptions = computed<SelectOption[]>(() => [
     { label: this.transloco.translate('replyInbox.filters.allApps'), value: '' },
-    ...this.apps().map((app) => ({ label: app.name, value: app.id, imageUrl: this.appIconUrl(app.id) })),
+    ...this.apps().map((app) => ({
+      label: app.name,
+      value: app.id,
+      imageUrl: this.appIconUrl(app.id),
+    })),
   ])
   protected readonly filterOptions = computed<SelectOption[]>(() =>
-    filterValues.map((filter) => ({ label: this.transloco.translate(this.filterLabelKey(filter)), value: filter })),
+    filterValues.map((filter) => ({
+      label: this.transloco.translate(this.filterLabelKey(filter)),
+      value: filter,
+    })),
   )
   protected readonly inboxResource = this.replyInboxService.replyInboxResource(() => ({
     filter: this.selectedFilter(),
     appId: this.selectedAppId(),
   }))
-  protected readonly reviews = computed(() => (this.inboxResource.hasValue() ? this.inboxResource.value().reviews : []))
+  protected readonly reviews = computed(() =>
+    this.inboxResource.hasValue() ? this.inboxResource.value().reviews : [],
+  )
 
   constructor() {
     effect(() => {
@@ -72,10 +115,14 @@ export class ReplyInboxPageComponent {
   }
 
   protected queueDraft(review: ReplyInboxReview): void {
-    this.runAction<QueueReplyDraftResponse>(review.id, this.replyInboxService.queueDraft(review.id), (response) =>
-      response.queued
-        ? { status: 'success', key: 'replyInbox.messages.draftQueued' }
-        : { status: 'error', key: 'replyInbox.messages.draftUnavailable', reload: false },
+    this.runAction<QueueReplyDraftResponse>(
+      review.id,
+      this.replyInboxService.queueDraft(review.id),
+      'replyInbox.messages.draftUnavailable',
+      (response) =>
+        response.queued
+          ? { status: 'success', key: 'replyInbox.messages.draftQueued' }
+          : { status: 'error', key: 'replyInbox.messages.draftUnavailable', reload: false },
     )
   }
 
@@ -95,16 +142,26 @@ export class ReplyInboxPageComponent {
   }
 
   protected ignore(review: ReplyInboxReview): void {
-    this.runAction(review.id, this.replyInboxService.ignoreReview(review.id), 'replyInbox.messages.ignored')
+    this.runAction(
+      review.id,
+      this.replyInboxService.ignoreReview(review.id),
+      'replyInbox.messages.ignored',
+    )
   }
 
   protected unignore(review: ReplyInboxReview): void {
-    this.runAction(review.id, this.replyInboxService.unignoreReview(review.id), 'replyInbox.messages.unignored')
+    this.runAction(
+      review.id,
+      this.replyInboxService.unignoreReview(review.id),
+      'replyInbox.messages.unignored',
+    )
   }
 
   protected openDraftDialog(review: ReplyInboxReview): void {
     const dialog = this.dialogService.open(ReplyDraftDialogComponent, {
-      header: this.transloco.translate(review.replyDraft ? 'replyInbox.dialog.editTitle' : 'replyInbox.dialog.manualTitle'),
+      header: this.transloco.translate(
+        review.replyDraft ? 'replyInbox.dialog.editTitle' : 'replyInbox.dialog.manualTitle',
+      ),
       modal: true,
       closable: true,
       dismissableMask: true,
@@ -124,14 +181,19 @@ export class ReplyInboxPageComponent {
         result.action === 'save'
           ? this.replyInboxService.saveDraft(review.id, { draftText: result.draftText })
           : this.replyInboxService.publishReply(review.id, { draftText: result.draftText })
-      const successKey = result.action === 'save' ? 'replyInbox.messages.draftSaved' : 'replyInbox.messages.published'
+      const successKey =
+        result.action === 'save'
+          ? 'replyInbox.messages.draftSaved'
+          : 'replyInbox.messages.published'
       this.runAction(review.id, request, successKey)
     })
   }
 
   protected reviewedAgo(review: ReplyInboxReview): string {
     const activeLang = this.transloco.getActiveLang()
-    const distance = formatDistanceToNow(review.reviewedAt, { locale: activeLang === 'fr' ? fr : enUS })
+    const distance = formatDistanceToNow(review.reviewedAt, {
+      locale: activeLang === 'fr' ? fr : enUS,
+    })
     return this.transloco.translate('replyInbox.reviewedAgo', { distance })
   }
 
@@ -140,7 +202,9 @@ export class ReplyInboxPageComponent {
   }
 
   protected providerLabel(review: ReplyInboxReview): string {
-    return this.transloco.translate(this.isFromAppStore(review) ? 'apps.stores.apple' : 'apps.stores.google')
+    return this.transloco.translate(
+      this.isFromAppStore(review) ? 'apps.stores.apple' : 'apps.stores.google',
+    )
   }
 
   protected appIconUrl(appId: string): string | null {
@@ -175,30 +239,36 @@ export class ReplyInboxPageComponent {
 
   private runAction<T>(
     reviewId: string,
-    request: { subscribe: (observer: { next?: (value: T) => void; error?: () => void; complete?: () => void }) => unknown },
-    result: string | ((value: T) => ActionResult),
+    request: Observable<T>,
+    resultKey: string,
+    resolveResult?: (value: T) => ActionResult,
   ): void {
-    if (this.activeReviewId()) {
+    if (this.activeReviewId() !== null) {
       return
     }
 
     this.activeReviewId.set(reviewId)
     request.subscribe({
       next: (value) => {
-        const actionResult = typeof result === 'function' ? result(value) : { status: 'success' as const, key: result }
+        let actionResult: ActionResult
+        if (resolveResult === undefined) {
+          actionResult = { status: 'success', key: resultKey }
+        } else {
+          actionResult = resolveResult(value)
+        }
         this.message.set({ status: actionResult.status, key: actionResult.key })
         if (actionResult.reload !== false) {
           this.reload()
         }
       },
-      error: () => this.message.set({ status: 'error', key: 'replyInbox.messages.actionFailed' }),
-      complete: () => this.activeReviewId.set(null),
+      error: () => {
+        this.message.set({ status: 'error', key: 'replyInbox.messages.actionFailed' })
+      },
+      complete: () => {
+        this.activeReviewId.set(null)
+      },
     })
   }
 }
 
-type ActionResult = {
-  status: 'success' | 'error'
-  key: string
-  reload?: boolean
-}
+type ActionResult = { status: 'success' | 'error'; key: string; reload?: boolean }

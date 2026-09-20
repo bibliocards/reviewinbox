@@ -1,9 +1,11 @@
-<div
-  class="grid gap-6 p-6 text-ink sm:p-8"
-  *transloco="let t">
-  <header class="flex flex-col gap-4 border-b border-hairline pb-5 md:flex-row md:items-end md:justify-between">
+<div class="grid gap-6 p-6 text-ink sm:p-8" *transloco="let t">
+  <header
+    class="flex flex-col gap-4 border-b border-hairline pb-5 md:flex-row md:items-end md:justify-between"
+  >
     <div>
-      <h1 class="m-0 mt-2 text-2xl font-semibold tracking-[-0.8px] text-ink">{{ t('apps.list.title') }}</h1>
+      <h1 class="m-0 mt-2 text-2xl font-semibold tracking-[-0.8px] text-ink">
+        {{ t('apps.list.title') }}
+      </h1>
       <p class="m-0 mt-2 max-w-2xl text-sm text-ink-subtle">{{ t('apps.list.description') }}</p>
     </div>
 
@@ -11,14 +13,16 @@
       @if (canManageApps()) {
       <a
         class="inline-flex min-h-10 items-center rounded-lg border border-hairline bg-surface-2 px-3 py-2 text-sm font-semibold text-ink no-underline transition hover:bg-surface-3"
-        routerLink="/organization/usage">
+        routerLink="/organization/usage"
+      >
         {{ t('apps.actions.viewUsage') }}
       </a>
       }
       <p-button
         [label]="t('apps.actions.connectApp')"
         icon="pi pi-plus"
-        (onClick)="openConnectAppDialog()" />
+        (onClick)="openConnectAppDialog()"
+      />
     </div>
   </header>
   @if (successAppName(); as appName) {
@@ -27,19 +31,26 @@
       mutationMessageIsError()
         ? 'm-0 rounded-xl border border-red-400 bg-surface-1 px-3 py-2 text-sm text-red-700'
         : 'm-0 rounded-xl border border-green-500/40 bg-surface-1 px-3 py-2 text-sm text-ink-muted'
-    ">
+    "
+  >
     {{ t(mutationMessageKey(), { name: appName }) }}
   </p>
   } @if (errorMessage()) {
-  <p class="m-0 rounded-xl border border-red-400 bg-surface-1 px-3 py-2 text-sm text-ink-muted">{{ t('apps.list.errors.loadFailed') }}</p>
+  <p class="m-0 rounded-xl border border-red-400 bg-surface-1 px-3 py-2 text-sm text-ink-muted">
+    {{ t('apps.list.errors.loadFailed') }}
+  </p>
   } @if (successMessageKey() === 'apps.list.errors.deleteFailed') {
-  <p class="m-0 rounded-xl border border-red-400 bg-surface-1 px-3 py-2 text-sm text-ink-muted">{{ t('apps.list.errors.deleteFailed') }}</p>
+  <p class="m-0 rounded-xl border border-red-400 bg-surface-1 px-3 py-2 text-sm text-ink-muted">
+    {{ t('apps.list.errors.deleteFailed') }}
+  </p>
   } @if (appsResource.isLoading()) {
   <div class="rounded-2xl border border-hairline bg-surface-1 p-5">
     <p class="m-0 text-sm text-ink-subtle">{{ t('apps.list.loading') }}</p>
   </div>
   } @else if (apps().length === 0) {
-  <div class="grid gap-4 rounded-3xl border border-dashed border-hairline-strong bg-surface-1 p-8 text-center">
+  <div
+    class="grid gap-4 rounded-3xl border border-dashed border-hairline-strong bg-surface-1 p-8 text-center"
+  >
     <div>
       <h2 class="m-0 text-xl font-semibold text-ink">{{ t('apps.list.empty.title') }}</h2>
       <p class="m-0 mt-2 text-sm text-ink-subtle">{{ t('apps.list.empty.description') }}</p>
@@ -48,7 +59,8 @@
       <p-button
         [label]="t('apps.actions.connectApp')"
         icon="pi pi-plus"
-        (onClick)="openConnectAppDialog()" />
+        (onClick)="openConnectAppDialog()"
+      />
     </div>
   </div>
   } @else {
@@ -57,46 +69,36 @@
       [value]="apps()"
       [showGridlines]="true"
       [stripedRows]="true"
-      [tableStyle]="{ 'min-width': '56rem' }">
+      [tableStyle]="{ 'min-width': '56rem' }"
+    >
       <ng-template #header>
         <tr>
           <th>{{ t('apps.list.table.app') }}</th>
           <th>
             <div class="flex items-center gap-2">
-              <i
-                class="pi pi-apple"
-                aria-hidden="true"></i>
+              <i class="pi pi-apple" aria-hidden="true"></i>
               <span>{{ t('apps.stores.apple') }}</span>
             </div>
           </th>
           <th>
             <div class="flex items-center gap-2">
-              <i
-                class="pi pi-google"
-                aria-hidden="true"></i>
+              <i class="pi pi-google" aria-hidden="true"></i>
               <span>{{ t('apps.stores.google') }}</span>
             </div>
           </th>
           <th>{{ t('apps.list.table.actions') }}</th>
         </tr>
       </ng-template>
-      <ng-template
-        #body
-        [typedTemplate]="apps()"
-        let-app>
+      <ng-template #body [typedTemplate]="apps()" let-app>
         <tr>
           <td>
             <div class="inline-flex items-center gap-3">
               <div
-                class="grid size-10 place-items-center overflow-hidden rounded-xl border border-hairline bg-surface-2 text-xs font-semibold text-ink-subtle">
+                class="grid size-10 place-items-center overflow-hidden rounded-xl border border-hairline bg-surface-2 text-xs font-semibold text-ink-subtle"
+              >
                 @if (appIconUrl(app); as iconUrl) {
-                <img
-                  class="size-full object-cover"
-                  [src]="iconUrl"
-                  [alt]="app.name" />
-                } @else {
-                {{ initialsFrom(app.name) }}
-                }
+                <img class="size-full object-cover" [src]="iconUrl" [alt]="app.name" />
+                } @else { {{ initialsFrom(app.name) }} }
               </div>
               <div class="flex flex-col">
                 <span>{{ app.name }}</span>
@@ -108,7 +110,8 @@
             <div class="grid gap-2">
               <div class="flex flex-wrap items-center gap-2">
                 <span [class]="storeStatusClass(app, 'apple_app_store')">
-                  {{ isStoreConfigured(app, 'apple_app_store') ? t('apps.list.status.configured') : t('apps.list.status.missing') }}
+                  {{ isStoreConfigured(app, 'apple_app_store') ? t('apps.list.status.configured') :
+                  t('apps.list.status.missing') }}
                 </span>
                 @if (canManuallySync(app, 'apple_app_store')) {
                 <p-button
@@ -119,15 +122,18 @@
                   [loading]="isSyncingApple(app)"
                   [disabled]="syncingStoreConnectionId() !== null"
                   icon="pi pi-refresh"
-                  (onClick)="syncAppleReviews(app)" />
+                  (onClick)="syncAppleReviews(app)"
+                />
                 }
               </div>
               @if (syncRunForApple(app); as syncRun) {
               <p
                 class="m-0 text-xs"
                 [class.text-green-700]="syncRun.status === 'succeeded'"
-                [class.text-red-600]="syncRun.status === 'failed'">
-                {{ t(syncRunMessageKey(syncRun), { fetchedCount: syncRun.fetchedCount, storedCount: syncRun.storedCount }) }}
+                [class.text-red-600]="syncRun.status === 'failed'"
+              >
+                {{ t(syncRunMessageKey(syncRun), { fetchedCount: syncRun.fetchedCount, storedCount:
+                syncRun.storedCount }) }}
               </p>
               }
             </div>
@@ -136,7 +142,8 @@
             <div class="grid gap-2">
               <div class="flex flex-wrap items-center gap-2">
                 <span [class]="storeStatusClass(app, 'google_play')">
-                  {{ isStoreConfigured(app, 'google_play') ? t('apps.list.status.configured') : t('apps.list.status.missing') }}
+                  {{ isStoreConfigured(app, 'google_play') ? t('apps.list.status.configured') :
+                  t('apps.list.status.missing') }}
                 </span>
                 @if (canManuallySync(app, 'google_play')) {
                 <p-button
@@ -147,15 +154,18 @@
                   [loading]="isSyncingGoogle(app)"
                   [disabled]="syncingStoreConnectionId() !== null"
                   icon="pi pi-refresh"
-                  (onClick)="syncGoogleReviews(app)" />
+                  (onClick)="syncGoogleReviews(app)"
+                />
                 }
               </div>
               @if (syncRunForGoogle(app); as syncRun) {
               <p
                 class="m-0 text-xs"
                 [class.text-green-700]="syncRun.status === 'succeeded'"
-                [class.text-red-600]="syncRun.status === 'failed'">
-                {{ t(syncRunMessageKey(syncRun), { fetchedCount: syncRun.fetchedCount, storedCount: syncRun.storedCount }) }}
+                [class.text-red-600]="syncRun.status === 'failed'"
+              >
+                {{ t(syncRunMessageKey(syncRun), { fetchedCount: syncRun.fetchedCount, storedCount:
+                syncRun.storedCount }) }}
               </p>
               }
             </div>
@@ -169,7 +179,8 @@
                 [outlined]="true"
                 [label]="t('apps.actions.replySettings')"
                 icon="pi pi-sliders-h"
-                (onClick)="openReplySettingsDialog(app)" />
+                (onClick)="openReplySettingsDialog(app)"
+              />
               } @if (canManageApps()) {
               <div class="grid justify-items-end gap-1">
                 <p-button
@@ -180,14 +191,18 @@
                   [loading]="isQueueingReplyDrafts(app)"
                   [disabled]="!app.autoDraftEnabled || queueingReplyDraftsAppId() !== null"
                   icon="pi pi-sparkles"
-                  (onClick)="queueMissingReplyDrafts(app)" />
+                  (onClick)="queueMissingReplyDrafts(app)"
+                />
                 @if (!app.autoDraftEnabled) {
-                <p class="m-0 max-w-48 text-right text-xs text-ink-subtle">{{ t('apps.list.replyDrafts.autoDraftDisabled') }}</p>
+                <p class="m-0 max-w-48 text-right text-xs text-ink-subtle">
+                  {{ t('apps.list.replyDrafts.autoDraftDisabled') }}
+                </p>
                 } @if (replyDraftQueueMessage(app); as queueMessage) {
                 <p
                   class="m-0 max-w-56 text-right text-xs"
                   [class.text-green-700]="queueMessage.status === 'success'"
-                  [class.text-red-600]="queueMessage.status === 'error'">
+                  [class.text-red-600]="queueMessage.status === 'error'"
+                >
                   {{ t(queueMessage.key, queueMessage.params) }}
                 </p>
                 }
@@ -198,7 +213,8 @@
                 [outlined]="true"
                 [label]="t('apps.actions.edit')"
                 icon="pi pi-pencil"
-                (onClick)="openEditAppDialog(app)" />
+                (onClick)="openEditAppDialog(app)"
+              />
               } @if (canManageApps()) {
               <p-button
                 size="small"
@@ -206,7 +222,8 @@
                 [outlined]="true"
                 [label]="t('apps.actions.delete')"
                 icon="pi pi-trash"
-                (onClick)="deleteApp(app)" />
+                (onClick)="deleteApp(app)"
+              />
               }
             </div>
           </td>

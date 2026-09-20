@@ -1,9 +1,20 @@
-import { Component, computed, DestroyRef, HostListener, inject, signal } from '@angular/core'
+import {
+  Component,
+  computed,
+  DestroyRef,
+  HostListener,
+  inject,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core'
+import { toSignal } from '@angular/core/rxjs-interop'
 import { ActivatedRoute } from '@angular/router'
 import type { OrganizationUsageResponse } from '@reviewinbox/contracts'
 import { AuthService, StripeService } from 'ngx-better-auth'
 import { ButtonModule } from 'primeng/button'
 import { firstValueFrom } from 'rxjs'
+import { z } from 'zod'
+
 import {
   billingPlanHighlights,
   billingPlanLabels,
@@ -16,9 +27,12 @@ import { OrganizationProfileService } from '../../../../shared/services/organiza
 
 type BillingInterval = 'monthly' | 'annual'
 
+const activeOrganizationSessionSchema = z.object({ activeOrganizationId: z.string().optional() })
+
 @Component({
   selector: 'ri-organization-billing-page',
   imports: [ButtonModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: 'organization-billing.page.html',
 })
 export class OrganizationBillingPageComponent {
@@ -28,6 +42,7 @@ export class OrganizationBillingPageComponent {
   private readonly organizationProfile = inject(OrganizationProfileService)
   private readonly route = inject(ActivatedRoute)
   private readonly stripe = inject(StripeService)
+  private readonly sessionState = toSignal(this.auth.sessionState$, { initialValue: null })
   private confirmationTimer: ReturnType<typeof setTimeout> | null = null
 
   protected readonly usage = signal<OrganizationUsageResponse | null>(null)
@@ -43,13 +58,18 @@ export class OrganizationBillingPageComponent {
   )
   protected readonly billingInterval = signal<BillingInterval>('monthly')
   protected readonly requestedReason = signal(this.route.snapshot.queryParamMap.get('reason'))
-  protected readonly availableBillingPlans = computed(() => this.authCapabilities.capabilities().availableBillingPlans)
+  protected readonly availableBillingPlans = computed(
+    () => this.authCapabilities.capabilities().availableBillingPlans,
+  )
   protected readonly billingPlanCards = computed(() =>
     this.availableBillingPlans().map((plan) => ({
       name: plan,
       label: billingPlanLabels[plan],
       summary: billingPlanSummaries[plan],
-      price: this.billingInterval() === 'annual' ? billingPlanPrices[plan].annual : billingPlanPrices[plan].monthly,
+      price:
+        this.billingInterval() === 'annual'
+          ? billingPlanPrices[plan].annual
+          : billingPlanPrices[plan].monthly,
       subprice: this.billingInterval() === 'annual' ? '2 months free' : 'Switch to annual later',
       highlights: billingPlanHighlights[plan],
       selected: this.selectedCheckoutPlan() === plan,
@@ -75,6 +95,8 @@ export class OrganizationBillingPageComponent {
         return 'Your Organization is close to its monthly Review import limit. Compare plans to keep imports running.'
       case 'reply-drafts-limit':
         return 'Your Organization is close to its managed AI Reply Draft limit. Compare plans to draft more replies.'
+      case null:
+        return 'Compare available plans for this Organization.'
       default:
         return 'Compare available plans for this Organization.'
     }
@@ -90,13 +112,17 @@ export class OrganizationBillingPageComponent {
 
   constructor() {
     this.loadUsage()
-    this.billingMessage.set(this.checkoutMessageFromQuery(this.route.snapshot.queryParamMap.get('checkout')))
+    this.billingMessage.set(
+      this.checkoutMessageFromQuery(this.route.snapshot.queryParamMap.get('checkout')),
+    )
 
     if (this.route.snapshot.queryParamMap.get('checkout') === 'success') {
       this.startCheckoutConfirmation()
     }
 
-    this.destroyRef.onDestroy(() => this.clearConfirmationTimer())
+    this.destroyRef.onDestroy(() => {
+      this.clearConfirmationTimer()
+    })
   }
 
   @HostListener('window:reviewinbox:active-organization-changed')
@@ -132,34 +158,19 @@ export class OrganizationBillingPageComponent {
     this.checkoutPlan.set(plan)
 
     const organizationId = this.activeOrganizationId()
-    if (!organizationId) {
+    if (organizationId === undefined) {
       this.billingMessage.set('Choose an active Organization before starting billing setup.')
       return
     }
 
-    this.isStartingCheckout.set(true)
-    this.billingMessage.set(null)
-    this.billingError.set(null)
+    this.prepareCheckout()
 
     try {
       const response = await firstValueFrom(
-        this.stripe.upgrade({
-          plan,
-          annual: this.billingInterval() === 'annual',
-          customerType: 'organization',
-          referenceId: organizationId,
-          successUrl: this.billingReturnUrl(`/organization/billing?plan=${plan}&checkout=success`),
-          cancelUrl: this.billingReturnUrl(`/organization/billing?plan=${plan}&checkout=canceled`),
-          returnUrl: this.billingReturnUrl('/organization/billing'),
-        }),
+        this.stripe.upgrade(this.checkoutRequest(plan, organizationId)),
       )
 
-      if (response.url) {
-        globalThis.location.assign(response.url)
-        return
-      }
-
-      this.billingError.set('Stripe did not return a checkout URL. Please try again.')
+      this.setCheckoutUrlOrError(response.url)
     } catch {
       this.billingError.set('We could not start billing setup. Please try again.')
     } finally {
@@ -169,26 +180,19 @@ export class OrganizationBillingPageComponent {
 
   protected async openBillingPortal(): Promise<void> {
     const organizationId = this.activeOrganizationId()
-    if (!organizationId) {
+    if (organizationId === undefined) {
       this.billingMessage.set('Choose an active Organization before managing billing.')
       return
     }
 
-    this.isOpeningPortal.set(true)
-    this.billingMessage.set('Opening Stripe billing portal...')
-    this.billingError.set(null)
+    this.preparePortal()
 
     try {
       const response = await firstValueFrom(
-        this.stripe.billingPortal({
-          customerType: 'organization',
-          referenceId: organizationId,
-          returnUrl: this.billingReturnUrl('/organization/billing'),
-        }),
+        this.stripe.billingPortal(this.portalRequest(organizationId)),
       )
 
-      if (response.url) {
-        globalThis.location.assign(response.url)
+      if (this.redirectToBillingUrl(response.url)) {
         return
       }
 
@@ -215,28 +219,34 @@ export class OrganizationBillingPageComponent {
 
   private pollCheckoutConfirmation(attempt: number): void {
     this.clearConfirmationTimer()
-    this.confirmationTimer = setTimeout(async () => {
-      try {
-        const usage = await firstValueFrom(this.organizationProfile.getUsage())
-        this.usage.set(usage)
+    this.confirmationTimer = setTimeout(() => {
+      void this.pollCheckoutConfirmationAttempt(attempt)
+    }, 2_000)
+  }
 
-        if (usage.limitsEnforced && usage.planName !== 'free') {
-          this.isConfirmingCheckout.set(false)
-          this.billingMessage.set('Your subscription is active.')
-          return
-        }
-      } catch {
-        // Keep the optimistic pending state; the normal retry action remains available.
-      }
+  private async pollCheckoutConfirmationAttempt(attempt: number): Promise<void> {
+    try {
+      const usage = await firstValueFrom(this.organizationProfile.getUsage())
+      this.usage.set(usage)
 
-      if (attempt >= 9) {
+      if (usage.limitsEnforced && usage.planName !== 'free') {
         this.isConfirmingCheckout.set(false)
-        this.billingMessage.set('Activation is still in progress. You can keep using ReviewInbox while Stripe confirms the subscription.')
+        this.billingMessage.set('Your subscription is active.')
         return
       }
+    } catch {
+      // Keep the optimistic pending state; the normal retry action remains available.
+    }
 
-      this.pollCheckoutConfirmation(attempt + 1)
-    }, 2_000)
+    if (attempt >= 9) {
+      this.isConfirmingCheckout.set(false)
+      this.billingMessage.set(
+        'Activation is still in progress. You can keep using ReviewInbox while Stripe confirms the subscription.',
+      )
+      return
+    }
+
+    this.pollCheckoutConfirmation(attempt + 1)
   }
 
   private clearConfirmationTimer(): void {
@@ -247,7 +257,58 @@ export class OrganizationBillingPageComponent {
   }
 
   private activeOrganizationId(): string | undefined {
-    return (this.auth.session()?.session as { activeOrganizationId?: string } | undefined)?.activeOrganizationId
+    const parsed = activeOrganizationSessionSchema.safeParse(this.sessionState()?.session)
+    return parsed.success ? parsed.data.activeOrganizationId : undefined
+  }
+
+  private prepareCheckout(): void {
+    this.isStartingCheckout.set(true)
+    this.billingMessage.set(null)
+    this.billingError.set(null)
+  }
+
+  private preparePortal(): void {
+    this.isOpeningPortal.set(true)
+    this.billingMessage.set('Opening Stripe billing portal...')
+    this.billingError.set(null)
+  }
+
+  private checkoutRequest(plan: PaidBillingPlanName, organizationId: string) {
+    return {
+      plan,
+      annual: this.billingInterval() === 'annual',
+      customerType: 'organization' as const,
+      referenceId: organizationId,
+      successUrl: this.billingReturnUrl(`/organization/billing?plan=${plan}&checkout=success`),
+      cancelUrl: this.billingReturnUrl(`/organization/billing?plan=${plan}&checkout=canceled`),
+      returnUrl: this.billingReturnUrl('/organization/billing'),
+    }
+  }
+
+  private portalRequest(organizationId: string) {
+    return {
+      customerType: 'organization' as const,
+      referenceId: organizationId,
+      returnUrl: this.billingReturnUrl('/organization/billing'),
+    }
+  }
+
+  private redirectToBillingUrl(url: string | undefined): boolean {
+    const parsed = z.string().min(1).safeParse(url)
+    if (!parsed.success) {
+      return false
+    }
+
+    globalThis.location.assign(parsed.data)
+    return true
+  }
+
+  private setCheckoutUrlOrError(url: string | undefined): void {
+    if (this.redirectToBillingUrl(url)) {
+      return
+    }
+
+    this.billingError.set('Stripe did not return a checkout URL. Please try again.')
   }
 
   private parseCheckoutPlan(plan: string | null): PaidBillingPlanName | null {

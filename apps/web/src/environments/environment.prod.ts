@@ -1,4 +1,4 @@
-// biome-ignore-all lint/suspicious/noTemplateCurlyInString: Docker/nginx envsubst replaces these placeholders at container startup.
+// Docker/nginx envsubst replaces these placeholders at container startup.
 import type { WebEnvironment } from './environment.model'
 
 export const environment: WebEnvironment = {

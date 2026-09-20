@@ -1,30 +1,35 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, inject, signal } from '@angular/core'
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FormField, form, required } from '@angular/forms/signals'
 import { TranslocoDirective } from '@jsverse/transloco'
 import type { ReplySettingsResponse, UpdateReplySettingsRequest } from '@reviewinbox/contracts'
-import { maxLanguageTagLength, maxMappedLanguages, maxReplyContextLength } from '@reviewinbox/contracts'
+import {
+  maxLanguageTagLength,
+  maxMappedLanguages,
+  maxReplyContextLength,
+} from '@reviewinbox/contracts'
 import { ButtonModule } from 'primeng/button'
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog'
 import { InputTextModule } from 'primeng/inputtext'
 import { finalize } from 'rxjs'
+
 import { ReplySettingsService } from '../../services/reply-settings.service'
 
-type ReplySettingsDialogData = {
-  appId: string
-}
+type ReplySettingsDialogData = { appId: string }
 
 @Component({
   selector: 'ri-reply-settings-dialog',
   imports: [ButtonModule, FormField, FormsModule, InputTextModule, TranslocoDirective],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './reply-settings-dialog.component.html',
 })
 export class ReplySettingsDialogComponent {
   private readonly replySettings = inject(ReplySettingsService)
   private readonly dialogRef = inject(DynamicDialogRef)
-  private readonly dialogConfig = inject(DynamicDialogConfig<ReplySettingsDialogData>)
-  private readonly appId = (this.dialogConfig.data as ReplySettingsDialogData | undefined)?.appId
+  private readonly dialogConfig =
+    inject<DynamicDialogConfig<ReplySettingsDialogData>>(DynamicDialogConfig)
+  private readonly appId = this.dialogConfig.data?.appId
 
   protected readonly maxReplyContextLength = maxReplyContextLength
   protected readonly maxLanguageTagLength = maxLanguageTagLength
@@ -45,7 +50,7 @@ export class ReplySettingsDialogComponent {
   })
 
   constructor() {
-    if (!this.appId) {
+    if (this.appId === undefined || this.appId === '') {
       this.isLoading.set(false)
       this.errorMessageKey.set('apps.replySettings.errors.loadFailed')
       return
@@ -53,10 +58,18 @@ export class ReplySettingsDialogComponent {
 
     this.replySettings
       .getReplySettings(this.appId)
-      .pipe(finalize(() => this.isLoading.set(false)))
+      .pipe(
+        finalize(() => {
+          this.isLoading.set(false)
+        }),
+      )
       .subscribe({
-        next: (settings) => this.setSettings(settings),
-        error: () => this.errorMessageKey.set('apps.replySettings.errors.loadFailed'),
+        next: (settings) => {
+          this.setSettings(settings)
+        },
+        error: () => {
+          this.errorMessageKey.set('apps.replySettings.errors.loadFailed')
+        },
       })
   }
 
@@ -67,13 +80,12 @@ export class ReplySettingsDialogComponent {
   protected submit(event: Event): void {
     event.preventDefault()
 
-    if (!this.appId || !this.isLoaded() || this.isSaving()) {
+    const appId = this.appId
+    if (appId === undefined || appId === '' || !this.isLoaded() || this.isSaving()) {
       return
     }
 
-    if (!this.settingsForm().valid()) {
-      this.settingsForm().markAsTouched()
-      this.errorMessageKey.set('apps.replySettings.errors.defaultLanguageRequired')
+    if (!this.validateForm()) {
       return
     }
 
@@ -84,12 +96,26 @@ export class ReplySettingsDialogComponent {
 
     this.errorMessageKey.set(null)
     this.isSaving.set(true)
+    this.saveReplySettings(appId, request)
+  }
+
+  private saveReplySettings(appId: string, request: UpdateReplySettingsRequest): void {
     this.replySettings
-      .updateReplySettings(this.appId, request)
-      .pipe(finalize(() => this.isSaving.set(false)))
+      .updateReplySettings(appId, request)
+      .pipe(
+        finalize(() => {
+          this.isSaving.set(false)
+        }),
+      )
       .subscribe({
-        next: (settings) => this.dialogRef.close(settings),
-        error: (error: unknown) => this.errorMessageKey.set(apiErrorMessageKey(error, 'apps.replySettings.errors.updateFailed')),
+        next: (settings) => {
+          this.dialogRef.close(settings)
+        },
+        error: (error: HttpErrorResponse) => {
+          this.errorMessageKey.set(
+            apiErrorMessageKey(error, 'apps.replySettings.errors.updateFailed'),
+          )
+        },
       })
   }
 
@@ -102,26 +128,29 @@ export class ReplySettingsDialogComponent {
     this.isLoaded.set(true)
   }
 
+  private validateForm(): boolean {
+    if (this.settingsForm().valid()) {
+      return true
+    }
+
+    this.settingsForm().markAsTouched()
+    this.errorMessageKey.set('apps.replySettings.errors.defaultLanguageRequired')
+    return false
+  }
+
   private toRequest(): UpdateReplySettingsRequest | null {
     const value = this.settingsForm().value()
     const replyContext = value.replyContext.trim()
     const defaultLanguage = value.defaultLanguage.trim()
     const mappedLanguages = parseMappedLanguages(value.mappedLanguagesText)
 
-    if (!defaultLanguage) {
-      this.errorMessageKey.set('apps.replySettings.errors.defaultLanguageRequired')
-      return null
-    }
-    if (replyContext.length > maxReplyContextLength) {
-      this.errorMessageKey.set('apps.replySettings.errors.contextTooLong')
-      return null
-    }
-    if (defaultLanguage.length > maxLanguageTagLength || mappedLanguages.some((language) => language.length > maxLanguageTagLength)) {
-      this.errorMessageKey.set('apps.replySettings.errors.languageTooLong')
-      return null
-    }
-    if (mappedLanguages.length > maxMappedLanguages) {
-      this.errorMessageKey.set('apps.replySettings.errors.tooManyMappedLanguages')
+    const validationError = replySettingsValidationError(
+      replyContext,
+      defaultLanguage,
+      mappedLanguages,
+    )
+    if (validationError !== null) {
+      this.errorMessageKey.set(validationError)
       return null
     }
 
@@ -140,7 +169,31 @@ function parseMappedLanguages(value: string): string[] {
   ]
 }
 
-function apiErrorMessageKey(error: unknown, fallback: string): string {
+function replySettingsValidationError(
+  replyContext: string,
+  defaultLanguage: string,
+  mappedLanguages: string[],
+): string | null {
+  if (defaultLanguage === '') {
+    return 'apps.replySettings.errors.defaultLanguageRequired'
+  }
+  if (replyContext.length > maxReplyContextLength) {
+    return 'apps.replySettings.errors.contextTooLong'
+  }
+  if (
+    defaultLanguage.length > maxLanguageTagLength
+    || mappedLanguages.some((language) => language.length > maxLanguageTagLength)
+  ) {
+    return 'apps.replySettings.errors.languageTooLong'
+  }
+  if (mappedLanguages.length > maxMappedLanguages) {
+    return 'apps.replySettings.errors.tooManyMappedLanguages'
+  }
+
+  return null
+}
+
+function apiErrorMessageKey(error: HttpErrorResponse, fallback: string): string {
   if (error instanceof HttpErrorResponse && error.status === 403) {
     return 'apps.replySettings.errors.ownerRequired'
   }

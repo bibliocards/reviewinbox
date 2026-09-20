@@ -1,5 +1,19 @@
 import type { ServerConfig } from '@reviewinbox/config'
-import nodemailer from 'nodemailer'
+import { createTransport } from 'nodemailer'
+
+export type SmtpTransportOptions = {
+  host: string
+  port: number
+  secure: boolean
+  requireTLS: boolean
+  auth: { user: string; pass: string } | undefined
+}
+
+export type MailMessage = { from: string; to: string; subject: string; text: string; html: string }
+
+export type MailTransport = { sendMail(message: MailMessage): Promise<void> }
+
+export type MailDelivery = { createTransport(options: SmtpTransportOptions): MailTransport }
 
 type InvitationEmailInput = {
   email: string
@@ -9,39 +23,35 @@ type InvitationEmailInput = {
   organizationName: string
 }
 
-type PasswordResetEmailInput = {
-  email: string
-  resetLink: string
-}
+type PasswordResetEmailInput = { email: string; resetLink: string }
 
 export function invitationEmailEnabled(config: ServerConfig): boolean {
-  return Boolean(config.smtpHost && config.mailFrom)
+  return hasText(config.smtpHost) && hasText(config.mailFrom)
 }
 
 export function passwordResetEmailEnabled(config: ServerConfig): boolean {
-  return Boolean(config.smtpHost && config.mailFrom)
+  return hasText(config.smtpHost) && hasText(config.mailFrom)
 }
 
 export function invitationLink(invitationId: string, config: ServerConfig): string {
   return new URL(`/accept-invitation/${invitationId}`, config.appPublicUrl).toString()
 }
 
-export async function sendInvitationEmail(input: InvitationEmailInput, config: ServerConfig): Promise<void> {
+export async function sendInvitationEmail(
+  input: InvitationEmailInput,
+  config: ServerConfig,
+  delivery: MailDelivery = defaultMailDelivery,
+): Promise<void> {
   if (!invitationEmailEnabled(config)) {
-    console.info('Invitation email skipped because SMTP is not configured.')
+    process.stdout.write('Invitation email skipped because SMTP is not configured.\n')
     return
   }
 
-  const transporter = nodemailer.createTransport({
-    host: config.smtpHost,
-    port: config.smtpPort,
-    secure: config.smtpSecure,
-    requireTLS: !config.smtpSecure && !isLocalSmtpHost(config.smtpHost),
-    auth: config.smtpUser && config.smtpPassword ? { user: config.smtpUser, pass: config.smtpPassword } : undefined,
-  })
+  const transporter = delivery.createTransport(createSmtpTransportOptions(config))
+  const mailFrom = requireMailFrom(config)
 
   await transporter.sendMail({
-    from: config.mailFrom,
+    from: mailFrom,
     to: input.email,
     subject: `${input.invitedByName} invited you to ${input.organizationName} on ReviewInbox`,
     text: [
@@ -53,23 +63,22 @@ export async function sendInvitationEmail(input: InvitationEmailInput, config: S
   })
 }
 
-export async function sendPasswordResetEmail(input: PasswordResetEmailInput, config: ServerConfig): Promise<void> {
+export async function sendPasswordResetEmail(
+  input: PasswordResetEmailInput,
+  config: ServerConfig,
+  delivery: MailDelivery = defaultMailDelivery,
+): Promise<void> {
   if (!passwordResetEmailEnabled(config)) {
     throw new Error('Password reset email delivery is not configured.')
   }
 
-  const transporter = nodemailer.createTransport({
-    host: config.smtpHost,
-    port: config.smtpPort,
-    secure: config.smtpSecure,
-    requireTLS: !config.smtpSecure && !isLocalSmtpHost(config.smtpHost),
-    auth: config.smtpUser && config.smtpPassword ? { user: config.smtpUser, pass: config.smtpPassword } : undefined,
-  })
+  const transporter = delivery.createTransport(createSmtpTransportOptions(config))
+  const mailFrom = requireMailFrom(config)
 
   const copy = passwordResetCopy(resetEmailLanguage(input.resetLink))
 
   await transporter.sendMail({
-    from: config.mailFrom,
+    from: mailFrom,
     to: input.email,
     subject: copy.subject,
     text: [copy.intro, '', `${copy.action}: ${input.resetLink}`, '', copy.ignore].join('\n'),
@@ -81,14 +90,53 @@ export async function sendPasswordResetEmail(input: PasswordResetEmailInput, con
  * Dispatch reset delivery in-process without making the Better Auth response wait for SMTP.
  * A long-lived API process must remain available for the best-effort delivery to complete.
  */
-export function dispatchPasswordResetEmail(input: PasswordResetEmailInput, config: ServerConfig): void {
-  void sendPasswordResetEmail(input, config).catch(() => {
-    console.error('Password reset email delivery failed.')
+export function dispatchPasswordResetEmail(
+  input: PasswordResetEmailInput,
+  config: ServerConfig,
+  delivery: MailDelivery = defaultMailDelivery,
+): void {
+  void sendPasswordResetEmail(input, config, delivery).catch(() => {
+    process.stderr.write('Password reset email delivery failed.\n')
   })
 }
 
+const defaultMailDelivery: MailDelivery = {
+  createTransport(options) {
+    const transporter = createTransport(options)
+    return {
+      async sendMail(message): Promise<void> {
+        await transporter.sendMail(message)
+      },
+    }
+  },
+}
+
+function createSmtpTransportOptions(config: ServerConfig): SmtpTransportOptions {
+  return {
+    host: config.smtpHost ?? '',
+    port: config.smtpPort,
+    secure: config.smtpSecure,
+    requireTLS: !config.smtpSecure && !isLocalSmtpHost(config.smtpHost),
+    auth:
+      hasText(config.smtpUser) && hasText(config.smtpPassword)
+        ? { user: config.smtpUser, pass: config.smtpPassword }
+        : undefined,
+  }
+}
+
+function requireMailFrom(config: ServerConfig): string {
+  if (!hasText(config.mailFrom)) {
+    throw new Error('Mail sender is not configured.')
+  }
+  return config.mailFrom
+}
+
 function escapeHtml(value: string): string {
-  return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;')
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
 }
 
 function isLocalSmtpHost(host: string | undefined): boolean {
@@ -100,7 +148,7 @@ function isLocalSmtpHost(host: string | undefined): boolean {
 function resetEmailLanguage(resetLink: string): 'en' | 'fr' {
   try {
     const callback = new URL(resetLink).searchParams.get('callbackURL')
-    return callback && new URL(callback).searchParams.get('lang') === 'fr' ? 'fr' : 'en'
+    return callback !== null && new URL(callback).searchParams.get('lang') === 'fr' ? 'fr' : 'en'
   } catch {
     return 'en'
   }
@@ -120,4 +168,8 @@ function passwordResetCopy(language: 'en' | 'fr') {
         action: 'Reset your password',
         ignore: 'If you did not request this, you can ignore this email.',
       }
+}
+
+function hasText(value: string | null | undefined): value is string {
+  return value !== undefined && value !== null && value !== ''
 }

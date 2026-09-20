@@ -11,17 +11,29 @@ export function getEffectiveOrganizationLimits(
   const plan = getPlanDefinition(planName)
 
   return {
-    includedMembers: overrides.includedMembers ?? plan.includedMembers,
-    memberLimit: overrides.memberLimit ?? plan.memberLimit,
-    includedApps: overrides.includedApps ?? plan.includedApps,
-    appLimit: overrides.appLimit ?? plan.appLimit,
-    includedStoreConnections: overrides.includedStoreConnections ?? plan.includedStoreConnections,
-    storeConnectionLimit: overrides.storeConnectionLimit ?? plan.storeConnectionLimit,
-    includedMonthlyReviewImports: overrides.includedMonthlyReviewImports ?? plan.includedMonthlyReviewImports,
-    monthlyReviewImportCap: overrides.monthlyReviewImportCap ?? plan.monthlyReviewImportCap,
-    includedMonthlyManagedAiReplyDrafts: overrides.includedMonthlyManagedAiReplyDrafts ?? plan.includedMonthlyManagedAiReplyDrafts,
-    monthlyManagedAiReplyDraftCap: overrides.monthlyManagedAiReplyDraftCap ?? plan.monthlyManagedAiReplyDraftCap,
+    includedMembers: resolveLimit(overrides, plan, 'includedMembers'),
+    memberLimit: resolveLimit(overrides, plan, 'memberLimit'),
+    includedApps: resolveLimit(overrides, plan, 'includedApps'),
+    appLimit: resolveLimit(overrides, plan, 'appLimit'),
+    includedStoreConnections: resolveLimit(overrides, plan, 'includedStoreConnections'),
+    storeConnectionLimit: resolveLimit(overrides, plan, 'storeConnectionLimit'),
+    includedMonthlyReviewImports: resolveLimit(overrides, plan, 'includedMonthlyReviewImports'),
+    monthlyReviewImportCap: resolveLimit(overrides, plan, 'monthlyReviewImportCap'),
+    includedMonthlyManagedAiReplyDrafts: resolveLimit(
+      overrides,
+      plan,
+      'includedMonthlyManagedAiReplyDrafts',
+    ),
+    monthlyManagedAiReplyDraftCap: resolveLimit(overrides, plan, 'monthlyManagedAiReplyDraftCap'),
   }
+}
+
+function resolveLimit(
+  overrides: OrganizationLimitOverrides,
+  plan: PlanLimits,
+  key: keyof PlanLimits,
+): number {
+  return overrides[key] ?? plan[key]
 }
 
 export function getUsagePercent(used: number, limit: number): number {

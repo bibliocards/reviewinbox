@@ -1,5 +1,6 @@
-import { Component, computed, inject } from '@angular/core'
+import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core'
 import { ActivatedRoute, Router, RouterLink } from '@angular/router'
+
 import {
   OrganizationCreateFormComponent,
   type SelectedPlan,
@@ -9,16 +10,22 @@ import { ThemeToggleComponent } from '../../shared/components/theme-toggle/theme
 @Component({
   selector: 'ri-organizations-new-page',
   imports: [OrganizationCreateFormComponent, RouterLink, ThemeToggleComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './organizations-new.page.html',
 })
 export class OrganizationsNewPageComponent {
   private readonly route = inject(ActivatedRoute)
   private readonly router = inject(Router)
 
-  protected readonly selectedPlan = computed(() => this.parseSelectedPlan(this.route.snapshot.queryParamMap.get('plan')))
+  protected readonly selectedPlan = computed(() =>
+    this.parseSelectedPlan(this.route.snapshot.queryParamMap.get('plan')),
+  )
   protected readonly selectedPlanLabel = computed(() => planLabels[this.selectedPlan()])
 
-  protected continueAfterCreate(event: { organizationId: string; selectedPlan: SelectedPlan }): void {
+  protected continueAfterCreate(event: {
+    organizationId: string
+    selectedPlan: SelectedPlan
+  }): void {
     if (event.selectedPlan === 'free') {
       void this.router.navigateByUrl('/apps')
       return

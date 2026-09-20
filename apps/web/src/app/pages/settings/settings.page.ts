@@ -1,4 +1,5 @@
-import { Component, computed, effect, inject, signal } from '@angular/core'
+import { Component, computed, effect, inject, signal, ChangeDetectionStrategy } from '@angular/core'
+import { toSignal } from '@angular/core/rxjs-interop'
 import { FormField, form, minLength, required } from '@angular/forms/signals'
 import { TranslocoDirective } from '@jsverse/transloco'
 import { AuthService } from 'ngx-better-auth'
@@ -11,12 +12,14 @@ import { firstValueFrom } from 'rxjs'
   selector: 'ri-settings-page',
   imports: [ButtonModule, FormField, InputTextModule, PasswordModule, TranslocoDirective],
   templateUrl: './settings.page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './settings.page.css',
 })
 export class SettingsPageComponent {
   private readonly auth = inject(AuthService)
+  private readonly session = toSignal(this.auth.sessionState$, { initialValue: null })
 
-  protected readonly user = computed(() => this.auth.session()?.user ?? null)
+  protected readonly user = computed(() => this.session()?.user ?? null)
   protected readonly profileError = signal<string | null>(null)
   protected readonly profileSuccess = signal<string | null>(null)
   protected readonly passwordError = signal<string | null>(null)
@@ -25,7 +28,11 @@ export class SettingsPageComponent {
   protected readonly isChangingPassword = signal(false)
 
   private readonly profileModel = signal({ name: '' })
-  private readonly passwordModel = signal({ currentPassword: '', newPassword: '', confirmPassword: '' })
+  private readonly passwordModel = signal({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  })
   private didInitializeProfile = false
 
   protected readonly profileForm = form(this.profileModel, (schema) => {
@@ -41,7 +48,11 @@ export class SettingsPageComponent {
 
   protected readonly canSavePassword = computed(() => {
     const value = this.passwordForm().value()
-    return this.passwordForm().valid() && value.newPassword === value.confirmPassword && !this.isChangingPassword()
+    return (
+      this.passwordForm().valid()
+      && value.newPassword === value.confirmPassword
+      && !this.isChangingPassword()
+    )
   })
 
   constructor() {
@@ -64,21 +75,40 @@ export class SettingsPageComponent {
     }
 
     const name = this.profileForm().value().name.trim()
-    if (!this.profileForm().valid() || !name) {
-      this.profileError.set('accountSettings.profile.errors.nameRequired')
-      this.profileSuccess.set(null)
-      this.profileForm().markAsTouched()
+    if (!this.profileForm().valid() || name === '') {
+      this.showInvalidProfileName()
       return
     }
 
+    this.prepareProfileSave()
+    this.persistProfile(name)
+  }
+
+  private showInvalidProfileName(): void {
+    this.profileError.set('accountSettings.profile.errors.nameRequired')
+    this.profileSuccess.set(null)
+    this.profileForm().markAsTouched()
+  }
+
+  private prepareProfileSave(): void {
     this.profileError.set(null)
     this.profileSuccess.set(null)
     this.isSavingProfile.set(true)
+  }
 
+  private persistProfile(name: string): void {
     firstValueFrom(this.auth.updateUser({ name }))
-      .then(() => this.profileSuccess.set('accountSettings.profile.saved'))
-      .catch(() => this.profileError.set('accountSettings.profile.errors.saveFailed'))
-      .finally(() => this.isSavingProfile.set(false))
+      .then(() => {
+        this.profileSuccess.set('accountSettings.profile.saved')
+        return null
+      })
+      .catch(() => {
+        this.profileError.set('accountSettings.profile.errors.saveFailed')
+        return null
+      })
+      .finally(() => {
+        this.isSavingProfile.set(false)
+      })
   }
 
   protected changePassword(event: Event): void {
@@ -108,8 +138,14 @@ export class SettingsPageComponent {
       .then(() => {
         this.passwordForm().reset({ currentPassword: '', newPassword: '', confirmPassword: '' })
         this.passwordSuccess.set('accountSettings.password.changed')
+        return null
       })
-      .catch(() => this.passwordError.set('accountSettings.password.errors.changeFailed'))
-      .finally(() => this.isChangingPassword.set(false))
+      .catch(() => {
+        this.passwordError.set('accountSettings.password.errors.changeFailed')
+        return null
+      })
+      .finally(() => {
+        this.isChangingPassword.set(false)
+      })
   }
 }

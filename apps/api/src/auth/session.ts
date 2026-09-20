@@ -1,16 +1,14 @@
+import { member } from '@reviewinbox/db'
 import { and, eq } from 'drizzle-orm'
 import type { Context } from 'hono'
-
-import { member } from '@reviewinbox/db'
+import { z } from 'zod'
 
 import { auth } from '../auth'
 import { database } from '../db'
 
-type ActiveOrganizationSession = {
-  userId: string
-  organizationId: string
-  role: string
-}
+const organizationSessionSchema = z.object({ activeOrganizationId: z.string().nullish() })
+
+type ActiveOrganizationSession = { userId: string; organizationId: string; role: string }
 
 export async function requireActiveOrganizationSession(
   context: Context,
@@ -21,8 +19,15 @@ export async function requireActiveOrganizationSession(
     return { ok: false, response: context.json({ error: 'Authentication required.' }, 401) }
   }
 
-  const activeOrganizationId = (session.session as typeof session.session & { activeOrganizationId?: string }).activeOrganizationId
-  if (!activeOrganizationId) {
+  const parsedSession = organizationSessionSchema.safeParse(session.session)
+  const activeOrganizationId = parsedSession.success
+    ? parsedSession.data.activeOrganizationId
+    : undefined
+  if (
+    activeOrganizationId === undefined
+    || activeOrganizationId === null
+    || activeOrganizationId === ''
+  ) {
     return { ok: false, response: context.json({ error: 'Active Organization required.' }, 403) }
   }
 

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { decryptStoreCredential, encryptStoreCredential, getStoreCredentialEncryptionKeyId } from './index'
+import {
+  decryptStoreCredential,
+  encryptStoreCredential,
+  getStoreCredentialEncryptionKeyId,
+} from './index'
 
 describe('Store Credential encryption', () => {
   it('round-trips plaintext without exposing it in the encrypted payload', () => {
@@ -18,6 +22,8 @@ describe('Store Credential encryption', () => {
   it('fails authentication with the wrong key', () => {
     const encrypted = encryptStoreCredential('secret', Buffer.alloc(32, 1))
 
-    expect(() => decryptStoreCredential(encrypted, Buffer.alloc(32, 2))).toThrow()
+    expect(() => decryptStoreCredential(encrypted, Buffer.alloc(32, 2))).toThrow(
+      'Unsupported state or unable to authenticate data',
+    )
   })
 })

@@ -1,4 +1,5 @@
 import { resolve } from 'node:path'
+
 import { defineConfig } from 'vitest/config'
 
 const fromRoot = (path: string) => resolve(process.cwd(), path)
@@ -6,7 +7,13 @@ const fromRoot = (path: string) => resolve(process.cwd(), path)
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['apps/api/src/**/*.spec.ts', 'apps/worker/src/**/*.spec.ts', 'packages/*/src/**/*.spec.ts', 'scripts/**/*.spec.ts'],
+    include: [
+      'apps/api/src/**/*.spec.ts',
+      'apps/worker/src/**/*.spec.ts',
+      'apps/web/src/**/*.spec.ts',
+      'packages/*/src/**/*.spec.ts',
+      'scripts/**/*.spec.ts',
+    ],
   },
   resolve: {
     alias: {
@@ -16,6 +23,7 @@ export default defineConfig({
       '@reviewinbox/contracts': fromRoot('packages/contracts/src/index.ts'),
       '@reviewinbox/core': fromRoot('packages/core/src/index.ts'),
       '@reviewinbox/db': fromRoot('packages/db/src/index.ts'),
+      '@reviewinbox/queue': fromRoot('packages/queue/src/index.ts'),
       '@reviewinbox/reply-drafts': fromRoot('packages/reply-drafts/src/index.ts'),
       '@reviewinbox/store-adapters': fromRoot('packages/store-adapters/src/index.ts'),
       '@reviewinbox/sync': fromRoot('packages/sync/src/index.ts'),

@@ -16,11 +16,17 @@ export function createGoogleServiceAccountJwt(credential: GooglePlayServiceAccou
     exp: now + 60 * 60,
   })
   const signingInput = `${header}.${payload}`
-  const signature = sign('RSA-SHA256', Buffer.from(signingInput), createPrivateKey(credential.private_key))
+  const signature = sign(
+    'RSA-SHA256',
+    Buffer.from(signingInput),
+    createPrivateKey(credential.private_key),
+  )
 
   return `${signingInput}.${signature.toString('base64url')}`
 }
 
-function base64UrlJson(value: unknown) {
+type JwtPayload = Record<string, string | number>
+
+function base64UrlJson(value: JwtPayload) {
   return Buffer.from(JSON.stringify(value)).toString('base64url')
 }

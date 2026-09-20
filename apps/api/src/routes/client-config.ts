@@ -1,5 +1,5 @@
-import { clientConfigResponseSchema } from '@reviewinbox/contracts'
 import { getNextAutoSyncWindowStartsAt } from '@reviewinbox/config'
+import { clientConfigResponseSchema } from '@reviewinbox/contracts'
 import { user } from '@reviewinbox/db'
 import { count } from 'drizzle-orm'
 import { Hono } from 'hono'
@@ -16,23 +16,14 @@ clientConfigRoutes.get('/api/client-config', async (context) => {
   const config = clientConfigResponseSchema.parse({
     deploymentMode: serverConfig.deploymentMode,
     appPublicUrl: serverConfig.appPublicUrl,
-    auth: {
-      emailPassword: true,
-      google: false,
-      enterpriseSso: false,
-      signUpAvailable,
-    },
-    mail: {
-      invitationEmailEnabled: invitationEmailEnabled(serverConfig),
-    },
+    auth: { emailPassword: true, google: false, enterpriseSso: false, signUpAvailable },
+    mail: { invitationEmailEnabled: invitationEmailEnabled(serverConfig) },
     autoSync: {
       reviewsEnabled: serverConfig.autoSyncReviewsEnabled,
       nextWindowStartsAt: getNextAutoSyncWindowStartsAt().toISOString(),
       spreadWindowMinutes: serverConfig.autoSyncReviewsSpreadWindowMinutes,
     },
-    billing: {
-      availablePlans: availableBillingPlans(),
-    },
+    billing: { availablePlans: availableBillingPlans() },
   })
 
   return context.json(config)
@@ -40,8 +31,18 @@ clientConfigRoutes.get('/api/client-config', async (context) => {
 
 function availableBillingPlans(): Array<'starter' | 'pro' | 'business'> {
   return [
-    serverConfig.stripeStarterPriceId && serverConfig.stripeStarterAnnualPriceId ? 'starter' : null,
-    serverConfig.stripeProPriceId && serverConfig.stripeProAnnualPriceId ? 'pro' : null,
-    serverConfig.stripeBusinessPriceId && serverConfig.stripeBusinessAnnualPriceId ? 'business' : null,
+    hasText(serverConfig.stripeStarterPriceId) && hasText(serverConfig.stripeStarterAnnualPriceId)
+      ? 'starter'
+      : null,
+    hasText(serverConfig.stripeProPriceId) && hasText(serverConfig.stripeProAnnualPriceId)
+      ? 'pro'
+      : null,
+    hasText(serverConfig.stripeBusinessPriceId) && hasText(serverConfig.stripeBusinessAnnualPriceId)
+      ? 'business'
+      : null,
   ].filter((plan): plan is 'starter' | 'pro' | 'business' => plan !== null)
+}
+
+function hasText(value: string | null | undefined): value is string {
+  return value !== undefined && value !== null && value !== ''
 }

@@ -6,28 +6,20 @@
   "targets": {
     "build": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "astro build --root apps/site"
-      },
+      "options": { "command": "astro build --root apps/site" },
       "outputs": ["{workspaceRoot}/dist/apps/site"]
     },
     "serve": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "astro dev --root apps/site --host 127.0.0.1 --port 4321"
-      }
+      "options": { "command": "astro dev --root apps/site --host 127.0.0.1 --port 4321" }
     },
     "typecheck": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "astro check --root apps/site"
-      }
+      "options": { "command": "astro check --root apps/site" }
     },
     "lint": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "biome lint apps/site"
-      }
+      "options": { "command": "tsx node_modules/oxlint/bin/oxlint apps/site" }
     }
   },
   "tags": ["scope:site", "type:app"]

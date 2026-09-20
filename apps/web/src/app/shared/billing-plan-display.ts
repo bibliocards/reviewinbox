@@ -21,7 +21,22 @@ export const billingPlanSummaries: Record<PaidBillingPlanName, string> = {
 }
 
 export const billingPlanHighlights: Record<PaidBillingPlanName, string[]> = {
-  starter: ['3 members', '2 Apps', '500 Review imports / month', '100 managed AI Reply Drafts / month'],
-  pro: ['10 members', '10 Apps', '5,000 Review imports / month', '1,000 managed AI Reply Drafts / month'],
-  business: ['25 members included', '100 Apps limit', '50,000 Review imports / month', '10,000 managed AI Reply Drafts / month'],
+  starter: [
+    '3 members',
+    '2 Apps',
+    '500 Review imports / month',
+    '100 managed AI Reply Drafts / month',
+  ],
+  pro: [
+    '10 members',
+    '10 Apps',
+    '5,000 Review imports / month',
+    '1,000 managed AI Reply Drafts / month',
+  ],
+  business: [
+    '25 members included',
+    '100 Apps limit',
+    '50,000 Review imports / month',
+    '10,000 managed AI Reply Drafts / month',
+  ],
 }
