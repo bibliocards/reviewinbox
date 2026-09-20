@@ -399,5 +399,49 @@
   "common": {
     "useLightTheme": "Utiliser le thème clair",
     "useDarkTheme": "Utiliser le thème sombre"
+  },
+  "shell": {
+    "navigation": {
+      "primary": "Navigation principale",
+      "currentPage": "Page actuelle",
+      "replyInbox": "Reply Inbox",
+      "apps": "Apps",
+      "auditHistory": "Historique d’audit",
+      "organization": "Organization"
+    },
+    "organization": {
+      "selectAria": "Organization"
+    },
+    "menu": {
+      "accountSettings": "Paramètres du compte",
+      "newOrganization": "Nouvelle Organization",
+      "logout": "Se déconnecter",
+      "ownerAria": "Menu du propriétaire"
+    },
+    "actions": {
+      "connectApp": "Connecter une App"
+    },
+    "autoSync": {
+      "label": "Sync automatique",
+      "free": "Toutes les 24 h avec le plan Free",
+      "nextWindow": "Prochaine fenêtre à {{time}}"
+    },
+    "links": {
+      "statusAria": "Page de statut de ReviewInbox",
+      "statusTitle": "Statut de ReviewInbox",
+      "githubAria": "Dépôt GitHub de ReviewInbox",
+      "githubTitle": "Dépôt GitHub",
+      "websiteAria": "Site web de ReviewInbox",
+      "websiteTitle": "Site web de ReviewInbox"
+    },
+    "states": {
+      "organizationError": "Impossible d’ouvrir votre Organization. Votre session est toujours active.",
+      "returnToPreviousOrganization": "Revenir à l’Organization précédente",
+      "retry": "Réessayer",
+      "finishSetup": "Terminez la configuration de ReviewInbox",
+      "createOrganizationDescription": "Créez une Organization pour connecter votre App et importer ses Reviews.",
+      "createOrganizationLink": "Créer une Organization",
+      "openingOrganization": "Ouverture de votre Organization…"
+    }
   }
 }

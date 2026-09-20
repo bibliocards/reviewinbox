@@ -182,6 +182,25 @@
   background: var(--color-surface-1);
 }
 
+.shell-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 32px;
+}
+
+.shell-state h1,
+.shell-state p {
+  margin: 0;
+}
+
+.shell-state p {
+  max-width: 60ch;
+  color: var(--color-ink-muted);
+  line-height: 1.6;
+}
+
 @media (max-width: 900px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -233,5 +252,9 @@
 
   .content-container {
     min-height: calc(100vh - 180px);
+  }
+
+  .shell-state {
+    padding: 24px;
   }
 }
