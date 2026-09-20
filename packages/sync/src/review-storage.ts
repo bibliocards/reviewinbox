@@ -1,5 +1,5 @@
 import { canImportNewReview, type OrganizationLimitContext } from '@reviewinbox/billing'
-import { type Database, reviews, usageEvents } from '@reviewinbox/db'
+import { publishedReplies, type Database, reviews, usageEvents } from '@reviewinbox/db'
 import type { NormalizedStoreReview } from '@reviewinbox/store-adapters'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 
@@ -79,6 +79,7 @@ async function loadExistingExternalReviewIds(
         inArray(reviews.externalReviewId, externalReviewIds),
       ),
     )
+    .for('update')
   return new Set(existingReviews.map((review) => review.externalReviewId))
 }
 
@@ -141,19 +142,7 @@ async function persistReviewBatches(state: PersistReviewState): Promise<StoredRe
     .values(reviewBatch.map((review) => toReviewInsertValues(review, state.scope)))
     .onConflictDoUpdate({
       target: [reviews.storeConnectionId, reviews.externalReviewId],
-      set: {
-        authorDisplayName: sql`excluded.author_display_name`,
-        rating: sql`excluded.rating`,
-        title: sql`excluded.title`,
-        body: sql`excluded.body`,
-        language: sql`excluded.language`,
-        version: sql`excluded.version`,
-        country: sql`excluded.country`,
-        locale: sql`excluded.locale`,
-        reviewedAt: sql`excluded.reviewed_at`,
-        rawPayload: sql`excluded.raw_payload`,
-        updatedAt: new Date(),
-      },
+      set: { ...reviewMetadataUpsertSet(), ...reviewReplyStateUpsertSet() },
     })
     .returning({ id: reviews.id, externalReviewId: reviews.externalReviewId })
   return persistReviewBatches({
@@ -161,6 +150,56 @@ async function persistReviewBatches(state: PersistReviewState): Promise<StoredRe
     index: state.index + reviewUpsertBatchSize,
     storedReviews: [...state.storedReviews, ...storedReviewBatch],
   })
+}
+
+function reviewMetadataUpsertSet() {
+  return {
+    authorDisplayName: sql`excluded.author_display_name`,
+    rating: sql`excluded.rating`,
+    title: sql`excluded.title`,
+    body: sql`excluded.body`,
+    language: sql`excluded.language`,
+    version: sql`excluded.version`,
+    country: sql`excluded.country`,
+    locale: sql`excluded.locale`,
+    reviewedAt: sql`excluded.reviewed_at`,
+    rawPayload: sql`excluded.raw_payload`,
+    updatedAt: new Date(),
+  }
+}
+
+function reviewReplyStateUpsertSet() {
+  const reviewContentChanged = sql<boolean>`(
+    ${reviews.rating} is distinct from excluded.rating
+    or ${reviews.title} is distinct from excluded.title
+    or ${reviews.body} is distinct from excluded.body
+  )`
+  const hasPublishedReply = sql<boolean>`exists (
+    select 1
+    from ${publishedReplies}
+    where ${publishedReplies.reviewId} = ${reviews.id}
+  )`
+  return {
+    replyStatus: sql`case
+      when ${hasPublishedReply} and ${reviewContentChanged} then 'pending'::reply_status
+      else ${reviews.replyStatus}
+    end`,
+    changedAfterReply: sql`case
+      when ${hasPublishedReply} and ${reviewContentChanged} then true
+      else ${reviews.changedAfterReply}
+    end`,
+    replyBaseline: sql`case
+      when ${hasPublishedReply}
+        and ${reviewContentChanged}
+        and ${reviews.replyBaseline} is null
+      then jsonb_build_object(
+        'title', ${reviews.title},
+        'body', ${reviews.body},
+        'rating', ${reviews.rating}
+      )
+      else ${reviews.replyBaseline}
+    end`,
+  }
 }
 
 function toReviewInsertValues(

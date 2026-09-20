@@ -1,5 +1,5 @@
 import { apps, type Database, replyDrafts, reviews, storeConnections } from '@reviewinbox/db'
-import { and, count, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { and, count, eq, inArray, isNull, or, sql } from 'drizzle-orm'
 
 const queueableReplyStatuses = ['pending', 'failed'] as const
 const maxQueuedReviewsPerRequest = 500
@@ -47,7 +47,7 @@ export async function selectMissingReplyDraftReviews(input: {
       and(
         baseReviewScope(input.organizationId, input.appId),
         eq(storeConnections.status, 'active'),
-        isNull(replyDrafts.id),
+        or(isNull(replyDrafts.id), eq(reviews.changedAfterReply, true)),
         sql`trim(${reviews.body}) <> ''`,
       ),
     )

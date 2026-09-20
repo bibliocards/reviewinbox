@@ -1,4 +1,5 @@
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -13,6 +14,8 @@ import {
 import { apps } from './app-schema'
 import { organization } from './auth-schema'
 import { storeConnections } from './store-schema'
+
+export type ReplyBaseline = { title: string | null; body: string; rating: number }
 
 export const replyStatusEnum = pgEnum('reply_status', [
   'pending',
@@ -55,6 +58,8 @@ export const reviews = pgTable(
     locale: text('locale'),
     reviewedAt: timestamp('reviewed_at').notNull(),
     replyStatus: replyStatusEnum('reply_status').default('pending').notNull(),
+    changedAfterReply: boolean('changed_after_reply').default(false).notNull(),
+    replyBaseline: jsonb('reply_baseline').$type<ReplyBaseline | null>(),
     detectedReviewLanguage: text('detected_review_language'),
     chosenReplyLanguage: text('chosen_reply_language'),
     draftFailureCode: draftFailureCodeEnum('draft_failure_code'),

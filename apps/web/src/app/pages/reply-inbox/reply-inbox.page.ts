@@ -1,4 +1,5 @@
 import { NgClass } from '@angular/common'
+import type { HttpErrorResponse } from '@angular/common/http'
 import {
   Component,
   computed,
@@ -17,7 +18,8 @@ import { enUS, fr } from 'date-fns/locale'
 import { ButtonModule } from 'primeng/button'
 import { DialogService } from 'primeng/dynamicdialog'
 import { SelectModule } from 'primeng/select'
-import { type Observable } from 'rxjs'
+import { finalize, type Observable } from 'rxjs'
+import { z } from 'zod'
 
 import {
   AppSelectComponent,
@@ -28,8 +30,14 @@ import { AppsService } from '../../shared/services/apps.service'
 import { ReplyInboxService } from '../../shared/services/reply-inbox.service'
 import {
   ReplyDraftDialogComponent,
+  type ReplyDraftDialogData,
   type ReplyDraftDialogResult,
 } from './components/reply-draft-dialog.component'
+
+const changedReviewErrorSchema = z.object({
+  status: z.literal(409),
+  error: z.object({ errorCode: z.literal('review_changed') }),
+})
 
 type ReplyInboxFilter = 'actionable' | ReplyInboxReview['replyStatus']
 
@@ -127,24 +135,30 @@ export class ReplyInboxPageComponent {
   }
 
   protected publish(review: ReplyInboxReview): void {
-    if (!review.replyDraft) {
+    const draft = review.replyDraft
+    if (!this.hasCurrentDraft(review) || draft === null) {
       return
     }
 
     this.runAction(
       review.id,
       this.replyInboxService.publishReply(review.id, {
-        replyDraftId: review.replyDraft.id,
-        replyDraftUpdatedAt: review.replyDraft.updatedAt,
+        reviewContentToken: review.reviewContentToken,
+        replyDraftId: draft.id,
+        replyDraftUpdatedAt: draft.updatedAt,
       }),
-      'replyInbox.messages.published',
+      review.changedAfterReply
+        ? 'replyInbox.messages.updatedReplyPublished'
+        : 'replyInbox.messages.published',
     )
   }
 
   protected ignore(review: ReplyInboxReview): void {
     this.runAction(
       review.id,
-      this.replyInboxService.ignoreReview(review.id),
+      this.replyInboxService.ignoreReview(review.id, {
+        reviewContentToken: review.reviewContentToken,
+      }),
       'replyInbox.messages.ignored',
     )
   }
@@ -152,24 +166,21 @@ export class ReplyInboxPageComponent {
   protected unignore(review: ReplyInboxReview): void {
     this.runAction(
       review.id,
-      this.replyInboxService.unignoreReview(review.id),
+      this.replyInboxService.unignoreReview(review.id, {
+        reviewContentToken: review.reviewContentToken,
+      }),
       'replyInbox.messages.unignored',
     )
   }
 
   protected openDraftDialog(review: ReplyInboxReview): void {
     const dialog = this.dialogService.open(ReplyDraftDialogComponent, {
-      header: this.transloco.translate(
-        review.replyDraft ? 'replyInbox.dialog.editTitle' : 'replyInbox.dialog.manualTitle',
-      ),
+      header: this.transloco.translate(this.draftDialogTitleKey(review)),
       modal: true,
       closable: true,
       dismissableMask: true,
       width: 'min(760px, 94vw)',
-      data: {
-        mode: review.replyDraft ? 'edit' : 'manual',
-        draftText: review.replyDraft?.draftText ?? '',
-      },
+      data: { mode: this.draftDialogMode(review), draftText: this.initialDraftText(review) },
     })
 
     dialog?.onClose.subscribe((result?: ReplyDraftDialogResult) => {
@@ -177,14 +188,12 @@ export class ReplyInboxPageComponent {
         return
       }
 
+      const input = { draftText: result.draftText, reviewContentToken: review.reviewContentToken }
       const request =
         result.action === 'save'
-          ? this.replyInboxService.saveDraft(review.id, { draftText: result.draftText })
-          : this.replyInboxService.publishReply(review.id, { draftText: result.draftText })
-      const successKey =
-        result.action === 'save'
-          ? 'replyInbox.messages.draftSaved'
-          : 'replyInbox.messages.published'
+          ? this.replyInboxService.saveDraft(review.id, input)
+          : this.replyInboxService.publishReply(review.id, input)
+      const successKey = this.draftActionSuccessKey(review, result.action)
       this.runAction(review.id, request, successKey)
     })
   }
@@ -221,6 +230,32 @@ export class ReplyInboxPageComponent {
       .toUpperCase()
   }
 
+  protected hasCurrentDraft(review: ReplyInboxReview): boolean {
+    return review.replyStatus === 'drafted' && review.replyDraft !== null
+  }
+
+  protected isChangedAfterReply(review: ReplyInboxReview): boolean {
+    return review.changedAfterReply
+  }
+
+  protected initialDraftText(review: ReplyInboxReview): string {
+    if (this.hasCurrentDraft(review) && review.replyDraft !== null) {
+      return review.replyDraft.draftText
+    }
+
+    return review.changedAfterReply ? (review.publishedReply?.replyText ?? '') : ''
+  }
+
+  protected reviewTitle(title: string | null): string {
+    return title === null || title === ''
+      ? this.transloco.translate('replyInbox.untitledReview')
+      : title
+  }
+
+  protected ratingLabel(rating: number): string {
+    return this.transloco.translate('replyInbox.rating', { rating })
+  }
+
   protected statusClass(status: ReplyInboxReview['replyStatus']): string {
     const base = 'inline-flex rounded-full border px-2.5 py-1 text-xs font-medium'
     const classes: Record<ReplyInboxReview['replyStatus'], string> = {
@@ -237,6 +272,39 @@ export class ReplyInboxPageComponent {
     return filter === 'actionable' ? 'replyInbox.filters.actionable' : `replyInbox.status.${filter}`
   }
 
+  private draftDialogMode(review: ReplyInboxReview): ReplyDraftDialogData['mode'] {
+    if (this.hasCurrentDraft(review)) {
+      return review.changedAfterReply ? 'update' : 'edit'
+    }
+
+    return review.changedAfterReply ? 'update-manual' : 'manual'
+  }
+
+  private draftDialogTitleKey(review: ReplyInboxReview): string {
+    if (this.hasCurrentDraft(review)) {
+      return review.changedAfterReply
+        ? 'replyInbox.dialog.updateTitle'
+        : 'replyInbox.dialog.editTitle'
+    }
+
+    return review.changedAfterReply
+      ? 'replyInbox.dialog.updateManualTitle'
+      : 'replyInbox.dialog.manualTitle'
+  }
+
+  private draftActionSuccessKey(
+    review: ReplyInboxReview,
+    action: ReplyDraftDialogResult['action'],
+  ): string {
+    if (action === 'save') {
+      return 'replyInbox.messages.draftSaved'
+    }
+
+    return review.changedAfterReply
+      ? 'replyInbox.messages.updatedReplyPublished'
+      : 'replyInbox.messages.published'
+  }
+
   private runAction<T>(
     reviewId: string,
     request: Observable<T>,
@@ -248,26 +316,36 @@ export class ReplyInboxPageComponent {
     }
 
     this.activeReviewId.set(reviewId)
-    request.subscribe({
-      next: (value) => {
-        let actionResult: ActionResult
-        if (resolveResult === undefined) {
-          actionResult = { status: 'success', key: resultKey }
-        } else {
-          actionResult = resolveResult(value)
-        }
-        this.message.set({ status: actionResult.status, key: actionResult.key })
-        if (actionResult.reload !== false) {
-          this.reload()
-        }
-      },
-      error: () => {
-        this.message.set({ status: 'error', key: 'replyInbox.messages.actionFailed' })
-      },
-      complete: () => {
-        this.activeReviewId.set(null)
-      },
-    })
+    request
+      .pipe(
+        finalize(() => {
+          this.activeReviewId.set(null)
+        }),
+      )
+      .subscribe({
+        next: (value) => {
+          let actionResult: ActionResult
+          if (resolveResult === undefined) {
+            actionResult = { status: 'success', key: resultKey }
+          } else {
+            actionResult = resolveResult(value)
+          }
+          this.message.set({ status: actionResult.status, key: actionResult.key })
+          if (actionResult.reload !== false) {
+            this.reload()
+          }
+        },
+        error: (error: HttpErrorResponse) => {
+          const changed = changedReviewErrorSchema.safeParse(error).success
+          this.message.set({
+            status: 'error',
+            key: changed ? 'replyInbox.messages.reviewChanged' : 'replyInbox.messages.actionFailed',
+          })
+          if (changed) {
+            this.reload()
+          }
+        },
+      })
   }
 }
 

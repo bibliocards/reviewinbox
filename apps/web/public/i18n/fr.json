@@ -176,6 +176,16 @@
     "untitledReview": "Review sans titre",
     "replyDraft": "Reply Draft",
     "publishedReply": "Published Reply",
+    "changedAfterReply": {
+      "badge": "Modifiée après la Published Reply",
+      "comparison": "Comparaison de la Review après la Published Reply",
+      "previousTitle": "Review précédente",
+      "previousHint": "Version précédente",
+      "latestTitle": "Review actuelle",
+      "latestHint": "Version actuelle",
+      "previousUnavailable": "La version précédente de cette Review n'est pas disponible. La version actuelle servira de référence pour les prochaines modifications.",
+      "previousUnavailableForPublished": "La version précédente de cette Review n'a pas été conservée pour cette Published Reply."
+    },
     "filters": { "allApps": "Toutes les Apps", "actionable": "À traiter" },
     "status": {
       "pending": "Pending",
@@ -186,20 +196,31 @@
     },
     "actions": {
       "publishDraft": "Publier le draft",
+      "publishUpdatedReply": "Publier la reply mise à jour",
       "generateDraft": "Générer un draft",
+      "generateUpdatedDraft": "Générer un draft mis à jour",
       "replyManually": "Répondre manuellement",
+      "replyToUpdatedReview": "Écrire une reply mise à jour",
       "edit": "Modifier avant publication",
+      "editUpdatedReply": "Modifier la reply mise à jour",
       "ignore": "Ignorer",
+      "ignoreChange": "Ignorer la modification",
       "unignore": "Restaurer",
       "saveDraft": "Enregistrer le draft",
-      "saveAndPublish": "Enregistrer et publier"
+      "saveUpdatedDraft": "Enregistrer le draft mis à jour",
+      "saveAndPublish": "Enregistrer et publier",
+      "saveAndPublishUpdatedReply": "Enregistrer et publier la reply mise à jour"
     },
     "dialog": {
       "manualTitle": "Écrire un Reply Draft",
       "editTitle": "Modifier le Reply Draft",
+      "updateTitle": "Mettre à jour la Published Reply",
+      "updateManualTitle": "Écrire une reply mise à jour",
       "manualDescription": "Rédigez la reply, puis enregistrez-la comme Reply Draft ou publiez-la immédiatement.",
       "editDescription": "Ajustez le Reply Draft enregistré, puis sauvegardez-le ou publiez la version modifiée.",
+      "updateDescription": "La Review a changé après la Published Reply. Modifiez la reply, puis enregistrez-la ou publiez-la explicitement.",
       "replyDraft": "Reply Draft",
+      "updatedReply": "Reply mise à jour",
       "placeholder": "Merci pour votre review...",
       "help": "Gardez un ton utile et spécifique. La reply doit contenir du texte avant d’être enregistrée ou publiée.",
       "cancel": "Annuler"
@@ -209,8 +230,10 @@
       "draftUnavailable": "La génération IA est indisponible pour le moment. Vous pouvez rédiger la Reply manuellement.",
       "draftSaved": "Reply Draft enregistré.",
       "published": "Reply publiée.",
+      "updatedReplyPublished": "Reply mise à jour publiée.",
       "ignored": "Review ignorée.",
       "unignored": "Review restaurée.",
+      "reviewChanged": "La Review a changé depuis son affichage. Votre action n’a pas été appliquée. Vérifiez la dernière version avant de réessayer.",
       "actionFailed": "Impossible de terminer cette action pour le moment.",
       "lastPublishFailed": "Dernière publication échouée :"
     },

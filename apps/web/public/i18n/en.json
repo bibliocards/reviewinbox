@@ -174,6 +174,16 @@
     "untitledReview": "Untitled Review",
     "replyDraft": "Reply Draft",
     "publishedReply": "Published Reply",
+    "changedAfterReply": {
+      "badge": "Changed after Published Reply",
+      "comparison": "Review comparison after Published Reply",
+      "previousTitle": "Previous Review",
+      "previousHint": "Previous version",
+      "latestTitle": "Latest Review",
+      "latestHint": "Current version",
+      "previousUnavailable": "The previous Review version is unavailable. We will keep the current version as the baseline for future changes.",
+      "previousUnavailableForPublished": "The previous Review version was not retained for this Published Reply."
+    },
     "filters": { "allApps": "All Apps", "actionable": "Actionable" },
     "status": {
       "pending": "Pending",
@@ -184,20 +194,31 @@
     },
     "actions": {
       "publishDraft": "Publish draft",
+      "publishUpdatedReply": "Publish updated reply",
       "generateDraft": "Generate draft",
+      "generateUpdatedDraft": "Generate updated draft",
       "replyManually": "Reply manually",
+      "replyToUpdatedReview": "Write an updated reply",
       "edit": "Modify before publishing",
+      "editUpdatedReply": "Modify updated reply",
       "ignore": "Ignore",
+      "ignoreChange": "Ignore review change",
       "unignore": "Unignore",
       "saveDraft": "Save draft",
-      "saveAndPublish": "Save and publish"
+      "saveUpdatedDraft": "Save updated draft",
+      "saveAndPublish": "Save and publish",
+      "saveAndPublishUpdatedReply": "Save and publish updated reply"
     },
     "dialog": {
       "manualTitle": "Write a Reply Draft",
       "editTitle": "Modify Reply Draft",
+      "updateTitle": "Update the Published Reply",
+      "updateManualTitle": "Write an Updated Reply",
       "manualDescription": "Write the reply text, then save it as a Reply Draft or publish it immediately.",
       "editDescription": "Adjust the saved Reply Draft, then save it or publish the edited version.",
+      "updateDescription": "The Review changed after the Published Reply. Edit the updated reply, then save it or publish it explicitly.",
       "replyDraft": "Reply Draft",
+      "updatedReply": "Updated Reply",
       "placeholder": "Thank you for your review...",
       "help": "Keep the tone helpful and specific. The reply must contain text before it can be saved or published.",
       "cancel": "Cancel"
@@ -207,8 +228,10 @@
       "draftUnavailable": "AI drafting is unavailable right now. You can write a Reply manually.",
       "draftSaved": "Reply Draft saved.",
       "published": "Reply published.",
+      "updatedReplyPublished": "Updated reply published.",
       "ignored": "Review ignored.",
       "unignored": "Review restored.",
+      "reviewChanged": "The Review changed since it was displayed. Your action was not applied. Check the latest version before trying again.",
       "actionFailed": "We could not complete this action yet.",
       "lastPublishFailed": "Last publish failed:"
     },

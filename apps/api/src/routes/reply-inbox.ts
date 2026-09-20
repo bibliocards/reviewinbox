@@ -9,6 +9,7 @@ import {
   replyAuditEventsResponseSchema,
   replyInboxFilterSchema,
   saveReplyDraftRequestSchema,
+  updateReviewIgnoredStatusRequestSchema,
 } from '@reviewinbox/contracts'
 import {
   apps,
@@ -42,6 +43,7 @@ import { requireActiveOrganizationSession } from '../auth/session'
 import { database } from '../db'
 import { parseJsonBody, parseUuidParam } from '../http/validation'
 import { enqueueGenerateReplyDraftJobs } from '../queue'
+import { createReviewContentToken, isReviewContentTokenCurrent } from '../review-content'
 
 export const replyInboxRoutes = new Hono()
 
@@ -303,14 +305,15 @@ replyInboxRoutes.put('/api/reply-inbox/:reviewId/draft', async (context) => {
     return request.response
   }
 
-  const result = await saveDraftFromRequest(
-    sessionResult.session.organizationId,
-    sessionResult.session.userId,
-    request.reviewId,
-    request.draftText,
-  )
+  const result = await saveDraftFromRequest({
+    organizationId: sessionResult.session.organizationId,
+    actorUserId: sessionResult.session.userId,
+    reviewId: request.reviewId,
+    draftText: request.draftText,
+    reviewContentToken: request.reviewContentToken,
+  })
   if (!result.ok) {
-    return context.json({ error: result.error }, result.status)
+    return context.json({ error: result.error, errorCode: result.errorCode }, result.status)
   }
 
   return context.json(
@@ -367,19 +370,21 @@ type SaveDraftInput = {
   actorUserId: string
   reviewId: string
   draftText: string
+  reviewContentToken: string
 }
 
 type PublishReplyInput = {
   organizationId: string
   actorUserId: string
   reviewId: string
+  reviewContentToken: string
   draftText?: string
   replyDraftId?: string
   replyDraftUpdatedAt?: string
 }
 
 type SaveDraftRequest =
-  | { ok: true; reviewId: string; draftText: string }
+  | { ok: true; reviewId: string; draftText: string; reviewContentToken: string }
   | { ok: false; response: Response }
 
 type PublishRequest =
@@ -417,7 +422,12 @@ async function parseSaveDraftRequest(context: Context): Promise<SaveDraftRequest
   if (!bodyResult.ok) {
     return { ok: false, response: bodyResult.response }
   }
-  return { ok: true, reviewId: reviewIdResult.data, draftText: bodyResult.data.draftText }
+  return {
+    ok: true,
+    reviewId: reviewIdResult.data,
+    draftText: bodyResult.data.draftText,
+    reviewContentToken: bodyResult.data.reviewContentToken,
+  }
 }
 
 async function parsePublishRequest(context: Context): Promise<PublishRequest> {
@@ -432,13 +442,8 @@ async function parsePublishRequest(context: Context): Promise<PublishRequest> {
   return { ok: true, reviewId: reviewIdResult.data, body: bodyResult.data }
 }
 
-function saveDraftFromRequest(
-  organizationId: string,
-  actorUserId: string,
-  reviewId: string,
-  draftText: string,
-) {
-  return saveDraft({ database, organizationId, actorUserId, reviewId, draftText })
+function saveDraftFromRequest(input: Omit<SaveDraftInput, 'database'>) {
+  return saveDraft({ database, ...input })
 }
 
 function buildPublishReplyInput(
@@ -447,7 +452,12 @@ function buildPublishReplyInput(
   reviewId: string,
   request: z.infer<typeof publishReplyRequestSchema>,
 ): PublishReplyInput {
-  const input: PublishReplyInput = { organizationId, actorUserId, reviewId }
+  const input: PublishReplyInput = {
+    organizationId,
+    actorUserId,
+    reviewId,
+    reviewContentToken: request.reviewContentToken,
+  }
   if (request.draftText !== undefined) {
     input.draftText = request.draftText
   }
@@ -462,13 +472,24 @@ function buildPublishReplyInput(
 
 function saveDraft(
   input: SaveDraftInput,
-): Promise<{ ok: true; reviewId: string } | { ok: false; status: 404 | 409; error: string }> {
+): Promise<
+  | { ok: true; reviewId: string }
+  | { ok: false; status: 404 | 409; error: string; errorCode?: string }
+> {
   return input.database.transaction(async (transaction) => {
     await transaction.execute(sql`select pg_advisory_xact_lock(hashtext(${input.reviewId}))`)
 
     const row = await selectReviewForAction(transaction, input.organizationId, input.reviewId)
     if (!row) {
       return { ok: false, status: 404, error: 'Review not found.' }
+    }
+    if (!isReviewContentTokenCurrent(input.reviewContentToken, row.review)) {
+      return {
+        ok: false,
+        status: 409,
+        error: 'Review changed before the Reply Draft could be saved.',
+        errorCode: 'review_changed',
+      }
     }
     if (row.review.replyStatus === 'published') {
       return { ok: false, status: 409, error: 'Published Reply is immutable.' }
@@ -579,33 +600,57 @@ type PublishValidation =
   | Exclude<PublishReplyResult, { ok: true }>
 
 function publishReply(input: PublishReplyInput): Promise<PublishReplyResult> {
-  return database.transaction(async (transaction) => {
-    await transaction.execute(sql`select pg_advisory_xact_lock(hashtext(${input.reviewId}))`)
+  return database.transaction((transaction) => publishReviewInTransaction(transaction, input))
+}
 
-    const row = await selectReviewForAction(transaction, input.organizationId, input.reviewId)
-    if (row === undefined) {
-      return { ok: false, status: 404, error: 'Review not found.' }
-    }
+async function publishReviewInTransaction(
+  transaction: Parameters<Parameters<typeof database.transaction>[0]>[0],
+  input: PublishReplyInput,
+): Promise<PublishReplyResult> {
+  await transaction.execute(sql`select pg_advisory_xact_lock(hashtext(${input.reviewId}))`)
 
-    const draftResult = await preparePublishDraft(transaction, row, input)
-    if (!draftResult.ok) {
-      return draftResult
-    }
+  const rowResult = await selectPublishableReview(transaction, input)
+  if (!rowResult.ok) {
+    return rowResult
+  }
 
-    const validation = validatePublishInput(draftResult.row, input)
-    if (!validation.ok) {
-      return validation
-    }
+  const draftResult = await preparePublishDraft(transaction, rowResult.row, input)
+  if (!draftResult.ok) {
+    return draftResult
+  }
 
-    const publish = await publishToStore(validation.store.provider, validation.store.input)
-    return finalizePublish({
-      transaction,
-      row: draftResult.row,
-      input,
-      store: validation.store,
-      publish,
-    })
+  const validation = validatePublishInput(draftResult.row, input)
+  if (!validation.ok) {
+    return validation
+  }
+
+  const publish = await publishToStore(validation.store.provider, validation.store.input)
+  return finalizePublish({
+    transaction,
+    row: draftResult.row,
+    input,
+    store: validation.store,
+    publish,
   })
+}
+
+async function selectPublishableReview(
+  transaction: Parameters<Parameters<typeof database.transaction>[0]>[0],
+  input: PublishReplyInput,
+): Promise<{ ok: true; row: ReviewActionRow } | Exclude<PublishReplyResult, { ok: true }>> {
+  const row = await selectReviewForAction(transaction, input.organizationId, input.reviewId)
+  if (row === undefined) {
+    return { ok: false, status: 404, error: 'Review not found.' }
+  }
+  if (!isReviewContentTokenCurrent(input.reviewContentToken, row.review)) {
+    return {
+      ok: false,
+      status: 409,
+      error: 'Review changed before the Reply could be published.',
+      errorCode: 'review_changed',
+    }
+  }
+  return { ok: true, row }
 }
 
 async function preparePublishDraft(
@@ -661,15 +706,16 @@ function validatePublishIdentity(
 }
 
 function validatePublishRow(row: ReviewActionRow): PublishValidation {
-  if (row.review.replyStatus !== 'drafted' || row.replyDraft === null) {
+  if (!isPublishableReviewActionRow(row)) {
     return {
       ok: false,
       status: 409,
       error: 'Review requires a saved Reply Draft before publishing.',
     }
   }
-  if (row.publishedReply !== null) {
-    return { ok: false, status: 409, error: 'Review already has a Published Reply.' }
+  const statusError = validatePublishableReviewStatus(row)
+  if (statusError !== null) {
+    return statusError
   }
   if (!hasNonEmptyValue(row.storeConnection.externalAppId)) {
     return {
@@ -708,6 +754,27 @@ function validatePublishRow(row: ReviewActionRow): PublishValidation {
       },
     },
   }
+}
+
+type PublishableReviewActionRow = ReviewActionRow & {
+  replyDraft: NonNullable<ReviewActionRow['replyDraft']>
+}
+
+function isPublishableReviewActionRow(row: ReviewActionRow): row is PublishableReviewActionRow {
+  return row.review.replyStatus === 'drafted' && row.replyDraft !== null
+}
+
+function validatePublishableReviewStatus(
+  row: ReviewActionRow,
+): Exclude<PublishValidation, { ok: true }> | null {
+  if (row.publishedReply !== null && !row.review.changedAfterReply) {
+    return {
+      ok: false,
+      status: 409,
+      error: 'Review has no detected changes after its Published Reply.',
+    }
+  }
+  return null
 }
 
 function isMissingPublishIdentity(input: PublishReplyInput): boolean {
@@ -751,30 +818,8 @@ async function recordPublishedReply(
   input: FinalizePublishInput,
   publish: Extract<StorePublishResult, { ok: true }>,
 ) {
-  await input.transaction
-    .insert(publishedReplies)
-    .values({
-      organizationId: input.row.review.organizationId,
-      appId: input.row.review.appId,
-      storeConnectionId: input.row.review.storeConnectionId,
-      reviewId: input.row.review.id,
-      replyDraftId: input.store.replyDraftId,
-      actorUserId: input.input.actorUserId,
-      provider: input.row.storeConnection.provider,
-      externalReplyId: publish.externalReplyId,
-      replyText: input.store.input.replyText,
-      publishedAt: new Date(publish.publishedAt),
-    })
-  await input.transaction
-    .update(reviews)
-    .set({ replyStatus: 'published', updatedAt: new Date() })
-    .where(
-      and(
-        eq(reviews.id, input.row.review.id),
-        eq(reviews.organizationId, input.input.organizationId),
-        eq(reviews.replyStatus, 'drafted'),
-      ),
-    )
+  await upsertPublishedReply(input, publish)
+  await markReviewPublished(input)
   await insertAuditEvent({
     transaction: input.transaction,
     review: input.row.review,
@@ -792,28 +837,83 @@ async function recordPublishedReply(
     })
 }
 
+async function upsertPublishedReply(
+  input: FinalizePublishInput,
+  publish: Extract<StorePublishResult, { ok: true }>,
+) {
+  await input.transaction
+    .insert(publishedReplies)
+    .values({
+      organizationId: input.row.review.organizationId,
+      appId: input.row.review.appId,
+      storeConnectionId: input.row.review.storeConnectionId,
+      reviewId: input.row.review.id,
+      replyDraftId: input.store.replyDraftId,
+      actorUserId: input.input.actorUserId,
+      provider: input.row.storeConnection.provider,
+      externalReplyId: publish.externalReplyId,
+      replyText: input.store.input.replyText,
+      publishedAt: new Date(publish.publishedAt),
+    })
+    .onConflictDoUpdate({
+      target: publishedReplies.reviewId,
+      set: {
+        replyDraftId: input.store.replyDraftId,
+        actorUserId: input.input.actorUserId,
+        provider: input.row.storeConnection.provider,
+        externalReplyId: publish.externalReplyId,
+        replyText: input.store.input.replyText,
+        publishedAt: new Date(publish.publishedAt),
+        updatedAt: new Date(),
+      },
+    })
+}
+
+async function markReviewPublished(input: FinalizePublishInput) {
+  await input.transaction
+    .update(reviews)
+    .set({
+      replyStatus: 'published',
+      changedAfterReply: false,
+      replyBaseline: {
+        title: input.row.review.title,
+        body: input.row.review.body,
+        rating: input.row.review.rating,
+      },
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(reviews.id, input.row.review.id),
+        eq(reviews.organizationId, input.input.organizationId),
+        eq(reviews.replyStatus, 'drafted'),
+      ),
+    )
+}
+
 async function updateIgnoredStatus(context: Context, ignored: boolean) {
   const sessionResult = await requireActiveOrganizationSession(context)
   if (!sessionResult.ok) {
     return sessionResult.response
   }
 
-  const reviewIdResult = parseUuidParam(context, 'reviewId', 'Review')
-  if (!reviewIdResult.ok) {
-    return reviewIdResult.response
+  const request = await parseIgnoredStatusRequest(context)
+  if (!request.ok) {
+    return request.response
   }
 
   const result = await database.transaction((transaction) =>
     updateIgnoredStatusInTransaction(transaction, {
       organizationId: sessionResult.session.organizationId,
       actorUserId: sessionResult.session.userId,
-      reviewId: reviewIdResult.data,
+      reviewId: request.reviewId,
       ignored,
+      reviewContentToken: request.reviewContentToken,
     }),
   )
 
   if (!result.ok) {
-    return context.json({ error: result.error }, result.status)
+    return context.json({ error: result.error, errorCode: result.errorCode }, result.status)
   }
 
   return context.json(
@@ -823,11 +923,32 @@ async function updateIgnoredStatus(context: Context, ignored: boolean) {
   )
 }
 
+async function parseIgnoredStatusRequest(
+  context: Context,
+): Promise<
+  { ok: true; reviewId: string; reviewContentToken: string } | { ok: false; response: Response }
+> {
+  const reviewIdResult = parseUuidParam(context, 'reviewId', 'Review')
+  if (!reviewIdResult.ok) {
+    return { ok: false, response: reviewIdResult.response }
+  }
+  const bodyResult = await parseJsonBody(context, updateReviewIgnoredStatusRequestSchema)
+  if (!bodyResult.ok) {
+    return { ok: false, response: bodyResult.response }
+  }
+  return {
+    ok: true,
+    reviewId: reviewIdResult.data,
+    reviewContentToken: bodyResult.data.reviewContentToken,
+  }
+}
+
 type IgnoredStatusInput = {
   organizationId: string
   actorUserId: string
   reviewId: string
   ignored: boolean
+  reviewContentToken: string
 }
 
 async function updateIgnoredStatusInTransaction(
@@ -838,13 +959,28 @@ async function updateIgnoredStatusInTransaction(
   if (row === undefined) {
     return { ok: false as const, status: 404 as const, error: 'Review not found.' }
   }
+  if (!isReviewContentTokenCurrent(input.reviewContentToken, row.review)) {
+    return {
+      ok: false as const,
+      status: 409 as const,
+      error: 'Review changed before its Reply Inbox status could be updated.',
+      errorCode: 'review_changed',
+    }
+  }
   if (row.review.replyStatus === 'published') {
     return { ok: false as const, status: 409 as const, error: 'Published Reply cannot be ignored.' }
+  }
+  if (!input.ignored && row.review.replyStatus !== 'ignored') {
+    return { ok: false as const, status: 409 as const, error: 'Review is not ignored.' }
   }
 
   await transaction
     .update(reviews)
-    .set({ replyStatus: ignoredReviewStatus(row, input.ignored), updatedAt: new Date() })
+    .set({
+      replyStatus: ignoredReviewStatus(row, input.ignored),
+      changedAfterReply: false,
+      updatedAt: new Date(),
+    })
     .where(and(eq(reviews.id, row.review.id), eq(reviews.organizationId, input.organizationId)))
   await insertAuditEvent({
     transaction,
@@ -859,9 +995,12 @@ async function updateIgnoredStatusInTransaction(
 function ignoredReviewStatus(
   row: ReviewActionRow,
   ignored: boolean,
-): 'ignored' | 'drafted' | 'pending' {
+): 'ignored' | 'drafted' | 'pending' | 'published' {
   if (ignored) {
     return 'ignored'
+  }
+  if (row.publishedReply !== null) {
+    return 'published'
   }
   if (row.replyDraft !== null) {
     return 'drafted'
@@ -928,6 +1067,13 @@ async function selectReviewForAction(
   organizationId: string,
   reviewId: string,
 ) {
+  await transaction.execute(sql`
+    select ${reviews.id}
+    from ${reviews}
+    where ${reviews.id} = ${reviewId}
+      and ${reviews.organizationId} = ${organizationId}
+    for update
+  `)
   const [row] = await transaction
     .select({
       review: reviews,
@@ -1021,6 +1167,9 @@ function toReplyInboxReview(
     locale: row.review.locale,
     reviewedAt: row.review.reviewedAt.toISOString(),
     replyStatus: row.review.replyStatus,
+    reviewContentToken: createReviewContentToken(row.review),
+    changedAfterReply: row.review.changedAfterReply,
+    replyBaseline: row.review.replyBaseline,
     draftFailureCode: row.review.draftFailureCode,
     draftFailureAt: row.review.draftFailureAt?.toISOString() ?? null,
     replyDraft: toReplyDraft(row.replyDraft),
