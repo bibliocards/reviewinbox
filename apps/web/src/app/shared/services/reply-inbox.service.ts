@@ -20,7 +20,7 @@ export class ReplyInboxService {
   private readonly apiUrl = resolveOptionalString(environment.apiUrl) ?? ''
 
   replyInboxResource(
-    params: () => { appId?: string; filter: string },
+    params: () => { appId?: string | undefined; filter: string; reviewId?: string | undefined },
   ): HttpResourceRef<ListReplyInboxResponse> {
     return httpResource<ListReplyInboxResponse>(
       () => `${this.apiUrl}/api/reply-inbox?${toQueryString(params())}`,
@@ -98,8 +98,15 @@ function toAuditQueryString(params: {
   return query.toString()
 }
 
-function toQueryString(params: { appId?: string; filter: string }) {
+function toQueryString(params: {
+  appId?: string | undefined
+  filter: string
+  reviewId?: string | undefined
+}) {
   const query = new URLSearchParams({ filter: params.filter })
+  if (params.reviewId !== undefined) {
+    query.set('reviewId', params.reviewId)
+  }
   if (params.appId !== undefined && params.appId !== '') {
     query.set('appId', params.appId)
   }

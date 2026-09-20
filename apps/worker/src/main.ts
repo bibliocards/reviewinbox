@@ -25,8 +25,6 @@ import {
   syncRuns,
   reviews,
   reviewAnalyses,
-  reviewTopics,
-  usageEvents,
   type Database,
 } from '@reviewinbox/db'
 import { createQueueClient, type QueueClient } from '@reviewinbox/queue'
@@ -35,7 +33,7 @@ import {
   syncReviewsForStoreConnection,
   type SyncReviewsForStoreConnectionInput,
 } from '@reviewinbox/sync'
-import { and, asc, desc, eq, inArray, isNull, isNotNull, lt, ne, or, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, isNull, isNotNull, lt, ne, or, sql } from 'drizzle-orm'
 
 import { createWorkerReplyDraftProvider } from './ai-provider'
 import { getAutoSyncJobStartsAt, isAutoSyncDueAt } from './auto-sync-scheduler'
@@ -45,7 +43,7 @@ import {
   reviewAnalysisCriteriaVersion,
   type ReviewAnalysisWorkerOptions,
 } from './review-analysis-worker'
-import { loadTopicDiscoveryCandidates } from './topic-discovery-candidates'
+import { discoverTopicsForApp } from './topic-discovery-worker'
 
 const shutdownSignals = ['SIGINT', 'SIGTERM'] as const
 
@@ -191,228 +189,6 @@ function createTopicDiscoveryProvider(aiConfig: AiConfig): TopicDiscoveryProvide
     options.baseUrl = aiConfig.baseUrl
   }
   return createOpenAiCompatibleTopicDiscoveryProvider(options)
-}
-
-const topicDiscoveryReviewCharacterLimit = 12_000
-const topicDiscoveryCatalogueCharacterLimit = 12_000
-
-type DiscoveryContext = {
-  app: {
-    id: string
-    catalogVersion: number
-    lastTopicDiscoveryAt: Date | null
-    topicDiscoveryRequestedAt: Date | null
-  }
-  topics: Array<{ label: string; description: string; aliases: string[] }>
-  boundedTopics: Array<{ label: string; description: string; aliases: string[] }>
-  uncovered: Array<{ id: string; title: string | null; body: string; rating: number }>
-}
-
-async function discoverTopicsForApp(
-  runtime: WorkerRuntime,
-  payload: { organizationId: string; appId: string; trigger: 'daily' | 'manual' },
-): Promise<void> {
-  if (runtime.topicDiscoveryProvider === null) {
-    return
-  }
-  const context = await loadDiscoveryContext(runtime, payload)
-  if (context === undefined) {
-    return
-  }
-  if (context.uncovered.length === 0) {
-    await markDiscoveryComplete(runtime, context.app.id)
-    return
-  }
-  const proposals = await runtime.topicDiscoveryProvider.proposeTopics({
-    reviews: context.uncovered.map(({ title, body, rating }) => ({
-      title: title?.slice(0, 500) ?? null,
-      body: body.slice(0, topicDiscoveryReviewCharacterLimit),
-      rating,
-    })),
-    existingTopics: context.boundedTopics,
-  })
-  const newProposals = deduplicateTopicProposals(proposals, context.topics)
-  await persistDiscoveryResults(runtime, payload, context, newProposals)
-}
-
-async function loadDiscoveryContext(
-  runtime: WorkerRuntime,
-  payload: { organizationId: string; appId: string },
-): Promise<DiscoveryContext | undefined> {
-  const [app] = await runtime.database
-    .select({
-      id: apps.id,
-      catalogVersion: apps.analysisCatalogVersion,
-      lastTopicDiscoveryAt: apps.lastTopicDiscoveryAt,
-      topicDiscoveryRequestedAt: apps.topicDiscoveryRequestedAt,
-    })
-    .from(apps)
-    .where(and(eq(apps.id, payload.appId), eq(apps.organizationId, payload.organizationId)))
-    .limit(1)
-  if (app === undefined || runtime.topicDiscoveryProvider === null) {
-    return undefined
-  }
-  const topics = await runtime.database
-    .select({
-      label: reviewTopics.label,
-      description: reviewTopics.description,
-      aliases: reviewTopics.aliases,
-    })
-    .from(reviewTopics)
-    .where(
-      and(eq(reviewTopics.appId, app.id), eq(reviewTopics.organizationId, payload.organizationId)),
-    )
-  const uncovered = await loadTopicDiscoveryCandidates({
-    database: runtime.database,
-    organizationId: payload.organizationId,
-    appId: app.id,
-    catalogVersion: app.catalogVersion,
-    criteriaVersion: reviewAnalysisCriteriaVersion,
-  })
-  return { app, topics, boundedTopics: boundDiscoveryTopics(topics), uncovered }
-}
-
-async function markDiscoveryComplete(runtime: WorkerRuntime, appId: string): Promise<void> {
-  await runtime.database
-    .update(apps)
-    .set({ lastTopicDiscoveryAt: new Date(), topicDiscoveryRequestedAt: null })
-    .where(eq(apps.id, appId))
-}
-
-function deduplicateTopicProposals(
-  proposals: Array<{ label: string; description: string }>,
-  topics: Array<{ label: string; aliases: string[] }>,
-): Array<{ label: string; description: string }> {
-  const knownLabels = new Set<string>()
-  for (const topic of topics) {
-    knownLabels.add(normalizeTopicLabel(topic.label))
-    for (const alias of topic.aliases) {
-      knownLabels.add(normalizeTopicLabel(alias))
-    }
-  }
-  return proposals.filter((proposal) => {
-    const normalized = normalizeTopicLabel(proposal.label)
-    if (normalized.length === 0 || knownLabels.has(normalized)) {
-      return false
-    }
-    knownLabels.add(normalized)
-    return true
-  })
-}
-
-async function persistDiscoveryResults(
-  runtime: WorkerRuntime,
-  payload: { organizationId: string; appId: string },
-  context: DiscoveryContext,
-  newProposals: Array<{ label: string; description: string }>,
-): Promise<void> {
-  await runtime.database.transaction((transaction) =>
-    persistDiscoveryResultsTransaction(transaction, payload, context, newProposals),
-  )
-}
-
-type WorkerTransaction = Parameters<Parameters<Database['transaction']>[0]>[0]
-
-async function persistDiscoveryResultsTransaction(
-  transaction: WorkerTransaction,
-  payload: { organizationId: string; appId: string },
-  context: DiscoveryContext,
-  newProposals: Array<{ label: string; description: string }>,
-): Promise<void> {
-  const [lockedApp] = await transaction
-    .select({
-      catalogVersion: apps.analysisCatalogVersion,
-      lastTopicDiscoveryAt: apps.lastTopicDiscoveryAt,
-    })
-    .from(apps)
-    .where(and(eq(apps.id, context.app.id), eq(apps.organizationId, payload.organizationId)))
-    .for('update')
-    .limit(1)
-  if (
-    lockedApp === undefined
-    || lockedApp.catalogVersion !== context.app.catalogVersion
-    || lockedApp.lastTopicDiscoveryAt?.getTime() !== context.app.lastTopicDiscoveryAt?.getTime()
-  ) {
-    throw new Error('topic_discovery_catalog_stale')
-  }
-  const insertedRows = await Promise.all(
-    newProposals.map((proposal) => insertDiscoveryTopic(transaction, payload, context, proposal)),
-  )
-  const insertedCount = insertedRows.reduce((total, rows) => total + rows.length, 0)
-  const now = new Date()
-  await markDiscoveryReviews(transaction, context)
-  const appUpdate =
-    insertedCount > 0
-      ? {
-          lastTopicDiscoveryAt: now,
-          topicDiscoveryRequestedAt: null,
-          analysisCatalogVersion: lockedApp.catalogVersion + 1,
-        }
-      : { lastTopicDiscoveryAt: now, topicDiscoveryRequestedAt: null }
-  await transaction.update(apps).set(appUpdate).where(eq(apps.id, context.app.id))
-  await transaction
-    .insert(usageEvents)
-    .values({
-      organizationId: payload.organizationId,
-      type: 'managed_ai_topic_discovery',
-      quantity: context.uncovered.length,
-      occurredAt: now,
-    })
-}
-
-async function markDiscoveryReviews(
-  transaction: WorkerTransaction,
-  context: DiscoveryContext,
-): Promise<void> {
-  await transaction
-    .update(reviewAnalyses)
-    .set({ discoveredAt: new Date() })
-    .where(
-      inArray(
-        reviewAnalyses.reviewId,
-        context.uncovered.map((review) => review.id),
-      ),
-    )
-}
-
-function insertDiscoveryTopic(
-  transaction: WorkerTransaction,
-  payload: { organizationId: string; appId: string },
-  context: DiscoveryContext,
-  proposal: { label: string; description: string },
-) {
-  return transaction
-    .insert(reviewTopics)
-    .values({
-      organizationId: payload.organizationId,
-      appId: context.app.id,
-      label: proposal.label,
-      normalizedLabel: normalizeTopicLabel(proposal.label),
-      description: proposal.description,
-      aliases: [],
-      status: 'pending',
-      origin: 'ai',
-    })
-    .onConflictDoNothing({ target: [reviewTopics.appId, reviewTopics.normalizedLabel] })
-    .returning({ id: reviewTopics.id })
-}
-
-function normalizeTopicLabel(label: string): string {
-  return label.trim().toLocaleLowerCase('en-US').replaceAll(/\s+/gu, ' ')
-}
-
-function boundDiscoveryTopics(
-  topics: Array<{ label: string; description: string; aliases: string[] }>,
-) {
-  let characters = 0
-  return topics.filter((topic) => {
-    const size = topic.label.length + topic.description.length + topic.aliases.join('').length
-    if (characters + size > topicDiscoveryCatalogueCharacterLimit) {
-      return false
-    }
-    characters += size
-    return true
-  })
 }
 
 async function enqueueAnalysisJobs(

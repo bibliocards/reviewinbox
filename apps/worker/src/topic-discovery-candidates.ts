@@ -13,7 +13,16 @@ export type TopicDiscoveryCandidateInput = {
 
 export function loadTopicDiscoveryCandidates(input: TopicDiscoveryCandidateInput) {
   return input.database
-    .select({ id: reviews.id, title: reviews.title, body: reviews.body, rating: reviews.rating })
+    .select({
+      id: reviews.id,
+      title: reviews.title,
+      body: reviews.body,
+      rating: reviews.rating,
+      version: reviews.version,
+      language: reviews.language,
+      analysisInputHash: reviewAnalyses.inputHash,
+      analysisAnalyzedAt: reviewAnalyses.analyzedAt,
+    })
     .from(reviews)
     .innerJoin(reviewAnalyses, eq(reviewAnalyses.reviewId, reviews.id))
     .innerJoin(

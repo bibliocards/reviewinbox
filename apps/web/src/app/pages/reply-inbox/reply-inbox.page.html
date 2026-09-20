@@ -15,12 +15,20 @@
       >
         {{ t('replyInbox.empty.openApps') }}
       </a>
+      @if (selectedReviewId()) {
+      <a
+        class="inline-flex min-h-10 items-center rounded-lg border border-hairline px-3 py-2 text-sm font-semibold text-ink"
+        routerLink="/"
+        >{{ t('replyInbox.focus.back') }}</a
+      >
+      } @else {
       <ri-app-select
         [options]="appOptions()"
         [(selectedAppId)]="selectedAppId"
         [ariaLabel]="t('replyInbox.filters.allApps')"
       />
       <p-select
+        appendTo="body"
         class="w-full sm:w-48"
         [fluid]="true"
         [options]="filterOptions()"
@@ -29,9 +37,12 @@
         [(ngModel)]="selectedFilter"
         [ariaLabel]="t('replyInbox.filters.actionable')"
       />
+      }
     </div>
   </header>
-  @if (message(); as currentMessage) {
+  @if (selectedReviewId()) {
+  <p class="m-0 text-sm text-ink-subtle">{{ t('replyInbox.focus.description') }}</p>
+  } @if (message(); as currentMessage) {
   <p
     class="m-0 rounded-xl border bg-surface-1 px-3 py-2 text-sm"
     [class.border-green-500]="currentMessage.status === 'success'"
@@ -45,6 +56,11 @@
   <div class="rounded-2xl border border-hairline bg-surface-1 p-5">
     <p class="m-0 text-sm text-ink-subtle">{{ t('replyInbox.loading') }}</p>
   </div>
+  } @else if (inboxResource.error()) {
+  <p class="m-0 rounded-xl border border-red-400 bg-surface-1 p-5 text-red-700" role="alert">
+    {{ t(selectedReviewId() ? 'replyInbox.focus.unavailable' : 'replyInbox.messages.actionFailed')
+    }}
+  </p>
   } @else if (reviews().length === 0) {
   <div class="rounded-3xl border border-dashed border-hairline-strong bg-surface-1 p-8 text-center">
     <h2 class="m-0 text-xl font-semibold text-ink">{{ t('replyInbox.empty.title') }}</h2>

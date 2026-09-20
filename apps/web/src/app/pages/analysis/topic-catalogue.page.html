@@ -3,9 +3,6 @@
     class="flex flex-col items-start justify-between gap-6 border-b border-hairline pb-6 lg:flex-row lg:items-end"
   >
     <div>
-      <p class="mb-2 mt-0 text-xs font-bold uppercase tracking-[0.08em] text-primary">
-        {{ t('analysis.catalogue.kicker') }}
-      </p>
       <h1 class="m-0 text-3xl font-semibold tracking-[-1.6px] text-ink sm:text-4xl">
         {{ t('analysis.catalogue.title') }}
       </h1>
@@ -261,6 +258,7 @@
         />
         }
         <p-select
+          appendTo="body"
           class="w-full sm:w-48"
           [options]="mergeTargets(topic)"
           optionLabel="label"

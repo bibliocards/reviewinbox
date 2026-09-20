@@ -250,6 +250,7 @@ export class AnalysisPageComponent {
   protected setTrendDay(date: string): void {
     this.selectedFrom.set(date)
     this.selectedTo.set(date)
+    this.selectedPage.set(1)
     this.updateUrl()
   }
 

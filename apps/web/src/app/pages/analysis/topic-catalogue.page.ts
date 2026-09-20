@@ -1,10 +1,20 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  signal,
+} from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, Router, RouterLink } from '@angular/router'
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
 import type { AppListItemResponse } from '@reviewinbox/contracts'
 import { ButtonModule } from 'primeng/button'
 import { SelectModule } from 'primeng/select'
+import { Subject, takeUntil } from 'rxjs'
 
 import type { AppSelectOption } from '../../shared/components/app-select/app-select.component'
 import { AppSelectComponent } from '../../shared/components/app-select/app-select.component'
@@ -28,10 +38,12 @@ import { AppsService } from '../../shared/services/apps.service'
 export class TopicCataloguePageComponent {
   private readonly route = inject(ActivatedRoute)
   private readonly router = inject(Router)
+  private readonly destroyRef = inject(DestroyRef)
   private readonly appsService = inject(AppsService)
   private readonly analysisService = inject(AnalysisService)
   private readonly appIcons = inject(AppIconsService)
   private readonly transloco = inject(TranslocoService)
+  private readonly mutationCancelled = new Subject<void>()
 
   protected readonly selectedAppId = signal(this.route.snapshot.queryParamMap.get('appId') ?? '')
   protected readonly editingTopicId = signal<string | null>(null)
@@ -85,8 +97,14 @@ export class TopicCataloguePageComponent {
   }
 
   protected changeApp(value: string): void {
+    this.cancelMutations()
     this.selectedAppId.set(value)
     this.message.set(null)
+    this.cancelTopicEdit()
+    this.draftLabel.set('')
+    this.draftDescription.set('')
+    this.pendingAction.set(null)
+    this.mergeTargetByTopicId.set({})
     void this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { appId: value || null },
@@ -121,22 +139,21 @@ export class TopicCataloguePageComponent {
       return
     }
     const topicId = this.editingTopicId()
+    this.cancelMutations()
     this.pendingAction.set(topicId ?? 'create')
     const request =
       topicId === null
         ? this.analysisService.createTopic(appId, { label, description, status: 'approved' })
         : this.analysisService.updateTopic(appId, topicId, { label, description })
-    request.subscribe({
+    request.pipe(takeUntil(this.mutationCancelled), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.message.set({ type: 'success', key: 'analysis.messages.topicSaved' })
         this.cancelTopicEdit()
         this.catalogueResource.reload()
+        this.pendingAction.set(null)
       },
       error: () => {
         this.message.set({ type: 'error', key: 'analysis.messages.actionFailed' })
-        this.pendingAction.set(null)
-      },
-      complete: () => {
         this.pendingAction.set(null)
       },
     })
@@ -147,20 +164,22 @@ export class TopicCataloguePageComponent {
     if (appId === undefined || appId === '') {
       return
     }
+    this.cancelMutations()
     this.pendingAction.set(topic.id)
-    this.analysisService.updateTopic(appId, topic.id, { status }).subscribe({
-      next: () => {
-        this.message.set({ type: 'success', key: 'analysis.messages.topicSaved' })
-        this.catalogueResource.reload()
-      },
-      error: () => {
-        this.message.set({ type: 'error', key: 'analysis.messages.actionFailed' })
-        this.pendingAction.set(null)
-      },
-      complete: () => {
-        this.pendingAction.set(null)
-      },
-    })
+    this.analysisService
+      .updateTopic(appId, topic.id, { status })
+      .pipe(takeUntil(this.mutationCancelled), takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.message.set({ type: 'success', key: 'analysis.messages.topicSaved' })
+          this.catalogueResource.reload()
+          this.pendingAction.set(null)
+        },
+        error: () => {
+          this.message.set({ type: 'error', key: 'analysis.messages.actionFailed' })
+          this.pendingAction.set(null)
+        },
+      })
   }
 
   protected mergeTarget(topicId: string): string {
@@ -186,21 +205,23 @@ export class TopicCataloguePageComponent {
     if (appId === undefined || appId === '' || targetTopicId === '') {
       return
     }
+    this.cancelMutations()
     this.pendingAction.set(topic.id)
-    this.analysisService.mergeTopics(appId, topic.id, targetTopicId).subscribe({
-      next: () => {
-        this.message.set({ type: 'success', key: 'analysis.messages.topicMerged' })
-        this.mergeTargetByTopicId.update((targets) => ({ ...targets, [topic.id]: '' }))
-        this.catalogueResource.reload()
-      },
-      error: () => {
-        this.message.set({ type: 'error', key: 'analysis.messages.actionFailed' })
-        this.pendingAction.set(null)
-      },
-      complete: () => {
-        this.pendingAction.set(null)
-      },
-    })
+    this.analysisService
+      .mergeTopics(appId, topic.id, targetTopicId)
+      .pipe(takeUntil(this.mutationCancelled), takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.message.set({ type: 'success', key: 'analysis.messages.topicMerged' })
+          this.mergeTargetByTopicId.update((targets) => ({ ...targets, [topic.id]: '' }))
+          this.catalogueResource.reload()
+          this.pendingAction.set(null)
+        },
+        error: () => {
+          this.message.set({ type: 'error', key: 'analysis.messages.actionFailed' })
+          this.pendingAction.set(null)
+        },
+      })
   }
 
   protected discoverTopics(): void {
@@ -208,20 +229,26 @@ export class TopicCataloguePageComponent {
     if (appId === undefined || appId === '') {
       return
     }
+    this.cancelMutations()
     this.pendingAction.set('discover')
-    this.analysisService.discoverTopics(appId).subscribe({
-      next: () => {
-        this.message.set({ type: 'success', key: 'analysis.messages.discoveryQueued' })
-        this.catalogueResource.reload()
-      },
-      error: () => {
-        this.message.set({ type: 'error', key: 'analysis.messages.actionFailed' })
-        this.pendingAction.set(null)
-      },
-      complete: () => {
-        this.pendingAction.set(null)
-      },
-    })
+    this.analysisService
+      .discoverTopics(appId)
+      .pipe(takeUntil(this.mutationCancelled), takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.message.set({ type: 'success', key: 'analysis.messages.discoveryQueued' })
+          this.catalogueResource.reload()
+          this.pendingAction.set(null)
+        },
+        error: () => {
+          this.message.set({ type: 'error', key: 'analysis.messages.actionFailed' })
+          this.pendingAction.set(null)
+        },
+      })
+  }
+
+  private cancelMutations(): void {
+    this.mutationCancelled.next()
   }
 
   protected isPending(topic: AnalysisTopic): boolean {

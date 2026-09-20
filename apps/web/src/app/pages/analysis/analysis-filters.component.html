@@ -34,23 +34,32 @@
       [ariaLabel]="t('analysis.filters.app')"
       (selectedAppIdChange)="emit('appId', $event)"
     />
-    <label class="grid gap-1 text-xs font-semibold text-ink-subtle"
+    <label class="grid gap-1 text-xs font-semibold text-ink-subtle" for="analysis-from-date"
       ><span>{{ t('analysis.filters.from') }}</span
-      ><input
-        class="min-h-10 rounded-lg border border-hairline-strong bg-surface-1 px-2.5 text-ink"
-        type="date"
-        [ngModel]="from()"
-        (ngModelChange)="emit('from', $event)"
+      ><p-datepicker
+        inputId="analysis-from-date"
+        appendTo="body"
+        dateFormat="yy-mm-dd"
+        [ngModel]="fromDate()"
+        [showButtonBar]="true"
+        [showIcon]="true"
+        [ariaLabel]="t('analysis.filters.from')"
+        (ngModelChange)="emitDate('from', $event)"
     /></label>
-    <label class="grid gap-1 text-xs font-semibold text-ink-subtle"
+    <label class="grid gap-1 text-xs font-semibold text-ink-subtle" for="analysis-to-date"
       ><span>{{ t('analysis.filters.to') }}</span
-      ><input
-        class="min-h-10 rounded-lg border border-hairline-strong bg-surface-1 px-2.5 text-ink"
-        type="date"
-        [ngModel]="to()"
-        (ngModelChange)="emit('to', $event)"
+      ><p-datepicker
+        inputId="analysis-to-date"
+        appendTo="body"
+        dateFormat="yy-mm-dd"
+        [ngModel]="toDate()"
+        [showButtonBar]="true"
+        [showIcon]="true"
+        [ariaLabel]="t('analysis.filters.to')"
+        (ngModelChange)="emitDate('to', $event)"
     /></label>
     <p-select
+      appendTo="body"
       [options]="storeOptions()"
       optionLabel="label"
       optionValue="value"
@@ -60,6 +69,7 @@
       [ariaLabel]="t('analysis.filters.store')"
     />
     <p-select
+      appendTo="body"
       [options]="versionOptions()"
       optionLabel="label"
       optionValue="value"
@@ -69,6 +79,7 @@
       [ariaLabel]="t('analysis.filters.version')"
     />
     <p-select
+      appendTo="body"
       [options]="severityOptions()"
       optionLabel="label"
       optionValue="value"
@@ -78,6 +89,7 @@
       [ariaLabel]="t('analysis.filters.severity')"
     />
     <p-select
+      appendTo="body"
       [options]="intentOptions()"
       optionLabel="label"
       optionValue="value"
@@ -87,6 +99,7 @@
       [ariaLabel]="t('analysis.filters.intent')"
     />
     <p-select
+      appendTo="body"
       [options]="topicOptions()"
       optionLabel="label"
       optionValue="value"
@@ -96,6 +109,7 @@
       [ariaLabel]="t('analysis.filters.topic')"
     />
     <p-select
+      appendTo="body"
       [options]="topicStatusOptions()"
       optionLabel="label"
       optionValue="value"

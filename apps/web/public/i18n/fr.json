@@ -170,7 +170,6 @@
     }
   },
   "analysis": {
-    "kicker": "Intelligence des Reviews",
     "title": "Analyse",
     "description": "Repérez les sujets récurrents, la gravité signalée et les Reviews derrière chaque signal.",
     "actions": {
@@ -211,7 +210,6 @@
       "versionNeedsStore": "Choisissez un store avant de filtrer par version."
     },
     "catalogue": {
-      "kicker": "Configuration de l’App",
       "title": "Catalogue de sujets",
       "description": "Définissez le vocabulaire partagé qui rend l’Analyse utile pour cette App.",
       "sharedTitle": "Un catalogue pour tous les stores",
@@ -368,6 +366,11 @@
       "title": "Aucune Review dans cette vue",
       "description": "Aucune Review éligible n’est disponible pour le moment. Google Play expose les Reviews écrites créées ou modifiées durant la dernière semaine. Vérifiez vos Store Connections dans Apps.",
       "openApps": "Ouvrir les Apps"
+    },
+    "focus": {
+      "back": "Retour à la boîte de réception",
+      "description": "Avis sélectionné, quel que soit le statut de sa réponse.",
+      "unavailable": "Impossible de charger cet avis. Il peut ne plus être disponible dans l’organisation active."
     }
   },
   "auditHistory": {

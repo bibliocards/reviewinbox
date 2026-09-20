@@ -1,0 +1,381 @@
+import { getReviewAnalysisInputHash, type TopicDiscoveryProvider } from '@reviewinbox/ai'
+import {
+  apps,
+  reviewAnalyses,
+  reviewTopics,
+  reviews,
+  usageEvents,
+  type Database,
+} from '@reviewinbox/db'
+import { and, eq, inArray, isNull } from 'drizzle-orm'
+
+import { reviewAnalysisCriteriaVersion } from './review-analysis-worker'
+import { loadTopicDiscoveryCandidates } from './topic-discovery-candidates'
+
+export type TopicDiscoveryWorkerRuntime = {
+  database: Database
+  topicDiscoveryProvider: TopicDiscoveryProvider | null
+}
+
+const topicDiscoveryReviewCharacterLimit = 12_000
+const topicDiscoveryCatalogueCharacterLimit = 12_000
+
+export type DiscoveryContext = {
+  app: {
+    id: string
+    catalogVersion: number
+    lastTopicDiscoveryAt: Date | null
+    topicDiscoveryRequestedAt: Date | null
+  }
+  topics: Array<{ label: string; description: string; aliases: string[] }>
+  boundedTopics: Array<{ label: string; description: string; aliases: string[] }>
+  uncovered: Array<{
+    id: string
+    title: string | null
+    body: string
+    rating: number
+    version: string | null
+    language: string | null
+    analysisInputHash: string
+    analysisAnalyzedAt: Date
+  }>
+}
+
+export async function discoverTopicsForApp(
+  runtime: TopicDiscoveryWorkerRuntime,
+  payload: { organizationId: string; appId: string; trigger: 'daily' | 'manual' },
+): Promise<void> {
+  if (runtime.topicDiscoveryProvider === null) {
+    return
+  }
+  const context = await loadDiscoveryContext(runtime.database, payload)
+  if (context === undefined) {
+    return
+  }
+  if (context.uncovered.length === 0) {
+    await markDiscoveryComplete(runtime, payload, context.app)
+    return
+  }
+  const proposals = await runtime.topicDiscoveryProvider.proposeTopics({
+    reviews: context.uncovered.map(({ title, body, rating }) => ({
+      title: title?.slice(0, 500) ?? null,
+      body: body.slice(0, topicDiscoveryReviewCharacterLimit),
+      rating,
+    })),
+    existingTopics: context.boundedTopics,
+  })
+  const newProposals = deduplicateTopicProposals(proposals, context.topics)
+  await persistDiscoveryResults(runtime.database, payload, context, newProposals)
+}
+
+export async function loadDiscoveryContext(
+  database: Database,
+  payload: { organizationId: string; appId: string },
+): Promise<DiscoveryContext | undefined> {
+  const [app] = await database
+    .select({
+      id: apps.id,
+      catalogVersion: apps.analysisCatalogVersion,
+      lastTopicDiscoveryAt: apps.lastTopicDiscoveryAt,
+      topicDiscoveryRequestedAt: apps.topicDiscoveryRequestedAt,
+    })
+    .from(apps)
+    .where(and(eq(apps.id, payload.appId), eq(apps.organizationId, payload.organizationId)))
+    .limit(1)
+  if (app === undefined) {
+    return undefined
+  }
+  const topics = await database
+    .select({
+      label: reviewTopics.label,
+      description: reviewTopics.description,
+      aliases: reviewTopics.aliases,
+    })
+    .from(reviewTopics)
+    .where(
+      and(eq(reviewTopics.appId, app.id), eq(reviewTopics.organizationId, payload.organizationId)),
+    )
+  const uncovered = await loadTopicDiscoveryCandidates({
+    database,
+    organizationId: payload.organizationId,
+    appId: app.id,
+    catalogVersion: app.catalogVersion,
+    criteriaVersion: reviewAnalysisCriteriaVersion,
+  })
+  return { app, topics, boundedTopics: boundDiscoveryTopics(topics), uncovered }
+}
+
+async function markDiscoveryComplete(
+  runtime: TopicDiscoveryWorkerRuntime,
+  payload: { organizationId: string; appId: string },
+  snapshot: DiscoveryContext['app'],
+): Promise<void> {
+  await runtime.database.transaction(async (transaction) => {
+    const [lockedApp] = await transaction
+      .select({
+        catalogVersion: apps.analysisCatalogVersion,
+        lastTopicDiscoveryAt: apps.lastTopicDiscoveryAt,
+        topicDiscoveryRequestedAt: apps.topicDiscoveryRequestedAt,
+      })
+      .from(apps)
+      .where(and(eq(apps.id, payload.appId), eq(apps.organizationId, payload.organizationId)))
+      .for('update')
+      .limit(1)
+    if (
+      lockedApp === undefined
+      || lockedApp.catalogVersion !== snapshot.catalogVersion
+      || lockedApp.lastTopicDiscoveryAt?.getTime() !== snapshot.lastTopicDiscoveryAt?.getTime()
+      || lockedApp.topicDiscoveryRequestedAt?.getTime()
+        !== snapshot.topicDiscoveryRequestedAt?.getTime()
+    ) {
+      return
+    }
+    const candidates = await transaction
+      .select({ id: reviews.id })
+      .from(reviews)
+      .innerJoin(reviewAnalyses, eq(reviewAnalyses.reviewId, reviews.id))
+      .where(
+        and(
+          eq(reviews.appId, payload.appId),
+          eq(reviews.organizationId, payload.organizationId),
+          eq(reviews.analysisStatus, 'completed'),
+          eq(reviewAnalyses.catalogVersion, snapshot.catalogVersion),
+          eq(reviewAnalyses.criteriaVersion, reviewAnalysisCriteriaVersion),
+          eq(reviewAnalyses.uncovered, true),
+          isNull(reviewAnalyses.discoveredAt),
+        ),
+      )
+      .limit(1)
+    if (candidates.length > 0) {
+      return
+    }
+    await transaction
+      .update(apps)
+      .set({ lastTopicDiscoveryAt: new Date(), topicDiscoveryRequestedAt: null })
+      .where(eq(apps.id, payload.appId))
+  })
+}
+
+function deduplicateTopicProposals(
+  proposals: Array<{ label: string; description: string }>,
+  topics: Array<{ label: string; aliases: string[] }>,
+): Array<{ label: string; description: string }> {
+  const knownLabels = new Set<string>()
+  for (const topic of topics) {
+    knownLabels.add(normalizeTopicLabel(topic.label))
+    for (const alias of topic.aliases) {
+      knownLabels.add(normalizeTopicLabel(alias))
+    }
+  }
+  return proposals.filter((proposal) => {
+    const normalized = normalizeTopicLabel(proposal.label)
+    if (normalized.length === 0 || knownLabels.has(normalized)) {
+      return false
+    }
+    knownLabels.add(normalized)
+    return true
+  })
+}
+
+export async function persistDiscoveryResults(
+  database: Database,
+  payload: { organizationId: string; appId: string },
+  context: DiscoveryContext,
+  newProposals: Array<{ label: string; description: string }>,
+): Promise<void> {
+  await database.transaction((transaction) =>
+    persistDiscoveryResultsTransaction(transaction, payload, context, newProposals),
+  )
+}
+
+type WorkerTransaction = Parameters<Parameters<Database['transaction']>[0]>[0]
+
+async function persistDiscoveryResultsTransaction(
+  transaction: WorkerTransaction,
+  payload: { organizationId: string; appId: string },
+  context: DiscoveryContext,
+  newProposals: Array<{ label: string; description: string }>,
+): Promise<void> {
+  const [lockedApp] = await transaction
+    .select({
+      catalogVersion: apps.analysisCatalogVersion,
+      lastTopicDiscoveryAt: apps.lastTopicDiscoveryAt,
+      topicDiscoveryRequestedAt: apps.topicDiscoveryRequestedAt,
+    })
+    .from(apps)
+    .where(and(eq(apps.id, context.app.id), eq(apps.organizationId, payload.organizationId)))
+    .for('update')
+    .limit(1)
+  if (
+    lockedApp === undefined
+    || lockedApp.catalogVersion !== context.app.catalogVersion
+    || lockedApp.lastTopicDiscoveryAt?.getTime() !== context.app.lastTopicDiscoveryAt?.getTime()
+    || lockedApp.topicDiscoveryRequestedAt?.getTime()
+      !== context.app.topicDiscoveryRequestedAt?.getTime()
+  ) {
+    throw new Error('topic_discovery_catalog_stale')
+  }
+  await assertDiscoveryCandidatesCurrent(transaction, payload, context, lockedApp.catalogVersion)
+  const insertedRows = await Promise.all(
+    newProposals.map((proposal) => insertDiscoveryTopic(transaction, payload, context, proposal)),
+  )
+  const insertedCount = insertedRows.reduce((total, rows) => total + rows.length, 0)
+  const now = new Date()
+  await markDiscoveryReviews(transaction, context)
+  const appUpdate =
+    insertedCount > 0
+      ? {
+          lastTopicDiscoveryAt: now,
+          topicDiscoveryRequestedAt: null,
+          analysisCatalogVersion: lockedApp.catalogVersion + 1,
+        }
+      : { lastTopicDiscoveryAt: now, topicDiscoveryRequestedAt: null }
+  await transaction.update(apps).set(appUpdate).where(eq(apps.id, context.app.id))
+  await transaction
+    .insert(usageEvents)
+    .values({
+      organizationId: payload.organizationId,
+      type: 'managed_ai_topic_discovery',
+      quantity: context.uncovered.length,
+      occurredAt: now,
+    })
+}
+
+async function assertDiscoveryCandidatesCurrent(
+  transaction: WorkerTransaction,
+  payload: { organizationId: string; appId: string },
+  context: DiscoveryContext,
+  catalogVersion: number,
+): Promise<void> {
+  const candidateIds = context.uncovered.map((candidate) => candidate.id)
+  const currentCandidates = await loadCurrentDiscoveryCandidates(transaction, payload, candidateIds)
+  const currentById = new Map(currentCandidates.map((candidate) => [candidate.id, candidate]))
+  const allCurrent = context.uncovered.every((candidate) =>
+    isDiscoveryCandidateCurrent(currentById.get(candidate.id), candidate, catalogVersion),
+  )
+  if (!allCurrent) {
+    throw new Error('topic_discovery_candidates_stale')
+  }
+}
+
+type CurrentDiscoveryCandidate = {
+  id: string
+  title: string | null
+  body: string
+  rating: number
+  version: string | null
+  language: string | null
+  analysisStatus: string
+  analysisInputHash: string
+  analysisAnalyzedAt: Date
+  analysisCatalogVersion: number
+  criteriaVersion: string
+  uncovered: boolean
+  discoveredAt: Date | null
+}
+
+function loadCurrentDiscoveryCandidates(
+  transaction: WorkerTransaction,
+  payload: { organizationId: string; appId: string },
+  candidateIds: string[],
+) {
+  return transaction
+    .select({
+      id: reviews.id,
+      title: reviews.title,
+      body: reviews.body,
+      rating: reviews.rating,
+      version: reviews.version,
+      language: reviews.language,
+      analysisStatus: reviews.analysisStatus,
+      analysisInputHash: reviewAnalyses.inputHash,
+      analysisAnalyzedAt: reviewAnalyses.analyzedAt,
+      analysisCatalogVersion: reviewAnalyses.catalogVersion,
+      criteriaVersion: reviewAnalyses.criteriaVersion,
+      uncovered: reviewAnalyses.uncovered,
+      discoveredAt: reviewAnalyses.discoveredAt,
+    })
+    .from(reviews)
+    .innerJoin(reviewAnalyses, eq(reviewAnalyses.reviewId, reviews.id))
+    .where(
+      and(
+        inArray(reviews.id, candidateIds),
+        eq(reviews.organizationId, payload.organizationId),
+        eq(reviews.appId, payload.appId),
+      ),
+    )
+    .for('update')
+}
+
+function isDiscoveryCandidateCurrent(
+  current: CurrentDiscoveryCandidate | undefined,
+  candidate: DiscoveryContext['uncovered'][number],
+  catalogVersion: number,
+): boolean {
+  return (
+    current !== undefined
+    && current.analysisStatus === 'completed'
+    && current.analysisCatalogVersion === catalogVersion
+    && current.criteriaVersion === reviewAnalysisCriteriaVersion
+    && current.uncovered
+    && current.discoveredAt === null
+    && current.analysisInputHash === candidate.analysisInputHash
+    && current.analysisAnalyzedAt.getTime() === candidate.analysisAnalyzedAt.getTime()
+    && getReviewAnalysisInputHash(current) === candidate.analysisInputHash
+  )
+}
+
+async function markDiscoveryReviews(
+  transaction: WorkerTransaction,
+  context: DiscoveryContext,
+): Promise<void> {
+  await transaction
+    .update(reviewAnalyses)
+    .set({ discoveredAt: new Date() })
+    .where(
+      inArray(
+        reviewAnalyses.reviewId,
+        context.uncovered.map((review) => review.id),
+      ),
+    )
+}
+
+function insertDiscoveryTopic(
+  transaction: WorkerTransaction,
+  payload: { organizationId: string; appId: string },
+  context: DiscoveryContext,
+  proposal: { label: string; description: string },
+) {
+  return transaction
+    .insert(reviewTopics)
+    .values({
+      organizationId: payload.organizationId,
+      appId: context.app.id,
+      label: proposal.label,
+      normalizedLabel: normalizeTopicLabel(proposal.label),
+      description: proposal.description,
+      aliases: [],
+      status: 'pending',
+      origin: 'ai',
+    })
+    .onConflictDoNothing({ target: [reviewTopics.appId, reviewTopics.normalizedLabel] })
+    .returning({ id: reviewTopics.id })
+}
+
+function normalizeTopicLabel(label: string): string {
+  return label.trim().toLocaleLowerCase('en-US').replaceAll(/\s+/gu, ' ')
+}
+
+function boundDiscoveryTopics(
+  topics: Array<{ label: string; description: string; aliases: string[] }>,
+) {
+  let characters = 0
+  return topics.filter((topic) => {
+    const size = topic.label.length + topic.description.length + topic.aliases.join('').length
+    if (characters + size > topicDiscoveryCatalogueCharacterLimit) {
+      return false
+    }
+    characters += size
+    return true
+  })
+}

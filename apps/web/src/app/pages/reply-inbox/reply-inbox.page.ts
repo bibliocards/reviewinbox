@@ -9,8 +9,9 @@ import {
   signal,
   ChangeDetectionStrategy,
 } from '@angular/core'
+import { toSignal } from '@angular/core/rxjs-interop'
 import { FormsModule } from '@angular/forms'
-import { RouterLink } from '@angular/router'
+import { ActivatedRoute, RouterLink } from '@angular/router'
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
 import type { QueueReplyDraftResponse, ReplyInboxReview } from '@reviewinbox/contracts'
 import { formatDistanceToNow } from 'date-fns/formatDistanceToNow'
@@ -72,6 +73,13 @@ const filterValues: readonly ReplyInboxFilter[] = [
   templateUrl: './reply-inbox.page.html',
 })
 export class ReplyInboxPageComponent {
+  private readonly route = inject(ActivatedRoute)
+  private readonly queryParams = toSignal(this.route.queryParamMap, {
+    initialValue: this.route.snapshot.queryParamMap,
+  })
+  protected readonly selectedReviewId = computed(
+    () => this.queryParams().get('reviewId') ?? undefined,
+  )
   private readonly appsService = inject(AppsService)
   private readonly replyInboxService = inject(ReplyInboxService)
   private readonly analysisService = inject(AnalysisService)
@@ -104,7 +112,8 @@ export class ReplyInboxPageComponent {
   )
   protected readonly inboxResource = this.replyInboxService.replyInboxResource(() => ({
     filter: this.selectedFilter(),
-    appId: this.selectedAppId(),
+    appId: this.selectedReviewId() === undefined ? this.selectedAppId() : undefined,
+    reviewId: this.selectedReviewId(),
   }))
   protected readonly reviews = computed(() =>
     this.inboxResource.hasValue() ? this.inboxResource.value().reviews : [],

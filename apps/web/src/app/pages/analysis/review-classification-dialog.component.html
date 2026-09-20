@@ -15,6 +15,7 @@
   <label class="grid gap-2 text-sm font-medium text-ink">
     {{ t('analysis.editor.severity') }}
     <p-select
+      appendTo="body"
       [options]="severities"
       [(ngModel)]="severity"
       [fluid]="true"
@@ -32,6 +33,7 @@
   <label class="grid gap-2 text-sm font-medium text-ink">
     {{ t('analysis.editor.intents') }}
     <p-multiselect
+      appendTo="body"
       [options]="intents"
       [(ngModel)]="selectedIntents"
       [fluid]="true"
@@ -59,6 +61,7 @@
   <label class="grid gap-2 text-sm font-medium text-ink">
     {{ t('analysis.editor.topics') }}
     <p-multiselect
+      appendTo="body"
       [options]="topics"
       optionLabel="label"
       optionValue="id"

@@ -47,6 +47,7 @@ type PersistClassificationInput = {
   review: Pick<ReviewForAnalysis, 'id' | 'organizationId' | 'appId'>
   catalogVersion: number
   inputHash: string
+  analysisAnalyzedAt: Date | null
   classification: ReviewClassificationResult
   now: () => Date
 }
@@ -63,8 +64,8 @@ export async function classifyReviewForAnalysis(
   }
 
   if (isEmptyReview(review)) {
-    await markReviewSkipped(options.database, review.id)
-    return { status: 'skipped', reviewId: review.id, reason: 'empty_body' }
+    const skipped = await markEmptyReviewSkipped(options.database, review)
+    return { status: 'skipped', reviewId: review.id, reason: skipped ? 'empty_body' : 'stale' }
   }
 
   const app = await loadApp(options.database, review)
@@ -88,17 +89,25 @@ async function classifyLoadedReview(
     version: review.version,
     language: review.language,
   })
-  if (await isAnalysisCurrent(options.database, review, catalogVersion, inputHash)) {
+  const existingAnalysis = await loadExistingAnalysis(options.database, review.id)
+  if (isAnalysisCurrent(review, catalogVersion, inputHash, existingAnalysis)) {
     return { status: 'unchanged', reviewId: review.id }
   }
   await markReviewProcessing(options.database, review.id, now())
 
   try {
-    return await runReviewClassification(options, { review, catalogVersion, inputHash, now })
+    return await runReviewClassification(options, {
+      review,
+      catalogVersion,
+      inputHash,
+      analysisAnalyzedAt: existingAnalysis?.analyzedAt ?? null,
+      now,
+    })
   } catch (error) {
     await markReviewFailed(
       options.database,
-      review.id,
+      review,
+      inputHash,
       error instanceof Error ? error : new Error('classification_failed'),
     )
     throw error
@@ -111,10 +120,11 @@ async function runReviewClassification(
     review: ReviewForAnalysis
     catalogVersion: number
     inputHash: string
+    analysisAnalyzedAt: Date | null
     now: () => Date
   },
 ): Promise<ReviewAnalysisResult> {
-  const { review, catalogVersion, inputHash, now } = context
+  const { review, catalogVersion, inputHash, analysisAnalyzedAt, now } = context
   const topics = await loadTopics(options.database, review)
   const classification = await options.classifier.classify({
     title: review.title,
@@ -132,6 +142,7 @@ async function runReviewClassification(
     review,
     catalogVersion,
     inputHash,
+    analysisAnalyzedAt,
     classification,
     now,
   })
@@ -200,21 +211,36 @@ function loadTopics(
     )
 }
 
-async function isAnalysisCurrent(
+type ExistingAnalysis = {
+  inputHash: string
+  catalogVersion: number
+  criteriaVersion: string
+  analyzedAt: Date
+}
+
+async function loadExistingAnalysis(
   database: Database,
-  review: Pick<ReviewForAnalysis, 'id' | 'analysisStatus'>,
-  catalogVersion: number,
-  inputHash: string,
-): Promise<boolean> {
+  reviewId: string,
+): Promise<ExistingAnalysis | undefined> {
   const [existing] = await database
     .select({
       inputHash: reviewAnalyses.inputHash,
       catalogVersion: reviewAnalyses.catalogVersion,
       criteriaVersion: reviewAnalyses.criteriaVersion,
+      analyzedAt: reviewAnalyses.analyzedAt,
     })
     .from(reviewAnalyses)
-    .where(eq(reviewAnalyses.reviewId, review.id))
+    .where(eq(reviewAnalyses.reviewId, reviewId))
     .limit(1)
+  return existing
+}
+
+function isAnalysisCurrent(
+  review: Pick<ReviewForAnalysis, 'analysisStatus'>,
+  catalogVersion: number,
+  inputHash: string,
+  existing: ExistingAnalysis | undefined,
+): boolean {
   return (
     existing?.inputHash === inputHash
     && existing.catalogVersion === catalogVersion
@@ -246,11 +272,60 @@ function isEmptyReview(review: Pick<ReviewForAnalysis, 'title' | 'body'>): boole
   return review.body.trim().length === 0 && (review.title ?? '').trim().length === 0
 }
 
-async function markReviewSkipped(database: Database, reviewId: string): Promise<void> {
-  await database
-    .update(reviews)
-    .set({ analysisStatus: 'skipped', analysisFailureCode: 'empty_body', analysisStartedAt: null })
-    .where(eq(reviews.id, reviewId))
+function markEmptyReviewSkipped(database: Database, review: ReviewForAnalysis): Promise<boolean> {
+  return skipEmptyReviewIfUnchanged(database, {
+    organizationId: review.organizationId,
+    appId: review.appId,
+    reviewId: review.id,
+    expectedInputHash: getReviewAnalysisInputHash(review),
+  })
+}
+
+export function skipEmptyReviewIfUnchanged(
+  database: Database,
+  input: { organizationId: string; appId: string; reviewId: string; expectedInputHash: string },
+): Promise<boolean> {
+  return database.transaction(async (transaction) => {
+    const [lockedApp] = await transaction
+      .select({ id: apps.id })
+      .from(apps)
+      .where(and(eq(apps.id, input.appId), eq(apps.organizationId, input.organizationId)))
+      .for('update')
+      .limit(1)
+    if (lockedApp === undefined) {
+      return false
+    }
+    const [current] = await transaction
+      .select({
+        title: reviews.title,
+        body: reviews.body,
+        rating: reviews.rating,
+        version: reviews.version,
+        language: reviews.language,
+        analysisStatus: reviews.analysisStatus,
+      })
+      .from(reviews)
+      .where(and(eq(reviews.id, input.reviewId), eq(reviews.organizationId, input.organizationId)))
+      .for('update')
+      .limit(1)
+    if (
+      current === undefined
+      || getReviewAnalysisInputHash(current) !== input.expectedInputHash
+      || !isEmptyReview(current)
+      || (current.analysisStatus !== 'pending' && current.analysisStatus !== 'skipped')
+    ) {
+      return false
+    }
+    await transaction
+      .update(reviews)
+      .set({
+        analysisStatus: 'skipped',
+        analysisFailureCode: 'empty_body',
+        analysisStartedAt: null,
+      })
+      .where(eq(reviews.id, input.reviewId))
+    return true
+  })
 }
 
 async function markReviewProcessing(
@@ -268,19 +343,56 @@ async function markReviewPending(database: Database, reviewId: string): Promise<
   await database
     .update(reviews)
     .set({ analysisStatus: 'pending', analysisStartedAt: null })
-    .where(eq(reviews.id, reviewId))
+    .where(and(eq(reviews.id, reviewId), eq(reviews.analysisStatus, 'processing')))
 }
 
-async function markReviewFailed(database: Database, reviewId: string, error: Error): Promise<void> {
-  await database
-    .update(reviews)
-    .set({
-      analysisStatus: 'failed',
-      analysisFailureCode: safeAnalysisFailureCode(error),
-      analysisStartedAt: null,
-      updatedAt: new Date(),
-    })
-    .where(eq(reviews.id, reviewId))
+async function markReviewFailed(
+  database: Database,
+  review: Pick<ReviewForAnalysis, 'id' | 'organizationId' | 'appId'>,
+  inputHash: string,
+  error: Error,
+): Promise<void> {
+  await database.transaction(async (transaction) => {
+    await transaction
+      .select({ id: apps.id })
+      .from(apps)
+      .where(and(eq(apps.id, review.appId), eq(apps.organizationId, review.organizationId)))
+      .for('update')
+      .limit(1)
+    const [current] = await transaction
+      .select({
+        title: reviews.title,
+        body: reviews.body,
+        rating: reviews.rating,
+        version: reviews.version,
+        language: reviews.language,
+        analysisStatus: reviews.analysisStatus,
+      })
+      .from(reviews)
+      .where(and(eq(reviews.id, review.id), eq(reviews.organizationId, review.organizationId)))
+      .for('update')
+      .limit(1)
+    if (
+      current === undefined
+      || current.analysisStatus !== 'processing'
+      || getReviewAnalysisInputHash(current) !== inputHash
+    ) {
+      await transaction
+        .update(reviews)
+        .set({ analysisStatus: 'pending', analysisStartedAt: null })
+        .where(and(eq(reviews.id, review.id), eq(reviews.analysisStatus, 'processing')))
+      return
+    }
+    await transaction
+      .update(reviews)
+      .set({
+        analysisStatus: 'failed',
+        analysisFailureCode: safeAnalysisFailureCode(error),
+        analysisStartedAt: null,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(reviews.id, review.id), eq(reviews.analysisStatus, 'processing')))
+  })
 }
 
 function persistClassification(input: PersistClassificationInput): Promise<boolean> {
@@ -334,6 +446,7 @@ async function lockPersistenceRows(
       manualOverride: reviewAnalyses.manualOverride,
       overrideInputHash: reviewAnalyses.overrideInputHash,
       inputHash: reviewAnalyses.inputHash,
+      analyzedAt: reviewAnalyses.analyzedAt,
       discoveredAt: reviewAnalyses.discoveredAt,
     })
     .from(reviewAnalyses)
@@ -349,25 +462,37 @@ async function lockPersistenceRows(
         eq(reviewTopics.organizationId, input.review.organizationId),
       ),
     )
+  const currentState = current ?? {
+    manualOverride: null,
+    overrideInputHash: null,
+    inputHash: null,
+    analyzedAt: null,
+    discoveredAt: null,
+  }
   return {
-    isCurrent: isPersistenceCurrent(lockedSource, input),
-    manualOverride: current?.manualOverride ?? null,
-    overrideInputHash: current?.overrideInputHash ?? null,
-    inputHash: current?.inputHash ?? null,
-    discoveredAt: current?.discoveredAt ?? null,
+    isCurrent: isPersistenceCurrent(lockedSource, current, input),
+    manualOverride: currentState.manualOverride,
+    overrideInputHash: currentState.overrideInputHash,
+    inputHash: currentState.inputHash,
+    discoveredAt: currentState.discoveredAt,
     activeTopicIds: getActiveTopicIds(activeTopics),
   }
 }
 
 function isPersistenceCurrent(
   source: Awaited<ReturnType<typeof lockSourceRows>>,
+  current: { analyzedAt: Date; inputHash: string } | undefined,
   input: PersistClassificationInput,
 ): boolean {
-  return (
+  const sourceCurrent =
     source.app?.catalogVersion === input.catalogVersion
     && source.review !== undefined
     && getReviewAnalysisInputHash(source.review) === input.inputHash
-  )
+  const analysisCurrent =
+    input.analysisAnalyzedAt === null
+      ? current === undefined
+      : current !== undefined && current.analyzedAt.getTime() === input.analysisAnalyzedAt.getTime()
+  return sourceCurrent && analysisCurrent
 }
 
 function getActiveTopicIds(topics: Array<{ id: string; status: string }>): Set<string> {
@@ -510,7 +635,7 @@ async function markTransactionReviewPending(
   await transaction
     .update(reviews)
     .set({ analysisStatus: 'pending', analysisStartedAt: null })
-    .where(eq(reviews.id, reviewId))
+    .where(and(eq(reviews.id, reviewId), eq(reviews.analysisStatus, 'processing')))
 }
 
 function toClassifierTopic(topic: {

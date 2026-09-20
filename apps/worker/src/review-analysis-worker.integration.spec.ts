@@ -1,6 +1,10 @@
 import { randomUUID } from 'node:crypto'
 
-import type { ReviewClassificationResult, TypeSafeReviewClassifier } from '@reviewinbox/ai'
+import {
+  getReviewAnalysisInputHash,
+  type ReviewClassificationResult,
+  type TypeSafeReviewClassifier,
+} from '@reviewinbox/ai'
 import {
   apps,
   closeDatabase,
@@ -15,8 +19,13 @@ import {
 import { and, eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
-import { classifyReviewForAnalysis, reviewAnalysisCriteriaVersion } from './review-analysis-worker'
+import {
+  classifyReviewForAnalysis,
+  reviewAnalysisCriteriaVersion,
+  skipEmptyReviewIfUnchanged,
+} from './review-analysis-worker'
 import { loadTopicDiscoveryCandidates } from './topic-discovery-candidates'
+import { loadDiscoveryContext, persistDiscoveryResults } from './topic-discovery-worker'
 
 const databaseUrl = process.env['ANALYSIS_TEST_DATABASE_URL']
 const database = createDatabase(databaseUrl ?? 'postgres://unused-analysis-test')
@@ -118,6 +127,14 @@ async function currentCatalogVersion() {
     throw new Error('Expected the analysis test app')
   }
   return app.catalogVersion
+}
+
+async function requiredDiscoveryContext(payload: { organizationId: string; appId: string }) {
+  const context = await loadDiscoveryContext(database, payload)
+  if (context === undefined) {
+    throw new Error('Expected discovery context')
+  }
+  return context
 }
 
 beforeAll(async () => {
@@ -274,6 +291,30 @@ describe.skipIf(databaseUrl === undefined)('review analysis concurrency', () => 
 })
 
 describe.skipIf(databaseUrl === undefined)('analysis retry and discovery markers', () => {
+  it('does not skip an empty snapshot after the source review changes', async () => {
+    const input = await createReview('', '')
+    const expectedInputHash = getReviewAnalysisInputHash({
+      title: '',
+      body: '',
+      rating: 1,
+      version: null,
+      language: null,
+    })
+    await database
+      .update(reviews)
+      .set({ body: 'The review now contains meaningful content.' })
+      .where(eq(reviews.id, input.reviewId))
+
+    await expect(
+      skipEmptyReviewIfUnchanged(database, { ...input, appId, expectedInputHash }),
+    ).resolves.toBe(false)
+    expect(
+      await database.query.reviews.findFirst({ where: eq(reviews.id, input.reviewId) }),
+    ).toMatchObject({ analysisStatus: 'pending' })
+  })
+})
+
+describe.skipIf(databaseUrl === undefined)('analysis retry and discovery markers', () => {
   it('records the failure time used by the scanner cooldown', async () => {
     const input = await createReview()
     await database
@@ -290,7 +331,9 @@ describe.skipIf(databaseUrl === undefined)('analysis retry and discovery markers
     expect(row?.analysisStatus).toBe('failed')
     expect(row?.updatedAt.getTime()).toBeGreaterThanOrEqual(started)
   })
+})
 
+describe.skipIf(databaseUrl === undefined)('topic discovery candidate selection', () => {
   it('selects only fresh completed analyses for topic discovery', async () => {
     const catalogVersion = await currentCatalogVersion()
     const baselineCandidates = await loadTopicDiscoveryCandidates({
@@ -333,7 +376,9 @@ describe.skipIf(databaseUrl === undefined)('analysis retry and discovery markers
         .map((candidate) => candidate.id),
     ).toEqual([fresh.reviewId])
   })
+})
 
+describe.skipIf(databaseUrl === undefined)('analysis discovery markers', () => {
   it('clears discovery eligibility only when source content changes', async () => {
     const input = await createReview()
     const provider = classifier()
@@ -354,6 +399,96 @@ describe.skipIf(databaseUrl === undefined)('analysis retry and discovery markers
       .set({ body: 'Now I cannot sign in either.', analysisStatus: 'pending' })
       .where(eq(reviews.id, input.reviewId))
     await classifyReviewForAnalysis({ database, classifier: provider }, input)
+    expect((await requiredAnalysis(input.reviewId)).discoveredAt).toBeNull()
+  })
+
+  it('keeps a newer analysis revision when an older provider call returns', async () => {
+    const input = await createReview()
+    const provider = classifier()
+    await classifyReviewForAnalysis({ database, classifier: provider }, input)
+    const newerAnalyzedAt = new Date(Date.now() + 1_000)
+    provider.classify.mockImplementationOnce(async () => {
+      await database
+        .update(reviewAnalyses)
+        .set({ analyzedAt: newerAnalyzedAt, model: 'newer-worker' })
+        .where(eq(reviewAnalyses.reviewId, input.reviewId))
+      return result()
+    })
+    await database
+      .update(reviews)
+      .set({ analysisStatus: 'pending' })
+      .where(eq(reviews.id, input.reviewId))
+
+    await expect(
+      classifyReviewForAnalysis({ database, classifier: provider }, input),
+    ).resolves.toMatchObject({ status: 'skipped', reason: 'stale' })
+    expect(await requiredAnalysis(input.reviewId)).toMatchObject({
+      model: 'newer-worker',
+      analyzedAt: newerAnalyzedAt,
+    })
+    expect(
+      await database.query.reviews.findFirst({ where: eq(reviews.id, input.reviewId) }),
+    ).toMatchObject({ analysisStatus: 'pending' })
+  })
+})
+
+describe.skipIf(databaseUrl === undefined)('discovery persistence races', () => {
+  it('rejects discovery results when a candidate analysis changes in flight', async () => {
+    const catalogVersion = await currentCatalogVersion()
+    const input = await createReview()
+    await createUncoveredAnalysis(input.reviewId, { catalogVersion })
+    const payload = { organizationId, appId }
+    const context = await requiredDiscoveryContext(payload)
+    const analyzedAt = new Date(Date.now() + 1_000)
+    await database
+      .update(reviewAnalyses)
+      .set({ analyzedAt })
+      .where(eq(reviewAnalyses.reviewId, input.reviewId))
+    const beforeUsage = await database.query.usageEvents.findMany({
+      where: and(
+        eq(usageEvents.organizationId, organizationId),
+        eq(usageEvents.type, 'managed_ai_topic_discovery'),
+      ),
+    })
+
+    await expect(
+      persistDiscoveryResults(database, payload, context, [
+        { label: `Stale proposal ${randomUUID()}`, description: 'Stale result.' },
+      ]),
+    ).rejects.toThrow('topic_discovery_candidates_stale')
+    expect(
+      await database.query.reviewTopics.findMany({ where: eq(reviewTopics.appId, appId) }),
+    ).not.toContainEqual(expect.objectContaining({ description: 'Stale result.' }))
+    expect(
+      await database.query.usageEvents.findMany({
+        where: and(
+          eq(usageEvents.organizationId, organizationId),
+          eq(usageEvents.type, 'managed_ai_topic_discovery'),
+        ),
+      }),
+    ).toHaveLength(beforeUsage.length)
+    expect((await requiredAnalysis(input.reviewId)).discoveredAt).toBeNull()
+  })
+
+  it('rejects discovery results when a candidate source changes in flight', async () => {
+    const catalogVersion = await currentCatalogVersion()
+    const input = await createReview()
+    await createUncoveredAnalysis(input.reviewId, { catalogVersion })
+    const payload = { organizationId, appId }
+    const context = await requiredDiscoveryContext(payload)
+    await database
+      .update(reviews)
+      .set({ body: 'The source changed while discovery was running.', analysisStatus: 'pending' })
+      .where(eq(reviews.id, input.reviewId))
+
+    await expect(
+      persistDiscoveryResults(database, payload, context, [
+        { label: `Stale source ${randomUUID()}`, description: 'Stale source result.' },
+      ]),
+    ).rejects.toThrow('topic_discovery_candidates_stale')
+    expect(
+      await database.query.reviewTopics.findMany({ where: eq(reviewTopics.appId, appId) }),
+    ).not.toContainEqual(expect.objectContaining({ description: 'Stale source result.' }))
     expect((await requiredAnalysis(input.reviewId)).discoveredAt).toBeNull()
   })
 })
