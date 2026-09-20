@@ -58,13 +58,15 @@ function classificationConditions(filters: AnalysisFilters): SQL {
 function effectiveReviews(organizationId: string, filters: AnalysisFilters): SQL {
   return sql`source as (
     select r.id, r.body, r.reviewed_at, r.analysis_status, s.provider, r.version,
-      case when a.manual_override is null then a.severity else a.manual_override->>'severity' end as severity,
-      case when a.manual_override is null then coalesce(a.intents, '[]'::jsonb)
-        else a.manual_override->'intents' end as intents,
+      case when a.manual_override is not null then a.manual_override->>'severity'
+        when r.analysis_status = 'completed' then a.severity else null end as severity,
+      case when a.manual_override is not null then a.manual_override->'intents'
+        when r.analysis_status = 'completed' then coalesce(a.intents, '[]'::jsonb)
+        else '[]'::jsonb end as intents,
       array(select t.id from review_topics t
         where t.app_id = r.app_id and t.organization_id = r.organization_id
           and t.status <> 'rejected' and t.merged_into_id is null
-          and case when a.manual_override is null then exists (
+          and case when a.manual_override is null then r.analysis_status = 'completed' and exists (
             select 1 from review_topic_assignments ta where ta.review_id = r.id and ta.topic_id = t.id
           ) else (a.manual_override->'topicIds') ? t.id::text end
       ) as topic_ids

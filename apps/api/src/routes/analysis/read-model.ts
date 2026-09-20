@@ -146,9 +146,14 @@ export function toAnalysisReview(
 ): AnalysisReviewView {
   const analysis = row.analysis
   const override = analysis?.manualOverride ?? null
-  const ids = effectiveTopicIds(row.review.id, override, assignments)
+  const automaticAnalysis = row.review.analysisStatus === 'completed' ? analysis : null
+  const ids = effectiveTopicIds(
+    row.review.id,
+    override,
+    automaticAnalysis === null ? [] : assignments,
+  )
   const responseTopics = visibleTopics(ids, topics)
-  const classification = effectiveClassification(analysis, override)
+  const classification = effectiveClassification(automaticAnalysis, override)
   const flags = analysisFlags(row, analysis, override)
   return {
     id: row.review.id,
@@ -186,10 +191,11 @@ function analysisFlags(
   analysis: ReviewRow['analysis'],
   override: NonNullable<ReviewRow['analysis']>['manualOverride'] | null,
 ) {
+  const automaticAnalysis = row.review.analysisStatus === 'completed' ? analysis : null
   return {
     needsRecheck: (analysis?.needsRecheck ?? false) || hasChangedInput(row, analysis, override),
-    uncovered: analysis?.uncovered ?? false,
-    analyzedAt: analysis?.analyzedAt?.toISOString() ?? null,
+    uncovered: automaticAnalysis?.uncovered ?? false,
+    analyzedAt: automaticAnalysis?.analyzedAt.toISOString() ?? null,
   }
 }
 

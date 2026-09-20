@@ -150,6 +150,65 @@ describe('topic catalogue chunks', () => {
     expect(result.topicMatches).toContainEqual({ topicId: 'topic-100', probability: 0.8 })
     expect(result.usage).toEqual({ inputTokens: 2, outputTokens: 2 })
   })
+
+  it('starts a new chunk before truncating regular topics', async () => {
+    const systemOne = vi
+      .fn<TypeSafeReviewClassifierClient['systemOne']>()
+      .mockImplementation((request) => Promise.resolve(createChunkResponse(request)))
+    const classifier = createTypeSafeReviewClassifier({ client: { systemOne } })
+    const topics = Array.from({ length: 4 }, (_, index) => ({
+      id: `topic-large-${index}`,
+      label: `Topic ${index}`,
+      description: 'x'.repeat(4_001),
+      validationStatus: 'approved' as const,
+    }))
+
+    const result = await classifier.classify({ ...input, topics })
+
+    expect(systemOne).toHaveBeenCalledTimes(2)
+    expect(systemOne.mock.calls[0]?.[0]?.state).toMatchObject({
+      activeTopics: topics
+        .slice(0, 2)
+        .map(({ id, label, description }) => ({ id, label, description })),
+    })
+    expect(systemOne.mock.calls[1]?.[0]?.state).toMatchObject({
+      activeTopics: topics
+        .slice(2)
+        .map(({ id, label, description }) => ({ id, label, description })),
+    })
+    expect(result.topicMatches).toHaveLength(4)
+  })
+
+  it('bounds a single oversized topic without dropping it', async () => {
+    const systemOne = vi
+      .fn<TypeSafeReviewClassifierClient['systemOne']>()
+      .mockImplementation((request) => Promise.resolve(createChunkResponse(request)))
+    const classifier = createTypeSafeReviewClassifier({ client: { systemOne } })
+
+    const result = await classifier.classify({
+      ...input,
+      topics: [
+        {
+          id: 'topic-oversized',
+          label: 'Oversized topic',
+          description: 'x'.repeat(13_000),
+          validationStatus: 'approved',
+        },
+      ],
+    })
+
+    expect(systemOne).toHaveBeenCalledOnce()
+    expect(systemOne.mock.calls[0]?.[0]?.state).toMatchObject({
+      activeTopics: [
+        {
+          id: 'topic-oversized',
+          label: 'Oversized topic',
+          description: 'x'.repeat(12_000 - 'Oversized topic'.length),
+        },
+      ],
+    })
+    expect(result.topicMatches).toEqual([{ topicId: 'topic-oversized', probability: 0.1 }])
+  })
 })
 
 describe('classification codes', () => {

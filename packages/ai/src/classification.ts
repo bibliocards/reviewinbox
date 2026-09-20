@@ -217,18 +217,20 @@ function appendTopicToChunks(
   builder: TopicChunkBuilder,
   topic: ReviewTopicForClassification,
 ): void {
-  const candidate = boundTopicCriteria(topic, maxTopicCriteriaCharacters - builder.characters)
-  const candidateCharacters = candidate.label.length + candidate.description.length
+  const topicCharacters = topic.label.length + topic.description.length
   if (
     builder.current.length > 0
     && (builder.current.length >= maxClassificationTopics
-      || builder.characters + candidateCharacters > maxTopicCriteriaCharacters)
+      || builder.characters + topicCharacters > maxTopicCriteriaCharacters)
   ) {
     builder.chunks.push(builder.current)
     builder.current = []
     builder.characters = 0
   }
-  const boundedTopic = boundTopicCriteria(topic, maxTopicCriteriaCharacters - builder.characters)
+  const boundedTopic =
+    topicCharacters > maxTopicCriteriaCharacters
+      ? boundTopicCriteria(topic, maxTopicCriteriaCharacters)
+      : topic
   builder.current.push(boundedTopic)
   builder.characters += boundedTopic.label.length + boundedTopic.description.length
 }

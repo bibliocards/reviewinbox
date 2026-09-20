@@ -77,6 +77,103 @@ describe.skipIf(databaseUrl === undefined)('analysis dashboard routes', () => {
       )
     })
   })
+})
+
+describe.skipIf(databaseUrl === undefined)('invalidated automatic analyses', () => {
+  it.each(['pending', 'processing', 'failed', 'skipped'] as const)(
+    'hides invalidated automatic classification while %s',
+    async (status) => {
+      await withFixture(async (fixture) => {
+        await database
+          .update(reviews)
+          .set({ analysisStatus: status, body: '' })
+          .where(eq(reviews.id, fixture.firstReviewId))
+        await database
+          .update(reviewAnalyses)
+          .set({ intents: ['report_problem'], uncovered: true })
+          .where(eq(reviewAnalyses.reviewId, fixture.firstReviewId))
+        const { routes } = createRouteHarness(fixture)
+        const dashboard = analysisResponseSchema.parse(
+          await (await routes.request(`/api/analysis?appId=${fixture.appId}`)).json(),
+        )
+        expect(dashboard.analyzed).toBe(2)
+        expect(dashboard.severities.some((item) => item.severity === 'blocking')).toBe(false)
+        expect(dashboard.trend.every((item) => item.blocking === 0)).toBe(true)
+        expect(
+          dashboard.topics.find((topic) => topic.id === fixture.approvedTopicId)?.reviewCount,
+        ).toBe(0)
+        const expected = {
+          severity: null,
+          intents: [],
+          topics: [],
+          uncovered: false,
+          analyzedAt: null,
+        }
+        expect(
+          dashboard.reviews.find((review) => review.id === fixture.firstReviewId),
+        ).toMatchObject(expected)
+        const detail = analysisReviewSchema.parse(
+          await (await routes.request(`/api/analysis/reviews/${fixture.firstReviewId}`)).json(),
+        )
+        expect(detail).toMatchObject(expected)
+        await Promise.all(
+          ['severity=blocking', 'intent=report_problem', `topicId=${fixture.approvedTopicId}`].map(
+            async (filter) => {
+              const filtered = analysisResponseSchema.parse(
+                await (
+                  await routes.request(`/api/analysis?appId=${fixture.appId}&${filter}`)
+                ).json(),
+              )
+              expect(filtered.total).toBe(0)
+              expect(filtered.reviews).toEqual([])
+            },
+          ),
+        )
+      })
+    },
+  )
+})
+
+describe.skipIf(databaseUrl === undefined)('retained manual analyses', () => {
+  it('retains manual classification for rechecking and never restores stale automatic values', async () => {
+    await withFixture(async (fixture) => {
+      await database
+        .update(reviews)
+        .set({ analysisStatus: 'pending', body: 'Changed Review' })
+        .where(eq(reviews.id, fixture.manualReviewId))
+      const { routes } = createRouteHarness(fixture)
+      const detail = analysisReviewSchema.parse(
+        await (await routes.request(`/api/analysis/reviews/${fixture.manualReviewId}`)).json(),
+      )
+      expect(detail).toMatchObject({ hasOverride: true, needsRecheck: true, severity: null })
+      expect(detail.topics.map((topic) => topic.id)).toEqual([fixture.pendingTopicId])
+      const dashboard = analysisResponseSchema.parse(
+        await (
+          await routes.request(
+            `/api/analysis?appId=${fixture.appId}&topicId=${fixture.pendingTopicId}`,
+          )
+        ).json(),
+      )
+      expect(dashboard.total).toBe(2)
+      expect(dashboard.reviews.find((review) => review.id === fixture.manualReviewId)).toEqual(
+        detail,
+      )
+      const reset = analysisReviewSchema.parse(
+        await (
+          await routes.request(`/api/analysis/reviews/${fixture.manualReviewId}/override`, {
+            method: 'DELETE',
+          })
+        ).json(),
+      )
+      expect(reset).toMatchObject({
+        hasOverride: false,
+        severity: null,
+        intents: [],
+        topics: [],
+        analyzedAt: null,
+      })
+    })
+  })
 
   it('keeps analysis and catalogue reads isolated to the active Organization', async () => {
     await withFixture(async (fixture) => {
