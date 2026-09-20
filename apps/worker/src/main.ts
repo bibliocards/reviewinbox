@@ -1,4 +1,5 @@
 import {
+  reviewAnalysisCriteriaVersion,
   createOpenAiCompatibleTopicDiscoveryProvider,
   generateReplyDraft,
   type ReplyDraftProvider,
@@ -40,7 +41,6 @@ import { getAutoSyncJobStartsAt, isAutoSyncDueAt } from './auto-sync-scheduler'
 import {
   classifyReviewForAnalysis,
   createTypeSafeClassifier,
-  reviewAnalysisCriteriaVersion,
   type ReviewAnalysisWorkerOptions,
 } from './review-analysis-worker'
 import { discoverTopicsForApp } from './topic-discovery-worker'

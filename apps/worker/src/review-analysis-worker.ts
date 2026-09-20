@@ -1,4 +1,5 @@
 import {
+  reviewAnalysisCriteriaVersion,
   createTypeSafeReviewClassifier,
   getReviewAnalysisInputHash,
   type ReviewClassificationResult,
@@ -16,7 +17,6 @@ import {
 } from '@reviewinbox/db'
 import { and, eq } from 'drizzle-orm'
 
-export const reviewAnalysisCriteriaVersion = 'review-analysis-v1'
 export const classificationProbabilityThreshold = 0.5
 
 export type ReviewAnalysisWorkerOptions = {

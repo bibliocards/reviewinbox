@@ -1,4 +1,4 @@
-import { getReviewAnalysisInputHash } from '@reviewinbox/ai'
+import { getReviewAnalysisInputHash, reviewAnalysisCriteriaVersion } from '@reviewinbox/ai'
 import {
   analysisFiltersSchema,
   analysisReviewSchema,
@@ -146,7 +146,7 @@ export function toAnalysisReview(
 ): AnalysisReviewView {
   const analysis = row.analysis
   const override = analysis?.manualOverride ?? null
-  const automaticAnalysis = row.review.analysisStatus === 'completed' ? analysis : null
+  const automaticAnalysis = currentAutomaticAnalysis(row)
   const ids = effectiveTopicIds(
     row.review.id,
     override,
@@ -176,6 +176,15 @@ export function toAnalysisReview(
   }
 }
 
+function currentAutomaticAnalysis(row: ReviewRow): ReviewRow['analysis'] {
+  const analysis = row.analysis
+  return row.review.analysisStatus === 'completed'
+    && analysis?.catalogVersion === row.app.analysisCatalogVersion
+    && analysis.criteriaVersion === reviewAnalysisCriteriaVersion
+    ? analysis
+    : null
+}
+
 function effectiveClassification(
   analysis: ReviewRow['analysis'],
   override: NonNullable<ReviewRow['analysis']>['manualOverride'] | null,
@@ -191,7 +200,7 @@ function analysisFlags(
   analysis: ReviewRow['analysis'],
   override: NonNullable<ReviewRow['analysis']>['manualOverride'] | null,
 ) {
-  const automaticAnalysis = row.review.analysisStatus === 'completed' ? analysis : null
+  const automaticAnalysis = currentAutomaticAnalysis(row)
   return {
     needsRecheck: (analysis?.needsRecheck ?? false) || hasChangedInput(row, analysis, override),
     uncovered: automaticAnalysis?.uncovered ?? false,

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 
 import {
+  reviewAnalysisCriteriaVersion,
   getReviewAnalysisInputHash,
   type ReviewClassificationResult,
   type TypeSafeReviewClassifier,
@@ -19,11 +20,7 @@ import {
 import { and, eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
-import {
-  classifyReviewForAnalysis,
-  reviewAnalysisCriteriaVersion,
-  skipEmptyReviewIfUnchanged,
-} from './review-analysis-worker'
+import { classifyReviewForAnalysis, skipEmptyReviewIfUnchanged } from './review-analysis-worker'
 import { loadTopicDiscoveryCandidates } from './topic-discovery-candidates'
 import { loadDiscoveryContext, persistDiscoveryResults } from './topic-discovery-worker'
 

@@ -1,4 +1,8 @@
-import { getReviewAnalysisInputHash, type TopicDiscoveryProvider } from '@reviewinbox/ai'
+import {
+  getReviewAnalysisInputHash,
+  reviewAnalysisCriteriaVersion,
+  type TopicDiscoveryProvider,
+} from '@reviewinbox/ai'
 import {
   apps,
   reviewAnalyses,
@@ -9,7 +13,6 @@ import {
 } from '@reviewinbox/db'
 import { and, eq, inArray, isNull, or } from 'drizzle-orm'
 
-import { reviewAnalysisCriteriaVersion } from './review-analysis-worker'
 import { loadTopicDiscoveryCandidates } from './topic-discovery-candidates'
 
 export type TopicDiscoveryWorkerRuntime = {

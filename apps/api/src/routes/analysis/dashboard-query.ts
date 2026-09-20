@@ -1,3 +1,4 @@
+import { reviewAnalysisCriteriaVersion } from '@reviewinbox/ai'
 import { analysisResponseSchema, type AnalysisFilters } from '@reviewinbox/contracts'
 import { type Database } from '@reviewinbox/db'
 import { sql, type SQL } from 'drizzle-orm'
@@ -56,21 +57,25 @@ function classificationConditions(filters: AnalysisFilters): SQL {
 }
 
 function effectiveReviews(organizationId: string, filters: AnalysisFilters): SQL {
+  const currentAnalysis = sql`r.analysis_status = 'completed'
+    and a.catalog_version = app.analysis_catalog_version
+    and a.criteria_version = ${reviewAnalysisCriteriaVersion}`
   return sql`source as (
-    select r.id, r.body, r.reviewed_at, r.analysis_status, s.provider, r.version,
+    select r.id, r.body, r.reviewed_at, (${currentAnalysis}) as analysis_current, s.provider, r.version,
       case when a.manual_override is not null then a.manual_override->>'severity'
-        when r.analysis_status = 'completed' then a.severity else null end as severity,
+        when ${currentAnalysis} then a.severity else null end as severity,
       case when a.manual_override is not null then a.manual_override->'intents'
-        when r.analysis_status = 'completed' then coalesce(a.intents, '[]'::jsonb)
+        when ${currentAnalysis} then coalesce(a.intents, '[]'::jsonb)
         else '[]'::jsonb end as intents,
       array(select t.id from review_topics t
         where t.app_id = r.app_id and t.organization_id = r.organization_id
           and t.status <> 'rejected' and t.merged_into_id is null
-          and case when a.manual_override is null then r.analysis_status = 'completed' and exists (
+          and case when a.manual_override is null then (${currentAnalysis}) and exists (
             select 1 from review_topic_assignments ta where ta.review_id = r.id and ta.topic_id = t.id
           ) else (a.manual_override->'topicIds') ? t.id::text end
       ) as topic_ids
-    from reviews r join store_connections s on s.id = r.store_connection_id
+    from reviews r join apps app on app.id = r.app_id and app.organization_id = r.organization_id
+    join store_connections s on s.id = r.store_connection_id
     left join review_analyses a on a.review_id = r.id
     where ${sourceConditions(organizationId, filters)}
   ), filtered as materialized (select * from source where ${classificationConditions(filters)})`
@@ -124,7 +129,7 @@ export async function readAnalysisSummary(
   const result = await db.execute(sql`with ${effectiveReviews(organizationId, filters)}
     select jsonb_build_object(
       'total', (select count(*) from filtered),
-      'analyzed', (select count(*) from filtered where analysis_status = 'completed'),
+      'analyzed', (select count(*) from filtered where analysis_current),
       'reviewIds', (select coalesce(jsonb_agg(p.id), '[]'::jsonb) from (
         select id from filtered order by reviewed_at desc, id limit ${filters.pageSize}
           offset ${(filters.page - 1) * filters.pageSize}

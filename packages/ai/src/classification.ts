@@ -4,6 +4,8 @@ import { noul, score, TypeSafeClient } from '@typesafe-ai/sdk'
 import type { Questions, SystemOneRequest, TypeSafeClientConfig } from '@typesafe-ai/sdk'
 import { z } from 'zod'
 
+export const reviewAnalysisCriteriaVersion = 'review-analysis-v1'
+
 export const reviewIntentCodes = [
   'report_problem',
   'request_feature',

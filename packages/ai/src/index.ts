@@ -20,6 +20,7 @@ export type { OpenAiCompatibleReplyDraftProviderDependencies } from './vercel-ai
 export {
   createTypeSafeReviewClassifier,
   getReviewAnalysisInputHash,
+  reviewAnalysisCriteriaVersion,
   reviewIntentCodes,
   reviewSeverityCodes,
   severityCodeFromScore,

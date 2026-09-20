@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 
+import { reviewAnalysisCriteriaVersion } from '@reviewinbox/ai'
 import {
   analysisResponseSchema,
   analysisReviewSchema,
@@ -134,6 +135,106 @@ describe.skipIf(databaseUrl === undefined)('invalidated automatic analyses', () 
   )
 })
 
+describe.skipIf(databaseUrl === undefined)('catalogue fingerprint freshness', () => {
+  it('hides a completed analysis when the App catalogue version is newer', async () => {
+    await withFixture(async (fixture) => {
+      await database
+        .update(apps)
+        .set({ analysisCatalogVersion: 2 })
+        .where(eq(apps.id, fixture.appId))
+      await database
+        .update(reviewAnalyses)
+        .set({ intents: ['report_problem'] })
+        .where(eq(reviewAnalyses.reviewId, fixture.firstReviewId))
+      const { routes } = createRouteHarness(fixture)
+      const result = await readInvalidatedAutomaticAnalysis(routes, fixture)
+      expect(result.dashboard.analyzed).toBe(0)
+      expect(result.invalidatedDashboardReview).toMatchObject({
+        severity: null,
+        intents: [],
+        topics: [],
+        uncovered: false,
+        analyzedAt: null,
+      })
+      expect(result.detail).toMatchObject({
+        severity: null,
+        intents: [],
+        topics: [],
+        uncovered: false,
+        analyzedAt: null,
+      })
+      expect(result.filtered.total).toBe(0)
+      expect(result.topicFiltered.total).toBe(0)
+      expect(result.intentFiltered.total).toBe(0)
+    })
+  })
+})
+
+describe.skipIf(databaseUrl === undefined)('criteria fingerprint freshness', () => {
+  it('hides a completed analysis when its criteria version is stale', async () => {
+    await withFixture(async (fixture) => {
+      await database
+        .update(reviewAnalyses)
+        .set({
+          criteriaVersion: `${reviewAnalysisCriteriaVersion}-stale`,
+          intents: ['report_problem'],
+        })
+        .where(eq(reviewAnalyses.reviewId, fixture.firstReviewId))
+      const { routes } = createRouteHarness(fixture)
+      const result = await readInvalidatedAutomaticAnalysis(routes, fixture)
+      expect(result.dashboard.analyzed).toBe(2)
+      expect(result.invalidatedDashboardReview).toMatchObject({
+        severity: null,
+        intents: [],
+        topics: [],
+        uncovered: false,
+        analyzedAt: null,
+      })
+      expect(result.detail).toMatchObject({
+        severity: null,
+        intents: [],
+        topics: [],
+        uncovered: false,
+        analyzedAt: null,
+      })
+      expect(result.filtered.total).toBe(0)
+      expect(result.topicFiltered.total).toBe(0)
+      expect(result.intentFiltered.total).toBe(0)
+    })
+  })
+})
+
+describe.skipIf(databaseUrl === undefined)('manual fingerprint freshness', () => {
+  it('keeps manual corrections when both automatic fingerprints are stale', async () => {
+    await withFixture(async (fixture) => {
+      await database
+        .update(apps)
+        .set({ analysisCatalogVersion: 2 })
+        .where(eq(apps.id, fixture.appId))
+      await database
+        .update(reviewAnalyses)
+        .set({ criteriaVersion: `${reviewAnalysisCriteriaVersion}-stale` })
+        .where(eq(reviewAnalyses.reviewId, fixture.manualReviewId))
+      const { routes } = createRouteHarness(fixture)
+      const detail = analysisReviewSchema.parse(
+        await (await routes.request(`/api/analysis/reviews/${fixture.manualReviewId}`)).json(),
+      )
+      expect(detail).toMatchObject({ hasOverride: true, severity: null, needsRecheck: true })
+      expect(detail.topics.map((topic) => topic.id)).toEqual([fixture.pendingTopicId])
+
+      const dashboard = analysisResponseSchema.parse(
+        await (
+          await routes.request(
+            `/api/analysis?appId=${fixture.appId}&topicId=${fixture.pendingTopicId}`,
+          )
+        ).json(),
+      )
+      expect(dashboard.total).toBe(1)
+      expect(dashboard.reviews.map((review) => review.id)).toEqual([fixture.manualReviewId])
+    })
+  })
+})
+
 describe.skipIf(databaseUrl === undefined)('retained manual analyses', () => {
   it('retains manual classification for rechecking and never restores stale automatic values', async () => {
     await withFixture(async (fixture) => {
@@ -193,6 +294,43 @@ describe.skipIf(databaseUrl === undefined)('retained manual analyses', () => {
     })
   })
 })
+
+async function readInvalidatedAutomaticAnalysis(
+  routes: ReturnType<typeof createRouteHarness>['routes'],
+  fixture: Fixture,
+) {
+  const dashboard = analysisResponseSchema.parse(
+    await (await routes.request(`/api/analysis?appId=${fixture.appId}`)).json(),
+  )
+  const detail = analysisReviewSchema.parse(
+    await (await routes.request(`/api/analysis/reviews/${fixture.firstReviewId}`)).json(),
+  )
+  const filtered = analysisResponseSchema.parse(
+    await (await routes.request(`/api/analysis?appId=${fixture.appId}&severity=blocking`)).json(),
+  )
+  const topicFiltered = analysisResponseSchema.parse(
+    await (
+      await routes.request(
+        `/api/analysis?appId=${fixture.appId}&topicId=${fixture.approvedTopicId}`,
+      )
+    ).json(),
+  )
+  const intentFiltered = analysisResponseSchema.parse(
+    await (
+      await routes.request(`/api/analysis?appId=${fixture.appId}&intent=report_problem`)
+    ).json(),
+  )
+  return {
+    dashboard,
+    detail,
+    filtered,
+    topicFiltered,
+    intentFiltered,
+    invalidatedDashboardReview: dashboard.reviews.find(
+      (review) => review.id === fixture.firstReviewId,
+    ),
+  }
+}
 
 describe.skipIf(databaseUrl === undefined)('analysis catalogue permissions', () => {
   it('does not grant catalogue management to a regular member', async () => {
@@ -286,7 +424,7 @@ describe.skipIf(databaseUrl === undefined)('analysis catalogue mutations', () =>
         { method: 'DELETE' },
       )
       const afterReset = analysisReviewSchema.parse(await resetResponse.json())
-      expect(afterReset).toMatchObject({ hasOverride: false, severity: 'degraded', topics: [] })
+      expect(afterReset).toMatchObject({ hasOverride: false, severity: null, topics: [] })
     })
   })
 })
@@ -299,20 +437,20 @@ function createRouteHarness(
   const session = { organizationId: fixture.organizationId, role, userId: 'analysis-test-user' }
   const requireSession = vi
     .fn<AnalysisRouteDependencies['requireSession']>()
-    .mockImplementation((_context: Context) => ({ ok: true, session }))
+    .mockImplementation((_context: Context) => Promise.resolve({ ok: true as const, session }))
   const requireManagerSession = vi
     .fn<AnalysisRouteDependencies['requireManagerSession']>()
     .mockImplementation((_context: Context) => {
       if (options.managerAllowed === false) {
-        return {
-          ok: false,
+        return Promise.resolve({
+          ok: false as const,
           response: new Response(
             JSON.stringify({ error: 'Organization Admin permission required.' }),
             { status: 403, headers: { 'content-type': 'application/json' } },
           ),
-        }
+        })
       }
-      return { ok: true, session }
+      return Promise.resolve({ ok: true as const, session })
     })
   return {
     routes: createAnalysisRoutes({
