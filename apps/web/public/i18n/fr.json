@@ -147,7 +147,6 @@
     }
   },
   "replyInbox": {
-    "eyebrow": "Reply Inbox",
     "title": "Reply Inbox",
     "description": "Relisez, modifiez, ignorez et publiez les replies des Reviews importées.",
     "loading": "Chargement des Reviews...",
@@ -285,5 +284,120 @@
       "title": "Créer une Organization",
       "description": "La création d’Organization sera ajoutée ici. Pour l’instant, ce placeholder garde le flux de suppression cloud dans un état sûr."
     }
+  },
+  "auth": {
+    "common": {
+      "productName": "ReviewInbox",
+      "or": "ou"
+    },
+    "actions": {
+      "signIn": "Se connecter",
+      "signUp": "Créer un compte",
+      "resetPassword": "Réinitialiser le mot de passe",
+      "sendResetLink": "Envoyer le lien de réinitialisation",
+      "setNewPassword": "Définir le nouveau mot de passe",
+      "backToSignIn": "Retour à la connexion"
+    },
+    "providers": {
+      "google": "Google",
+      "apple": "Apple",
+      "github": "GitHub",
+      "sso": "Continuer avec SSO"
+    },
+    "fields": {
+      "email": "E-mail",
+      "emailPlaceholder": "vous@exemple.com",
+      "password": "Mot de passe",
+      "newPassword": "Nouveau mot de passe",
+      "confirmPassword": "Confirmer le nouveau mot de passe"
+    },
+    "password": {
+      "prompt": "Choisissez un mot de passe",
+      "weak": "Faible",
+      "medium": "Moyen",
+      "strong": "Fort"
+    },
+    "validation": {
+      "email": "Saisissez une adresse e-mail valide.",
+      "passwordRequired": "Saisissez votre mot de passe.",
+      "newPassword": "Utilisez un mot de passe d’au moins 8 caractères.",
+      "confirmPasswordRequired": "Confirmez votre nouveau mot de passe.",
+      "passwordsDoNotMatch": "Les mots de passe doivent correspondre."
+    },
+    "login": {
+      "title": "Se connecter à ReviewInbox",
+      "noAccount": "Vous n’avez pas encore de compte ?",
+      "forgotPassword": "Mot de passe oublié ?",
+      "errors": {
+        "invalidCredentials": "Impossible de vous connecter avec ces identifiants."
+      }
+    },
+    "forgotPassword": {
+      "title": "Réinitialiser votre mot de passe",
+      "description": "Saisissez l’e-mail de votre compte et nous enverrons un lien si le compte existe.",
+      "sentTitle": "Consultez votre e-mail",
+      "sentDescription": "Si un compte utilise cette adresse e-mail, nous avons envoyé un lien de réinitialisation. Le lien expire après un court délai.",
+      "errors": {
+        "unavailable": "La récupération du mot de passe est indisponible pour le moment. Contactez votre administrateur."
+      }
+    },
+    "resetPassword": {
+      "title": "Choisir un nouveau mot de passe",
+      "description": "Utilisez au moins 8 caractères. Vos autres sessions actives seront déconnectées.",
+      "completedTitle": "Mot de passe modifié",
+      "completedDescription": "Votre mot de passe a été réinitialisé. Vous pouvez maintenant vous connecter avec le nouveau mot de passe.",
+      "invalidTitle": "Lien de réinitialisation indisponible",
+      "invalidDescription": "Ce lien de réinitialisation est invalide ou a expiré. Demandez un nouveau lien pour continuer.",
+      "errors": {
+        "invalidLink": "Ce lien de réinitialisation est invalide ou a expiré. Demandez-en un nouveau et réessayez."
+      }
+    }
+  },
+  "accountSettings": {
+    "title": "Paramètres du compte",
+    "description": "Gérez le nom affiché à votre équipe et protégez votre compte.",
+    "profile": {
+      "title": "Profil",
+      "email": "Votre adresse e-mail est {{email}}.",
+      "nameLabel": "Nom",
+      "namePlaceholder": "Votre nom",
+      "save": "Enregistrer le profil",
+      "saved": "Le nom de votre profil a été enregistré.",
+      "errors": {
+        "saveFailed": "Impossible d’enregistrer le nom de votre profil.",
+        "nameRequired": "Saisissez un nom."
+      }
+    },
+    "password": {
+      "title": "Mot de passe",
+      "description": "La modification de votre mot de passe déconnecte vos autres sessions actives.",
+      "currentLabel": "Mot de passe actuel",
+      "newLabel": "Nouveau mot de passe",
+      "confirmLabel": "Confirmer le nouveau mot de passe",
+      "change": "Modifier le mot de passe",
+      "changed": "Votre mot de passe a été modifié. Les autres sessions ont été déconnectées.",
+      "validation": {
+        "currentRequired": "Saisissez votre mot de passe actuel."
+      },
+      "errors": {
+        "changeFailed": "Impossible de modifier votre mot de passe. Vérifiez votre mot de passe actuel et réessayez."
+      }
+    }
+  },
+  "pageTitles": {
+    "login": "Connexion",
+    "signUp": "Créer un compte",
+    "forgotPassword": "Réinitialiser votre mot de passe",
+    "resetPassword": "Choisir un nouveau mot de passe",
+    "acceptInvitation": "Accepter une invitation",
+    "createOrganization": "Créer une Organization",
+    "inbox": "Reply Inbox",
+    "apps": "Apps",
+    "auditHistory": "Historique",
+    "settings": "Paramètres"
+  },
+  "common": {
+    "useLightTheme": "Utiliser le thème clair",
+    "useDarkTheme": "Utiliser le thème sombre"
   }
 }

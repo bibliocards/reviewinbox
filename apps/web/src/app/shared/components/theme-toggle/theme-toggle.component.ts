@@ -1,10 +1,11 @@
 import { DOCUMENT } from '@angular/common'
 import { Component, computed, inject, signal } from '@angular/core'
+import { TranslocoDirective } from '@jsverse/transloco'
 import { ButtonModule } from 'primeng/button'
 
 @Component({
   selector: 'ri-theme-toggle',
-  imports: [ButtonModule],
+  imports: [ButtonModule, TranslocoDirective],
   templateUrl: './theme-toggle.component.html',
   host: { class: 'inline-flex' },
 })
@@ -12,7 +13,7 @@ export class ThemeToggleComponent {
   private readonly document = inject(DOCUMENT)
 
   protected readonly isDarkTheme = signal(false)
-  protected readonly themeLabel = computed(() => (this.isDarkTheme() ? 'Use light theme' : 'Use dark theme'))
+  protected readonly themeLabel = computed(() => (this.isDarkTheme() ? 'common.useLightTheme' : 'common.useDarkTheme'))
   protected readonly themeIcon = computed(() => (this.isDarkTheme() ? 'pi pi-sun' : 'pi pi-moon'))
 
   constructor() {

@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, signal } from '@angular/core'
 import { toSignal } from '@angular/core/rxjs-interop'
 import { email, FormField, form, required, submit } from '@angular/forms/signals'
 import { ActivatedRoute, Router, RouterLink } from '@angular/router'
+import { TranslocoDirective } from '@jsverse/transloco'
 import { AuthService } from 'ngx-better-auth'
 import { ButtonModule } from 'primeng/button'
 import { InputTextModule } from 'primeng/inputtext'
@@ -12,7 +13,7 @@ import { AuthCapabilitiesService } from '../../../shared/services/auth-capabilit
 
 @Component({
   selector: 'ri-login-page',
-  imports: [ButtonModule, FormField, InputTextModule, PasswordModule, RouterLink, ThemeToggleComponent],
+  imports: [ButtonModule, FormField, InputTextModule, PasswordModule, RouterLink, ThemeToggleComponent, TranslocoDirective],
   templateUrl: './login.page.html',
 })
 export class LoginPageComponent {
@@ -66,7 +67,7 @@ export class LoginPageComponent {
         await firstValueFrom(this.auth.signInEmail(this.loginForm().value()))
         await this.router.navigateByUrl(this.redirectUrl ?? '/')
       } catch {
-        this.errorMessage.set('We could not sign you in with these credentials.')
+        this.errorMessage.set('auth.login.errors.invalidCredentials')
       } finally {
         this.isSubmitting.set(false)
       }

@@ -1,0 +1,5 @@
+/* Signal Forms binds validity before interaction; show its error color only
+   when the same touched validation state also displays an error message. */
+:host p-password.settings-password-field:not(.settings-password-field-invalid) {
+  --p-inputtext-invalid-border-color: var(--p-inputtext-border-color);
+}
