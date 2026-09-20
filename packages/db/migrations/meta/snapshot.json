@@ -1,6 +1,6 @@
 {
-  "id": "28a236bc-74b7-43a4-b471-3c6b37ff85c8",
-  "prevId": "e16a8c60-5baa-4c43-b379-c295d64a7809",
+  "id": "88d19106-6cc3-4fd3-b505-92d41947a23a",
+  "prevId": "28a236bc-74b7-43a4-b471-3c6b37ff85c8",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1787,6 +1787,19 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'pending'"
+        },
+        "changed_after_reply": {
+          "name": "changed_after_reply",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "reply_baseline": {
+          "name": "reply_baseline",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         },
         "detected_review_language": {
           "name": "detected_review_language",

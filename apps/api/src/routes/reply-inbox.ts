@@ -661,15 +661,16 @@ function validatePublishIdentity(
 }
 
 function validatePublishRow(row: ReviewActionRow): PublishValidation {
-  if (row.review.replyStatus !== 'drafted' || row.replyDraft === null) {
+  if (!isPublishableReviewActionRow(row)) {
     return {
       ok: false,
       status: 409,
       error: 'Review requires a saved Reply Draft before publishing.',
     }
   }
-  if (row.publishedReply !== null) {
-    return { ok: false, status: 409, error: 'Review already has a Published Reply.' }
+  const statusError = validatePublishableReviewStatus(row)
+  if (statusError !== null) {
+    return statusError
   }
   if (!hasNonEmptyValue(row.storeConnection.externalAppId)) {
     return {
@@ -708,6 +709,27 @@ function validatePublishRow(row: ReviewActionRow): PublishValidation {
       },
     },
   }
+}
+
+type PublishableReviewActionRow = ReviewActionRow & {
+  replyDraft: NonNullable<ReviewActionRow['replyDraft']>
+}
+
+function isPublishableReviewActionRow(row: ReviewActionRow): row is PublishableReviewActionRow {
+  return row.review.replyStatus === 'drafted' && row.replyDraft !== null
+}
+
+function validatePublishableReviewStatus(
+  row: ReviewActionRow,
+): Exclude<PublishValidation, { ok: true }> | null {
+  if (row.publishedReply !== null && !row.review.changedAfterReply) {
+    return {
+      ok: false,
+      status: 409,
+      error: 'Review has no detected changes after its Published Reply.',
+    }
+  }
+  return null
 }
 
 function isMissingPublishIdentity(input: PublishReplyInput): boolean {
@@ -751,30 +773,8 @@ async function recordPublishedReply(
   input: FinalizePublishInput,
   publish: Extract<StorePublishResult, { ok: true }>,
 ) {
-  await input.transaction
-    .insert(publishedReplies)
-    .values({
-      organizationId: input.row.review.organizationId,
-      appId: input.row.review.appId,
-      storeConnectionId: input.row.review.storeConnectionId,
-      reviewId: input.row.review.id,
-      replyDraftId: input.store.replyDraftId,
-      actorUserId: input.input.actorUserId,
-      provider: input.row.storeConnection.provider,
-      externalReplyId: publish.externalReplyId,
-      replyText: input.store.input.replyText,
-      publishedAt: new Date(publish.publishedAt),
-    })
-  await input.transaction
-    .update(reviews)
-    .set({ replyStatus: 'published', updatedAt: new Date() })
-    .where(
-      and(
-        eq(reviews.id, input.row.review.id),
-        eq(reviews.organizationId, input.input.organizationId),
-        eq(reviews.replyStatus, 'drafted'),
-      ),
-    )
+  await upsertPublishedReply(input, publish)
+  await markReviewPublished(input)
   await insertAuditEvent({
     transaction: input.transaction,
     review: input.row.review,
@@ -790,6 +790,60 @@ async function recordPublishedReply(
       quantity: 1,
       occurredAt: new Date(),
     })
+}
+
+async function upsertPublishedReply(
+  input: FinalizePublishInput,
+  publish: Extract<StorePublishResult, { ok: true }>,
+) {
+  await input.transaction
+    .insert(publishedReplies)
+    .values({
+      organizationId: input.row.review.organizationId,
+      appId: input.row.review.appId,
+      storeConnectionId: input.row.review.storeConnectionId,
+      reviewId: input.row.review.id,
+      replyDraftId: input.store.replyDraftId,
+      actorUserId: input.input.actorUserId,
+      provider: input.row.storeConnection.provider,
+      externalReplyId: publish.externalReplyId,
+      replyText: input.store.input.replyText,
+      publishedAt: new Date(publish.publishedAt),
+    })
+    .onConflictDoUpdate({
+      target: publishedReplies.reviewId,
+      set: {
+        replyDraftId: input.store.replyDraftId,
+        actorUserId: input.input.actorUserId,
+        provider: input.row.storeConnection.provider,
+        externalReplyId: publish.externalReplyId,
+        replyText: input.store.input.replyText,
+        publishedAt: new Date(publish.publishedAt),
+        updatedAt: new Date(),
+      },
+    })
+}
+
+async function markReviewPublished(input: FinalizePublishInput) {
+  await input.transaction
+    .update(reviews)
+    .set({
+      replyStatus: 'published',
+      changedAfterReply: false,
+      replyBaseline: {
+        title: input.row.review.title,
+        body: input.row.review.body,
+        rating: input.row.review.rating,
+      },
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(reviews.id, input.row.review.id),
+        eq(reviews.organizationId, input.input.organizationId),
+        eq(reviews.replyStatus, 'drafted'),
+      ),
+    )
 }
 
 async function updateIgnoredStatus(context: Context, ignored: boolean) {
@@ -844,7 +898,11 @@ async function updateIgnoredStatusInTransaction(
 
   await transaction
     .update(reviews)
-    .set({ replyStatus: ignoredReviewStatus(row, input.ignored), updatedAt: new Date() })
+    .set({
+      replyStatus: ignoredReviewStatus(row, input.ignored),
+      changedAfterReply: ignoredChangedAfterReply(row, input.ignored),
+      updatedAt: new Date(),
+    })
     .where(and(eq(reviews.id, row.review.id), eq(reviews.organizationId, input.organizationId)))
   await insertAuditEvent({
     transaction,
@@ -856,12 +914,25 @@ async function updateIgnoredStatusInTransaction(
   return { ok: true as const, reviewId: row.review.id }
 }
 
+function ignoredChangedAfterReply(row: ReviewActionRow, ignored: boolean): boolean {
+  if (ignored) {
+    return false
+  }
+  if (row.publishedReply !== null) {
+    return true
+  }
+  return row.review.changedAfterReply
+}
+
 function ignoredReviewStatus(
   row: ReviewActionRow,
   ignored: boolean,
 ): 'ignored' | 'drafted' | 'pending' {
   if (ignored) {
     return 'ignored'
+  }
+  if (row.publishedReply !== null) {
+    return 'pending'
   }
   if (row.replyDraft !== null) {
     return 'drafted'
@@ -928,6 +999,13 @@ async function selectReviewForAction(
   organizationId: string,
   reviewId: string,
 ) {
+  await transaction.execute(sql`
+    select ${reviews.id}
+    from ${reviews}
+    where ${reviews.id} = ${reviewId}
+      and ${reviews.organizationId} = ${organizationId}
+    for update
+  `)
   const [row] = await transaction
     .select({
       review: reviews,
@@ -1021,6 +1099,8 @@ function toReplyInboxReview(
     locale: row.review.locale,
     reviewedAt: row.review.reviewedAt.toISOString(),
     replyStatus: row.review.replyStatus,
+    changedAfterReply: row.review.changedAfterReply,
+    replyBaseline: row.review.replyBaseline,
     draftFailureCode: row.review.draftFailureCode,
     draftFailureAt: row.review.draftFailureAt?.toISOString() ?? null,
     replyDraft: toReplyDraft(row.replyDraft),

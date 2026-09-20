@@ -4,7 +4,10 @@ import { TranslocoDirective } from '@jsverse/transloco'
 import { ButtonModule } from 'primeng/button'
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog'
 
-export type ReplyDraftDialogData = { draftText: string; mode: 'manual' | 'edit' }
+export type ReplyDraftDialogData = {
+  draftText: string
+  mode: 'manual' | 'edit' | 'update' | 'update-manual'
+}
 
 export type ReplyDraftDialogResult = { action: 'save' | 'publish'; draftText: string }
 
@@ -31,6 +34,10 @@ export class ReplyDraftDialogComponent {
   protected readonly draftForm = form(this.model, (schema) => {
     required(schema.draftText)
   })
+
+  protected isUpdate(): boolean {
+    return this.data.mode === 'update' || this.data.mode === 'update-manual'
+  }
 
   protected submit(action: ReplyDraftDialogResult['action']): void {
     if (!this.canSubmit()) {

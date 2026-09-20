@@ -2,7 +2,54 @@ import { generateKeyPairSync } from 'node:crypto'
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { appleAppStoreReviewAdapter } from './adapter'
 import { syncAppleAppStoreReviews } from './client'
+
+describe('publishing Apple App Store replies', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  it('replaces a previous reply through the review response create-or-update endpoint', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(Response.json({ data: { id: 'response-123' } }))
+      .mockResolvedValueOnce(Response.json({ data: { id: 'response-123' } }))
+    const request = {
+      externalAppId: '123456789',
+      externalReviewId: 'review-123',
+      credential: {
+        issuerId: '00000000-0000-0000-0000-000000000000',
+        keyId: 'ABC123DEFG',
+        privateKey: createTestPrivateKey(),
+      },
+    }
+
+    await appleAppStoreReviewAdapter.publishReply({
+      ...request,
+      replyText: 'Thanks for reviewing.',
+    })
+    const updated = await appleAppStoreReviewAdapter.publishReply({
+      ...request,
+      replyText: 'The crash mentioned in your updated review is fixed in 2.0.',
+    })
+
+    expect(updated.externalReplyId).toBe('response-123')
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://api.appstoreconnect.apple.com/v1/customerReviewResponses',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          data: {
+            type: 'customerReviewResponses',
+            attributes: {
+              responseBody: 'The crash mentioned in your updated review is fixed in 2.0.',
+            },
+            relationships: { review: { data: { type: 'customerReviews', id: 'review-123' } } },
+          },
+        }),
+      }),
+    )
+  })
+})
 
 describe('syncAppleAppStoreReviews', () => {
   afterEach(() => {

@@ -28,6 +28,7 @@ import { AppsService } from '../../shared/services/apps.service'
 import { ReplyInboxService } from '../../shared/services/reply-inbox.service'
 import {
   ReplyDraftDialogComponent,
+  type ReplyDraftDialogData,
   type ReplyDraftDialogResult,
 } from './components/reply-draft-dialog.component'
 
@@ -127,17 +128,20 @@ export class ReplyInboxPageComponent {
   }
 
   protected publish(review: ReplyInboxReview): void {
-    if (!review.replyDraft) {
+    const draft = review.replyDraft
+    if (!this.hasCurrentDraft(review) || draft === null) {
       return
     }
 
     this.runAction(
       review.id,
       this.replyInboxService.publishReply(review.id, {
-        replyDraftId: review.replyDraft.id,
-        replyDraftUpdatedAt: review.replyDraft.updatedAt,
+        replyDraftId: draft.id,
+        replyDraftUpdatedAt: draft.updatedAt,
       }),
-      'replyInbox.messages.published',
+      review.changedAfterReply
+        ? 'replyInbox.messages.updatedReplyPublished'
+        : 'replyInbox.messages.published',
     )
   }
 
@@ -159,17 +163,12 @@ export class ReplyInboxPageComponent {
 
   protected openDraftDialog(review: ReplyInboxReview): void {
     const dialog = this.dialogService.open(ReplyDraftDialogComponent, {
-      header: this.transloco.translate(
-        review.replyDraft ? 'replyInbox.dialog.editTitle' : 'replyInbox.dialog.manualTitle',
-      ),
+      header: this.transloco.translate(this.draftDialogTitleKey(review)),
       modal: true,
       closable: true,
       dismissableMask: true,
       width: 'min(760px, 94vw)',
-      data: {
-        mode: review.replyDraft ? 'edit' : 'manual',
-        draftText: review.replyDraft?.draftText ?? '',
-      },
+      data: { mode: this.draftDialogMode(review), draftText: this.initialDraftText(review) },
     })
 
     dialog?.onClose.subscribe((result?: ReplyDraftDialogResult) => {
@@ -181,10 +180,7 @@ export class ReplyInboxPageComponent {
         result.action === 'save'
           ? this.replyInboxService.saveDraft(review.id, { draftText: result.draftText })
           : this.replyInboxService.publishReply(review.id, { draftText: result.draftText })
-      const successKey =
-        result.action === 'save'
-          ? 'replyInbox.messages.draftSaved'
-          : 'replyInbox.messages.published'
+      const successKey = this.draftActionSuccessKey(review, result.action)
       this.runAction(review.id, request, successKey)
     })
   }
@@ -221,6 +217,32 @@ export class ReplyInboxPageComponent {
       .toUpperCase()
   }
 
+  protected hasCurrentDraft(review: ReplyInboxReview): boolean {
+    return review.replyStatus === 'drafted' && review.replyDraft !== null
+  }
+
+  protected isChangedAfterReply(review: ReplyInboxReview): boolean {
+    return review.changedAfterReply
+  }
+
+  protected initialDraftText(review: ReplyInboxReview): string {
+    if (this.hasCurrentDraft(review) && review.replyDraft !== null) {
+      return review.replyDraft.draftText
+    }
+
+    return review.changedAfterReply ? (review.publishedReply?.replyText ?? '') : ''
+  }
+
+  protected reviewTitle(title: string | null): string {
+    return title === null || title === ''
+      ? this.transloco.translate('replyInbox.untitledReview')
+      : title
+  }
+
+  protected ratingLabel(rating: number): string {
+    return this.transloco.translate('replyInbox.rating', { rating })
+  }
+
   protected statusClass(status: ReplyInboxReview['replyStatus']): string {
     const base = 'inline-flex rounded-full border px-2.5 py-1 text-xs font-medium'
     const classes: Record<ReplyInboxReview['replyStatus'], string> = {
@@ -235,6 +257,39 @@ export class ReplyInboxPageComponent {
 
   private filterLabelKey(filter: ReplyInboxFilter): string {
     return filter === 'actionable' ? 'replyInbox.filters.actionable' : `replyInbox.status.${filter}`
+  }
+
+  private draftDialogMode(review: ReplyInboxReview): ReplyDraftDialogData['mode'] {
+    if (this.hasCurrentDraft(review)) {
+      return review.changedAfterReply ? 'update' : 'edit'
+    }
+
+    return review.changedAfterReply ? 'update-manual' : 'manual'
+  }
+
+  private draftDialogTitleKey(review: ReplyInboxReview): string {
+    if (this.hasCurrentDraft(review)) {
+      return review.changedAfterReply
+        ? 'replyInbox.dialog.updateTitle'
+        : 'replyInbox.dialog.editTitle'
+    }
+
+    return review.changedAfterReply
+      ? 'replyInbox.dialog.updateManualTitle'
+      : 'replyInbox.dialog.manualTitle'
+  }
+
+  private draftActionSuccessKey(
+    review: ReplyInboxReview,
+    action: ReplyDraftDialogResult['action'],
+  ): string {
+    if (action === 'save') {
+      return 'replyInbox.messages.draftSaved'
+    }
+
+    return review.changedAfterReply
+      ? 'replyInbox.messages.updatedReplyPublished'
+      : 'replyInbox.messages.published'
   }
 
   private runAction<T>(

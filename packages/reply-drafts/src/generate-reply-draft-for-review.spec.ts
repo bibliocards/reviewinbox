@@ -17,6 +17,7 @@ const reviewRow: DraftableReview = {
     appId: 'app-1',
     storeConnectionId: 'connection-1',
     replyStatus: 'pending',
+    changedAfterReply: false,
     body: 'Great app',
     rating: 5,
     title: null,
@@ -209,5 +210,106 @@ describe('concurrent Reply Draft generation', () => {
     expect(generateDraft).toHaveBeenCalledOnce()
     expect(transaction.updateReviewWithDraft).not.toHaveBeenCalled()
     expect(transaction.recordManagedDraftUsage).not.toHaveBeenCalled()
+  })
+})
+
+describe('reopened Reply Draft generation', () => {
+  it('replaces the stale draft when a published Review has changed', async () => {
+    const transaction = createTransaction()
+    const reopenedRow: DraftableReview = {
+      ...reviewRow,
+      review: { ...reviewRow.review, changedAfterReply: true },
+      replyDraft: { id: 'published-draft' },
+    }
+    transaction.selectDraftableReview.mockResolvedValue(reopenedRow)
+    transaction.selectLatestDraftableReview.mockResolvedValue(reopenedRow)
+
+    const result = await generateReplyDraftForReview({
+      transaction,
+      organizationId: 'org-1',
+      reviewId: 'review-1',
+      deploymentMode: 'self-hosted',
+      aiProvider: 'openai-compatible',
+      generateDraft: createDraftGenerator(),
+    })
+
+    expect(result).toEqual({ status: 'drafted', replyDraftId: 'draft-1' })
+    expect(transaction.updateReviewWithDraft).toHaveBeenCalledOnce()
+    expect(transaction.insertGeneratedDraft).toHaveBeenCalledOnce()
+  })
+})
+
+describe('stale Reply Draft generation', () => {
+  it.each([
+    ['title', { title: 'Edited after the AI request' }],
+    ['body', { body: 'Edited after the AI request' }],
+    ['rating', { rating: 1 }],
+  ] as const)(
+    'does not save a draft when the Review %s changes during generation',
+    async (_field, reviewChange) => {
+      const transaction = createTransaction()
+      transaction.selectLatestDraftableReview.mockResolvedValue({
+        ...reviewRow,
+        review: { ...reviewRow.review, ...reviewChange },
+      })
+
+      const result = await generateReplyDraftForReview({
+        transaction,
+        organizationId: 'org-1',
+        reviewId: 'review-1',
+        deploymentMode: 'self-hosted',
+        aiProvider: 'openai-compatible',
+        generateDraft: createDraftGenerator(),
+      })
+
+      expect(result).toEqual({ status: 'skipped', reason: 'not_draftable' })
+      expect(transaction.updateReviewWithDraft).not.toHaveBeenCalled()
+      expect(transaction.insertGeneratedDraft).not.toHaveBeenCalled()
+    },
+  )
+})
+
+describe('Reply Draft generation races with Review actions', () => {
+  it('does not save a draft after the Review is ignored during generation', async () => {
+    const transaction = createTransaction()
+    transaction.selectLatestDraftableReview.mockResolvedValue({
+      ...reviewRow,
+      review: { ...reviewRow.review, replyStatus: 'ignored' },
+    })
+
+    const result = await generateReplyDraftForReview({
+      transaction,
+      organizationId: 'org-1',
+      reviewId: 'review-1',
+      deploymentMode: 'self-hosted',
+      aiProvider: 'openai-compatible',
+      generateDraft: createDraftGenerator(),
+    })
+
+    expect(result).toEqual({ status: 'skipped', reason: 'not_draftable' })
+    expect(transaction.updateReviewWithDraft).not.toHaveBeenCalled()
+    expect(transaction.insertGeneratedDraft).not.toHaveBeenCalled()
+  })
+
+  it('does not replace a manually saved draft during generation', async () => {
+    const transaction = createTransaction()
+    transaction.selectLatestDraftableReview.mockResolvedValue({
+      ...reviewRow,
+      review: { ...reviewRow.review, replyStatus: 'drafted' },
+      replyDraft: { id: 'manual-draft' },
+    })
+
+    const result = await generateReplyDraftForReview({
+      transaction,
+      organizationId: 'org-1',
+      reviewId: 'review-1',
+      deploymentMode: 'self-hosted',
+      aiProvider: 'openai-compatible',
+      generateDraft: createDraftGenerator(),
+    })
+
+    expect(result).toEqual({ status: 'skipped', reason: 'not_draftable' })
+    expect(transaction.updateReviewWithDraft).not.toHaveBeenCalled()
+    expect(transaction.insertGeneratedDraft).not.toHaveBeenCalled()
   })
 })

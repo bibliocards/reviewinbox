@@ -54,6 +54,7 @@ type DraftReview = Pick<
   | 'appId'
   | 'storeConnectionId'
   | 'replyStatus'
+  | 'changedAfterReply'
   | 'body'
   | 'rating'
   | 'title'
@@ -254,7 +255,7 @@ function getSkipReason(
     return 'not_draftable'
   }
 
-  if (row.replyDraft) {
+  if (row.replyDraft && !row.review.changedAfterReply) {
     return 'draft_exists'
   }
 
@@ -281,7 +282,19 @@ async function storeGeneratedDraft(
     return { status: 'skipped', reason: 'review_not_found' }
   }
 
+  if (!hasSameReviewContent(row, latest)) {
+    return { status: 'skipped', reason: 'not_draftable' }
+  }
+
   return storeLatestGeneratedDraft(transaction, latest, generated, input)
+}
+
+function hasSameReviewContent(left: DraftableReview, right: DraftableReview): boolean {
+  return (
+    left.review.title === right.review.title
+    && left.review.body === right.review.body
+    && left.review.rating === right.review.rating
+  )
 }
 
 async function storeLatestGeneratedDraft(
@@ -335,6 +348,7 @@ async function selectLatestDraftableReview(database: DatabaseExecutor, row: Draf
     .where(
       and(eq(reviews.id, row.review.id), eq(reviews.organizationId, row.review.organizationId)),
     )
+    .for('update', { of: reviews })
     .limit(1)
 
   return latest
@@ -360,6 +374,9 @@ async function updateReviewWithDraft(
         eq(reviews.id, latest.review.id),
         eq(reviews.organizationId, latest.review.organizationId),
         inArray(reviews.replyStatus, [...draftableStatuses]),
+        sql`${reviews.title} is not distinct from ${latest.review.title}`,
+        sql`${reviews.body} is not distinct from ${latest.review.body}`,
+        sql`${reviews.rating} is not distinct from ${latest.review.rating}`,
       ),
     )
     .returning({ id: reviews.id, organizationId: reviews.organizationId, appId: reviews.appId })
@@ -384,7 +401,17 @@ async function insertGeneratedDraft(
       model: generated.model,
       promptVersion: generated.promptVersion,
     })
-    .onConflictDoNothing({ target: replyDrafts.reviewId })
+    .onConflictDoUpdate({
+      target: replyDrafts.reviewId,
+      set: {
+        draftText: generated.draftText,
+        detectedReviewLanguage: generated.detectedReviewLanguage,
+        chosenReplyLanguage: generated.chosenReplyLanguage,
+        model: generated.model,
+        promptVersion: generated.promptVersion,
+        updatedAt: new Date(),
+      },
+    })
     .returning({ id: replyDrafts.id })
 
   return created

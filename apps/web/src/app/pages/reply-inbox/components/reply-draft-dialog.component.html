@@ -4,12 +4,16 @@
       t(
         data.mode === 'manual'
           ? 'replyInbox.dialog.manualDescription'
-          : 'replyInbox.dialog.editDescription'
+          : isUpdate()
+            ? 'replyInbox.dialog.updateDescription'
+            : 'replyInbox.dialog.editDescription'
       )
     }}
   </p>
   <label class="grid gap-2 text-sm font-medium text-ink" for="reply-draft-text">
-    <span>{{ t('replyInbox.dialog.replyDraft') }}</span>
+    <span>{{
+      t(isUpdate() ? 'replyInbox.dialog.updatedReply' : 'replyInbox.dialog.replyDraft')
+    }}</span>
     <textarea
       id="reply-draft-text"
       class="min-h-48 w-full rounded-2xl border border-hairline bg-surface-1 p-3 text-sm font-normal leading-6 text-ink outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
@@ -30,12 +34,20 @@
     />
     <p-button
       severity="secondary"
-      [label]="t('replyInbox.actions.saveDraft')"
+      [label]="
+        t(isUpdate() ? 'replyInbox.actions.saveUpdatedDraft' : 'replyInbox.actions.saveDraft')
+      "
       [disabled]="!canSubmit()"
       (onClick)="submit('save')"
     />
     <p-button
-      [label]="t('replyInbox.actions.saveAndPublish')"
+      [label]="
+        t(
+          isUpdate()
+            ? 'replyInbox.actions.saveAndPublishUpdatedReply'
+            : 'replyInbox.actions.saveAndPublish'
+        )
+      "
       [disabled]="!canSubmit()"
       icon="pi pi-send"
       (onClick)="submit('publish')"

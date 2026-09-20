@@ -45,6 +45,14 @@ export const replyInboxReviewSchema = z.object({
   locale: z.string().nullable(),
   reviewedAt: z.iso.datetime(),
   replyStatus: replyStatusSchema,
+  changedAfterReply: z.boolean(),
+  replyBaseline: z
+    .object({
+      title: z.string().nullable(),
+      body: z.string(),
+      rating: z.number().int().min(1).max(5),
+    })
+    .nullable(),
   draftFailureCode: z.string().nullable(),
   draftFailureAt: z.iso.datetime().nullable(),
   replyDraft: z
