@@ -1,6 +1,8 @@
 export const usageEventTypes = [
   'review_imported',
   'managed_ai_reply_draft_generated',
+  'managed_ai_review_classified',
+  'managed_ai_topic_discovery',
   'published_reply_created',
   'weekly_digest_generated',
 ] as const

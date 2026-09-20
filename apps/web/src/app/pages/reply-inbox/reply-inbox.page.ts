@@ -9,8 +9,9 @@ import {
   signal,
   ChangeDetectionStrategy,
 } from '@angular/core'
+import { toSignal } from '@angular/core/rxjs-interop'
 import { FormsModule } from '@angular/forms'
-import { RouterLink } from '@angular/router'
+import { ActivatedRoute, RouterLink } from '@angular/router'
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
 import type { QueueReplyDraftResponse, ReplyInboxReview } from '@reviewinbox/contracts'
 import { formatDistanceToNow } from 'date-fns/formatDistanceToNow'
@@ -18,16 +19,21 @@ import { enUS, fr } from 'date-fns/locale'
 import { ButtonModule } from 'primeng/button'
 import { DialogService } from 'primeng/dynamicdialog'
 import { SelectModule } from 'primeng/select'
-import { finalize, type Observable } from 'rxjs'
+import { finalize, forkJoin, type Observable } from 'rxjs'
 import { z } from 'zod'
 
 import {
   AppSelectComponent,
   type AppSelectOption,
 } from '../../shared/components/app-select/app-select.component'
+import { AnalysisService } from '../../shared/services/analysis.service'
 import { AppIconsService } from '../../shared/services/app-icons.service'
 import { AppsService } from '../../shared/services/apps.service'
 import { ReplyInboxService } from '../../shared/services/reply-inbox.service'
+import {
+  ReviewClassificationDialogComponent,
+  type ReviewClassificationDialogResult,
+} from '../analysis/review-classification-dialog.component'
 import {
   ReplyDraftDialogComponent,
   type ReplyDraftDialogData,
@@ -67,8 +73,16 @@ const filterValues: readonly ReplyInboxFilter[] = [
   templateUrl: './reply-inbox.page.html',
 })
 export class ReplyInboxPageComponent {
+  private readonly route = inject(ActivatedRoute)
+  private readonly queryParams = toSignal(this.route.queryParamMap, {
+    initialValue: this.route.snapshot.queryParamMap,
+  })
+  protected readonly selectedReviewId = computed(
+    () => this.queryParams().get('reviewId') ?? undefined,
+  )
   private readonly appsService = inject(AppsService)
   private readonly replyInboxService = inject(ReplyInboxService)
+  private readonly analysisService = inject(AnalysisService)
   private readonly dialogService = inject(DialogService)
   private readonly transloco = inject(TranslocoService)
   private readonly appIcons = inject(AppIconsService)
@@ -76,6 +90,7 @@ export class ReplyInboxPageComponent {
   protected readonly selectedAppId = signal<string>('')
   protected readonly selectedFilter = signal<ReplyInboxFilter>('actionable')
   protected readonly activeReviewId = signal<string | null>(null)
+  protected readonly activeClassificationReviewId = signal<string | null>(null)
   protected readonly message = signal<{ status: 'success' | 'error'; key: string } | null>(null)
   protected readonly appsResource = this.appsService.appsResource()
   protected readonly apps = computed(() =>
@@ -97,7 +112,8 @@ export class ReplyInboxPageComponent {
   )
   protected readonly inboxResource = this.replyInboxService.replyInboxResource(() => ({
     filter: this.selectedFilter(),
-    appId: this.selectedAppId(),
+    appId: this.selectedReviewId() === undefined ? this.selectedAppId() : undefined,
+    reviewId: this.selectedReviewId(),
   }))
   protected readonly reviews = computed(() =>
     this.inboxResource.hasValue() ? this.inboxResource.value().reviews : [],
@@ -195,6 +211,62 @@ export class ReplyInboxPageComponent {
           : this.replyInboxService.publishReply(review.id, input)
       const successKey = this.draftActionSuccessKey(review, result.action)
       this.runAction(review.id, request, successKey)
+    })
+  }
+
+  protected openClassificationEditor(review: ReplyInboxReview): void {
+    if (this.activeClassificationReviewId() !== null) {
+      return
+    }
+    this.activeClassificationReviewId.set(review.id)
+    forkJoin({
+      analysis: this.analysisService.reviewAnalysis(review.id),
+      topics: this.analysisService.topics(review.appId),
+    }).subscribe({
+      next: ({ analysis, topics }) => {
+        const dialog = this.dialogService.open(ReviewClassificationDialogComponent, {
+          header: this.transloco.translate('analysis.editor.title'),
+          modal: true,
+          closable: true,
+          dismissableMask: true,
+          width: 'min(720px, 94vw)',
+          data: { review: analysis, topics: topics.topics },
+        })
+        dialog?.onClose.subscribe((result?: ReviewClassificationDialogResult) => {
+          if (!result) {
+            this.activeClassificationReviewId.set(null)
+            return
+          }
+          this.saveClassification(review.id, result)
+        })
+        if (!dialog) {
+          this.activeClassificationReviewId.set(null)
+        }
+      },
+      error: () => {
+        this.message.set({ status: 'error', key: 'analysis.messages.actionFailed' })
+        this.activeClassificationReviewId.set(null)
+      },
+    })
+  }
+
+  private saveClassification(reviewId: string, result: ReviewClassificationDialogResult): void {
+    const request =
+      result.action === 'reset'
+        ? this.analysisService.resetReviewClassification(reviewId)
+        : this.analysisService.updateReviewClassification(reviewId, result)
+    request.subscribe({
+      next: () => {
+        this.message.set({ status: 'success', key: 'analysis.messages.reviewSaved' })
+        this.reload()
+      },
+      error: () => {
+        this.message.set({ status: 'error', key: 'analysis.messages.actionFailed' })
+        this.activeClassificationReviewId.set(null)
+      },
+      complete: () => {
+        this.activeClassificationReviewId.set(null)
+      },
     })
   }
 

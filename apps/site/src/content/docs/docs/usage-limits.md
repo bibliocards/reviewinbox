@@ -39,6 +39,8 @@ Managed AI Reply Draft usage counts only when ReviewInbox managed AI creates a R
 - Failed AI generation does not consume Managed AI usage when no Reply Draft is created.
 - Regeneration through managed AI should consume another Managed AI Reply Draft.
 
+Review analysis is separate from Managed AI Reply Draft usage. Jev classification is included for imported Reviews and the initial history backfill, subject to global cost controls and fair queue scheduling. Luna topic discovery is metered separately per Organization and runs in bounded batches; commercial discovery quotas are deferred while usage is measured. Infrastructure retries and catalogue-maintenance reprocessing do not consume user-facing credits.
+
 ## Sync cadence and caps
 
 Automatic review sync follows the interval shown in the plan table when the worker and automatic sync are enabled. The worker may spread a run across its configured scheduling window. Manual sync is available on paid Cloud plans and unavailable on Free.

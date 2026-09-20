@@ -32,6 +32,7 @@
 ## UI Direction
 
 - Use `DESIGN.md` as the visual direction source when implementing UI; the intended product UI stack is PrimeNG with Tailwind v4.
+- Prefer Tailwind utilities in templates for component styling. Component CSS files are prohibited unless essential styles cannot reasonably be expressed with Tailwind; keep any exception minimal and explain why it is necessary.
 
 ## Domain And Security Constraints
 

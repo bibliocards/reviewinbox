@@ -66,6 +66,20 @@ export const appRoutes: Routes = [
       { path: '', title: () => pageTitle('inbox'), component: ReplyInboxPageComponent },
       { path: 'apps', title: () => pageTitle('apps'), component: AppsPageComponent },
       {
+        path: 'analysis',
+        title: () => pageTitle('analysis'),
+        loadComponent: () =>
+          import('./pages/analysis/analysis.page').then((page) => page.AnalysisPageComponent),
+      },
+      {
+        path: 'analysis/catalogue',
+        title: () => pageTitle('analysis'),
+        loadComponent: () =>
+          import('./pages/analysis/topic-catalogue.page').then(
+            (page) => page.TopicCataloguePageComponent,
+          ),
+      },
+      {
         path: 'audit-history',
         title: () => pageTitle('auditHistory'),
         loadComponent: () =>

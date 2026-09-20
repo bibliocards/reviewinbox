@@ -6,6 +6,8 @@
       "edit": "Edit",
       "delete": "Delete",
       "replySettings": "Reply settings",
+      "analysis": "Analysis",
+      "catalogue": "Topic catalogue",
       "viewUsage": "View usage and limits"
     },
     "stores": { "apple": "Apple App Store", "google": "Google Play" },
@@ -165,6 +167,129 @@
       }
     }
   },
+  "analysis": {
+    "title": "Analysis",
+    "description": "See recurring topics, reported severity, and the Reviews behind every signal.",
+    "actions": {
+      "openCatalogue": "Topic catalogue",
+      "openDashboard": "Open dashboard",
+      "discover": "Discover topics",
+      "newTopic": "New topic",
+      "saveTopic": "Save topic",
+      "rename": "Rename",
+      "approve": "Approve",
+      "reject": "Reject",
+      "reopen": "Reopen",
+      "mergeInto": "Merge into…",
+      "confirmMerge": "Merge topics",
+      "manageTopics": "Manage catalogue",
+      "correct": "Correct analysis",
+      "openReview": "Open Review"
+    },
+    "filters": {
+      "title": "Explore the data",
+      "clear": "Clear filters",
+      "allApps": "All Apps",
+      "app": "App",
+      "from": "From",
+      "to": "To",
+      "allStores": "All stores",
+      "store": "Store",
+      "allVersions": "All versions",
+      "version": "Version",
+      "allSeverities": "All severities",
+      "severity": "Severity",
+      "allIntents": "All intents",
+      "intent": "Intent",
+      "allTopics": "All topics",
+      "topic": "Topic",
+      "allTopicStatuses": "All topic statuses",
+      "topicStatus": "Topic status",
+      "versionNeedsStore": "Choose a store before filtering by version."
+    },
+    "catalogue": {
+      "title": "Topic catalogue",
+      "description": "Keep the shared vocabulary that makes Analysis useful for this App.",
+      "sharedTitle": "One catalogue across stores",
+      "sharedDescription": "Pending proposals stay visible until a human validates them.",
+      "newTopic": "Create a topic",
+      "label": "Topic label",
+      "definition": "Definition",
+      "aliases": "Aliases",
+      "reviews": "Reviews",
+      "emptyTitle": "No topics yet",
+      "emptyDescription": "Create a topic or ask the classifier to discover a proposal."
+    },
+    "loading": "Loading analysis…",
+    "disabled": {
+      "title": "Analysis is not available yet",
+      "description": "Stored results will appear here when analysis is enabled for this installation."
+    },
+    "metrics": {
+      "reviews": "Reviews",
+      "inPeriod": "in the selected period",
+      "coverage": "Coverage",
+      "analyzed": "analyzed",
+      "topics": "Topics",
+      "inCatalogue": "in the catalogue",
+      "flagged": "Needs attention",
+      "blockingCritical": "blocking or critical"
+    },
+    "severity": {
+      "title": "Reported severity",
+      "description": "Click a level to filter the Reviews below.",
+      "none": "No problem described",
+      "unknown": "Unknown",
+      "minor": "Minor",
+      "degraded": "Degraded",
+      "blocking": "Blocking",
+      "critical": "Critical"
+    },
+    "trend": {
+      "title": "Review volume",
+      "description": "Select a day to inspect its Reviews.",
+      "aria": "Review volume by day"
+    },
+    "topicStatus": { "pending": "Pending", "approved": "Approved", "rejected": "Rejected" },
+    "topics": {
+      "title": "Leading topics",
+      "description": "Pending topics are outlined and remain interactive."
+    },
+    "pagination": { "previous": "Previous page", "next": "Next page" },
+    "reviews": {
+      "title": "Reviews in this view",
+      "description": "Every count drills down to the source Reviews.",
+      "empty": "No Reviews match these filters.",
+      "manual": "Manually corrected"
+    },
+    "review": { "untitled": "Untitled Review" },
+    "editor": {
+      "title": "Correct Review analysis",
+      "severity": "Reported severity",
+      "intents": "Intents",
+      "topics": "Topics",
+      "none": "None",
+      "save": "Save correction",
+      "reset": "Reset to automatic analysis",
+      "needsRecheck": "This Review needs analysis again after a catalogue change."
+    },
+    "intents": {
+      "report_problem": "Report a problem",
+      "request_feature": "Request a feature",
+      "request_help": "Request help",
+      "request_refund": "Request a refund",
+      "express_satisfaction": "Express satisfaction",
+      "express_dissatisfaction": "Express dissatisfaction"
+    },
+    "errors": { "loadFailed": "We could not load Analysis yet." },
+    "messages": {
+      "reviewSaved": "Review analysis saved.",
+      "topicSaved": "Topic catalogue saved.",
+      "topicMerged": "Topics merged. Source aliases were retained.",
+      "discoveryQueued": "Topic discovery queued.",
+      "actionFailed": "We could not complete this analysis action yet."
+    }
+  },
   "replyInbox": {
     "title": "Reply Inbox",
     "description": "Review, edit, ignore, and publish replies for imported Reviews.",
@@ -239,6 +364,11 @@
       "title": "No Reviews in this view",
       "description": "No eligible Reviews are available yet. Google Play exposes written Reviews created or changed during the last week. Check your Store Connections in Apps.",
       "openApps": "Open Apps"
+    },
+    "focus": {
+      "back": "Back to Reply Inbox",
+      "description": "Showing the selected Review, regardless of its reply status.",
+      "unavailable": "This Review could not be loaded. It may no longer be available in the active Organization."
     }
   },
   "auditHistory": {
@@ -424,14 +554,20 @@
     "inbox": "Reply Inbox",
     "apps": "Apps",
     "auditHistory": "Audit History",
-    "settings": "Settings"
+    "settings": "Settings",
+    "analysis": "Analysis"
   },
-  "common": { "useLightTheme": "Use light theme", "useDarkTheme": "Use dark theme" },
+  "common": {
+    "useLightTheme": "Use light theme",
+    "useDarkTheme": "Use dark theme",
+    "cancel": "Cancel"
+  },
   "shell": {
     "navigation": {
       "primary": "Primary navigation",
       "currentPage": "Current page",
       "replyInbox": "Reply Inbox",
+      "analysis": "Analysis",
       "apps": "Apps",
       "auditHistory": "Audit History",
       "organization": "Organization"

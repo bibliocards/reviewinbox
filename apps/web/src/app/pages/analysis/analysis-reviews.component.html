@@ -1,0 +1,130 @@
+<section class="grid gap-4 rounded-xl border border-hairline bg-surface-1 p-5" *transloco="let t">
+  <div class="flex items-start justify-between">
+    <div>
+      <h2 class="m-0 text-lg font-semibold">{{ t('analysis.reviews.title') }}</h2>
+      <p class="m-1 text-sm text-ink-subtle">{{ t('analysis.reviews.description') }}</p>
+    </div>
+    <span class="text-sm text-ink-subtle">{{ reviews().length }} / {{ total() }}</span>
+  </div>
+  @if (loading()) {
+    <div
+      class="grid justify-items-center gap-2 border border-dashed border-hairline-strong p-8 text-ink-subtle"
+    >
+      <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>{{ t('analysis.loading') }}
+    </div>
+  } @else if (reviews().length === 0) {
+    <div
+      class="grid justify-items-center gap-2 border border-dashed border-hairline-strong p-8 text-ink-subtle"
+    >
+      <i class="pi pi-inbox" aria-hidden="true"></i><span>{{ t('analysis.reviews.empty') }}</span>
+    </div>
+  } @else {
+    <div class="grid">
+      @for (review of reviews(); track review.id) {
+        <article
+          class="flex flex-col justify-between gap-4 border-t border-hairline py-4 lg:flex-row"
+          [id]="'review-' + review.id"
+        >
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2 text-xs text-ink-subtle">
+              <span
+                ><i
+                  class="pi mr-1"
+                  [ngClass]="review.provider === 'apple_app_store' ? 'pi-apple' : 'pi-google'"
+                  aria-hidden="true"
+                ></i
+                >{{ providerLabel(review.provider) }}</span
+              >
+              @if (review.version) {
+                <span>v{{ review.version }}</span>
+              }
+              <span>{{ review.reviewedAt.slice(0, 10) }}</span>
+              @if (review.hasOverride) {
+                <span class="text-primary"
+                  ><i class="pi pi-pencil mr-1" aria-hidden="true"></i
+                  >{{ t('analysis.reviews.manual') }}</span
+                >
+              }
+            </div>
+            <h3 class="mb-1 mt-2 text-base font-semibold">
+              {{ review.title || t('analysis.review.untitled') }}
+            </h3>
+            <p class="m-0 line-clamp-2 text-sm text-ink-muted">{{ review.body }}</p>
+            <div class="mt-2 flex flex-wrap gap-1">
+              <button
+                type="button"
+                class="rounded-full px-2 py-0.5 text-xs text-white"
+                [class]="severityClass(review.severity ?? 'unknown')"
+                (click)="severitySelected.emit(review.severity ?? 'unknown')"
+              >
+                {{ t('analysis.severity.' + (review.severity ?? 'unknown')) }}
+              </button>
+              @for (intent of review.intents; track intent) {
+                <button
+                  type="button"
+                  class="rounded-full border border-hairline bg-surface-2 px-2 py-0.5 text-xs text-ink-muted"
+                  (click)="intentSelected.emit(intent)"
+                >
+                  {{ t('analysis.intents.' + intent) }}
+                </button>
+              }
+              @for (topic of review.topics; track topic.id) {
+                <button
+                  type="button"
+                  class="rounded-full border border-hairline bg-surface-2 px-2 py-0.5 text-xs text-ink-muted"
+                  [class.border-dashed]="topic.status === 'pending'"
+                  (click)="topicSelected.emit(topic.id)"
+                >
+                  {{ topic.label }}
+                </button>
+              }
+            </div>
+          </div>
+          <div class="flex shrink-0 flex-wrap items-start gap-2 lg:flex-col lg:items-end">
+            <p-button
+              severity="secondary"
+              [outlined]="true"
+              size="small"
+              icon="pi pi-pencil"
+              [label]="t('analysis.actions.correct')"
+              [loading]="pendingReviewId() === review.id"
+              (onClick)="corrected.emit(review)"
+            /><a
+              class="text-xs font-semibold text-primary no-underline"
+              [routerLink]="['/']"
+              [queryParams]="{ reviewId: review.id }"
+              >{{ t('analysis.actions.openReview') }}
+              <i class="pi pi-arrow-right" aria-hidden="true"></i
+            ></a>
+          </div>
+        </article>
+      }
+    </div>
+    <nav
+      class="flex items-center justify-between border-t border-hairline pt-3"
+      aria-label="Pagination"
+    >
+      <span class="text-xs text-ink-subtle">{{ page() }} / {{ pageCount() }}</span>
+      <div class="flex gap-2">
+        <p-button
+          severity="secondary"
+          [outlined]="true"
+          size="small"
+          icon="pi pi-chevron-left"
+          [disabled]="page() <= 1"
+          [ariaLabel]="t('analysis.pagination.previous')"
+          (onClick)="pageSelected.emit(page() - 1)"
+        />
+        <p-button
+          severity="secondary"
+          [outlined]="true"
+          size="small"
+          icon="pi pi-chevron-right"
+          [disabled]="page() >= pageCount()"
+          [ariaLabel]="t('analysis.pagination.next')"
+          (onClick)="pageSelected.emit(page() + 1)"
+        />
+      </div>
+    </nav>
+  }
+</section>

@@ -62,27 +62,47 @@ type AuditMetadataKey = keyof AuditMetadata
 
 type ReplyInboxFilter = z.infer<typeof replyInboxFilterSchema>
 
-type ReplyInboxQuery = { filter: ReplyInboxFilter; appId?: string }
+type ReplyInboxQuery = {
+  filter: ReplyInboxFilter
+  appId?: string | undefined
+  reviewId?: string | undefined
+}
 
 type ReplyInboxQueryResult =
   | { ok: true; data: ReplyInboxQuery }
   | { ok: false; error: string; status: 400 | 404 }
 
-replyInboxRoutes.get('/api/reply-inbox', async (context) => {
-  const sessionResult = await requireActiveOrganizationSession(context)
-  if (!sessionResult.ok) {
-    return sessionResult.response
+type ReplyInboxReadDependencies = {
+  database: Database
+  requireSession: typeof requireActiveOrganizationSession
+}
+
+export function createReplyInboxReadHandler(dependencies: ReplyInboxReadDependencies) {
+  return async (context: Context) => {
+    const sessionResult = await dependencies.requireSession(context)
+    if (!sessionResult.ok) {
+      return sessionResult.response
+    }
+    const queryResult = parseReplyInboxQuery(context)
+    if (!queryResult.ok) {
+      return context.json({ error: queryResult.error }, queryResult.status)
+    }
+    const rows = await selectReplyInboxReviews(
+      dependencies.database,
+      sessionResult.session.organizationId,
+      queryResult.data,
+    )
+    if (queryResult.data.reviewId !== undefined && rows.length === 0) {
+      return context.json({ error: 'Review not found.' }, 404)
+    }
+    return context.json(listReplyInboxResponseSchema.parse({ reviews: rows }))
   }
+}
 
-  const queryResult = parseReplyInboxQuery(context)
-  if (!queryResult.ok) {
-    return context.json({ error: queryResult.error }, queryResult.status)
-  }
-
-  const rows = await selectReplyInboxReviews(sessionResult.session.organizationId, queryResult.data)
-
-  return context.json(listReplyInboxResponseSchema.parse({ reviews: rows }))
-})
+replyInboxRoutes.get(
+  '/api/reply-inbox',
+  createReplyInboxReadHandler({ database, requireSession: requireActiveOrganizationSession }),
+)
 
 function parseReplyInboxQuery(context: Context): ReplyInboxQueryResult {
   const filterResult = replyInboxFilterSchema
@@ -98,15 +118,22 @@ function parseReplyInboxQuery(context: Context): ReplyInboxQueryResult {
     return { ok: false, error: 'App not found.', status: 404 }
   }
 
-  const data: ReplyInboxQuery = { filter: filterResult.data }
-  if (appIdResult.data !== undefined) {
-    data.appId = appIdResult.data
+  const reviewIdResult = z.uuid().optional().safeParse(context.req.query('reviewId'))
+  if (!reviewIdResult.success) {
+    return { ok: false, error: 'Invalid Review ID.', status: 400 }
   }
-  return { ok: true, data }
+  return {
+    ok: true,
+    data: { filter: filterResult.data, appId: appIdResult.data, reviewId: reviewIdResult.data },
+  }
 }
 
-async function selectReplyInboxReviews(organizationId: string, query: ReplyInboxQuery) {
-  const rows = await database
+async function selectReplyInboxReviews(
+  db: Database,
+  organizationId: string,
+  query: ReplyInboxQuery,
+) {
+  const rows = await db
     .select({
       review: reviews,
       app: apps,
@@ -124,6 +151,7 @@ async function selectReplyInboxReviews(organizationId: string, query: ReplyInbox
     .limit(defaultLimit)
 
   const publishFailures = await selectLatestPublishFailures(
+    db,
     organizationId,
     rows.map((row) => row.review.id),
   )
@@ -141,7 +169,9 @@ function replyInboxWhere(organizationId: string, query: ReplyInboxQuery) {
   if (query.appId !== undefined) {
     where.push(eq(reviews.appId, query.appId))
   }
-  if (query.filter === 'actionable') {
+  if (query.reviewId !== undefined) {
+    where.push(eq(reviews.id, query.reviewId))
+  } else if (query.filter === 'actionable') {
     where.push(inArray(reviews.replyStatus, ['drafted', 'failed', 'pending']))
   } else {
     where.push(eq(reviews.replyStatus, query.filter))
@@ -149,11 +179,11 @@ function replyInboxWhere(organizationId: string, query: ReplyInboxQuery) {
   return where
 }
 
-function selectLatestPublishFailures(organizationId: string, reviewIds: string[]) {
+function selectLatestPublishFailures(db: Database, organizationId: string, reviewIds: string[]) {
   if (reviewIds.length === 0) {
     return []
   }
-  return database
+  return db
     .selectDistinctOn([replyAuditEvents.reviewId], { event: replyAuditEvents })
     .from(replyAuditEvents)
     .where(

@@ -1,8 +1,16 @@
-import { generateReplyDraft, type ReplyDraftProvider } from '@reviewinbox/ai'
+import {
+  reviewAnalysisCriteriaVersion,
+  createOpenAiCompatibleTopicDiscoveryProvider,
+  generateReplyDraft,
+  type ReplyDraftProvider,
+  type OpenAiCompatibleTopicDiscoveryProviderOptions,
+  type TopicDiscoveryProvider,
+} from '@reviewinbox/ai'
 import { getPlanDefinition } from '@reviewinbox/billing'
 import {
   getNextAutoSyncWindowStartsAt,
   loadAiConfig,
+  loadTypeSafeConfig,
   loadWorkerConfig,
   type AiConfig,
   type WorkerConfig,
@@ -10,11 +18,14 @@ import {
 import {
   closeDatabase,
   createDatabase,
+  apps,
   organization,
   runDatabaseMigrations,
   storeConnections,
   storeCredentials,
   syncRuns,
+  reviews,
+  reviewAnalyses,
   type Database,
 } from '@reviewinbox/db'
 import { createQueueClient, type QueueClient } from '@reviewinbox/queue'
@@ -23,10 +34,16 @@ import {
   syncReviewsForStoreConnection,
   type SyncReviewsForStoreConnectionInput,
 } from '@reviewinbox/sync'
-import { and, asc, desc, eq, isNull, isNotNull } from 'drizzle-orm'
+import { and, asc, desc, eq, isNull, isNotNull, lt, ne, or, sql } from 'drizzle-orm'
 
 import { createWorkerReplyDraftProvider } from './ai-provider'
 import { getAutoSyncJobStartsAt, isAutoSyncDueAt } from './auto-sync-scheduler'
+import {
+  classifyReviewForAnalysis,
+  createTypeSafeClassifier,
+  type ReviewAnalysisWorkerOptions,
+} from './review-analysis-worker'
+import { discoverTopicsForApp } from './topic-discovery-worker'
 
 const shutdownSignals = ['SIGINT', 'SIGTERM'] as const
 
@@ -38,6 +55,10 @@ type WorkerRuntime = {
   queue: QueueClient
   replyDraftProvider: ReplyDraftProvider | null
   replyDraftProviderKind: ReplyDraftProviderKind | null
+  analysis: ReviewAnalysisWorkerOptions | null
+  topicDiscoveryProvider: TopicDiscoveryProvider | null
+  topicDiscoveryScanTimer: ReturnType<typeof setTimeout> | null
+  analysisScanTimer: ReturnType<typeof setTimeout> | null
   autoSyncTimer: ReturnType<typeof setTimeout> | null
 }
 
@@ -47,6 +68,12 @@ async function main(): Promise<void> {
   const runtime = await createWorkerRuntime()
   await registerStoreSyncHandler(runtime)
   await registerDraftHandler(runtime)
+  await registerAnalysisHandlers(runtime)
+  await registerTopicDiscoveryHandler(runtime)
+  await enqueuePendingAnalysisJobs(runtime)
+  await enqueueTopicDiscoveryJobs(runtime)
+  runtime.analysisScanTimer = startAnalysisScanner(runtime)
+  runtime.topicDiscoveryScanTimer = startTopicDiscoveryScanner(runtime)
   runtime.autoSyncTimer = startAutoSyncScheduler(runtime)
   logWorkerStarted(runtime)
   await waitForShutdown(runtime)
@@ -55,6 +82,8 @@ async function main(): Promise<void> {
 async function createWorkerRuntime(): Promise<WorkerRuntime> {
   const config = loadWorkerConfig()
   const aiConfig = loadAiConfig()
+  const typeSafeConfig = loadTypeSafeConfig()
+  const analysisClassifier = createTypeSafeClassifier(typeSafeConfig.apiKey)
   await runStartupMigrations(config)
   const database = createDatabase(config.databaseUrl)
   const queue = createWorkerQueue(config)
@@ -66,6 +95,11 @@ async function createWorkerRuntime(): Promise<WorkerRuntime> {
     queue,
     replyDraftProvider: createWorkerReplyDraftProvider(aiConfig),
     replyDraftProviderKind: getReplyDraftProviderKind(aiConfig),
+    analysis: analysisClassifier === null ? null : { database, classifier: analysisClassifier },
+    topicDiscoveryProvider:
+      analysisClassifier === null ? null : createTopicDiscoveryProvider(aiConfig),
+    topicDiscoveryScanTimer: null,
+    analysisScanTimer: null,
     autoSyncTimer: null,
   }
 }
@@ -103,6 +137,9 @@ async function registerStoreSyncHandler(runtime: WorkerRuntime): Promise<void> {
     })
 
     const syncRun = await runStoreConnectionSync(runtime, job.payload)
+    if (syncRun.status === 'succeeded' || syncRun.status === 'partial') {
+      await enqueueAnalysisJobs(runtime, syncRun.organizationId, syncRun.newReviewIds)
+    }
     if (isSuccessfulSyncWithDraftProvider(runtime, syncRun.status)) {
       await enqueueGenerateReplyDraftJobs(runtime, syncRun.organizationId, syncRun.newReviewIds)
     }
@@ -115,6 +152,176 @@ async function registerStoreSyncHandler(runtime: WorkerRuntime): Promise<void> {
       storedCount: syncRun.storedCount,
     })
   })
+}
+
+async function registerAnalysisHandlers(runtime: WorkerRuntime): Promise<void> {
+  const analysis = runtime.analysis
+  if (analysis === null) {
+    return
+  }
+  await runtime.queue.workClassifyReview(async (job) => {
+    await classifyReviewForAnalysis(analysis, job.payload)
+  })
+}
+
+async function registerTopicDiscoveryHandler(runtime: WorkerRuntime): Promise<void> {
+  await runtime.queue.workDiscoverReviewTopics(async (job) => {
+    if (runtime.topicDiscoveryProvider === null) {
+      return
+    }
+    await discoverTopicsForApp(runtime, job.payload)
+  })
+}
+
+function createTopicDiscoveryProvider(aiConfig: AiConfig): TopicDiscoveryProvider | null {
+  if (
+    (aiConfig.provider !== 'managed' && aiConfig.provider !== 'openai-compatible')
+    || aiConfig.apiKey === undefined
+    || aiConfig.model === undefined
+  ) {
+    return null
+  }
+  const options: OpenAiCompatibleTopicDiscoveryProviderOptions = {
+    apiKey: aiConfig.apiKey,
+    model: aiConfig.model,
+  }
+  if (aiConfig.baseUrl !== undefined) {
+    options.baseUrl = aiConfig.baseUrl
+  }
+  return createOpenAiCompatibleTopicDiscoveryProvider(options)
+}
+
+async function enqueueAnalysisJobs(
+  runtime: WorkerRuntime,
+  organizationId: string,
+  reviewIds: readonly string[],
+): Promise<void> {
+  if (runtime.analysis === null) {
+    return
+  }
+  await Promise.all(
+    reviewIds.map((reviewId) => enqueueAnalysisJob(runtime, organizationId, reviewId)),
+  )
+}
+
+async function enqueueAnalysisJob(
+  runtime: WorkerRuntime,
+  organizationId: string,
+  reviewId: string,
+): Promise<void> {
+  try {
+    await runtime.queue.enqueueClassifyReview({ organizationId, reviewId })
+  } catch (error) {
+    logError('ReviewInbox worker analysis job enqueue failed after Store Connection sync', {
+      reviewId,
+      error: error instanceof Error ? error.message : 'Unknown worker error',
+    })
+  }
+}
+
+async function enqueuePendingAnalysisJobs(runtime: WorkerRuntime): Promise<void> {
+  if (runtime.analysis === null) {
+    return
+  }
+  const staleBefore = new Date(Date.now() - 15 * 60 * 1000)
+  const retryAfter = new Date(Date.now() - 5 * 60 * 1000)
+  const catalogMismatch = and(
+    eq(reviews.analysisStatus, 'completed'),
+    or(
+      isNull(reviewAnalyses.reviewId),
+      ne(reviewAnalyses.catalogVersion, apps.analysisCatalogVersion),
+      ne(reviewAnalyses.criteriaVersion, reviewAnalysisCriteriaVersion),
+    ),
+  )
+  const pendingReviews = await runtime.database
+    .select({ organizationId: reviews.organizationId, reviewId: reviews.id })
+    .from(reviews)
+    .innerJoin(
+      apps,
+      and(eq(apps.id, reviews.appId), eq(apps.organizationId, reviews.organizationId)),
+    )
+    .leftJoin(reviewAnalyses, eq(reviewAnalyses.reviewId, reviews.id))
+    .where(
+      or(
+        eq(reviews.analysisStatus, 'pending'),
+        and(eq(reviews.analysisStatus, 'failed'), lt(reviews.updatedAt, retryAfter)),
+        and(eq(reviews.analysisStatus, 'processing'), lt(reviews.analysisStartedAt, staleBefore)),
+        catalogMismatch,
+      ),
+    )
+    .orderBy(
+      asc(sql<number>`case when ${reviews.analysisStatus} = 'failed' then 1 else 0 end`),
+      desc(reviews.reviewedAt),
+    )
+    .limit(500)
+  await Promise.all(
+    pendingReviews.map((review) =>
+      enqueueAnalysisJob(runtime, review.organizationId, review.reviewId),
+    ),
+  )
+}
+
+function startAnalysisScanner(runtime: WorkerRuntime): ReturnType<typeof setTimeout> | null {
+  if (runtime.analysis === null) {
+    return null
+  }
+  return setTimeout(() => {
+    void enqueuePendingAnalysisJobs(runtime)
+      .catch(() => {
+        logError('ReviewInbox worker analysis scanner failed', { name: 'UnknownError' })
+      })
+      .finally(() => {
+        runtime.analysisScanTimer = startAnalysisScanner(runtime)
+      })
+  }, 60_000)
+}
+
+function startTopicDiscoveryScanner(runtime: WorkerRuntime): ReturnType<typeof setTimeout> | null {
+  if (runtime.topicDiscoveryProvider === null) {
+    return null
+  }
+  return setTimeout(
+    () => {
+      void enqueueTopicDiscoveryJobs(runtime)
+        .catch(() => {
+          logError('ReviewInbox worker topic discovery scanner failed', { name: 'UnknownError' })
+        })
+        .finally(() => {
+          runtime.topicDiscoveryScanTimer = startTopicDiscoveryScanner(runtime)
+        })
+    },
+    60 * 60 * 1000,
+  )
+}
+
+async function enqueueTopicDiscoveryJobs(runtime: WorkerRuntime): Promise<void> {
+  if (runtime.topicDiscoveryProvider === null) {
+    return
+  }
+  const dailyCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000)
+  const candidates = await runtime.database
+    .select({
+      organizationId: apps.organizationId,
+      appId: apps.id,
+      requestedAt: apps.topicDiscoveryRequestedAt,
+    })
+    .from(apps)
+    .where(
+      or(
+        isNotNull(apps.topicDiscoveryRequestedAt),
+        isNull(apps.lastTopicDiscoveryAt),
+        lt(apps.lastTopicDiscoveryAt, dailyCutoff),
+      ),
+    )
+  await Promise.all(
+    candidates.map((candidate) =>
+      runtime.queue.enqueueDiscoverReviewTopics({
+        organizationId: candidate.organizationId,
+        appId: candidate.appId,
+        trigger: candidate.requestedAt === null ? 'daily' : 'manual',
+      }),
+    ),
+  )
 }
 
 function runStoreConnectionSync(
@@ -375,6 +582,12 @@ async function waitForShutdown(runtime: WorkerRuntime): Promise<void> {
   logInfo(`ReviewInbox worker received ${signal}, shutting down`)
   if (runtime.autoSyncTimer) {
     clearTimeout(runtime.autoSyncTimer)
+  }
+  if (runtime.analysisScanTimer) {
+    clearTimeout(runtime.analysisScanTimer)
+  }
+  if (runtime.topicDiscoveryScanTimer) {
+    clearTimeout(runtime.topicDiscoveryScanTimer)
   }
   try {
     await runtime.queue.stop()

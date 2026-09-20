@@ -23,6 +23,8 @@ const pageKeywords = [
   'AI reply drafts',
   'app review reply tool',
   'mobile app support',
+  'app review analysis',
+  'review topics and severity',
   'self-hosted review management',
 ]
 
@@ -38,6 +40,25 @@ const features = [
   {
     title: 'Store Connections',
     description: 'Connect your mobile apps once and keep review work in one place.',
+  },
+  {
+    title: 'Review Analysis',
+    description: 'See recurring topics, reported severity, and trends by period, store, and app version.',
+  },
+]
+
+const analysisHighlights = [
+  {
+    title: 'Find recurring pain',
+    description: 'Group Reviews into an evolving topic catalogue shared by an App’s Store Connections.',
+  },
+  {
+    title: 'See what is urgent',
+    description: 'Scan a common severity scale and drill from a chart segment into the supporting Reviews.',
+  },
+  {
+    title: 'Keep the signal human',
+    description: 'Jev classifies Reviews. Luna proposes missing topics, while your team approves and corrects the catalogue.',
   },
 ]
 
@@ -98,6 +119,10 @@ const faqs = [
   {
     question: 'Which stores are supported?',
     answer: 'ReviewInbox supports App Store and Google Play review workflows. Each store has its own access and review-history limits.',
+  },
+  {
+    question: 'How does Review analysis work?',
+    answer: 'Jev classifies imported Reviews by topic, intent, and reported severity. Luna proposes missing topics for human approval. Analysis stays separate from Reply Draft generation and never publishes replies.',
   },
 ]
 ---
@@ -163,6 +188,7 @@ const faqs = [
 
           <div class="hidden items-center gap-md text-sm text-ink-subtle md:flex">
             <a class="inline-flex min-h-10 items-center px-xs transition hover:text-ink" href="#product">Product</a>
+            <a class="inline-flex min-h-10 items-center px-xs transition hover:text-ink" href="#analysis">Analysis</a>
             <a class="inline-flex min-h-10 items-center px-xs transition hover:text-ink" href="/pricing/">Pricing</a>
             <a class="inline-flex min-h-10 items-center px-xs transition hover:text-ink" href="/docs/">Docs</a>
           </div>
@@ -173,6 +199,7 @@ const faqs = [
             </summary>
             <div class="absolute right-0 top-12 z-30 grid min-w-52 gap-xxs rounded-lg border border-hairline bg-surface-2 p-xs text-sm shadow-xl">
               <a class="inline-flex min-h-10 items-center rounded-md px-sm transition hover:bg-surface-3" href="#product">Product</a>
+              <a class="inline-flex min-h-10 items-center rounded-md px-sm transition hover:bg-surface-3" href="#analysis">Analysis</a>
               <a class="inline-flex min-h-10 items-center rounded-md px-sm transition hover:bg-surface-3" href="/pricing/">Pricing</a>
               <a class="inline-flex min-h-10 items-center rounded-md px-sm transition hover:bg-surface-3" href="/docs/">Docs</a>
               <a class="inline-flex min-h-10 items-center rounded-md px-sm transition hover:bg-surface-3" href={signInUrl}>Sign in</a>
@@ -197,7 +224,7 @@ const faqs = [
             App Store and Google Play reviews, in one inbox.
           </h1>
           <p class="mt-lg max-w-2xl text-lg leading-8 tracking-[-0.1px] text-ink-muted sm:text-xl">
-            ReviewInbox centralizes Reviews, drafts replies with AI, and lets you edit before anything is published.
+            ReviewInbox centralizes Reviews, shows the patterns behind them, drafts replies with AI, and lets you edit before anything is published.
           </p>
           <div class="mt-xl flex flex-col items-center gap-sm sm:flex-row">
             <a class="inline-flex min-h-10 items-center rounded-md bg-linear-primary px-md py-sm text-sm font-medium text-white transition hover:bg-linear-primary-focus" href={signUpUrl}>
@@ -223,6 +250,29 @@ const faqs = [
                 decoding="async"
               />
             </picture>
+          </div>
+        </section>
+
+        <section id="analysis" class="mx-auto max-w-7xl px-md pb-section sm:px-lg">
+          <div class="rounded-xl border border-hairline bg-surface-1 p-lg shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] lg:p-xl">
+            <div class="grid gap-xl lg:grid-cols-[0.85fr_1.15fr] lg:items-end">
+              <div>
+                <p class="font-mono text-xs uppercase tracking-[0.12em] text-linear-primary-hover">Review analysis</p>
+                <h2 class="mt-md max-w-2xl text-4xl font-semibold leading-tight tracking-[-1px] text-ink sm:text-5xl">Turn a queue of Reviews into a product signal.</h2>
+              </div>
+              <p class="max-w-2xl text-base leading-7 text-ink-muted lg:justify-self-end">
+                Explore interactive trends by period, Store, and app version. Filter by topic, intent, or reported severity, then open the Reviews behind a chart segment. Pending topics stay visible with a clear provisional treatment while your team validates them.
+              </p>
+            </div>
+            <div class="mt-xl grid gap-md md:grid-cols-3">
+              {analysisHighlights.map((highlight) => (
+                <article class="rounded-lg border border-hairline bg-canvas p-lg">
+                  <h3 class="font-medium text-ink">{highlight.title}</h3>
+                  <p class="mt-sm text-sm leading-6 text-ink-subtle">{highlight.description}</p>
+                </article>
+              ))}
+            </div>
+            <a class="mt-lg inline-flex min-h-10 items-center rounded-md border border-hairline bg-canvas px-md py-sm text-sm font-medium text-ink transition hover:border-hairline-strong hover:bg-surface-2" href="/docs/review-analysis/">Read how analysis works</a>
           </div>
         </section>
 

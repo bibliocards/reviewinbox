@@ -162,6 +162,7 @@ export class AppShellComponent {
 
   protected readonly navItems = computed<ShellNavItem[]>(() => [
     { labelKey: 'shell.navigation.replyInbox', route: '/', icon: 'pi-inbox' },
+    { labelKey: 'shell.navigation.analysis', route: '/analysis', icon: 'pi-chart-bar' },
     { labelKey: 'shell.navigation.apps', route: '/apps', icon: 'pi-mobile' },
     { labelKey: 'shell.navigation.auditHistory', route: '/audit-history', icon: 'pi-history' },
     {

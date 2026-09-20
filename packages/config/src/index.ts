@@ -412,6 +412,10 @@ function validateAiProvider(config: AiConfigValues, context: RefinementContext):
 
 export type AiConfig = z.infer<typeof aiConfigSchema>
 
+export const typeSafeConfigSchema = z.object({ apiKey: optionalStringSchema })
+
+export type TypeSafeConfig = z.infer<typeof typeSafeConfigSchema>
+
 export const appEncryptionKeySchema = z.string().superRefine((value, context) => {
   let decoded: Buffer
 
@@ -490,6 +494,10 @@ export function loadAiConfig(env: NodeJS.ProcessEnv = loadProcessEnv()): AiConfi
     apiKey: env['AI_API_KEY'],
     baseUrl: env['AI_BASE_URL'],
   })
+}
+
+export function loadTypeSafeConfig(env: NodeJS.ProcessEnv = loadProcessEnv()): TypeSafeConfig {
+  return typeSafeConfigSchema.parse({ apiKey: env['TYPESAFE_API_KEY'] })
 }
 
 export function loadEncryptionConfig(env: NodeJS.ProcessEnv = loadProcessEnv()): EncryptionConfig {

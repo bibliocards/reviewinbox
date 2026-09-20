@@ -4,8 +4,15 @@ import { z } from 'zod'
 
 export const generateReplyDraftJobName = 'generate-reply-draft'
 export const syncStoreConnectionJobName = 'sync-store-connection'
+export const classifyReviewJobName = 'classify-review'
+export const discoverReviewTopicsJobName = 'discover-review-topics'
 
-export const reviewInboxJobNames = [generateReplyDraftJobName, syncStoreConnectionJobName] as const
+export const reviewInboxJobNames = [
+  generateReplyDraftJobName,
+  syncStoreConnectionJobName,
+  classifyReviewJobName,
+  discoverReviewTopicsJobName,
+] as const
 
 const generateReplyDraftJobPayloadSchema = z.object({
   organizationId: z.string().min(1),
@@ -18,9 +25,20 @@ const syncStoreConnectionJobPayloadSchema = z.object({
   windowStartsAt: z.iso.datetime(),
   trigger: z.enum(['automatic', 'initial']),
 })
+const classifyReviewJobPayloadSchema = z.object({
+  organizationId: z.string().min(1),
+  reviewId: z.uuid(),
+})
+const discoverReviewTopicsJobPayloadSchema = z.object({
+  organizationId: z.string().min(1),
+  appId: z.uuid(),
+  trigger: z.enum(['daily', 'manual']),
+})
 
 export type GenerateReplyDraftJobPayload = z.infer<typeof generateReplyDraftJobPayloadSchema>
 export type SyncStoreConnectionJobPayload = z.infer<typeof syncStoreConnectionJobPayloadSchema>
+export type ClassifyReviewJobPayload = z.infer<typeof classifyReviewJobPayloadSchema>
+export type DiscoverReviewTopicsJobPayload = z.infer<typeof discoverReviewTopicsJobPayloadSchema>
 
 export type QueueJobOptions = { priority?: number; startAfter?: number | string | Date }
 
@@ -41,8 +59,20 @@ export type QueueClient = {
     payload: SyncStoreConnectionJobPayload,
     options?: QueueJobOptions,
   ): Promise<string | null>
+  enqueueClassifyReview(
+    payload: ClassifyReviewJobPayload,
+    options?: QueueJobOptions,
+  ): Promise<string>
+  enqueueDiscoverReviewTopics(
+    payload: DiscoverReviewTopicsJobPayload,
+    options?: QueueJobOptions,
+  ): Promise<string | null>
   workGenerateReplyDraft(handler: QueueJobHandler<GenerateReplyDraftJobPayload>): Promise<string>
   workSyncStoreConnection(handler: QueueJobHandler<SyncStoreConnectionJobPayload>): Promise<string>
+  workClassifyReview(handler: QueueJobHandler<ClassifyReviewJobPayload>): Promise<string>
+  workDiscoverReviewTopics(
+    handler: QueueJobHandler<DiscoverReviewTopicsJobPayload>,
+  ): Promise<string>
 }
 
 export type QueueClientOptions = {
@@ -52,7 +82,11 @@ export type QueueClientOptions = {
   boss?: QueueClientBoss
 }
 
-type QueuePayload = GenerateReplyDraftJobPayload | SyncStoreConnectionJobPayload
+type QueuePayload =
+  | GenerateReplyDraftJobPayload
+  | SyncStoreConnectionJobPayload
+  | ClassifyReviewJobPayload
+  | DiscoverReviewTopicsJobPayload
 
 type QueueCreationOptions = {
   retryLimit?: number
@@ -97,8 +131,14 @@ function createQueueClientMethods(boss: QueueClientBoss): QueueClient {
       enqueueGenerateReplyDraft(boss, payload, jobOptions),
     enqueueSyncStoreConnection: (payload, jobOptions) =>
       enqueueSyncStoreConnection(boss, payload, jobOptions),
+    enqueueClassifyReview: (payload, jobOptions) =>
+      enqueueClassifyReview(boss, payload, jobOptions),
+    enqueueDiscoverReviewTopics: (payload, jobOptions) =>
+      enqueueDiscoverReviewTopics(boss, payload, jobOptions),
     workGenerateReplyDraft: (handler) => workGenerateReplyDraft(boss, handler),
     workSyncStoreConnection: (handler) => workSyncStoreConnection(boss, handler),
+    workClassifyReview: (handler) => workClassifyReview(boss, handler),
+    workDiscoverReviewTopics: (handler) => workDiscoverReviewTopics(boss, handler),
   }
 }
 
@@ -136,6 +176,38 @@ function enqueueSyncStoreConnection(
   })
 }
 
+async function enqueueClassifyReview(
+  boss: QueueClientBoss,
+  payload: ClassifyReviewJobPayload,
+  jobOptions?: QueueJobOptions,
+): Promise<string> {
+  const parsedPayload = classifyReviewJobPayloadSchema.parse(payload)
+  const jobId = await boss.send(classifyReviewJobName, parsedPayload, {
+    ...defaultClassifyReviewJobOptions,
+    ...jobOptions,
+    singletonKey: parsedPayload.reviewId,
+  })
+  if (jobId === null) {
+    throw new Error('pg-boss did not create a classify-review job.')
+  }
+  return jobId
+}
+
+function enqueueDiscoverReviewTopics(
+  boss: QueueClientBoss,
+  payload: DiscoverReviewTopicsJobPayload,
+  jobOptions?: QueueJobOptions,
+): Promise<string | null> {
+  return Promise.resolve().then(() => {
+    const parsedPayload = discoverReviewTopicsJobPayloadSchema.parse(payload)
+    return boss.send(discoverReviewTopicsJobName, parsedPayload, {
+      ...defaultDiscoverReviewTopicsJobOptions,
+      ...jobOptions,
+      singletonKey: parsedPayload.appId,
+    })
+  })
+}
+
 function workGenerateReplyDraft(
   boss: QueueClientBoss,
   handler: QueueJobHandler<GenerateReplyDraftJobPayload>,
@@ -155,6 +227,28 @@ function workSyncStoreConnection(
     syncStoreConnectionJobName,
     defaultSyncStoreConnectionWorkOptions,
     (jobs) => handleJobsSequentially(jobs, handler, parseSyncStoreConnectionJob),
+  )
+}
+
+function workClassifyReview(
+  boss: QueueClientBoss,
+  handler: QueueJobHandler<ClassifyReviewJobPayload>,
+): Promise<string> {
+  return boss.work<ClassifyReviewJobPayload>(
+    classifyReviewJobName,
+    defaultClassifyReviewWorkOptions,
+    (jobs) => handleJobsSequentially(jobs, handler, parseClassifyReviewJob),
+  )
+}
+
+function workDiscoverReviewTopics(
+  boss: QueueClientBoss,
+  handler: QueueJobHandler<DiscoverReviewTopicsJobPayload>,
+): Promise<string> {
+  return boss.work<DiscoverReviewTopicsJobPayload>(
+    discoverReviewTopicsJobName,
+    defaultDiscoverReviewTopicsWorkOptions,
+    (jobs) => handleJobsSequentially(jobs, handler, parseDiscoverReviewTopicsJob),
   )
 }
 
@@ -196,6 +290,32 @@ const defaultSyncStoreConnectionWorkOptions = {
   pollingIntervalSeconds: 1,
 } satisfies WorkOptions
 
+const defaultClassifyReviewJobOptions = {
+  retryLimit: 3,
+  retryDelay: 30,
+  retryBackoff: true,
+  expireInSeconds: 300,
+  singletonSeconds: 60,
+} satisfies SendOptions
+
+const defaultClassifyReviewWorkOptions = {
+  batchSize: 1,
+  pollingIntervalSeconds: 1,
+} satisfies WorkOptions
+
+const defaultDiscoverReviewTopicsJobOptions = {
+  retryLimit: 2,
+  retryDelay: 60,
+  retryBackoff: true,
+  expireInSeconds: 60 * 60,
+  singletonSeconds: 60 * 60 * 24,
+} satisfies SendOptions
+
+const defaultDiscoverReviewTopicsWorkOptions = {
+  batchSize: 1,
+  pollingIntervalSeconds: 1,
+} satisfies WorkOptions
+
 async function ensureQueues(boss: QueueClientBoss): Promise<void> {
   await boss.createQueue(generateReplyDraftJobName, {
     retryLimit: defaultGenerateReplyDraftJobOptions.retryLimit,
@@ -206,6 +326,18 @@ async function ensureQueues(boss: QueueClientBoss): Promise<void> {
   await boss.createQueue(syncStoreConnectionJobName, {
     retryLimit: defaultSyncStoreConnectionJobOptions.retryLimit,
     expireInSeconds: defaultSyncStoreConnectionJobOptions.expireInSeconds,
+  })
+  await boss.createQueue(classifyReviewJobName, {
+    retryLimit: defaultClassifyReviewJobOptions.retryLimit,
+    retryDelay: defaultClassifyReviewJobOptions.retryDelay,
+    retryBackoff: defaultClassifyReviewJobOptions.retryBackoff,
+    expireInSeconds: defaultClassifyReviewJobOptions.expireInSeconds,
+  })
+  await boss.createQueue(discoverReviewTopicsJobName, {
+    retryLimit: defaultDiscoverReviewTopicsJobOptions.retryLimit,
+    retryDelay: defaultDiscoverReviewTopicsJobOptions.retryDelay,
+    retryBackoff: defaultDiscoverReviewTopicsJobOptions.retryBackoff,
+    expireInSeconds: defaultDiscoverReviewTopicsJobOptions.expireInSeconds,
   })
 }
 
@@ -219,4 +351,14 @@ function parseSyncStoreConnectionJob(
   job: Job<SyncStoreConnectionJobPayload>,
 ): SyncStoreConnectionJobPayload {
   return syncStoreConnectionJobPayloadSchema.parse(job.data)
+}
+
+function parseClassifyReviewJob(job: Job<ClassifyReviewJobPayload>): ClassifyReviewJobPayload {
+  return classifyReviewJobPayloadSchema.parse(job.data)
+}
+
+function parseDiscoverReviewTopicsJob(
+  job: Job<DiscoverReviewTopicsJobPayload>,
+): DiscoverReviewTopicsJobPayload {
+  return discoverReviewTopicsJobPayloadSchema.parse(job.data)
 }

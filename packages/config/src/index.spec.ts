@@ -5,6 +5,7 @@ import {
   loadAiConfig,
   loadEncryptionConfig,
   loadServerConfig,
+  loadTypeSafeConfig,
   loadWorkerConfig,
 } from './index'
 
@@ -224,6 +225,15 @@ describe('loadAiConfig', () => {
         AI_BASE_URL: 'https://user:pass@example.com/v1',
       }),
     ).toThrow(/credentials/u)
+  })
+})
+
+describe('loadTypeSafeConfig', () => {
+  it('keeps the global classification provider optional', () => {
+    expect(loadTypeSafeConfig({})).toEqual({ apiKey: undefined })
+    expect(loadTypeSafeConfig({ TYPESAFE_API_KEY: 'operator-key' })).toEqual({
+      apiKey: 'operator-key',
+    })
   })
 })
 

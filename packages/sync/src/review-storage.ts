@@ -142,7 +142,11 @@ async function persistReviewBatches(state: PersistReviewState): Promise<StoredRe
     .values(reviewBatch.map((review) => toReviewInsertValues(review, state.scope)))
     .onConflictDoUpdate({
       target: [reviews.storeConnectionId, reviews.externalReviewId],
-      set: { ...reviewMetadataUpsertSet(), ...reviewReplyStateUpsertSet() },
+      set: {
+        ...reviewMetadataUpsertSet(),
+        ...reviewReplyStateUpsertSet(),
+        ...reviewAnalysisStateUpsertSet(),
+      },
     })
     .returning({ id: reviews.id, externalReviewId: reviews.externalReviewId })
   return persistReviewBatches({
@@ -150,6 +154,19 @@ async function persistReviewBatches(state: PersistReviewState): Promise<StoredRe
     index: state.index + reviewUpsertBatchSize,
     storedReviews: [...state.storedReviews, ...storedReviewBatch],
   })
+}
+
+function reviewAnalysisStateUpsertSet() {
+  const inputChanged = sql`reviews.title IS DISTINCT FROM excluded.title
+    OR reviews.body IS DISTINCT FROM excluded.body
+    OR reviews.rating IS DISTINCT FROM excluded.rating
+    OR reviews.version IS DISTINCT FROM excluded.version
+    OR reviews.language IS DISTINCT FROM excluded.language`
+  return {
+    analysisStatus: sql`CASE WHEN ${inputChanged} THEN 'pending' ELSE reviews.analysis_status END`,
+    analysisStartedAt: sql`CASE WHEN ${inputChanged} THEN NULL ELSE reviews.analysis_started_at END`,
+    analysisFailureCode: sql`CASE WHEN ${inputChanged} THEN NULL ELSE reviews.analysis_failure_code END`,
+  }
 }
 
 function reviewMetadataUpsertSet() {
