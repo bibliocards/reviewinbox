@@ -231,7 +231,7 @@
       "updatedReplyPublished": "Updated reply published.",
       "ignored": "Review ignored.",
       "unignored": "Review restored.",
-      "reviewChanged": "The Review changed while you were editing. Nothing was saved or published. Check the latest version before trying again.",
+      "reviewChanged": "The Review changed since it was displayed. Your action was not applied. Check the latest version before trying again.",
       "actionFailed": "We could not complete this action yet.",
       "lastPublishFailed": "Last publish failed:"
     },

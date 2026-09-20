@@ -127,6 +127,13 @@ export const saveReplyDraftRequestSchema = z
   .strict()
 export type SaveReplyDraftRequest = z.infer<typeof saveReplyDraftRequestSchema>
 
+export const updateReviewIgnoredStatusRequestSchema = z
+  .object({ reviewContentToken: z.string().regex(/^[a-f0-9]{64}$/u) })
+  .strict()
+export type UpdateReviewIgnoredStatusRequest = z.infer<
+  typeof updateReviewIgnoredStatusRequestSchema
+>
+
 export const publishReplyRequestSchema = z
   .object({
     reviewContentToken: z.string().regex(/^[a-f0-9]{64}$/u),

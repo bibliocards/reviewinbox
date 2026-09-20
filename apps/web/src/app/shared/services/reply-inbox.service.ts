@@ -7,6 +7,7 @@ import type {
   QueueReplyDraftResponse,
   ReplyActionResponse,
   SaveReplyDraftRequest,
+  UpdateReviewIgnoredStatusRequest,
 } from '@reviewinbox/contracts'
 import type { Observable } from 'rxjs'
 
@@ -57,17 +58,23 @@ export class ReplyInboxService {
     )
   }
 
-  ignoreReview(reviewId: string): Observable<ReplyActionResponse> {
+  ignoreReview(
+    reviewId: string,
+    input: UpdateReviewIgnoredStatusRequest,
+  ): Observable<ReplyActionResponse> {
     return this.http.post<ReplyActionResponse>(
       `${this.apiUrl}/api/reply-inbox/${reviewId}/ignore`,
-      {},
+      input,
     )
   }
 
-  unignoreReview(reviewId: string): Observable<ReplyActionResponse> {
+  unignoreReview(
+    reviewId: string,
+    input: UpdateReviewIgnoredStatusRequest,
+  ): Observable<ReplyActionResponse> {
     return this.http.post<ReplyActionResponse>(
       `${this.apiUrl}/api/reply-inbox/${reviewId}/unignore`,
-      {},
+      input,
     )
   }
 }

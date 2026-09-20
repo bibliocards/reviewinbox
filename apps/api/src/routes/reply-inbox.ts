@@ -9,6 +9,7 @@ import {
   replyAuditEventsResponseSchema,
   replyInboxFilterSchema,
   saveReplyDraftRequestSchema,
+  updateReviewIgnoredStatusRequestSchema,
 } from '@reviewinbox/contracts'
 import {
   apps,
@@ -896,22 +897,23 @@ async function updateIgnoredStatus(context: Context, ignored: boolean) {
     return sessionResult.response
   }
 
-  const reviewIdResult = parseUuidParam(context, 'reviewId', 'Review')
-  if (!reviewIdResult.ok) {
-    return reviewIdResult.response
+  const request = await parseIgnoredStatusRequest(context)
+  if (!request.ok) {
+    return request.response
   }
 
   const result = await database.transaction((transaction) =>
     updateIgnoredStatusInTransaction(transaction, {
       organizationId: sessionResult.session.organizationId,
       actorUserId: sessionResult.session.userId,
-      reviewId: reviewIdResult.data,
+      reviewId: request.reviewId,
       ignored,
+      reviewContentToken: request.reviewContentToken,
     }),
   )
 
   if (!result.ok) {
-    return context.json({ error: result.error }, result.status)
+    return context.json({ error: result.error, errorCode: result.errorCode }, result.status)
   }
 
   return context.json(
@@ -921,11 +923,32 @@ async function updateIgnoredStatus(context: Context, ignored: boolean) {
   )
 }
 
+async function parseIgnoredStatusRequest(
+  context: Context,
+): Promise<
+  { ok: true; reviewId: string; reviewContentToken: string } | { ok: false; response: Response }
+> {
+  const reviewIdResult = parseUuidParam(context, 'reviewId', 'Review')
+  if (!reviewIdResult.ok) {
+    return { ok: false, response: reviewIdResult.response }
+  }
+  const bodyResult = await parseJsonBody(context, updateReviewIgnoredStatusRequestSchema)
+  if (!bodyResult.ok) {
+    return { ok: false, response: bodyResult.response }
+  }
+  return {
+    ok: true,
+    reviewId: reviewIdResult.data,
+    reviewContentToken: bodyResult.data.reviewContentToken,
+  }
+}
+
 type IgnoredStatusInput = {
   organizationId: string
   actorUserId: string
   reviewId: string
   ignored: boolean
+  reviewContentToken: string
 }
 
 async function updateIgnoredStatusInTransaction(
@@ -935,6 +958,14 @@ async function updateIgnoredStatusInTransaction(
   const row = await selectReviewForAction(transaction, input.organizationId, input.reviewId)
   if (row === undefined) {
     return { ok: false as const, status: 404 as const, error: 'Review not found.' }
+  }
+  if (!isReviewContentTokenCurrent(input.reviewContentToken, row.review)) {
+    return {
+      ok: false as const,
+      status: 409 as const,
+      error: 'Review changed before its Reply Inbox status could be updated.',
+      errorCode: 'review_changed',
+    }
   }
   if (row.review.replyStatus === 'published') {
     return { ok: false as const, status: 409 as const, error: 'Published Reply cannot be ignored.' }

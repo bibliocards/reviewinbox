@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { publishReplyRequestSchema, saveReplyDraftRequestSchema } from './reply-inbox'
+import {
+  publishReplyRequestSchema,
+  saveReplyDraftRequestSchema,
+  updateReviewIgnoredStatusRequestSchema,
+} from './reply-inbox'
 
 const reviewContentToken = 'a'.repeat(64)
 
@@ -18,5 +22,15 @@ describe('Reply Inbox content token requests', () => {
       publishReplyRequestSchema.safeParse({ draftText: 'Thanks', reviewContentToken }).success,
     ).toBe(true)
     expect(publishReplyRequestSchema.safeParse({}).success).toBe(false)
+  })
+
+  it('requires a valid token when ignoring or unignoring a Review', () => {
+    expect(updateReviewIgnoredStatusRequestSchema.safeParse({ reviewContentToken }).success).toBe(
+      true,
+    )
+    expect(updateReviewIgnoredStatusRequestSchema.safeParse({}).success).toBe(false)
+    expect(
+      updateReviewIgnoredStatusRequestSchema.safeParse({ reviewContentToken: 'stale' }).success,
+    ).toBe(false)
   })
 })

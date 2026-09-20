@@ -156,7 +156,9 @@ export class ReplyInboxPageComponent {
   protected ignore(review: ReplyInboxReview): void {
     this.runAction(
       review.id,
-      this.replyInboxService.ignoreReview(review.id),
+      this.replyInboxService.ignoreReview(review.id, {
+        reviewContentToken: review.reviewContentToken,
+      }),
       'replyInbox.messages.ignored',
     )
   }
@@ -164,7 +166,9 @@ export class ReplyInboxPageComponent {
   protected unignore(review: ReplyInboxReview): void {
     this.runAction(
       review.id,
-      this.replyInboxService.unignoreReview(review.id),
+      this.replyInboxService.unignoreReview(review.id, {
+        reviewContentToken: review.reviewContentToken,
+      }),
       'replyInbox.messages.unignored',
     )
   }
