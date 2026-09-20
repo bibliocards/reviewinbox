@@ -7,7 +7,7 @@ import {
   usageEvents,
   type Database,
 } from '@reviewinbox/db'
-import { and, eq, inArray, isNull } from 'drizzle-orm'
+import { and, eq, inArray, isNull, or } from 'drizzle-orm'
 
 import { reviewAnalysisCriteriaVersion } from './review-analysis-worker'
 import { loadTopicDiscoveryCandidates } from './topic-discovery-candidates'
@@ -130,23 +130,7 @@ async function markDiscoveryComplete(
     ) {
       return
     }
-    const candidates = await transaction
-      .select({ id: reviews.id })
-      .from(reviews)
-      .innerJoin(reviewAnalyses, eq(reviewAnalyses.reviewId, reviews.id))
-      .where(
-        and(
-          eq(reviews.appId, payload.appId),
-          eq(reviews.organizationId, payload.organizationId),
-          eq(reviews.analysisStatus, 'completed'),
-          eq(reviewAnalyses.catalogVersion, snapshot.catalogVersion),
-          eq(reviewAnalyses.criteriaVersion, reviewAnalysisCriteriaVersion),
-          eq(reviewAnalyses.uncovered, true),
-          isNull(reviewAnalyses.discoveredAt),
-        ),
-      )
-      .limit(1)
-    if (candidates.length > 0) {
+    if (await hasOutstandingDiscoveryWork(transaction, payload, snapshot.catalogVersion)) {
       return
     }
     await transaction
@@ -154,6 +138,35 @@ async function markDiscoveryComplete(
       .set({ lastTopicDiscoveryAt: new Date(), topicDiscoveryRequestedAt: null })
       .where(eq(apps.id, payload.appId))
   })
+}
+
+async function hasOutstandingDiscoveryWork(
+  transaction: WorkerTransaction,
+  payload: { organizationId: string; appId: string },
+  catalogVersion: number,
+): Promise<boolean> {
+  const candidates = await transaction
+    .select({ id: reviews.id })
+    .from(reviews)
+    .leftJoin(reviewAnalyses, eq(reviewAnalyses.reviewId, reviews.id))
+    .where(
+      and(
+        eq(reviews.appId, payload.appId),
+        eq(reviews.organizationId, payload.organizationId),
+        or(
+          inArray(reviews.analysisStatus, ['pending', 'processing']),
+          and(
+            eq(reviews.analysisStatus, 'completed'),
+            eq(reviewAnalyses.catalogVersion, catalogVersion),
+            eq(reviewAnalyses.criteriaVersion, reviewAnalysisCriteriaVersion),
+            eq(reviewAnalyses.uncovered, true),
+            isNull(reviewAnalyses.discoveredAt),
+          ),
+        ),
+      ),
+    )
+    .limit(1)
+  return candidates.length > 0
 }
 
 function deduplicateTopicProposals(

@@ -251,7 +251,7 @@ async function enqueuePendingAnalysisJobs(runtime: WorkerRuntime): Promise<void>
     )
     .orderBy(
       asc(sql<number>`case when ${reviews.analysisStatus} = 'failed' then 1 else 0 end`),
-      asc(reviews.reviewedAt),
+      desc(reviews.reviewedAt),
     )
     .limit(500)
   await Promise.all(
