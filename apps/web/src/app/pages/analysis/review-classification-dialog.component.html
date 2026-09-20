@@ -18,6 +18,8 @@
       appendTo="body"
       [options]="severities"
       [(ngModel)]="severity"
+      [showClear]="true"
+      [placeholder]="t('analysis.severity.unknown')"
       [fluid]="true"
       [ariaLabel]="t('analysis.editor.severity')"
     >
