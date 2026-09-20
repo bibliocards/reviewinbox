@@ -4,6 +4,7 @@ import type { FlexibleSchema } from 'ai'
 import { generateText, Output } from 'ai'
 
 import { createVercelAiReplyDraftProvider } from './vercel-ai-adapter'
+import { translateVercelAiError } from './errors'
 
 export type OpenAiCompatibleReplyDraftProviderOptions = {
   apiKey: string
@@ -11,6 +12,8 @@ export type OpenAiCompatibleReplyDraftProviderOptions = {
   baseUrl?: string
   providerName?: string
 }
+
+export const replyDraftProviderTimeoutMs = 60_000
 
 export function createOpenAiCompatibleReplyDraftProvider(options: OpenAiCompatibleReplyDraftProviderOptions) {
   const providerSettings: OpenAIProviderSettings = {
@@ -35,9 +38,15 @@ export function createOpenAiCompatibleReplyDraftProvider(options: OpenAiCompatib
         output: Output.object({ schema: request.schema as FlexibleSchema<unknown> }),
         temperature: request.temperature,
         maxOutputTokens: request.maxOutputTokens,
+        maxRetries: 0,
+        timeout: replyDraftProviderTimeoutMs,
       })
 
-      return { output: result.output }
+      try {
+        return { output: result.output }
+      } catch (error) {
+        throw translateVercelAiError(error, { finishReason: result.finishReason }) ?? error
+      }
     },
   })
 }

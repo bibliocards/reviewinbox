@@ -7,14 +7,21 @@ export function createWorkerReplyDraftProvider(config: AiConfig): ReplyDraftProv
     case 'disabled':
       return null
     case 'openai-compatible':
-      return createOpenAiCompatibleReplyDraftProvider({
-        apiKey: requireAiConfigValue(config.apiKey, 'AI_API_KEY'),
-        model: requireAiConfigValue(config.model, 'AI_MODEL'),
-        ...(config.baseUrl ? { baseUrl: config.baseUrl } : {}),
-      })
+      return createConfiguredProvider(config)
     case 'managed':
-      throw new Error('Managed AI provider runtime is not configured in this deployment.')
+      if (config.deploymentMode !== 'cloud') {
+        throw new Error('Managed AI provider is only available in cloud deployments.')
+      }
+      return createConfiguredProvider(config)
   }
+}
+
+function createConfiguredProvider(config: AiConfig): ReplyDraftProvider {
+  return createOpenAiCompatibleReplyDraftProvider({
+    apiKey: requireAiConfigValue(config.apiKey, 'AI_API_KEY'),
+    model: requireAiConfigValue(config.model, 'AI_MODEL'),
+    ...(config.baseUrl ? { baseUrl: config.baseUrl } : {}),
+  })
 }
 
 function requireAiConfigValue(value: string | undefined, name: string): string {

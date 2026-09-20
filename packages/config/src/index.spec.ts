@@ -115,8 +115,34 @@ describe('loadAiConfig', () => {
     expect(() => loadAiConfig({ AI_PROVIDER: 'openai-compatible', AI_MODEL: 'gpt-4.1-mini' })).toThrow(/AI_API_KEY/)
   })
 
-  it('rejects managed AI until runtime support exists', () => {
-    expect(() => loadAiConfig({ DEPLOYMENT_MODE: 'cloud', AI_PROVIDER: 'managed', AI_MODEL: 'gpt-4.1-mini' })).toThrow(/not supported/)
+  it('accepts managed AI in cloud when the operator provider is configured', () => {
+    expect(
+      loadAiConfig({
+        DEPLOYMENT_MODE: 'cloud',
+        AI_PROVIDER: 'managed',
+        AI_MODEL: 'gpt-4.1-mini',
+        AI_API_KEY: 'operator-key',
+      }),
+    ).toEqual({
+      deploymentMode: 'cloud',
+      provider: 'managed',
+      model: 'gpt-4.1-mini',
+      apiKey: 'operator-key',
+    })
+  })
+
+  it('rejects managed AI for self-hosted deployments', () => {
+    expect(() =>
+      loadAiConfig({
+        AI_PROVIDER: 'managed',
+        AI_MODEL: 'gpt-4.1-mini',
+        AI_API_KEY: 'operator-key',
+      }),
+    ).toThrow(/only available in cloud/)
+  })
+
+  it('requires an API key for managed AI', () => {
+    expect(() => loadAiConfig({ DEPLOYMENT_MODE: 'cloud', AI_PROVIDER: 'managed', AI_MODEL: 'gpt-4.1-mini' })).toThrow(/AI_API_KEY/)
   })
 
   it('rejects non-local HTTP AI base URLs', () => {

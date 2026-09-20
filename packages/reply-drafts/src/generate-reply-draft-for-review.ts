@@ -32,47 +32,57 @@ export type GenerateReplyDraftForReviewResult =
 
 const draftableStatuses = ['pending', 'failed'] as const
 
+type DatabaseTransaction = Parameters<Parameters<Database['transaction']>[0]>[0]
+type DatabaseExecutor = Database | DatabaseTransaction
+
 export async function generateReplyDraftForReview(input: GenerateReplyDraftForReviewInput): Promise<GenerateReplyDraftForReviewResult> {
-  const draftableReview = await selectDraftableReview(input.database, input.organizationId, input.reviewId)
-
-  if (!draftableReview) {
-    return { status: 'skipped', reason: 'review_not_found' }
-  }
-
-  const skipReason = getSkipReason(draftableReview)
-  if (skipReason) {
-    return { status: 'skipped', reason: skipReason }
-  }
-
-  if (input.aiProvider === 'managed') {
-    const decision = await canGenerateManagedAiReplyDraftForOrganization(input)
-    if (!decision.allowed) {
-      return { status: 'skipped', reason: 'monthly_managed_ai_reply_draft_cap_reached' }
+  return input.database.transaction(async (transaction) => {
+    if (shouldMeterAiUsage(input)) {
+      await transaction.execute(sql`select pg_advisory_xact_lock(hashtext(${input.organizationId}))`)
     }
-  }
 
-  try {
-    const generated = await input.generateDraft({
-      reviewText: draftableReview.review.body,
-      reviewRating: draftableReview.review.rating,
-      reviewTitle: draftableReview.review.title,
-      appName: draftableReview.app.name,
-      store: draftableReview.storeConnection.provider,
-      replyContext: draftableReview.app.replyContext,
-      defaultLanguage: draftableReview.app.defaultLanguage,
-      mappedLanguages: draftableReview.app.mappedLanguages,
-      storeLocale: draftableReview.review.locale ?? draftableReview.review.language,
-    })
+    const draftableReview = await selectDraftableReview(transaction, input.organizationId, input.reviewId)
 
-    return storeGeneratedDraft(input.database, draftableReview, generated, input.aiProvider)
-  } catch (error) {
-    const errorCode = error instanceof AiDraftingError ? error.code : 'unknown'
-    await recordDraftFailure(input.database, input.organizationId, input.reviewId, errorCode)
-    return { status: 'failed', errorCode }
-  }
+    if (!draftableReview) {
+      return { status: 'skipped', reason: 'review_not_found' }
+    }
+
+    const skipReason = getSkipReason(draftableReview)
+    if (skipReason) {
+      return { status: 'skipped', reason: skipReason }
+    }
+
+    if (shouldMeterAiUsage(input)) {
+      const decision = await canGenerateCloudAiReplyDraftForOrganization({ ...input, database: transaction })
+      if (!decision.allowed) {
+        return { status: 'skipped', reason: 'monthly_managed_ai_reply_draft_cap_reached' }
+      }
+    }
+
+    let generated: GenerateReplyDraftResult
+    try {
+      generated = await input.generateDraft({
+        reviewText: draftableReview.review.body,
+        reviewRating: draftableReview.review.rating,
+        reviewTitle: draftableReview.review.title,
+        appName: draftableReview.app.name,
+        store: draftableReview.storeConnection.provider,
+        replyContext: draftableReview.app.replyContext,
+        defaultLanguage: draftableReview.app.defaultLanguage,
+        mappedLanguages: draftableReview.app.mappedLanguages,
+        storeLocale: draftableReview.review.locale ?? draftableReview.review.language,
+      })
+    } catch (error) {
+      const errorCode = error instanceof AiDraftingError ? error.code : 'unknown'
+      await recordDraftFailure(transaction, input.organizationId, input.reviewId, errorCode)
+      return { status: 'failed', errorCode }
+    }
+
+    return storeGeneratedDraft(transaction, draftableReview, generated, input)
+  })
 }
 
-async function selectDraftableReview(database: Database, organizationId: string, reviewId: string) {
+async function selectDraftableReview(database: DatabaseExecutor, organizationId: string, reviewId: string) {
   const [row] = await database
     .select({
       review: reviews,
@@ -120,98 +130,102 @@ function getSkipReason(row: DraftableReview): Extract<GenerateReplyDraftForRevie
 }
 
 async function storeGeneratedDraft(
-  database: Database,
+  database: DatabaseExecutor,
   row: DraftableReview,
   generated: GenerateReplyDraftResult,
-  aiProvider: GenerateReplyDraftForReviewInput['aiProvider'],
+  input: Pick<GenerateReplyDraftForReviewInput, 'deploymentMode'>,
 ): Promise<GenerateReplyDraftForReviewResult> {
-  return database.transaction(async (transaction) => {
-    const [latest] = await transaction
-      .select({
-        review: reviews,
-        app: apps,
-        storeConnection: storeConnections,
-        replyDraft: replyDrafts,
-      })
-      .from(reviews)
-      .innerJoin(apps, and(eq(reviews.appId, apps.id), eq(apps.organizationId, row.review.organizationId)))
-      .innerJoin(
-        storeConnections,
-        and(eq(reviews.storeConnectionId, storeConnections.id), eq(storeConnections.organizationId, row.review.organizationId)),
-      )
-      .leftJoin(replyDrafts, eq(reviews.id, replyDrafts.reviewId))
-      .where(and(eq(reviews.id, row.review.id), eq(reviews.organizationId, row.review.organizationId)))
-      .limit(1)
+  const [latest] = await database
+    .select({
+      review: reviews,
+      app: apps,
+      storeConnection: storeConnections,
+      replyDraft: replyDrafts,
+    })
+    .from(reviews)
+    .innerJoin(apps, and(eq(reviews.appId, apps.id), eq(apps.organizationId, row.review.organizationId)))
+    .innerJoin(
+      storeConnections,
+      and(eq(reviews.storeConnectionId, storeConnections.id), eq(storeConnections.organizationId, row.review.organizationId)),
+    )
+    .leftJoin(replyDrafts, eq(reviews.id, replyDrafts.reviewId))
+    .where(and(eq(reviews.id, row.review.id), eq(reviews.organizationId, row.review.organizationId)))
+    .limit(1)
 
-    if (!latest) {
-      return { status: 'skipped', reason: 'review_not_found' }
-    }
+  if (!latest) {
+    return { status: 'skipped', reason: 'review_not_found' }
+  }
 
-    const skipReason = getSkipReason(latest)
-    if (skipReason) {
-      return { status: 'skipped', reason: skipReason }
-    }
+  const skipReason = getSkipReason(latest)
+  if (skipReason) {
+    return { status: 'skipped', reason: skipReason }
+  }
 
-    const [updatedReview] = await transaction
-      .update(reviews)
-      .set({
-        replyStatus: 'drafted',
-        detectedReviewLanguage: generated.detectedReviewLanguage,
-        chosenReplyLanguage: generated.chosenReplyLanguage,
-        draftFailureCode: null,
-        draftFailureAt: null,
-        updatedAt: new Date(),
-      })
-      .where(
-        and(
-          eq(reviews.id, latest.review.id),
-          eq(reviews.organizationId, latest.review.organizationId),
-          inArray(reviews.replyStatus, [...draftableStatuses]),
-        ),
-      )
-      .returning({
-        id: reviews.id,
-        organizationId: reviews.organizationId,
-        appId: reviews.appId,
-      })
+  const [updatedReview] = await database
+    .update(reviews)
+    .set({
+      replyStatus: 'drafted',
+      detectedReviewLanguage: generated.detectedReviewLanguage,
+      chosenReplyLanguage: generated.chosenReplyLanguage,
+      draftFailureCode: null,
+      draftFailureAt: null,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(reviews.id, latest.review.id),
+        eq(reviews.organizationId, latest.review.organizationId),
+        inArray(reviews.replyStatus, [...draftableStatuses]),
+      ),
+    )
+    .returning({
+      id: reviews.id,
+      organizationId: reviews.organizationId,
+      appId: reviews.appId,
+    })
 
-    if (!updatedReview) {
-      return { status: 'skipped', reason: 'not_draftable' }
-    }
+  if (!updatedReview) {
+    return { status: 'skipped', reason: 'not_draftable' }
+  }
 
-    const [created] = await transaction
-      .insert(replyDrafts)
-      .values({
-        organizationId: updatedReview.organizationId,
-        appId: updatedReview.appId,
-        reviewId: updatedReview.id,
-        draftText: generated.draftText,
-        detectedReviewLanguage: generated.detectedReviewLanguage,
-        chosenReplyLanguage: generated.chosenReplyLanguage,
-        model: generated.model,
-        promptVersion: generated.promptVersion,
-      })
-      .onConflictDoNothing({ target: replyDrafts.reviewId })
-      .returning({ id: replyDrafts.id })
+  const [created] = await database
+    .insert(replyDrafts)
+    .values({
+      organizationId: updatedReview.organizationId,
+      appId: updatedReview.appId,
+      reviewId: updatedReview.id,
+      draftText: generated.draftText,
+      detectedReviewLanguage: generated.detectedReviewLanguage,
+      chosenReplyLanguage: generated.chosenReplyLanguage,
+      model: generated.model,
+      promptVersion: generated.promptVersion,
+    })
+    .onConflictDoNothing({ target: replyDrafts.reviewId })
+    .returning({ id: replyDrafts.id })
 
-    if (!created) {
-      return { status: 'skipped', reason: 'draft_exists' }
-    }
+  if (!created) {
+    return { status: 'skipped', reason: 'draft_exists' }
+  }
 
-    if (aiProvider === 'managed') {
-      await transaction.insert(usageEvents).values({
-        organizationId: updatedReview.organizationId,
-        type: 'managed_ai_reply_draft_generated',
-        quantity: 1,
-        occurredAt: new Date(),
-      })
-    }
+  if (shouldMeterAiUsage(input)) {
+    await database.insert(usageEvents).values({
+      organizationId: updatedReview.organizationId,
+      type: 'managed_ai_reply_draft_generated',
+      quantity: 1,
+      occurredAt: new Date(),
+    })
+  }
 
-    return { status: 'drafted', replyDraftId: created.id }
-  })
+  return { status: 'drafted', replyDraftId: created.id }
 }
 
-async function canGenerateManagedAiReplyDraftForOrganization(input: GenerateReplyDraftForReviewInput) {
+function shouldMeterAiUsage(input: Pick<GenerateReplyDraftForReviewInput, 'deploymentMode'>): boolean {
+  return input.deploymentMode === 'cloud'
+}
+
+async function canGenerateCloudAiReplyDraftForOrganization(
+  input: Omit<GenerateReplyDraftForReviewInput, 'database'> & { database: DatabaseExecutor },
+) {
   const billingOrganization = await input.database.query.organization.findFirst({
     columns: { planName: true, billingOverrides: true },
     where: eq(organization.id, input.organizationId),
@@ -243,7 +257,7 @@ async function canGenerateManagedAiReplyDraftForOrganization(input: GenerateRepl
   )
 }
 
-async function recordDraftFailure(database: Database, organizationId: string, reviewId: string, errorCode: string): Promise<void> {
+async function recordDraftFailure(database: DatabaseExecutor, organizationId: string, reviewId: string, errorCode: string): Promise<void> {
   await database
     .update(reviews)
     .set({

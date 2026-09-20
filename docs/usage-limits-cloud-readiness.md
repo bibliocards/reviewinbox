@@ -40,7 +40,7 @@ Current usage event types:
 
 `review_imported` is recorded only on first import. Review updates from later Sync Runs do not consume review import quota.
 
-`managed_ai_reply_draft_generated` is recorded only when ReviewInbox managed AI creates a Reply Draft. Failed generations and manual editing do not consume Managed AI quota.
+`managed_ai_reply_draft_generated` is recorded only when the Cloud worker, using the operator's configured AI provider, creates a Reply Draft. This includes either the managed provider label or an OpenAI-compatible transport configured for the Cloud deployment. Failed generations and manual editing do not consume Managed AI quota. Self-hosted deployments do not enforce or record this billing usage.
 
 `published_reply_created` is recorded for visibility but is not directly limited.
 

@@ -6,10 +6,11 @@ const fromRoot = (path: string) => resolve(process.cwd(), path)
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['apps/api/src/**/*.spec.ts', 'packages/*/src/**/*.spec.ts'],
+    include: ['apps/api/src/**/*.spec.ts', 'apps/worker/src/**/*.spec.ts', 'packages/*/src/**/*.spec.ts'],
   },
   resolve: {
     alias: {
+      '@reviewinbox/ai': fromRoot('packages/ai/src/index.ts'),
       '@reviewinbox/billing': fromRoot('packages/billing/src/index.ts'),
       '@reviewinbox/config': fromRoot('packages/config/src/index.ts'),
       '@reviewinbox/contracts': fromRoot('packages/contracts/src/index.ts'),
