@@ -1,5 +1,5 @@
-import { loadEncryptionConfig } from '@reviewinbox/config'
 import { canCreateStoreConnection, getPlanDefinition } from '@reviewinbox/billing'
+import { loadEncryptionConfig } from '@reviewinbox/config'
 import {
   createStoreConnectionRequestSchema,
   listStoreConnectionsResponseSchema,
@@ -28,7 +28,12 @@ import {
 } from '../auth/session'
 import { database, serverConfig } from '../db'
 import { parseJsonBody, parseUuidParam } from '../http/validation'
-import { enqueueGenerateReplyDraftJobs } from '../queue'
+import {
+  latestStoreConnectionSyncRevisionAt,
+  selectLatestSettledStoreConnectionSyncStartedAt,
+  shouldQueueInitialStoreConnectionSync,
+} from '../initial-sync'
+import { enqueueGenerateReplyDraftJobs, enqueueInitialStoreConnectionSyncJobs } from '../queue'
 
 export const storeConnectionsRoutes = new Hono()
 
@@ -104,18 +109,74 @@ storeConnectionsRoutes.patch('/api/store-connections/:storeConnectionId', async 
     return bodyResult.response
   }
 
-  const [updated] = await database
-    .update(storeConnections)
-    .set(bodyResult.data)
-    .where(eq(storeConnections.id, existing.connection.id))
-    .returning()
+  const changedFields: Partial<Pick<StoreConnectionRow, 'displayName' | 'externalAppId' | 'externalStoreId' | 'status'>> = {}
+  if (bodyResult.data.displayName !== undefined && bodyResult.data.displayName !== existing.connection.displayName) {
+    changedFields.displayName = bodyResult.data.displayName
+  }
+  if (bodyResult.data.externalAppId !== undefined && bodyResult.data.externalAppId !== existing.connection.externalAppId) {
+    changedFields.externalAppId = bodyResult.data.externalAppId
+  }
+  if (bodyResult.data.externalStoreId !== undefined && bodyResult.data.externalStoreId !== existing.connection.externalStoreId) {
+    changedFields.externalStoreId = bodyResult.data.externalStoreId
+  }
+  if (bodyResult.data.status !== undefined && bodyResult.data.status !== existing.connection.status) {
+    changedFields.status = bodyResult.data.status
+  }
+
+  const hasChanges = Object.keys(changedFields).length > 0
+  const syncRevisionChanged =
+    changedFields.status !== undefined || changedFields.externalAppId !== undefined || changedFields.externalStoreId !== undefined
+  const updated = hasChanges
+    ? (
+        await database
+          .update(storeConnections)
+          .set({ ...changedFields, updatedAt: syncRevisionChanged ? new Date() : existing.connection.updatedAt })
+          .where(eq(storeConnections.id, existing.connection.id))
+          .returning()
+      )[0]
+    : existing.connection
 
   if (!updated) {
     throw new Error('Store Connection update did not return a row.')
   }
 
+  const syncRevisionAt = latestStoreConnectionSyncRevisionAt({
+    connectionUpdatedAt: updated.updatedAt,
+    credentialUpdatedAt: existing.credential?.updatedAt,
+  })
+  const isActivation = existing.connection.status === 'disabled' && changedFields.status === 'active'
+  const identityChanged = changedFields.externalAppId !== undefined || changedFields.externalStoreId !== undefined
+  const isIdenticalSyncRelevantPatch =
+    !hasChanges &&
+    (bodyResult.data.status !== undefined || bodyResult.data.externalAppId !== undefined || bodyResult.data.externalStoreId !== undefined)
+  const latestSettledAt =
+    isIdenticalSyncRelevantPatch && updated.status === 'active' && existing.credential?.updatedAt
+      ? await selectLatestSettledStoreConnectionSyncStartedAt(database, {
+          storeConnectionId: updated.id,
+          organizationId: sessionResult.session.organizationId,
+        })
+      : null
+  const shouldRetryInitialSync =
+    isIdenticalSyncRelevantPatch &&
+    updated.status === 'active' &&
+    existing.credential?.updatedAt != null &&
+    shouldQueueInitialStoreConnectionSync({ revisionAt: syncRevisionAt, latestSettledAt })
+  const initialSync =
+    isActivation || identityChanged || shouldRetryInitialSync
+      ? await enqueueInitialStoreConnectionSyncJobs({
+          organizationId: sessionResult.session.organizationId,
+          connections:
+            updated.status === 'active' && existing.credential?.updatedAt
+              ? [{ storeConnectionId: existing.connection.id, revisionAt: syncRevisionAt }]
+              : [],
+        })
+      : undefined
+
   return context.json(
-    storeConnectionResponseSchema.parse(toStoreConnectionResponse({ connection: updated, credential: existing.credential })),
+    storeConnectionResponseSchema.parse({
+      ...toStoreConnectionResponse({ connection: updated, credential: existing.credential }),
+      ...(initialSync ? { initialSync } : {}),
+    }),
   )
 })
 
@@ -201,6 +262,12 @@ storeConnectionsRoutes.put('/api/store-connections/:storeConnectionId/credential
     throw new Error('Store Credential replacement did not return a row.')
   }
 
+  const initialSync = await enqueueInitialStoreConnectionSyncJobs({
+    organizationId: sessionResult.session.organizationId,
+    connections:
+      existing.connection.status === 'active' ? [{ storeConnectionId: existing.connection.id, revisionAt: credential.updatedAt }] : [],
+  })
+
   return context.json(
     storeCredentialResponseSchema.parse({
       storeConnectionId: existing.connection.id,
@@ -209,6 +276,7 @@ storeConnectionsRoutes.put('/api/store-connections/:storeConnectionId/credential
         updatedAt: credential.updatedAt.toISOString(),
         keyId: credential.keyId,
       },
+      initialSync,
     }),
   )
 })

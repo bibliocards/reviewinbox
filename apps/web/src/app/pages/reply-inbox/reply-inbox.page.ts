@@ -1,8 +1,9 @@
 import { NgClass } from '@angular/common'
 import { Component, computed, effect, HostListener, inject, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
+import { RouterLink } from '@angular/router'
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
-import type { ReplyInboxReview } from '@reviewinbox/contracts'
+import type { QueueReplyDraftResponse, ReplyInboxReview } from '@reviewinbox/contracts'
 import { formatDistanceToNow } from 'date-fns/formatDistanceToNow'
 import { enUS, fr } from 'date-fns/locale'
 import { ButtonModule } from 'primeng/button'
@@ -22,7 +23,7 @@ const filterValues: readonly ReplyInboxFilter[] = ['actionable', 'drafted', 'fai
 
 @Component({
   selector: 'ri-reply-inbox-page',
-  imports: [AppSelectComponent, ButtonModule, FormsModule, SelectModule, TranslocoDirective, NgClass],
+  imports: [RouterLink, AppSelectComponent, ButtonModule, FormsModule, SelectModule, TranslocoDirective, NgClass],
   templateUrl: './reply-inbox.page.html',
 })
 export class ReplyInboxPageComponent {
@@ -37,7 +38,7 @@ export class ReplyInboxPageComponent {
   protected readonly activeReviewId = signal<string | null>(null)
   protected readonly message = signal<{ status: 'success' | 'error'; key: string } | null>(null)
   protected readonly appsResource = this.appsService.appsResource()
-  protected readonly apps = computed(() => this.appsResource.value().apps)
+  protected readonly apps = computed(() => (this.appsResource.hasValue() ? this.appsResource.value().apps : []))
   protected readonly appOptions = computed<SelectOption[]>(() => [
     { label: this.transloco.translate('replyInbox.filters.allApps'), value: '' },
     ...this.apps().map((app) => ({ label: app.name, value: app.id, imageUrl: this.appIconUrl(app.id) })),
@@ -49,7 +50,7 @@ export class ReplyInboxPageComponent {
     filter: this.selectedFilter(),
     appId: this.selectedAppId(),
   }))
-  protected readonly reviews = computed(() => this.inboxResource.value().reviews)
+  protected readonly reviews = computed(() => (this.inboxResource.hasValue() ? this.inboxResource.value().reviews : []))
 
   constructor() {
     effect(() => {
@@ -71,7 +72,11 @@ export class ReplyInboxPageComponent {
   }
 
   protected queueDraft(review: ReplyInboxReview): void {
-    this.runAction(review.id, this.replyInboxService.queueDraft(review.id), 'replyInbox.messages.draftQueued')
+    this.runAction<QueueReplyDraftResponse>(review.id, this.replyInboxService.queueDraft(review.id), (response) =>
+      response.queued
+        ? { status: 'success', key: 'replyInbox.messages.draftQueued' }
+        : { status: 'error', key: 'replyInbox.messages.draftUnavailable', reload: false },
+    )
   }
 
   protected publish(review: ReplyInboxReview): void {
@@ -168,10 +173,10 @@ export class ReplyInboxPageComponent {
     return filter === 'actionable' ? 'replyInbox.filters.actionable' : `replyInbox.status.${filter}`
   }
 
-  private runAction(
+  private runAction<T>(
     reviewId: string,
-    request: { subscribe: (observer: { next?: () => void; error?: () => void; complete?: () => void }) => unknown },
-    successKey: string,
+    request: { subscribe: (observer: { next?: (value: T) => void; error?: () => void; complete?: () => void }) => unknown },
+    result: string | ((value: T) => ActionResult),
   ): void {
     if (this.activeReviewId()) {
       return
@@ -179,12 +184,21 @@ export class ReplyInboxPageComponent {
 
     this.activeReviewId.set(reviewId)
     request.subscribe({
-      next: () => {
-        this.message.set({ status: 'success', key: successKey })
-        this.reload()
+      next: (value) => {
+        const actionResult = typeof result === 'function' ? result(value) : { status: 'success' as const, key: result }
+        this.message.set({ status: actionResult.status, key: actionResult.key })
+        if (actionResult.reload !== false) {
+          this.reload()
+        }
       },
       error: () => this.message.set({ status: 'error', key: 'replyInbox.messages.actionFailed' }),
       complete: () => this.activeReviewId.set(null),
     })
   }
+}
+
+type ActionResult = {
+  status: 'success' | 'error'
+  key: string
+  reload?: boolean
 }

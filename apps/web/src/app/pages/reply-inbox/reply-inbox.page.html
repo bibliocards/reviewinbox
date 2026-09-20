@@ -7,6 +7,11 @@
       <p class="m-0 mt-2 max-w-2xl text-sm text-ink-subtle">{{ t('replyInbox.description') }}</p>
     </div>
     <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <a
+        class="inline-flex min-h-10 items-center justify-center rounded-lg border border-hairline bg-surface-2 px-3 py-2 text-sm font-semibold text-ink no-underline transition hover:bg-surface-3"
+        routerLink="/apps">
+        {{ t('replyInbox.empty.openApps') }}
+      </a>
       <ri-app-select
         [options]="appOptions()"
         [(selectedAppId)]="selectedAppId"
@@ -38,6 +43,11 @@
   <div class="rounded-3xl border border-dashed border-hairline-strong bg-surface-1 p-8 text-center">
     <h2 class="m-0 text-xl font-semibold text-ink">{{ t('replyInbox.empty.title') }}</h2>
     <p class="m-0 mt-2 text-sm text-ink-subtle">{{ t('replyInbox.empty.description') }}</p>
+    <a
+      class="mt-4 inline-flex items-center justify-center rounded-xl border border-hairline-strong px-4 py-2 text-sm font-medium text-ink transition hover:bg-surface-2"
+      routerLink="/apps">
+      {{ t('replyInbox.empty.openApps') }}
+    </a>
   </div>
   } @else {
   <section class="grid gap-4">

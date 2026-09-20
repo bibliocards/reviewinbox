@@ -1,10 +1,12 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, computed, effect, HostListener, inject, signal } from '@angular/core'
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
+import { RouterLink } from '@angular/router'
 import type {
   AppListItemResponse,
   ConnectAppResponse,
   OrganizationUsageResponse,
+  ReplySettingsResponse,
   StoreConnectionResponse,
   StoreProvider,
   SyncRunResponse,
@@ -17,6 +19,7 @@ import { ButtonModule } from 'primeng/button'
 import { DialogService } from 'primeng/dynamicdialog'
 import { TableModule } from 'primeng/table'
 import { ConnectAppDialogComponent } from '../../shared/components/connect-app-dialog/connect-app-dialog.component'
+import { ReplySettingsDialogComponent } from '../../shared/components/reply-settings-dialog/reply-settings-dialog.component'
 import { TypedTemplateDirective } from '../../shared/directives/typed-template.directive'
 import { AppIconsService } from '../../shared/services/app-icons.service'
 import { AppsService } from '../../shared/services/apps.service'
@@ -28,9 +31,11 @@ type ReplyDraftQueueMessage = {
   status: 'success' | 'error'
 }
 
+type InitialSyncStatus = 'not_requested' | 'queued' | 'partial' | 'failed'
+
 @Component({
   selector: 'ri-apps-page',
-  imports: [ButtonModule, TableModule, TranslocoDirective, TypedTemplateDirective],
+  imports: [ButtonModule, RouterLink, TableModule, TranslocoDirective, TypedTemplateDirective],
   templateUrl: './apps.page.html',
 })
 export class AppsPageComponent {
@@ -43,10 +48,11 @@ export class AppsPageComponent {
 
   protected readonly appsResource = this.appsService.appsResource()
   protected readonly organizationUsageResource = this.organizationProfile.usageResource()
-  protected readonly apps = computed(() => this.appsResource.value().apps)
+  protected readonly apps = computed(() => (this.appsResource.hasValue() ? this.appsResource.value().apps : []))
   protected readonly errorMessage = computed(() => this.appsResource.error())
   protected readonly successAppName = signal<string | null>(history.state?.appCreated ?? null)
   protected readonly successMessageKey = signal<string | null>(null)
+  protected readonly initialSyncStatus = signal<InitialSyncStatus | null>(history.state?.initialSyncStatus ?? null)
   protected readonly activeMemberRole = signal<string | string[] | undefined>(undefined)
   protected readonly syncingStoreConnectionId = signal<string | null>(null)
   protected readonly syncRunByStoreConnectionId = signal<Record<string, SyncRunResponse>>({})
@@ -56,7 +62,10 @@ export class AppsPageComponent {
     const role = this.roleLabel(this.activeMemberRole()).toLowerCase()
     return ['owner', 'admin'].includes(role)
   })
-  protected readonly manualSyncAvailable = computed(() => isManualSyncAvailable(this.organizationUsageResource.value()))
+  protected readonly canEditReplySettings = computed(() => this.roleLabel(this.activeMemberRole()).toLowerCase() === 'owner')
+  protected readonly manualSyncAvailable = computed(() =>
+    isManualSyncAvailable(this.organizationUsageResource.hasValue() ? this.organizationUsageResource.value() : undefined),
+  )
 
   constructor() {
     this.loadActiveMemberRole()
@@ -75,6 +84,7 @@ export class AppsPageComponent {
   protected reloadForActiveOrganization(): void {
     this.successAppName.set(null)
     this.successMessageKey.set(null)
+    this.initialSyncStatus.set(null)
     this.syncingStoreConnectionId.set(null)
     this.syncRunByStoreConnectionId.set({})
     this.queueingReplyDraftsAppId.set(null)
@@ -92,6 +102,7 @@ export class AppsPageComponent {
         return
       }
 
+      this.initialSyncStatus.set(this.initialSyncStatusFrom(result))
       this.successAppName.set(result.app.name)
       this.successMessageKey.set(null)
       this.reloadApps()
@@ -106,9 +117,35 @@ export class AppsPageComponent {
         return
       }
 
+      this.initialSyncStatus.set(this.initialSyncStatusFrom(result))
       this.successAppName.set(result.app.name)
       this.successMessageKey.set('apps.list.updatedSuccess')
       this.reloadApps()
+    })
+  }
+
+  protected openReplySettingsDialog(app: AppListItemResponse): void {
+    const dialog = this.dialogService.open(ReplySettingsDialogComponent, {
+      header: this.transloco.translate('apps.replySettings.title'),
+      modal: true,
+      closable: true,
+      dismissableMask: true,
+      width: 'min(680px, 94vw)',
+      contentStyle: { overflow: 'auto' },
+      data: { appId: app.id },
+      breakpoints: {
+        '640px': '94vw',
+      },
+    })
+
+    dialog?.onClose.subscribe((result?: ReplySettingsResponse) => {
+      if (!result) {
+        return
+      }
+
+      this.initialSyncStatus.set(null)
+      this.successAppName.set(app.name)
+      this.successMessageKey.set('apps.replySettings.saved')
     })
   }
 
@@ -122,6 +159,7 @@ export class AppsPageComponent {
       next: () => {
         this.successAppName.set(app.name)
         this.successMessageKey.set('apps.list.deletedSuccess')
+        this.initialSyncStatus.set(null)
         this.reloadApps()
       },
       error: () => {
@@ -203,6 +241,23 @@ export class AppsPageComponent {
 
   protected replyDraftQueueMessage(app: AppListItemResponse): ReplyDraftQueueMessage | null {
     return this.replyDraftQueueMessageByAppId()[app.id] ?? null
+  }
+
+  protected mutationMessageKey(): string {
+    const initialSyncStatus = this.initialSyncStatus()
+    if (initialSyncStatus === 'failed') {
+      return 'apps.list.initialSync.failed'
+    }
+    if (initialSyncStatus === 'partial') {
+      return 'apps.list.initialSync.partial'
+    }
+
+    return this.successMessageKey() ?? 'apps.list.createdSuccess'
+  }
+
+  protected mutationMessageIsError(): boolean {
+    const status = this.initialSyncStatus()
+    return status === 'failed' || status === 'partial'
   }
 
   protected syncRunForApple(app: AppListItemResponse): SyncRunResponse | null {
@@ -310,6 +365,10 @@ export class AppsPageComponent {
       [appId]: message,
     }))
     this.queueingReplyDraftsAppId.set(null)
+  }
+
+  private initialSyncStatusFrom(result: ConnectAppResponse | UpdateAppResponse): InitialSyncStatus | null {
+    return result.initialSync?.status ?? null
   }
 }
 

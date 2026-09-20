@@ -1,5 +1,5 @@
-import { loadEncryptionConfig } from '@reviewinbox/config'
 import { canCreateApp, canCreateStoreConnection } from '@reviewinbox/billing'
+import { loadEncryptionConfig } from '@reviewinbox/config'
 import {
   appResponseSchema,
   connectAppRequestSchema,
@@ -14,8 +14,8 @@ import {
 import {
   decodeStoreCredentialEncryptionKey,
   decryptStoreCredential,
-  encryptStoreCredential,
   type EncryptedStoreCredential,
+  encryptStoreCredential,
 } from '@reviewinbox/core'
 import { apps, organization as organizationTable, storeConnections, storeCredentials } from '@reviewinbox/db'
 import { selectMissingReplyDraftReviews } from '@reviewinbox/reply-drafts'
@@ -30,7 +30,13 @@ import {
 } from '../auth/session'
 import { database, serverConfig } from '../db'
 import { parseJsonBody, parseUuidParam } from '../http/validation'
-import { enqueueGenerateReplyDraftJobs } from '../queue'
+import {
+  latestStoreConnectionSyncRevisionAt,
+  selectLatestSettledStoreConnectionSyncStartedAt,
+  shouldQueueInitialStoreConnectionSync,
+} from '../initial-sync'
+import { enqueueGenerateReplyDraftJobs, enqueueInitialStoreConnectionSyncJobs } from '../queue'
+import { replaceStoreCredential } from '../store-credential'
 
 export const appsRoutes = new Hono()
 
@@ -248,7 +254,14 @@ appsRoutes.post('/api/apps/connect', async (context) => {
     }
   })
 
-  return context.json(connectAppResponseSchema.parse(result), 201)
+  const initialSync = await enqueueInitialStoreConnectionSyncJobs({
+    organizationId: sessionResult.session.organizationId,
+    connections: result.storeConnections.flatMap((connection) =>
+      connection.credential.updatedAt ? [{ storeConnectionId: connection.id, revisionAt: connection.credential.updatedAt }] : [],
+    ),
+  })
+
+  return context.json(connectAppResponseSchema.parse({ ...result, initialSync }), 201)
 })
 
 appsRoutes.get('/api/apps/:appId', async (context) => {
@@ -369,14 +382,20 @@ appsRoutes.put('/api/apps/:appId', async (context) => {
       throw new Error('App update did not return a row.')
     }
 
+    const initialSyncConnectionIds = new Set<string>()
+    const credentialRevisionIds = new Set<string>()
+    const requestedStoreConnectionIds = new Set<string>()
+
     if (connections.apple) {
-      const connection = await upsertStoreConnection(transaction, {
+      const upserted = await upsertStoreConnection(transaction, {
         appId: updatedApp.id,
         organizationId: sessionResult.session.organizationId,
         provider: 'apple_app_store',
         externalAppId: connections.apple.appStoreAppId,
         externalStoreId: connections.apple.issuerId,
       })
+      const connection = upserted.connection
+      requestedStoreConnectionIds.add(connection.id)
 
       if (connections.apple.keyId && connections.apple.privateKey) {
         const encrypted = encryptStoreCredential(
@@ -388,21 +407,33 @@ appsRoutes.put('/api/apps/:appId', async (context) => {
           encryptionKey,
         )
         await replaceStoreCredential(transaction, connection.id, encrypted)
+        credentialRevisionIds.add(connection.id)
+      }
+
+      if (upserted.wasCreated || upserted.wasDisabled || upserted.identityChanged) {
+        initialSyncConnectionIds.add(connection.id)
       }
     }
 
     if (connections.google) {
-      const connection = await upsertStoreConnection(transaction, {
+      const upserted = await upsertStoreConnection(transaction, {
         appId: updatedApp.id,
         organizationId: sessionResult.session.organizationId,
         provider: 'google_play',
         externalAppId: connections.google.packageName,
         externalStoreId: null,
       })
+      const connection = upserted.connection
+      requestedStoreConnectionIds.add(connection.id)
 
       if (connections.google.serviceAccountJson) {
         const encrypted = encryptStoreCredential(connections.google.serviceAccountJson, encryptionKey)
         await replaceStoreCredential(transaction, connection.id, encrypted)
+        credentialRevisionIds.add(connection.id)
+      }
+
+      if (upserted.wasCreated || upserted.wasDisabled || upserted.identityChanged) {
+        initialSyncConnectionIds.add(connection.id)
       }
     }
 
@@ -412,13 +443,73 @@ appsRoutes.put('/api/apps/:appId', async (context) => {
       .leftJoin(storeCredentials, eq(storeCredentials.storeConnectionId, storeConnections.id))
       .where(and(eq(storeConnections.appId, updatedApp.id), eq(storeConnections.organizationId, sessionResult.session.organizationId)))
 
+    const initialSyncConnections = connectionRows.flatMap((row) => {
+      if (
+        (!initialSyncConnectionIds.has(row.connection.id) && !credentialRevisionIds.has(row.connection.id)) ||
+        row.connection.status !== 'active' ||
+        !row.credential?.updatedAt
+      ) {
+        return []
+      }
+
+      return [
+        {
+          storeConnectionId: row.connection.id,
+          revisionAt: latestStoreConnectionSyncRevisionAt({
+            connectionUpdatedAt: row.connection.updatedAt,
+            credentialUpdatedAt: row.credential.updatedAt,
+          }),
+        },
+      ]
+    })
+
+    const retryInitialSyncCandidates = connectionRows.flatMap((row) => {
+      if (
+        !requestedStoreConnectionIds.has(row.connection.id) ||
+        initialSyncConnectionIds.has(row.connection.id) ||
+        credentialRevisionIds.has(row.connection.id) ||
+        row.connection.status !== 'active' ||
+        !row.credential?.updatedAt
+      ) {
+        return []
+      }
+
+      return [
+        {
+          storeConnectionId: row.connection.id,
+          revisionAt: latestStoreConnectionSyncRevisionAt({
+            connectionUpdatedAt: row.connection.updatedAt,
+            credentialUpdatedAt: row.credential.updatedAt,
+          }),
+        },
+      ]
+    })
+
     return {
       app: toAppResponse(updatedApp),
       storeConnections: connectionRows.map((row) => toStoreConnectionResponse(row.connection, row.credential)),
+      initialSyncConnections,
+      retryInitialSyncCandidates,
     }
   })
 
-  return context.json(updateAppResponseSchema.parse(result))
+  const retryInitialSyncConnections = []
+  for (const candidate of result.retryInitialSyncCandidates) {
+    const latestSettledAt = await selectLatestSettledStoreConnectionSyncStartedAt(database, {
+      storeConnectionId: candidate.storeConnectionId,
+      organizationId: sessionResult.session.organizationId,
+    })
+    if (shouldQueueInitialStoreConnectionSync({ revisionAt: candidate.revisionAt, latestSettledAt })) {
+      retryInitialSyncConnections.push(candidate)
+    }
+  }
+
+  const initialSync = await enqueueInitialStoreConnectionSyncJobs({
+    organizationId: sessionResult.session.organizationId,
+    connections: [...result.initialSyncConnections, ...retryInitialSyncConnections],
+  })
+
+  return context.json(updateAppResponseSchema.parse({ ...result, initialSync }))
 })
 
 appsRoutes.delete('/api/apps/:appId', async (context) => {
@@ -589,6 +680,17 @@ async function upsertStoreConnection(
   })
 
   if (existing) {
+    const wasDisabled = existing.status === 'disabled'
+    const identityChanged = existing.externalAppId !== input.externalAppId || existing.externalStoreId !== input.externalStoreId
+    if (!wasDisabled && !identityChanged) {
+      return {
+        connection: existing,
+        wasDisabled: false,
+        identityChanged: false,
+        wasCreated: false,
+      }
+    }
+
     const [updated] = await transaction
       .update(storeConnections)
       .set({
@@ -603,7 +705,12 @@ async function upsertStoreConnection(
       throw new Error('Store Connection update did not return a row.')
     }
 
-    return updated
+    return {
+      connection: updated,
+      wasDisabled,
+      identityChanged,
+      wasCreated: false,
+    }
   }
 
   const [created] = await transaction
@@ -622,19 +729,7 @@ async function upsertStoreConnection(
     throw new Error('Store Connection creation did not return a row.')
   }
 
-  return created
-}
-
-async function replaceStoreCredential(
-  transaction: Parameters<Parameters<typeof database.transaction>[0]>[0],
-  storeConnectionId: string,
-  encrypted: ReturnType<typeof encryptStoreCredential>,
-) {
-  await transaction.delete(storeCredentials).where(eq(storeCredentials.storeConnectionId, storeConnectionId))
-  await transaction.insert(storeCredentials).values({
-    storeConnectionId,
-    ...encrypted,
-  })
+  return { connection: created, wasDisabled: false, identityChanged: false, wasCreated: true }
 }
 
 function parseServiceAccountJson(value: string): { ok: true } | { ok: false; error: string; errorCode: string } {

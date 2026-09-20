@@ -10,10 +10,14 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '@reviewinbox/billing': fromRoot('packages/billing/src/index.ts'),
       '@reviewinbox/config': fromRoot('packages/config/src/index.ts'),
       '@reviewinbox/contracts': fromRoot('packages/contracts/src/index.ts'),
       '@reviewinbox/core': fromRoot('packages/core/src/index.ts'),
       '@reviewinbox/db': fromRoot('packages/db/src/index.ts'),
+      '@reviewinbox/reply-drafts': fromRoot('packages/reply-drafts/src/index.ts'),
+      '@reviewinbox/store-adapters': fromRoot('packages/store-adapters/src/index.ts'),
+      '@reviewinbox/sync': fromRoot('packages/sync/src/index.ts'),
     },
   },
 })

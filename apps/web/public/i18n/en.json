@@ -4,7 +4,9 @@
       "connectApp": "Connect app",
       "generateMissingDrafts": "Generate missing drafts",
       "edit": "Edit",
-      "delete": "Delete"
+      "delete": "Delete",
+      "replySettings": "Reply settings",
+      "viewUsage": "View usage and limits"
     },
     "stores": {
       "apple": "Apple App Store",
@@ -16,6 +18,10 @@
       "createdSuccess": "App {{name}} created.",
       "updatedSuccess": "App {{name}} updated.",
       "deletedSuccess": "App {{name}} deleted.",
+      "initialSync": {
+        "partial": "App {{name}} was saved, but the first Review import was only queued for some Store Connections.",
+        "failed": "App {{name}} was saved, but the first Review import could not be queued. Check the Store Connections in Apps."
+      },
       "deleteConfirm": "Delete {{name}} and all of its Store Connections, Store Credentials, Reviews, Reply Drafts, Published Replies, and Sync Runs? This cannot be undone.",
       "loading": "Loading Apps...",
       "createdAgo": "{{distance}} ago",
@@ -69,6 +75,32 @@
         "deleteFailed": "We could not delete this App yet."
       }
     },
+    "replySettings": {
+      "saved": "Reply settings for {{name}} saved.",
+      "loading": "Loading Reply settings...",
+      "title": "Reply settings",
+      "description": "Set the guidance and language policy used when creating Reply Drafts for this App.",
+      "contextLabel": "Reply Context",
+      "contextHelp": "Describe your app, preferred tone, and support information to help prepare useful drafts. Maximum {{maxLength}} characters.",
+      "languagePolicyTitle": "Reply Language Policy",
+      "languagePolicyDescription": "Drafts use the default language unless the Review language is allowed below. Leave the list empty to always use the default language.",
+      "defaultLanguageLabel": "Default language",
+      "mappedLanguagesLabel": "Allowed mapped languages",
+      "mappedLanguagesHelp": "Enter one language tag per line or separate tags with commas. Up to {{maxLanguages}} languages.",
+      "actions": {
+        "cancel": "Cancel",
+        "save": "Save settings"
+      },
+      "errors": {
+        "loadFailed": "We could not load Reply settings yet.",
+        "updateFailed": "We could not save Reply settings yet.",
+        "ownerRequired": "Only the Organization Owner can change Reply settings.",
+        "defaultLanguageRequired": "Enter a default language.",
+        "contextTooLong": "Reply Context is too long.",
+        "languageTooLong": "A language tag is too long.",
+        "tooManyMappedLanguages": "You can add up to 50 mapped languages."
+      }
+    },
     "connectDialog": {
       "title": "Connect app",
       "editTitle": "Edit app",
@@ -101,6 +133,7 @@
       "apple": {
         "skipHint": "Leave every field empty to skip Apple for now.",
         "editHint": "Update App Store identifiers. Fill key id and private key only to replace the Store Credential.",
+        "guide": "Read the App Store connection guide",
         "appStoreAppIdLabel": "App Store app id",
         "issuerIdLabel": "Issuer id",
         "keyIdLabel": "Key id",
@@ -109,6 +142,7 @@
       "google": {
         "skipHint": "Leave every field empty to skip Google for now.",
         "editHint": "Update the package name. Fill the service account JSON only to replace the Store Credential.",
+        "guide": "Read the Google Play connection guide",
         "packageNameLabel": "Package name",
         "serviceAccountJsonLabel": "Service account JSON"
       },
@@ -188,6 +222,7 @@
     },
     "messages": {
       "draftQueued": "Reply Draft generation queued. It will be available soon.",
+      "draftUnavailable": "AI drafting is unavailable right now. You can write a Reply manually.",
       "draftSaved": "Reply Draft saved.",
       "published": "Reply published.",
       "ignored": "Review ignored.",
@@ -197,7 +232,8 @@
     },
     "empty": {
       "title": "No Reviews in this view",
-      "description": "Change the App or status filter, or sync Reviews from the Apps page."
+      "description": "No eligible Reviews are available yet. Google Play exposes written Reviews created or changed during the last week. Check your Store Connections in Apps.",
+      "openApps": "Open Apps"
     }
   },
   "auditHistory": {

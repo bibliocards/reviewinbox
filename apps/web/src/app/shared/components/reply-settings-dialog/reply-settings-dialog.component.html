@@ -1,0 +1,74 @@
+<form
+  class="grid gap-5"
+  (submit)="submit($event)"
+  *transloco="let t">
+  @if (isLoading()) {
+  <p class="m-0 text-sm text-ink-subtle">{{ t('apps.replySettings.loading') }}</p>
+  } @else if (isLoaded()) {
+  <div class="grid gap-1">
+    <h2 class="m-0 text-lg font-semibold text-ink">{{ t('apps.replySettings.title') }}</h2>
+    <p class="m-0 text-sm text-ink-subtle">{{ t('apps.replySettings.description') }}</p>
+  </div>
+
+  <label class="grid gap-1.5 text-sm font-medium text-ink">
+    <span>{{ t('apps.replySettings.contextLabel') }}</span>
+    <textarea
+      class="w-full rounded-md border border-hairline-strong bg-canvas px-3 py-2 text-sm text-ink outline-none transition focus:border-primary"
+      rows="7"
+      autocomplete="off"
+      [attr.maxlength]="maxReplyContextLength"
+      [attr.aria-label]="t('apps.replySettings.contextLabel')"
+      [formField]="settingsForm.replyContext"></textarea>
+    <span class="text-xs font-normal text-ink-tertiary"
+      >{{ t('apps.replySettings.contextHelp', { maxLength: maxReplyContextLength }) }}</span
+    >
+  </label>
+
+  <section class="grid gap-4 rounded-2xl border border-hairline bg-surface-1 p-4">
+    <div>
+      <h3 class="m-0 font-semibold text-ink">{{ t('apps.replySettings.languagePolicyTitle') }}</h3>
+      <p class="m-0 mt-1 text-xs font-normal text-ink-tertiary">{{ t('apps.replySettings.languagePolicyDescription') }}</p>
+    </div>
+    <label class="grid gap-1.5 text-sm font-medium text-ink">
+      <span>{{ t('apps.replySettings.defaultLanguageLabel') }}</span>
+      <input
+        pInputText
+        type="text"
+        autocomplete="off"
+        [attr.maxlength]="maxLanguageTagLength"
+        [attr.aria-label]="t('apps.replySettings.defaultLanguageLabel')"
+        [formField]="settingsForm.defaultLanguage" />
+    </label>
+    <label class="grid gap-1.5 text-sm font-medium text-ink">
+      <span>{{ t('apps.replySettings.mappedLanguagesLabel') }}</span>
+      <textarea
+        class="w-full rounded-md border border-hairline-strong bg-canvas px-3 py-2 text-sm text-ink outline-none transition focus:border-primary"
+        rows="4"
+        autocomplete="off"
+        [attr.maxlength]="maxMappedLanguages * (maxLanguageTagLength + 1)"
+        [attr.aria-label]="t('apps.replySettings.mappedLanguagesLabel')"
+        [formField]="settingsForm.mappedLanguagesText"></textarea>
+      <span class="text-xs font-normal text-ink-tertiary"
+        >{{ t('apps.replySettings.mappedLanguagesHelp', { maxLanguages: maxMappedLanguages }) }}</span
+      >
+    </label>
+  </section>
+  } @if (errorMessageKey(); as messageKey) {
+  <p class="m-0 rounded-xl border border-red-400 bg-surface-2 px-3 py-2 text-sm text-ink-muted">{{ t(messageKey) }}</p>
+  }
+
+  <div class="flex flex-wrap justify-end gap-2">
+    <p-button
+      type="button"
+      severity="secondary"
+      [outlined]="true"
+      [label]="t('apps.replySettings.actions.cancel')"
+      [disabled]="isSaving()"
+      (onClick)="close()" />
+    <p-button
+      type="submit"
+      [label]="t('apps.replySettings.actions.save')"
+      [loading]="isSaving()"
+      [disabled]="!isLoaded() || isLoading() || isSaving()" />
+  </div>
+</form>
