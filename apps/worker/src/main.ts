@@ -45,6 +45,7 @@ import {
   reviewAnalysisCriteriaVersion,
   type ReviewAnalysisWorkerOptions,
 } from './review-analysis-worker'
+import { loadTopicDiscoveryCandidates } from './topic-discovery-candidates'
 
 const shutdownSignals = ['SIGINT', 'SIGTERM'] as const
 
@@ -192,7 +193,6 @@ function createTopicDiscoveryProvider(aiConfig: AiConfig): TopicDiscoveryProvide
   return createOpenAiCompatibleTopicDiscoveryProvider(options)
 }
 
-const topicDiscoveryBatchSize = 50
 const topicDiscoveryReviewCharacterLimit = 12_000
 const topicDiscoveryCatalogueCharacterLimit = 12_000
 
@@ -262,20 +262,13 @@ async function loadDiscoveryContext(
     .where(
       and(eq(reviewTopics.appId, app.id), eq(reviewTopics.organizationId, payload.organizationId)),
     )
-  const uncovered = await runtime.database
-    .select({ id: reviews.id, title: reviews.title, body: reviews.body, rating: reviews.rating })
-    .from(reviews)
-    .innerJoin(reviewAnalyses, eq(reviewAnalyses.reviewId, reviews.id))
-    .where(
-      and(
-        eq(reviews.appId, app.id),
-        eq(reviews.organizationId, payload.organizationId),
-        eq(reviewAnalyses.uncovered, true),
-        isNull(reviewAnalyses.discoveredAt),
-      ),
-    )
-    .orderBy(desc(reviews.reviewedAt))
-    .limit(topicDiscoveryBatchSize)
+  const uncovered = await loadTopicDiscoveryCandidates({
+    database: runtime.database,
+    organizationId: payload.organizationId,
+    appId: app.id,
+    catalogVersion: app.catalogVersion,
+    criteriaVersion: reviewAnalysisCriteriaVersion,
+  })
   return { app, topics, boundedTopics: boundDiscoveryTopics(topics), uncovered }
 }
 

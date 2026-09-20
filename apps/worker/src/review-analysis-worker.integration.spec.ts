@@ -15,7 +15,8 @@ import {
 import { and, eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
-import { classifyReviewForAnalysis } from './review-analysis-worker'
+import { classifyReviewForAnalysis, reviewAnalysisCriteriaVersion } from './review-analysis-worker'
+import { loadTopicDiscoveryCandidates } from './topic-discovery-candidates'
 
 const databaseUrl = process.env['ANALYSIS_TEST_DATABASE_URL']
 const database = createDatabase(databaseUrl ?? 'postgres://unused-analysis-test')
@@ -75,6 +76,48 @@ async function requiredAnalysis(reviewId: string) {
     throw new Error('Expected a persisted analysis')
   }
   return analysis
+}
+
+async function createUncoveredAnalysis(
+  reviewId: string,
+  options: {
+    status?: 'pending' | 'processing' | 'completed' | 'failed' | 'skipped'
+    catalogVersion?: number
+    criteriaVersion?: string
+    discoveredAt?: Date | null
+  } = {},
+) {
+  await database
+    .update(reviews)
+    .set({ analysisStatus: options.status ?? 'completed' })
+    .where(eq(reviews.id, reviewId))
+  await database
+    .insert(reviewAnalyses)
+    .values({
+      reviewId,
+      organizationId,
+      appId,
+      inputHash: randomUUID(),
+      criteriaVersion: options.criteriaVersion ?? reviewAnalysisCriteriaVersion,
+      catalogVersion: options.catalogVersion ?? 1,
+      model: 'fixture-jev',
+      severity: 'critical',
+      intents: ['report_problem'],
+      uncovered: true,
+      probabilities: { catalogue_gap: 0.99 },
+      discoveredAt: options.discoveredAt ?? null,
+    })
+}
+
+async function currentCatalogVersion() {
+  const [app] = await database
+    .select({ catalogVersion: apps.analysisCatalogVersion })
+    .from(apps)
+    .where(eq(apps.id, appId))
+  if (app === undefined) {
+    throw new Error('Expected the analysis test app')
+  }
+  return app.catalogVersion
 }
 
 beforeAll(async () => {
@@ -246,6 +289,49 @@ describe.skipIf(databaseUrl === undefined)('analysis retry and discovery markers
     const row = await database.query.reviews.findFirst({ where: eq(reviews.id, input.reviewId) })
     expect(row?.analysisStatus).toBe('failed')
     expect(row?.updatedAt.getTime()).toBeGreaterThanOrEqual(started)
+  })
+
+  it('selects only fresh completed analyses for topic discovery', async () => {
+    const catalogVersion = await currentCatalogVersion()
+    const baselineCandidates = await loadTopicDiscoveryCandidates({
+      database,
+      organizationId,
+      appId,
+      catalogVersion,
+      criteriaVersion: reviewAnalysisCriteriaVersion,
+    })
+    const baselineIds = new Set(baselineCandidates.map((candidate) => candidate.id))
+    const fresh = await createReview()
+    await createUncoveredAnalysis(fresh.reviewId, { catalogVersion })
+    await Promise.all(
+      (['pending', 'processing', 'failed', 'skipped'] as const).map(async (status) => {
+        const review = await createReview()
+        await createUncoveredAnalysis(review.reviewId, { status, catalogVersion })
+      }),
+    )
+    const oldCatalog = await createReview()
+    await createUncoveredAnalysis(oldCatalog.reviewId, { catalogVersion: catalogVersion - 1 })
+    const oldCriteria = await createReview()
+    await createUncoveredAnalysis(oldCriteria.reviewId, {
+      catalogVersion,
+      criteriaVersion: 'review-analysis-old',
+    })
+    const discovered = await createReview()
+    await createUncoveredAnalysis(discovered.reviewId, { catalogVersion, discoveredAt: new Date() })
+
+    const candidates = await loadTopicDiscoveryCandidates({
+      database,
+      organizationId,
+      appId,
+      catalogVersion,
+      criteriaVersion: reviewAnalysisCriteriaVersion,
+    })
+
+    expect(
+      candidates
+        .filter((candidate) => !baselineIds.has(candidate.id))
+        .map((candidate) => candidate.id),
+    ).toEqual([fresh.reviewId])
   })
 
   it('clears discovery eligibility only when source content changes', async () => {

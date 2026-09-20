@@ -191,6 +191,8 @@ export class AnalysisPageComponent {
     switch (name) {
       case 'appId':
         this.selectedAppId.set(value)
+        this.selectedTopicId.set('')
+        this.selectedVersion.set('')
         break
       case 'from':
         this.selectedFrom.set(value)
@@ -257,13 +259,14 @@ export class AnalysisPageComponent {
   }
 
   protected openClassification(review: AnalysisReview): void {
+    const topics = this.analysis().topics.filter((topic) => topic.appId === review.appId)
     const dialog = this.dialogService.open(ReviewClassificationDialogComponent, {
       header: this.transloco.translate('analysis.editor.title'),
       modal: true,
       closable: true,
       dismissableMask: true,
       width: 'min(720px, 94vw)',
-      data: { review, topics: this.analysis().topics },
+      data: { review, topics },
     })
     dialog?.onClose.subscribe((result?: ReviewClassificationDialogResult) => {
       if (!result) {
