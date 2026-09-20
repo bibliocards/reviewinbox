@@ -1,4 +1,7 @@
-import type { Routes } from '@angular/router'
+import { inject } from '@angular/core'
+import type { ActivatedRouteSnapshot, Routes } from '@angular/router'
+import { TranslocoService } from '@jsverse/transloco'
+import { map, take } from 'rxjs'
 import { canActivate, redirectLoggedInTo, redirectUnauthorizedTo } from 'ngx-better-auth'
 import { AppShellComponent } from './layout/app-shell.component'
 import { AppsPageComponent } from './pages/apps/apps.page'
@@ -8,24 +11,34 @@ import { signUpAvailableGuard } from './shared/guards/sign-up-available.guard'
 export const appRoutes: Routes = [
   {
     path: 'login',
-    title: 'Log in | ReviewInbox',
+    title: () => pageTitle('login'),
     loadComponent: () => import('./pages/auth/login/login.page').then((page) => page.LoginPageComponent),
     ...canActivate(redirectLoggedInTo(['/'])),
   },
   {
     path: 'sign-up',
-    title: 'Create account | ReviewInbox',
+    title: () => pageTitle('signUp'),
     loadComponent: () => import('./pages/auth/sign-up/sign-up.page').then((page) => page.SignUpPageComponent),
     canActivate: [...canActivate(redirectLoggedInTo(['/'])).canActivate, signUpAvailableGuard],
   },
   {
+    path: 'forgot-password',
+    title: () => pageTitle('forgotPassword'),
+    loadComponent: () => import('./pages/auth/forgot-password/forgot-password.page').then((page) => page.ForgotPasswordPageComponent),
+  },
+  {
+    path: 'reset-password',
+    title: (route: ActivatedRouteSnapshot) => pageTitle('resetPassword', route.queryParamMap.get('lang')),
+    loadComponent: () => import('./pages/auth/reset-password/reset-password.page').then((page) => page.ResetPasswordPageComponent),
+  },
+  {
     path: 'accept-invitation/:invitationId',
-    title: 'Accept invitation | ReviewInbox',
+    title: () => pageTitle('acceptInvitation'),
     loadComponent: () => import('./pages/accept-invitation/accept-invitation.page').then((page) => page.AcceptInvitationPageComponent),
   },
   {
     path: 'organizations/new',
-    title: 'Create Organization | ReviewInbox',
+    title: () => pageTitle('createOrganization'),
     loadComponent: () => import('./pages/organizations-new/organizations-new.page').then((page) => page.OrganizationsNewPageComponent),
     ...canActivate(redirectUnauthorizedTo(['/login'])),
   },
@@ -36,22 +49,22 @@ export const appRoutes: Routes = [
     children: [
       {
         path: '',
-        title: 'Reply Inbox | ReviewInbox',
+        title: () => pageTitle('inbox'),
         component: ReplyInboxPageComponent,
       },
       {
         path: 'apps',
-        title: 'Apps | ReviewInbox',
+        title: () => pageTitle('apps'),
         component: AppsPageComponent,
       },
       {
         path: 'audit-history',
-        title: 'Audit History | ReviewInbox',
+        title: () => pageTitle('auditHistory'),
         loadComponent: () => import('./pages/audit-history/audit-history.page').then((page) => page.AuditHistoryPageComponent),
       },
       {
         path: 'settings',
-        title: 'Settings | ReviewInbox',
+        title: () => pageTitle('settings'),
         loadComponent: () => import('./pages/settings/settings.page').then((page) => page.SettingsPageComponent),
       },
       {
@@ -65,3 +78,14 @@ export const appRoutes: Routes = [
     redirectTo: '',
   },
 ]
+
+function pageTitle(key: string, language?: string | null) {
+  const transloco = inject(TranslocoService)
+  if (language === 'en' || language === 'fr') {
+    transloco.setActiveLang(language)
+  }
+  return transloco.selectTranslate<string>(`pageTitles.${key}`).pipe(
+    take(1),
+    map((title) => `${title} | ReviewInbox`),
+  )
+}

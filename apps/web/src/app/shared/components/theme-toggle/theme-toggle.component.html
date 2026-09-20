@@ -1,8 +1,9 @@
 <p-button
+  *transloco="let t"
   severity="secondary"
   class="theme-button"
   size="small"
-  [attr.aria-label]="themeLabel()"
-  [title]="themeLabel()"
+  [attr.aria-label]="t(themeLabel())"
+  [title]="t(themeLabel())"
   (click)="toggleTheme()"
   [icon]="themeIcon()" />

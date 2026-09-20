@@ -1,4 +1,6 @@
-<main class="min-h-screen bg-canvas px-5 py-6 text-ink">
+<main
+  class="min-h-screen bg-canvas px-5 py-6 text-ink"
+  *transloco="let t">
   <header class="mx-auto flex max-w-[1920px] items-center justify-between gap-4">
     <a
       class="inline-flex items-center gap-3 text-ink no-underline"
@@ -8,7 +10,7 @@
         src="/icon.png"
         alt=""
         aria-hidden="true" />
-      <span class="sr-only">ReviewInbox</span>
+      <span class="sr-only">{{ t('auth.common.productName') }}</span>
     </a>
 
     <div class="flex items-center gap-3">
@@ -18,30 +20,30 @@
         variant="outlined"
         routerLink="/sign-up"
         [queryParams]="signUpQueryParams()">
-        Sign up
+        {{ t('auth.actions.signUp') }}
       </p-button>
       }
     </div>
   </header>
 
   <section class="mx-auto mt-14 w-full max-w-153 rounded-3xl border border-hairline bg-surface-1 px-6 py-8 sm:mt-20 sm:px-14 sm:py-10">
-    <h1 class="m-0 text-xl font-semibold tracking-[-0.8px] text-ink sm:text-2xl">Sign in to ReviewInbox</h1>
+    <h1 class="m-0 text-xl font-semibold tracking-[-0.8px] text-ink sm:text-2xl">{{ t('auth.login.title') }}</h1>
     @if (capabilities().externalProviders) {
     <div class="mt-6 grid gap-2 sm:grid-cols-3">
       <p-button
-        label="Google"
+        [label]="t('auth.providers.google')"
         icon="pi pi-google"
         severity="secondary"
         [disabled]="!capabilities().google"
         styleClass="w-full justify-center" />
       <p-button
-        label="Apple"
+        [label]="t('auth.providers.apple')"
         icon="pi pi-apple"
         severity="secondary"
         [disabled]="true"
         styleClass="w-full justify-center" />
       <p-button
-        label="GitHub"
+        [label]="t('auth.providers.github')"
         icon="pi pi-github"
         severity="secondary"
         [disabled]="true"
@@ -50,7 +52,7 @@
 
     <div class="mt-2">
       <p-button
-        label="Continue with SSO"
+        [label]="t('auth.providers.sso')"
         icon="pi pi-lock"
         severity="secondary"
         [disabled]="!capabilities().enterpriseSso"
@@ -59,7 +61,7 @@
 
     <div class="my-6 flex items-center gap-4 text-sm text-ink-tertiary">
       <span class="h-px flex-1 bg-hairline"></span>
-      or
+      {{ t('auth.common.or') }}
       <span class="h-px flex-1 bg-hairline"></span>
     </div>
     }
@@ -68,33 +70,45 @@
       class="grid gap-4"
       (submit)="signIn($event)">
       <label class="grid gap-1.5 text-sm font-medium text-ink">
-        Email
+        {{ t('auth.fields.email') }}
         <input
           class=""
           pInputText
           type="email"
           autocomplete="email"
+          [placeholder]="t('auth.fields.emailPlaceholder')"
+          [attr.aria-label]="t('auth.fields.email')"
           [formField]="loginForm.email" />
       </label>
+      @if (loginForm.email().touched() && loginForm.email().invalid()) {
+      <p class="-mt-3 m-0 text-sm text-red-600">{{ t('auth.validation.email') }}</p>
+      }
 
       <div class="grid gap-1.5 text-sm font-medium text-ink">
-        <label for="login-password">Password</label>
+        <label for="login-password">{{ t('auth.fields.password') }}</label>
         <p-password
           inputId="login-password"
           [formField]="loginForm.password"
           autocomplete="current-password"
+          [promptLabel]="t('auth.password.prompt')"
+          [weakLabel]="t('auth.password.weak')"
+          [mediumLabel]="t('auth.password.medium')"
+          [strongLabel]="t('auth.password.strong')"
+          [ariaLabel]="t('auth.fields.password')"
           [feedback]="false"
           [toggleMask]="true"
           [fluid]="true"
           inputStyleClass="w-full" />
       </div>
-      @if (errorMessage()) {
-      <p class="m-0 rounded-xl border border-red-400 bg-surface-2 px-3 py-2 text-sm text-ink-muted">{{ errorMessage() }}</p>
+      @if (loginForm.password().touched() && loginForm.password().invalid()) {
+      <p class="-mt-3 m-0 text-sm text-red-600">{{ t('auth.validation.passwordRequired') }}</p>
+      } @if (errorMessage()) {
+      <p class="m-0 rounded-xl border border-red-400 bg-surface-2 px-3 py-2 text-sm text-ink-muted">{{ t(errorMessage()!) }}</p>
       }
 
       <p-button
         type="submit"
-        label="Sign in"
+        [label]="t('auth.actions.signIn')"
         class="mt-1"
         [fluid]="true"
         [loading]="isSubmitting()"
@@ -104,28 +118,22 @@
     <div class="mt-7 grid gap-2 text-center text-sm text-ink-subtle">
       @if (signUpAvailable()) {
       <p class="m-0">
-        Don't have an account?
+        {{ t('auth.login.noAccount') }}
         <a
           class="font-medium text-linear-primary underline-offset-4 hover:underline"
           routerLink="/sign-up"
           [queryParams]="signUpQueryParams()"
-          >Sign up</a
+          >{{ t('auth.actions.signUp') }}</a
         >
       </p>
       }
       <p class="m-0">
-        Forgot your
+        {{ t('auth.login.forgotPassword') }}
         <a
           class="font-medium text-linear-primary underline-offset-4 hover:underline"
           routerLink="/forgot-password"
-          >email</a
+          >{{ t('auth.actions.resetPassword') }}</a
         >
-        or
-        <a
-          class="font-medium text-linear-primary underline-offset-4 hover:underline"
-          routerLink="/forgot-password"
-          >password</a
-        >?
       </p>
     </div>
   </section>

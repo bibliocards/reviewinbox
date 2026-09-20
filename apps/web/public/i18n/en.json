@@ -147,7 +147,6 @@
     }
   },
   "replyInbox": {
-    "eyebrow": "Reply Inbox",
     "title": "Reply Inbox",
     "description": "Review, edit, ignore, and publish replies for imported Reviews.",
     "loading": "Loading Reviews...",
@@ -285,5 +284,120 @@
       "title": "Create an Organization",
       "description": "Organization creation will live here. For now, this placeholder keeps the cloud deletion flow in a safe landing state."
     }
+  },
+  "auth": {
+    "common": {
+      "productName": "ReviewInbox",
+      "or": "or"
+    },
+    "actions": {
+      "signIn": "Sign in",
+      "signUp": "Sign up",
+      "resetPassword": "Reset it",
+      "sendResetLink": "Send reset link",
+      "setNewPassword": "Set new password",
+      "backToSignIn": "Back to sign in"
+    },
+    "providers": {
+      "google": "Google",
+      "apple": "Apple",
+      "github": "GitHub",
+      "sso": "Continue with SSO"
+    },
+    "fields": {
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "password": "Password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm new password"
+    },
+    "password": {
+      "prompt": "Choose a password",
+      "weak": "Weak",
+      "medium": "Medium",
+      "strong": "Strong"
+    },
+    "validation": {
+      "email": "Enter a valid email address.",
+      "passwordRequired": "Enter your password.",
+      "newPassword": "Use a password with at least 8 characters.",
+      "confirmPasswordRequired": "Confirm your new password.",
+      "passwordsDoNotMatch": "Passwords must match."
+    },
+    "login": {
+      "title": "Sign in to ReviewInbox",
+      "noAccount": "Don't have an account?",
+      "forgotPassword": "Forgot your password?",
+      "errors": {
+        "invalidCredentials": "We could not sign you in with these credentials."
+      }
+    },
+    "forgotPassword": {
+      "title": "Reset your password",
+      "description": "Enter your account email and we will send a reset link if the account exists.",
+      "sentTitle": "Check your email",
+      "sentDescription": "If an account uses this email address, we sent a password reset link. The link expires after a short time.",
+      "errors": {
+        "unavailable": "Password recovery is not available right now. Please contact your administrator."
+      }
+    },
+    "resetPassword": {
+      "title": "Choose a new password",
+      "description": "Use at least 8 characters. Your other active sessions will be signed out.",
+      "completedTitle": "Password changed",
+      "completedDescription": "Your password has been reset. You can now sign in with the new password.",
+      "invalidTitle": "Reset link unavailable",
+      "invalidDescription": "This password reset link is invalid or has expired. Request a new link to continue.",
+      "errors": {
+        "invalidLink": "This password reset link is invalid or has expired. Request a new one and try again."
+      }
+    }
+  },
+  "accountSettings": {
+    "title": "Account settings",
+    "description": "Manage the name shown to your team and protect your account.",
+    "profile": {
+      "title": "Profile",
+      "email": "Your email address is {{email}}.",
+      "nameLabel": "Name",
+      "namePlaceholder": "Your name",
+      "save": "Save profile",
+      "saved": "Your profile name has been saved.",
+      "errors": {
+        "saveFailed": "We could not save your profile name.",
+        "nameRequired": "Enter a name."
+      }
+    },
+    "password": {
+      "title": "Password",
+      "description": "Changing your password signs out your other active sessions.",
+      "currentLabel": "Current password",
+      "newLabel": "New password",
+      "confirmLabel": "Confirm new password",
+      "change": "Change password",
+      "changed": "Your password has been changed. Other sessions were signed out.",
+      "validation": {
+        "currentRequired": "Enter your current password."
+      },
+      "errors": {
+        "changeFailed": "We could not change your password. Check your current password and try again."
+      }
+    }
+  },
+  "pageTitles": {
+    "login": "Log in",
+    "signUp": "Create account",
+    "forgotPassword": "Reset your password",
+    "resetPassword": "Choose a new password",
+    "acceptInvitation": "Accept invitation",
+    "createOrganization": "Create Organization",
+    "inbox": "Reply Inbox",
+    "apps": "Apps",
+    "auditHistory": "Audit History",
+    "settings": "Settings"
+  },
+  "common": {
+    "useLightTheme": "Use light theme",
+    "useDarkTheme": "Use dark theme"
   }
 }

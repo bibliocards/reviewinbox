@@ -10,7 +10,7 @@ import { organization } from 'better-auth/plugins/organization'
 import Stripe from 'stripe'
 
 import { database, serverConfig } from './db'
-import { invitationLink, sendInvitationEmail } from './mail'
+import { dispatchPasswordResetEmail, invitationLink, passwordResetEmailEnabled, sendInvitationEmail } from './mail'
 
 const rateLimitStorage = process.env['NODE_ENV'] === 'test' ? 'memory' : 'database'
 type StripeRuntimeConfig = {
@@ -66,6 +66,15 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    ...(passwordResetEmailEnabled(serverConfig)
+      ? {
+          sendResetPassword({ user, url }: { user: { email: string }; url: string }) {
+            dispatchPasswordResetEmail({ email: user.email, resetLink: url }, serverConfig)
+            return Promise.resolve()
+          },
+        }
+      : {}),
+    revokeSessionsOnPasswordReset: true,
   },
   plugins: authPlugins,
   rateLimit: {
