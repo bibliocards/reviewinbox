@@ -6,7 +6,7 @@ const fromRoot = (path: string) => resolve(process.cwd(), path)
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['apps/api/src/**/*.spec.ts', 'apps/worker/src/**/*.spec.ts', 'packages/*/src/**/*.spec.ts'],
+    include: ['apps/api/src/**/*.spec.ts', 'apps/worker/src/**/*.spec.ts', 'packages/*/src/**/*.spec.ts', 'scripts/**/*.spec.ts'],
   },
   resolve: {
     alias: {
