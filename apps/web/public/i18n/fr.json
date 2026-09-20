@@ -4,7 +4,9 @@
       "connectApp": "Connecter une App",
       "generateMissingDrafts": "Générer les drafts manquants",
       "edit": "Modifier",
-      "delete": "Supprimer"
+      "delete": "Supprimer",
+      "replySettings": "Paramètres de reply",
+      "viewUsage": "Voir l’usage et les limites"
     },
     "stores": {
       "apple": "Apple App Store",
@@ -16,6 +18,10 @@
       "createdSuccess": "App {{name}} créée.",
       "updatedSuccess": "App {{name}} modifiée.",
       "deletedSuccess": "App {{name}} supprimée.",
+      "initialSync": {
+        "partial": "L’App {{name}} est enregistrée, mais le premier import de Reviews n’a été mis en file que pour certaines Store Connections.",
+        "failed": "L’App {{name}} est enregistrée, mais le premier import de Reviews n’a pas pu être mis en file. Vérifiez les Store Connections dans Apps."
+      },
       "deleteConfirm": "Supprimer {{name}} et toutes ses Store Connections, Store Credentials, Reviews, Reply Drafts, Published Replies et Sync Runs ? Cette action est irréversible.",
       "loading": "Chargement des Apps...",
       "createdAgo": "il y a {{distance}}",
@@ -69,6 +75,32 @@
         "deleteFailed": "Impossible de supprimer cette App pour le moment."
       }
     },
+    "replySettings": {
+      "saved": "Les paramètres de reply de {{name}} sont enregistrés.",
+      "loading": "Chargement des paramètres de reply...",
+      "title": "Paramètres de reply",
+      "description": "Définissez la guidance et la politique de langue utilisées pour créer les Reply Drafts de cette App.",
+      "contextLabel": "Reply Context",
+      "contextHelp": "Décris ton application, le ton souhaité et les informations de support pour préparer des brouillons utiles. Maximum {{maxLength}} caractères.",
+      "languagePolicyTitle": "Reply Language Policy",
+      "languagePolicyDescription": "Les drafts utilisent la langue par défaut, sauf si la langue de la Review est autorisée ci-dessous. Laissez la liste vide pour toujours utiliser la langue par défaut.",
+      "defaultLanguageLabel": "Langue par défaut",
+      "mappedLanguagesLabel": "Langues mappées autorisées",
+      "mappedLanguagesHelp": "Saisissez un tag de langue par ligne ou séparez-les par des virgules. {{maxLanguages}} langues maximum.",
+      "actions": {
+        "cancel": "Annuler",
+        "save": "Enregistrer les paramètres"
+      },
+      "errors": {
+        "loadFailed": "Impossible de charger les paramètres de reply pour le moment.",
+        "updateFailed": "Impossible d’enregistrer les paramètres de reply pour le moment.",
+        "ownerRequired": "Seul l’Owner de l’Organization peut modifier les paramètres de reply.",
+        "defaultLanguageRequired": "Renseignez une langue par défaut.",
+        "contextTooLong": "Le Reply Context est trop long.",
+        "languageTooLong": "Un tag de langue est trop long.",
+        "tooManyMappedLanguages": "Vous pouvez ajouter au maximum 50 langues mappées."
+      }
+    },
     "connectDialog": {
       "title": "Connecter une App",
       "editTitle": "Modifier l’App",
@@ -101,6 +133,7 @@
       "apple": {
         "skipHint": "Laissez tous les champs vides pour ignorer Apple pour le moment.",
         "editHint": "Mettez à jour les identifiants App Store. Remplissez le key id et la private key seulement pour remplacer le Store Credential.",
+        "guide": "Lire le guide de connexion App Store",
         "appStoreAppIdLabel": "Identifiant App Store de l’App",
         "issuerIdLabel": "Issuer id",
         "keyIdLabel": "Key id",
@@ -109,6 +142,7 @@
       "google": {
         "skipHint": "Laissez tous les champs vides pour ignorer Google pour le moment.",
         "editHint": "Mettez à jour le package name. Remplissez le JSON du service account seulement pour remplacer le Store Credential.",
+        "guide": "Lire le guide de connexion Google Play",
         "packageNameLabel": "Package name",
         "serviceAccountJsonLabel": "JSON du service account"
       },
@@ -188,6 +222,7 @@
     },
     "messages": {
       "draftQueued": "Génération du Reply Draft mise en file. Il sera disponible bientôt.",
+      "draftUnavailable": "La génération IA est indisponible pour le moment. Vous pouvez rédiger la Reply manuellement.",
       "draftSaved": "Reply Draft enregistré.",
       "published": "Reply publiée.",
       "ignored": "Review ignorée.",
@@ -197,7 +232,8 @@
     },
     "empty": {
       "title": "Aucune Review dans cette vue",
-      "description": "Changez le filtre d’App ou de statut, ou synchronisez les Reviews depuis la page Apps."
+      "description": "Aucune Review éligible n’est disponible pour le moment. Google Play expose les Reviews écrites créées ou modifiées durant la dernière semaine. Vérifiez vos Store Connections dans Apps.",
+      "openApps": "Ouvrir les Apps"
     }
   },
   "auditHistory": {

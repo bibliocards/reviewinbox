@@ -309,7 +309,7 @@ export class AppShellComponent {
       }
 
       dispatchEvent(new CustomEvent('reviewinbox:apps-changed'))
-      void this.router.navigate(['/apps'], { state: { appCreated: result.app.name } })
+      void this.router.navigate(['/apps'], { state: { appCreated: result.app.name, initialSyncStatus: result.initialSync?.status } })
     })
   }
 

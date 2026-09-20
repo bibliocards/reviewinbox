@@ -13,6 +13,13 @@ export const storeCredentialMetadataSchema = z.object({
 })
 export type StoreCredentialMetadata = z.infer<typeof storeCredentialMetadataSchema>
 
+export const initialSyncResponseSchema = z.object({
+  status: z.enum(['not_requested', 'queued', 'partial', 'failed']),
+  queuedStoreConnectionIds: z.array(z.uuid()),
+  failedStoreConnectionIds: z.array(z.uuid()),
+})
+export type InitialSyncResponse = z.infer<typeof initialSyncResponseSchema>
+
 export const storeConnectionResponseSchema = z.object({
   id: z.uuid(),
   appId: z.uuid(),
@@ -24,6 +31,7 @@ export const storeConnectionResponseSchema = z.object({
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
   credential: storeCredentialMetadataSchema,
+  initialSync: initialSyncResponseSchema.optional(),
 })
 export type StoreConnectionResponse = z.infer<typeof storeConnectionResponseSchema>
 
@@ -69,6 +77,7 @@ export type PutStoreCredentialRequest = z.infer<typeof putStoreCredentialRequest
 export const storeCredentialResponseSchema = z.object({
   storeConnectionId: z.uuid(),
   credential: storeCredentialMetadataSchema,
+  initialSync: initialSyncResponseSchema.optional(),
 })
 export type StoreCredentialResponse = z.infer<typeof storeCredentialResponseSchema>
 

@@ -32,7 +32,7 @@ export type QueueClient = {
   start(): Promise<void>
   stop(): Promise<void>
   enqueueGenerateReplyDraft(payload: GenerateReplyDraftJobPayload, options?: QueueJobOptions): Promise<string>
-  enqueueSyncStoreConnection(payload: SyncStoreConnectionJobPayload, options?: QueueJobOptions): Promise<string>
+  enqueueSyncStoreConnection(payload: SyncStoreConnectionJobPayload, options?: QueueJobOptions): Promise<string | null>
   workGenerateReplyDraft(handler: QueueJobHandler<GenerateReplyDraftJobPayload>): Promise<string>
   workSyncStoreConnection(handler: QueueJobHandler<SyncStoreConnectionJobPayload>): Promise<string>
 }
@@ -82,10 +82,6 @@ export function createQueueClient(options: QueueClientOptions): QueueClient {
         ...jobOptions,
         singletonKey: `${parsedPayload.windowStartsAt}:${parsedPayload.storeConnectionId}`,
       })
-
-      if (jobId === null) {
-        throw new Error('pg-boss did not create a sync-store-connection job.')
-      }
 
       return jobId
     },

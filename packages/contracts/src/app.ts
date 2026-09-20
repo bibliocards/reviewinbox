@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { storeConnectionResponseSchema } from './store'
+import { initialSyncResponseSchema, storeConnectionResponseSchema } from './store'
 
 export const appResponseSchema = z.object({
   id: z.uuid(),
@@ -104,6 +104,7 @@ export type UpdateAppRequest = z.infer<typeof updateAppRequestSchema>
 export const connectAppResponseSchema = z.object({
   app: appResponseSchema,
   storeConnections: z.array(storeConnectionResponseSchema),
+  initialSync: initialSyncResponseSchema.optional(),
 })
 export type ConnectAppResponse = z.infer<typeof connectAppResponseSchema>
 

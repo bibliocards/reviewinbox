@@ -12,6 +12,7 @@ import { appsRoutes } from './routes/apps'
 import { clientConfigRoutes } from './routes/client-config'
 import { invitationsRoutes } from './routes/invitations'
 import { organizationProfileRoutes } from './routes/organization-profile'
+import { replySettingsRoutes } from './routes/reply-settings'
 import { replyInboxRoutes } from './routes/reply-inbox'
 import { storeConnectionsRoutes } from './routes/store-connections'
 
@@ -74,6 +75,7 @@ export function createApp() {
   app.route('/', organizationProfileRoutes)
   app.route('/', appsRoutes)
   app.route('/', replyInboxRoutes)
+  app.route('/', replySettingsRoutes)
   app.route('/', storeConnectionsRoutes)
 
   return app

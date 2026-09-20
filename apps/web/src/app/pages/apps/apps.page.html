@@ -7,14 +7,28 @@
       <p class="m-0 mt-2 max-w-2xl text-sm text-ink-subtle">{{ t('apps.list.description') }}</p>
     </div>
 
-    <p-button
-      [label]="t('apps.actions.connectApp')"
-      icon="pi pi-plus"
-      (onClick)="openConnectAppDialog()" />
+    <div class="flex flex-wrap items-center gap-2">
+      @if (canManageApps()) {
+      <a
+        class="inline-flex min-h-10 items-center rounded-lg border border-hairline bg-surface-2 px-3 py-2 text-sm font-semibold text-ink no-underline transition hover:bg-surface-3"
+        routerLink="/organization/usage">
+        {{ t('apps.actions.viewUsage') }}
+      </a>
+      }
+      <p-button
+        [label]="t('apps.actions.connectApp')"
+        icon="pi pi-plus"
+        (onClick)="openConnectAppDialog()" />
+    </div>
   </header>
   @if (successAppName(); as appName) {
-  <p class="m-0 rounded-xl border border-green-500/40 bg-surface-1 px-3 py-2 text-sm text-ink-muted">
-    {{ t(successMessageKey() ?? 'apps.list.createdSuccess', { name: appName }) }}
+  <p
+    [class]="
+      mutationMessageIsError()
+        ? 'm-0 rounded-xl border border-red-400 bg-surface-1 px-3 py-2 text-sm text-red-700'
+        : 'm-0 rounded-xl border border-green-500/40 bg-surface-1 px-3 py-2 text-sm text-ink-muted'
+    ">
+    {{ t(mutationMessageKey(), { name: appName }) }}
   </p>
   } @if (errorMessage()) {
   <p class="m-0 rounded-xl border border-red-400 bg-surface-1 px-3 py-2 text-sm text-ink-muted">{{ t('apps.list.errors.loadFailed') }}</p>
@@ -148,7 +162,15 @@
           </td>
           <td>
             <div class="flex justify-end gap-2">
-              @if (canManageApps()) {
+              @if (canEditReplySettings()) {
+              <p-button
+                size="small"
+                severity="secondary"
+                [outlined]="true"
+                [label]="t('apps.actions.replySettings')"
+                icon="pi pi-sliders-h"
+                (onClick)="openReplySettingsDialog(app)" />
+              } @if (canManageApps()) {
               <div class="grid justify-items-end gap-1">
                 <p-button
                   size="small"
