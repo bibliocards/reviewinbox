@@ -12,4 +12,5 @@ apps/web/.env.example
 !apps/web/.env.example
 *.tsbuildinfo
 .idea/
+.humanlayer/
 volumes/

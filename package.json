@@ -20,7 +20,8 @@
     "db:migrate": "drizzle-kit migrate --config packages/db/drizzle.config.ts",
     "db:clear": "docker compose exec -T postgres psql -U reviewinbox -d reviewinbox -c \"DROP SCHEMA IF EXISTS drizzle CASCADE; DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;\"",
     "db:reset": "pnpm db:clear && pnpm db:migrate",
-    "stripe:listen": "stripe listen --forward-to localhost:3000/api/auth/stripe/webhook"
+    "stripe:listen": "stripe listen --forward-to localhost:3000/api/auth/stripe/webhook",
+    "report:acquisition": "tsx --tsconfig tsconfig.base.json scripts/acquisition-funnel.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.73",
