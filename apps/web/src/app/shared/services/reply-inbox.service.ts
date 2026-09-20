@@ -50,7 +50,7 @@ export class ReplyInboxService {
     )
   }
 
-  publishReply(reviewId: string, input: PublishReplyRequest = {}): Observable<ReplyActionResponse> {
+  publishReply(reviewId: string, input: PublishReplyRequest): Observable<ReplyActionResponse> {
     return this.http.post<ReplyActionResponse>(
       `${this.apiUrl}/api/reply-inbox/${reviewId}/publish`,
       input,

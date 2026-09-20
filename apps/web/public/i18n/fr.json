@@ -233,6 +233,7 @@
       "updatedReplyPublished": "Reply mise à jour publiée.",
       "ignored": "Review ignorée.",
       "unignored": "Review restaurée.",
+      "reviewChanged": "La Review a changé pendant votre rédaction. Rien n’a été enregistré ni publié. Vérifiez la dernière version avant de réessayer.",
       "actionFailed": "Impossible de terminer cette action pour le moment.",
       "lastPublishFailed": "Dernière publication échouée :"
     },

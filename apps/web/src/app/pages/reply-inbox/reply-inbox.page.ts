@@ -1,4 +1,5 @@
 import { NgClass } from '@angular/common'
+import type { HttpErrorResponse } from '@angular/common/http'
 import {
   Component,
   computed,
@@ -17,7 +18,8 @@ import { enUS, fr } from 'date-fns/locale'
 import { ButtonModule } from 'primeng/button'
 import { DialogService } from 'primeng/dynamicdialog'
 import { SelectModule } from 'primeng/select'
-import { type Observable } from 'rxjs'
+import { finalize, type Observable } from 'rxjs'
+import { z } from 'zod'
 
 import {
   AppSelectComponent,
@@ -31,6 +33,11 @@ import {
   type ReplyDraftDialogData,
   type ReplyDraftDialogResult,
 } from './components/reply-draft-dialog.component'
+
+const changedReviewErrorSchema = z.object({
+  status: z.literal(409),
+  error: z.object({ errorCode: z.literal('review_changed') }),
+})
 
 type ReplyInboxFilter = 'actionable' | ReplyInboxReview['replyStatus']
 
@@ -136,6 +143,7 @@ export class ReplyInboxPageComponent {
     this.runAction(
       review.id,
       this.replyInboxService.publishReply(review.id, {
+        reviewContentToken: review.reviewContentToken,
         replyDraftId: draft.id,
         replyDraftUpdatedAt: draft.updatedAt,
       }),
@@ -176,10 +184,11 @@ export class ReplyInboxPageComponent {
         return
       }
 
+      const input = { draftText: result.draftText, reviewContentToken: review.reviewContentToken }
       const request =
         result.action === 'save'
-          ? this.replyInboxService.saveDraft(review.id, { draftText: result.draftText })
-          : this.replyInboxService.publishReply(review.id, { draftText: result.draftText })
+          ? this.replyInboxService.saveDraft(review.id, input)
+          : this.replyInboxService.publishReply(review.id, input)
       const successKey = this.draftActionSuccessKey(review, result.action)
       this.runAction(review.id, request, successKey)
     })
@@ -303,26 +312,36 @@ export class ReplyInboxPageComponent {
     }
 
     this.activeReviewId.set(reviewId)
-    request.subscribe({
-      next: (value) => {
-        let actionResult: ActionResult
-        if (resolveResult === undefined) {
-          actionResult = { status: 'success', key: resultKey }
-        } else {
-          actionResult = resolveResult(value)
-        }
-        this.message.set({ status: actionResult.status, key: actionResult.key })
-        if (actionResult.reload !== false) {
-          this.reload()
-        }
-      },
-      error: () => {
-        this.message.set({ status: 'error', key: 'replyInbox.messages.actionFailed' })
-      },
-      complete: () => {
-        this.activeReviewId.set(null)
-      },
-    })
+    request
+      .pipe(
+        finalize(() => {
+          this.activeReviewId.set(null)
+        }),
+      )
+      .subscribe({
+        next: (value) => {
+          let actionResult: ActionResult
+          if (resolveResult === undefined) {
+            actionResult = { status: 'success', key: resultKey }
+          } else {
+            actionResult = resolveResult(value)
+          }
+          this.message.set({ status: actionResult.status, key: actionResult.key })
+          if (actionResult.reload !== false) {
+            this.reload()
+          }
+        },
+        error: (error: HttpErrorResponse) => {
+          const changed = changedReviewErrorSchema.safeParse(error).success
+          this.message.set({
+            status: 'error',
+            key: changed ? 'replyInbox.messages.reviewChanged' : 'replyInbox.messages.actionFailed',
+          })
+          if (changed) {
+            this.reload()
+          }
+        },
+      })
   }
 }
 

@@ -22,6 +22,8 @@ Published Reply records store the latest successfully published reply text and t
 
 Concurrent publishing is guarded server-side with a PostgreSQL advisory lock rather than adding a durable `publishing` status. Review row locks serialize publication and other user actions with synchronization. The server checks that the Review is still `drafted`; an existing Published Reply is accepted only when the Review has an unresolved change after publication.
 
+Saving or publishing a Reply Draft requires the content token from the Review displayed to the user. Under the row lock, the server rejects requests whose title, body, or rating has changed before any draft write or store publication. Metadata-only updates preserve the token. The interface reloads the latest Review after this conflict.
+
 ### Reviews edited after publication
 
 A Sync Run compares title, body, and rating against the currently stored Review. A relevant change to a Review with a Published Reply sets `changedAfterReply` and returns it to `pending`, including when a draft already exists. Identical content and unrelated metadata do not reopen it. A Sync Run never publishes a reply.

@@ -45,6 +45,7 @@ export const replyInboxReviewSchema = z.object({
   locale: z.string().nullable(),
   reviewedAt: z.iso.datetime(),
   replyStatus: replyStatusSchema,
+  reviewContentToken: z.string().regex(/^[a-f0-9]{64}$/u),
   changedAfterReply: z.boolean(),
   replyBaseline: z
     .object({
@@ -119,12 +120,16 @@ export const listReplyAuditEventsResponseSchema = z.object({
 export type ListReplyAuditEventsResponse = z.infer<typeof listReplyAuditEventsResponseSchema>
 
 export const saveReplyDraftRequestSchema = z
-  .object({ draftText: z.string().trim().min(1).max(4000) })
+  .object({
+    draftText: z.string().trim().min(1).max(4000),
+    reviewContentToken: z.string().regex(/^[a-f0-9]{64}$/u),
+  })
   .strict()
 export type SaveReplyDraftRequest = z.infer<typeof saveReplyDraftRequestSchema>
 
 export const publishReplyRequestSchema = z
   .object({
+    reviewContentToken: z.string().regex(/^[a-f0-9]{64}$/u),
     replyDraftId: z.uuid().optional(),
     replyDraftUpdatedAt: z.iso.datetime().optional(),
     draftText: z.string().trim().min(1).max(4000).optional(),

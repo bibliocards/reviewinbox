@@ -42,6 +42,7 @@ import { requireActiveOrganizationSession } from '../auth/session'
 import { database } from '../db'
 import { parseJsonBody, parseUuidParam } from '../http/validation'
 import { enqueueGenerateReplyDraftJobs } from '../queue'
+import { createReviewContentToken, isReviewContentTokenCurrent } from '../review-content'
 
 export const replyInboxRoutes = new Hono()
 
@@ -303,14 +304,15 @@ replyInboxRoutes.put('/api/reply-inbox/:reviewId/draft', async (context) => {
     return request.response
   }
 
-  const result = await saveDraftFromRequest(
-    sessionResult.session.organizationId,
-    sessionResult.session.userId,
-    request.reviewId,
-    request.draftText,
-  )
+  const result = await saveDraftFromRequest({
+    organizationId: sessionResult.session.organizationId,
+    actorUserId: sessionResult.session.userId,
+    reviewId: request.reviewId,
+    draftText: request.draftText,
+    reviewContentToken: request.reviewContentToken,
+  })
   if (!result.ok) {
-    return context.json({ error: result.error }, result.status)
+    return context.json({ error: result.error, errorCode: result.errorCode }, result.status)
   }
 
   return context.json(
@@ -367,19 +369,21 @@ type SaveDraftInput = {
   actorUserId: string
   reviewId: string
   draftText: string
+  reviewContentToken: string
 }
 
 type PublishReplyInput = {
   organizationId: string
   actorUserId: string
   reviewId: string
+  reviewContentToken: string
   draftText?: string
   replyDraftId?: string
   replyDraftUpdatedAt?: string
 }
 
 type SaveDraftRequest =
-  | { ok: true; reviewId: string; draftText: string }
+  | { ok: true; reviewId: string; draftText: string; reviewContentToken: string }
   | { ok: false; response: Response }
 
 type PublishRequest =
@@ -417,7 +421,12 @@ async function parseSaveDraftRequest(context: Context): Promise<SaveDraftRequest
   if (!bodyResult.ok) {
     return { ok: false, response: bodyResult.response }
   }
-  return { ok: true, reviewId: reviewIdResult.data, draftText: bodyResult.data.draftText }
+  return {
+    ok: true,
+    reviewId: reviewIdResult.data,
+    draftText: bodyResult.data.draftText,
+    reviewContentToken: bodyResult.data.reviewContentToken,
+  }
 }
 
 async function parsePublishRequest(context: Context): Promise<PublishRequest> {
@@ -432,13 +441,8 @@ async function parsePublishRequest(context: Context): Promise<PublishRequest> {
   return { ok: true, reviewId: reviewIdResult.data, body: bodyResult.data }
 }
 
-function saveDraftFromRequest(
-  organizationId: string,
-  actorUserId: string,
-  reviewId: string,
-  draftText: string,
-) {
-  return saveDraft({ database, organizationId, actorUserId, reviewId, draftText })
+function saveDraftFromRequest(input: Omit<SaveDraftInput, 'database'>) {
+  return saveDraft({ database, ...input })
 }
 
 function buildPublishReplyInput(
@@ -447,7 +451,12 @@ function buildPublishReplyInput(
   reviewId: string,
   request: z.infer<typeof publishReplyRequestSchema>,
 ): PublishReplyInput {
-  const input: PublishReplyInput = { organizationId, actorUserId, reviewId }
+  const input: PublishReplyInput = {
+    organizationId,
+    actorUserId,
+    reviewId,
+    reviewContentToken: request.reviewContentToken,
+  }
   if (request.draftText !== undefined) {
     input.draftText = request.draftText
   }
@@ -462,13 +471,24 @@ function buildPublishReplyInput(
 
 function saveDraft(
   input: SaveDraftInput,
-): Promise<{ ok: true; reviewId: string } | { ok: false; status: 404 | 409; error: string }> {
+): Promise<
+  | { ok: true; reviewId: string }
+  | { ok: false; status: 404 | 409; error: string; errorCode?: string }
+> {
   return input.database.transaction(async (transaction) => {
     await transaction.execute(sql`select pg_advisory_xact_lock(hashtext(${input.reviewId}))`)
 
     const row = await selectReviewForAction(transaction, input.organizationId, input.reviewId)
     if (!row) {
       return { ok: false, status: 404, error: 'Review not found.' }
+    }
+    if (!isReviewContentTokenCurrent(input.reviewContentToken, row.review)) {
+      return {
+        ok: false,
+        status: 409,
+        error: 'Review changed before the Reply Draft could be saved.',
+        errorCode: 'review_changed',
+      }
     }
     if (row.review.replyStatus === 'published') {
       return { ok: false, status: 409, error: 'Published Reply is immutable.' }
@@ -579,33 +599,57 @@ type PublishValidation =
   | Exclude<PublishReplyResult, { ok: true }>
 
 function publishReply(input: PublishReplyInput): Promise<PublishReplyResult> {
-  return database.transaction(async (transaction) => {
-    await transaction.execute(sql`select pg_advisory_xact_lock(hashtext(${input.reviewId}))`)
+  return database.transaction((transaction) => publishReviewInTransaction(transaction, input))
+}
 
-    const row = await selectReviewForAction(transaction, input.organizationId, input.reviewId)
-    if (row === undefined) {
-      return { ok: false, status: 404, error: 'Review not found.' }
-    }
+async function publishReviewInTransaction(
+  transaction: Parameters<Parameters<typeof database.transaction>[0]>[0],
+  input: PublishReplyInput,
+): Promise<PublishReplyResult> {
+  await transaction.execute(sql`select pg_advisory_xact_lock(hashtext(${input.reviewId}))`)
 
-    const draftResult = await preparePublishDraft(transaction, row, input)
-    if (!draftResult.ok) {
-      return draftResult
-    }
+  const rowResult = await selectPublishableReview(transaction, input)
+  if (!rowResult.ok) {
+    return rowResult
+  }
 
-    const validation = validatePublishInput(draftResult.row, input)
-    if (!validation.ok) {
-      return validation
-    }
+  const draftResult = await preparePublishDraft(transaction, rowResult.row, input)
+  if (!draftResult.ok) {
+    return draftResult
+  }
 
-    const publish = await publishToStore(validation.store.provider, validation.store.input)
-    return finalizePublish({
-      transaction,
-      row: draftResult.row,
-      input,
-      store: validation.store,
-      publish,
-    })
+  const validation = validatePublishInput(draftResult.row, input)
+  if (!validation.ok) {
+    return validation
+  }
+
+  const publish = await publishToStore(validation.store.provider, validation.store.input)
+  return finalizePublish({
+    transaction,
+    row: draftResult.row,
+    input,
+    store: validation.store,
+    publish,
   })
+}
+
+async function selectPublishableReview(
+  transaction: Parameters<Parameters<typeof database.transaction>[0]>[0],
+  input: PublishReplyInput,
+): Promise<{ ok: true; row: ReviewActionRow } | Exclude<PublishReplyResult, { ok: true }>> {
+  const row = await selectReviewForAction(transaction, input.organizationId, input.reviewId)
+  if (row === undefined) {
+    return { ok: false, status: 404, error: 'Review not found.' }
+  }
+  if (!isReviewContentTokenCurrent(input.reviewContentToken, row.review)) {
+    return {
+      ok: false,
+      status: 409,
+      error: 'Review changed before the Reply could be published.',
+      errorCode: 'review_changed',
+    }
+  }
+  return { ok: true, row }
 }
 
 async function preparePublishDraft(
@@ -1092,6 +1136,7 @@ function toReplyInboxReview(
     locale: row.review.locale,
     reviewedAt: row.review.reviewedAt.toISOString(),
     replyStatus: row.review.replyStatus,
+    reviewContentToken: createReviewContentToken(row.review),
     changedAfterReply: row.review.changedAfterReply,
     replyBaseline: row.review.replyBaseline,
     draftFailureCode: row.review.draftFailureCode,
