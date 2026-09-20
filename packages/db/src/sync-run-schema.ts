@@ -19,6 +19,9 @@ export const syncRuns = pgTable(
     storeConnectionId: uuid('store_connection_id')
       .notNull()
       .references(() => storeConnections.id, { onDelete: 'cascade' }),
+    // Set only for automatic worker runs. Manual and initial imports remain
+    // distinguishable so they can still suppress a too-close auto run.
+    windowStartsAt: timestamp('window_starts_at'),
     status: syncRunStatusEnum('status').default('pending').notNull(),
     startedAt: timestamp('started_at'),
     finishedAt: timestamp('finished_at'),

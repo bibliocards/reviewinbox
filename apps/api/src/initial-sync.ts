@@ -101,6 +101,7 @@ export async function enqueueInitialStoreConnectionSync(input: {
         organizationId: input.organizationId,
         storeConnectionId: connection.storeConnectionId,
         windowStartsAt: toIsoDateTime(connection.revisionAt),
+        trigger: 'initial',
       })
       queuedStoreConnectionIds.push(connection.storeConnectionId)
     } catch {

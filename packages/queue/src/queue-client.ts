@@ -16,6 +16,7 @@ const syncStoreConnectionJobPayloadSchema = z.object({
   organizationId: z.string().min(1),
   storeConnectionId: z.uuid(),
   windowStartsAt: z.iso.datetime(),
+  trigger: z.enum(['automatic', 'initial']),
 })
 
 export type GenerateReplyDraftJobPayload = z.infer<typeof generateReplyDraftJobPayloadSchema>
@@ -82,7 +83,6 @@ export function createQueueClient(options: QueueClientOptions): QueueClient {
         ...jobOptions,
         singletonKey: `${parsedPayload.windowStartsAt}:${parsedPayload.storeConnectionId}`,
       })
-
       return jobId
     },
     async workGenerateReplyDraft(handler) {
