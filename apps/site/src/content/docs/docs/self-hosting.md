@@ -84,7 +84,21 @@ AI_API_KEY=your-provider-key
 AI_BASE_URL=
 ```
 
-Set `REPLY_DRAFT_WORKER_ENABLED=true` on the API service so UI actions can enqueue Reply Draft jobs. Set the `AI_*` values on the worker service; the API does not need the provider key. Set `AI_BASE_URL` only when your provider requires a custom OpenAI-compatible endpoint.
+Set `REPLY_DRAFT_WORKER_ENABLED=true` on the API service so UI actions can enqueue Reply Draft jobs. For drafting alone, set the `AI_*` values on the worker service. When enabling Review Analysis, configure the same optional `TYPESAFE_API_KEY` and `AI_*` values on the API and worker so the API can report classification and discovery availability; the supplied Compose file maps these values to both services. Set `AI_BASE_URL` only when your provider requires a custom OpenAI-compatible endpoint.
+
+## Review analysis
+
+Review analysis is independent from Reply Draft quotas. Jev classifies imported Reviews and the complete initial backfill; Luna proposes missing English topics in bounded daily batches or after a manual request. Discovery is metered separately per Organization, and its commercial limits are intentionally not published until usage has been measured.
+
+Set the optional installation-wide TypeSafe key for the API and worker:
+
+```env
+TYPESAFE_API_KEY=your-typesafe-key
+```
+
+Without `TYPESAFE_API_KEY`, stored analysis remains readable, but new classification and topic-discovery jobs stay unavailable. Review sync and Reply Draft generation continue. The key is operator configuration and is never entered by an Organization owner. Luna reuses the configured `AI_PROVIDER`, `AI_MODEL`, `AI_API_KEY`, and optional `AI_BASE_URL` values passed to the API and worker.
+
+Analysis processing is durable and resumable. It covers all imported history, uses bounded batches, and records `pending`, `processing`, `completed`, `failed`, or `skipped` states. Restarting the worker resumes incomplete work and does not repeatedly submit Reviews already marked `completed`.
 
 ## Reverse Proxy Model
 

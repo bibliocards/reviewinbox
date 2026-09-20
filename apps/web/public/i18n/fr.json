@@ -6,6 +6,8 @@
       "edit": "Modifier",
       "delete": "Supprimer",
       "replySettings": "Paramètres de reply",
+      "analysis": "Analyse",
+      "catalogue": "Catalogue de sujets",
       "viewUsage": "Voir l’usage et les limites"
     },
     "stores": { "apple": "Apple App Store", "google": "Google Play" },
@@ -165,6 +167,131 @@
         "createFailed": "Impossible de créer cette App pour le moment.",
         "updateFailed": "Impossible de modifier cette App pour le moment."
       }
+    }
+  },
+  "analysis": {
+    "kicker": "Intelligence des Reviews",
+    "title": "Analyse",
+    "description": "Repérez les sujets récurrents, la gravité signalée et les Reviews derrière chaque signal.",
+    "actions": {
+      "openCatalogue": "Catalogue de sujets",
+      "openDashboard": "Ouvrir le tableau de bord",
+      "discover": "Découvrir des sujets",
+      "newTopic": "Nouveau sujet",
+      "saveTopic": "Enregistrer",
+      "rename": "Renommer",
+      "approve": "Valider",
+      "reject": "Rejeter",
+      "reopen": "Rouvrir",
+      "mergeInto": "Fusionner dans…",
+      "confirmMerge": "Fusionner les sujets",
+      "manageTopics": "Gérer le catalogue",
+      "correct": "Corriger l’analyse",
+      "openReview": "Ouvrir la Review"
+    },
+    "filters": {
+      "title": "Explorer les données",
+      "clear": "Effacer les filtres",
+      "allApps": "Toutes les Apps",
+      "app": "App",
+      "from": "Du",
+      "to": "Au",
+      "allStores": "Tous les stores",
+      "store": "Store",
+      "allVersions": "Toutes les versions",
+      "version": "Version",
+      "allSeverities": "Toutes les gravités",
+      "severity": "Gravité",
+      "allIntents": "Toutes les intentions",
+      "intent": "Intention",
+      "allTopics": "Tous les sujets",
+      "topic": "Sujet",
+      "allTopicStatuses": "Tous les statuts",
+      "topicStatus": "Statut du sujet",
+      "versionNeedsStore": "Choisissez un store avant de filtrer par version."
+    },
+    "catalogue": {
+      "kicker": "Configuration de l’App",
+      "title": "Catalogue de sujets",
+      "description": "Définissez le vocabulaire partagé qui rend l’Analyse utile pour cette App.",
+      "sharedTitle": "Un catalogue pour tous les stores",
+      "sharedDescription": "Les propositions restent visibles jusqu’à leur validation humaine.",
+      "newTopic": "Créer un sujet",
+      "label": "Libellé du sujet",
+      "definition": "Définition",
+      "aliases": "Alias",
+      "reviews": "Reviews",
+      "emptyTitle": "Aucun sujet",
+      "emptyDescription": "Créez un sujet ou demandez au classifieur de proposer un sujet."
+    },
+    "loading": "Chargement de l’analyse…",
+    "disabled": {
+      "title": "L’Analyse n’est pas encore disponible",
+      "description": "Les résultats enregistrés apparaîtront ici lorsque l’Analyse sera activée pour cette installation."
+    },
+    "metrics": {
+      "reviews": "Reviews",
+      "inPeriod": "sur la période sélectionnée",
+      "coverage": "Couverture",
+      "analyzed": "analysées",
+      "topics": "Sujets",
+      "inCatalogue": "dans le catalogue",
+      "flagged": "À surveiller",
+      "blockingCritical": "bloquantes ou critiques"
+    },
+    "severity": {
+      "title": "Gravité signalée",
+      "description": "Cliquez sur un niveau pour filtrer les Reviews ci-dessous.",
+      "none": "Aucun problème décrit",
+      "unknown": "Inconnue",
+      "minor": "Mineure",
+      "degraded": "Dégradée",
+      "blocking": "Bloquante",
+      "critical": "Critique"
+    },
+    "trend": {
+      "title": "Volume de Reviews",
+      "description": "Sélectionnez un jour pour voir ses Reviews.",
+      "aria": "Volume de Reviews par jour"
+    },
+    "topicStatus": { "pending": "En attente", "approved": "Validé", "rejected": "Rejeté" },
+    "topics": {
+      "title": "Sujets principaux",
+      "description": "Les sujets en attente sont en pointillés et restent interactifs."
+    },
+    "pagination": { "previous": "Page précédente", "next": "Page suivante" },
+    "reviews": {
+      "title": "Reviews dans cette vue",
+      "description": "Chaque compteur mène aux Reviews concernées.",
+      "empty": "Aucune Review ne correspond à ces filtres.",
+      "manual": "Corrigée manuellement"
+    },
+    "review": { "untitled": "Review sans titre" },
+    "editor": {
+      "title": "Corriger l’analyse de la Review",
+      "severity": "Gravité signalée",
+      "intents": "Intentions",
+      "topics": "Sujets",
+      "none": "Aucune",
+      "save": "Enregistrer la correction",
+      "reset": "Revenir à l’analyse automatique",
+      "needsRecheck": "Cette Review doit être réanalysée après une modification du catalogue."
+    },
+    "intents": {
+      "report_problem": "Signaler un problème",
+      "request_feature": "Demander une fonctionnalité",
+      "request_help": "Demander de l’aide",
+      "request_refund": "Demander un remboursement",
+      "express_satisfaction": "Exprimer sa satisfaction",
+      "express_dissatisfaction": "Exprimer son insatisfaction"
+    },
+    "errors": { "loadFailed": "Impossible de charger l’Analyse pour le moment." },
+    "messages": {
+      "reviewSaved": "Analyse de la Review enregistrée.",
+      "topicSaved": "Catalogue de sujets enregistré.",
+      "topicMerged": "Sujets fusionnés. Les alias de la source sont conservés.",
+      "discoveryQueued": "Découverte de sujets mise en file.",
+      "actionFailed": "Impossible de terminer cette action d’analyse pour le moment."
     }
   },
   "replyInbox": {
@@ -426,17 +553,20 @@
     "inbox": "Reply Inbox",
     "apps": "Apps",
     "auditHistory": "Historique",
-    "settings": "Paramètres"
+    "settings": "Paramètres",
+    "analysis": "Analyse"
   },
   "common": {
     "useLightTheme": "Utiliser le thème clair",
-    "useDarkTheme": "Utiliser le thème sombre"
+    "useDarkTheme": "Utiliser le thème sombre",
+    "cancel": "Annuler"
   },
   "shell": {
     "navigation": {
       "primary": "Navigation principale",
       "currentPage": "Page actuelle",
       "replyInbox": "Reply Inbox",
+      "analysis": "Analyse",
       "apps": "Apps",
       "auditHistory": "Historique d’audit",
       "organization": "Organization"

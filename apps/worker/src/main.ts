@@ -1,8 +1,15 @@
-import { generateReplyDraft, type ReplyDraftProvider } from '@reviewinbox/ai'
+import {
+  createOpenAiCompatibleTopicDiscoveryProvider,
+  generateReplyDraft,
+  type ReplyDraftProvider,
+  type OpenAiCompatibleTopicDiscoveryProviderOptions,
+  type TopicDiscoveryProvider,
+} from '@reviewinbox/ai'
 import { getPlanDefinition } from '@reviewinbox/billing'
 import {
   getNextAutoSyncWindowStartsAt,
   loadAiConfig,
+  loadTypeSafeConfig,
   loadWorkerConfig,
   type AiConfig,
   type WorkerConfig,
@@ -10,11 +17,16 @@ import {
 import {
   closeDatabase,
   createDatabase,
+  apps,
   organization,
   runDatabaseMigrations,
   storeConnections,
   storeCredentials,
   syncRuns,
+  reviews,
+  reviewAnalyses,
+  reviewTopics,
+  usageEvents,
   type Database,
 } from '@reviewinbox/db'
 import { createQueueClient, type QueueClient } from '@reviewinbox/queue'
@@ -23,10 +35,16 @@ import {
   syncReviewsForStoreConnection,
   type SyncReviewsForStoreConnectionInput,
 } from '@reviewinbox/sync'
-import { and, asc, desc, eq, isNull, isNotNull } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNull, isNotNull, lt, ne, or, sql } from 'drizzle-orm'
 
 import { createWorkerReplyDraftProvider } from './ai-provider'
 import { getAutoSyncJobStartsAt, isAutoSyncDueAt } from './auto-sync-scheduler'
+import {
+  classifyReviewForAnalysis,
+  createTypeSafeClassifier,
+  reviewAnalysisCriteriaVersion,
+  type ReviewAnalysisWorkerOptions,
+} from './review-analysis-worker'
 
 const shutdownSignals = ['SIGINT', 'SIGTERM'] as const
 
@@ -38,6 +56,10 @@ type WorkerRuntime = {
   queue: QueueClient
   replyDraftProvider: ReplyDraftProvider | null
   replyDraftProviderKind: ReplyDraftProviderKind | null
+  analysis: ReviewAnalysisWorkerOptions | null
+  topicDiscoveryProvider: TopicDiscoveryProvider | null
+  topicDiscoveryScanTimer: ReturnType<typeof setTimeout> | null
+  analysisScanTimer: ReturnType<typeof setTimeout> | null
   autoSyncTimer: ReturnType<typeof setTimeout> | null
 }
 
@@ -47,6 +69,12 @@ async function main(): Promise<void> {
   const runtime = await createWorkerRuntime()
   await registerStoreSyncHandler(runtime)
   await registerDraftHandler(runtime)
+  await registerAnalysisHandlers(runtime)
+  await registerTopicDiscoveryHandler(runtime)
+  await enqueuePendingAnalysisJobs(runtime)
+  await enqueueTopicDiscoveryJobs(runtime)
+  runtime.analysisScanTimer = startAnalysisScanner(runtime)
+  runtime.topicDiscoveryScanTimer = startTopicDiscoveryScanner(runtime)
   runtime.autoSyncTimer = startAutoSyncScheduler(runtime)
   logWorkerStarted(runtime)
   await waitForShutdown(runtime)
@@ -55,6 +83,8 @@ async function main(): Promise<void> {
 async function createWorkerRuntime(): Promise<WorkerRuntime> {
   const config = loadWorkerConfig()
   const aiConfig = loadAiConfig()
+  const typeSafeConfig = loadTypeSafeConfig()
+  const analysisClassifier = createTypeSafeClassifier(typeSafeConfig.apiKey)
   await runStartupMigrations(config)
   const database = createDatabase(config.databaseUrl)
   const queue = createWorkerQueue(config)
@@ -66,6 +96,11 @@ async function createWorkerRuntime(): Promise<WorkerRuntime> {
     queue,
     replyDraftProvider: createWorkerReplyDraftProvider(aiConfig),
     replyDraftProviderKind: getReplyDraftProviderKind(aiConfig),
+    analysis: analysisClassifier === null ? null : { database, classifier: analysisClassifier },
+    topicDiscoveryProvider:
+      analysisClassifier === null ? null : createTopicDiscoveryProvider(aiConfig),
+    topicDiscoveryScanTimer: null,
+    analysisScanTimer: null,
     autoSyncTimer: null,
   }
 }
@@ -103,6 +138,9 @@ async function registerStoreSyncHandler(runtime: WorkerRuntime): Promise<void> {
     })
 
     const syncRun = await runStoreConnectionSync(runtime, job.payload)
+    if (syncRun.status === 'succeeded' || syncRun.status === 'partial') {
+      await enqueueAnalysisJobs(runtime, syncRun.organizationId, syncRun.newReviewIds)
+    }
     if (isSuccessfulSyncWithDraftProvider(runtime, syncRun.status)) {
       await enqueueGenerateReplyDraftJobs(runtime, syncRun.organizationId, syncRun.newReviewIds)
     }
@@ -115,6 +153,406 @@ async function registerStoreSyncHandler(runtime: WorkerRuntime): Promise<void> {
       storedCount: syncRun.storedCount,
     })
   })
+}
+
+async function registerAnalysisHandlers(runtime: WorkerRuntime): Promise<void> {
+  const analysis = runtime.analysis
+  if (analysis === null) {
+    return
+  }
+  await runtime.queue.workClassifyReview(async (job) => {
+    await classifyReviewForAnalysis(analysis, job.payload)
+  })
+}
+
+async function registerTopicDiscoveryHandler(runtime: WorkerRuntime): Promise<void> {
+  await runtime.queue.workDiscoverReviewTopics(async (job) => {
+    if (runtime.topicDiscoveryProvider === null) {
+      return
+    }
+    await discoverTopicsForApp(runtime, job.payload)
+  })
+}
+
+function createTopicDiscoveryProvider(aiConfig: AiConfig): TopicDiscoveryProvider | null {
+  if (
+    (aiConfig.provider !== 'managed' && aiConfig.provider !== 'openai-compatible')
+    || aiConfig.apiKey === undefined
+    || aiConfig.model === undefined
+  ) {
+    return null
+  }
+  const options: OpenAiCompatibleTopicDiscoveryProviderOptions = {
+    apiKey: aiConfig.apiKey,
+    model: aiConfig.model,
+  }
+  if (aiConfig.baseUrl !== undefined) {
+    options.baseUrl = aiConfig.baseUrl
+  }
+  return createOpenAiCompatibleTopicDiscoveryProvider(options)
+}
+
+const topicDiscoveryBatchSize = 50
+const topicDiscoveryReviewCharacterLimit = 12_000
+const topicDiscoveryCatalogueCharacterLimit = 12_000
+
+type DiscoveryContext = {
+  app: {
+    id: string
+    catalogVersion: number
+    lastTopicDiscoveryAt: Date | null
+    topicDiscoveryRequestedAt: Date | null
+  }
+  topics: Array<{ label: string; description: string; aliases: string[] }>
+  boundedTopics: Array<{ label: string; description: string; aliases: string[] }>
+  uncovered: Array<{ id: string; title: string | null; body: string; rating: number }>
+}
+
+async function discoverTopicsForApp(
+  runtime: WorkerRuntime,
+  payload: { organizationId: string; appId: string; trigger: 'daily' | 'manual' },
+): Promise<void> {
+  if (runtime.topicDiscoveryProvider === null) {
+    return
+  }
+  const context = await loadDiscoveryContext(runtime, payload)
+  if (context === undefined) {
+    return
+  }
+  if (context.uncovered.length === 0) {
+    await markDiscoveryComplete(runtime, context.app.id)
+    return
+  }
+  const proposals = await runtime.topicDiscoveryProvider.proposeTopics({
+    reviews: context.uncovered.map(({ title, body, rating }) => ({
+      title: title?.slice(0, 500) ?? null,
+      body: body.slice(0, topicDiscoveryReviewCharacterLimit),
+      rating,
+    })),
+    existingTopics: context.boundedTopics,
+  })
+  const newProposals = deduplicateTopicProposals(proposals, context.topics)
+  await persistDiscoveryResults(runtime, payload, context, newProposals)
+}
+
+async function loadDiscoveryContext(
+  runtime: WorkerRuntime,
+  payload: { organizationId: string; appId: string },
+): Promise<DiscoveryContext | undefined> {
+  const [app] = await runtime.database
+    .select({
+      id: apps.id,
+      catalogVersion: apps.analysisCatalogVersion,
+      lastTopicDiscoveryAt: apps.lastTopicDiscoveryAt,
+      topicDiscoveryRequestedAt: apps.topicDiscoveryRequestedAt,
+    })
+    .from(apps)
+    .where(and(eq(apps.id, payload.appId), eq(apps.organizationId, payload.organizationId)))
+    .limit(1)
+  if (app === undefined || runtime.topicDiscoveryProvider === null) {
+    return undefined
+  }
+  const topics = await runtime.database
+    .select({
+      label: reviewTopics.label,
+      description: reviewTopics.description,
+      aliases: reviewTopics.aliases,
+    })
+    .from(reviewTopics)
+    .where(
+      and(eq(reviewTopics.appId, app.id), eq(reviewTopics.organizationId, payload.organizationId)),
+    )
+  const uncovered = await runtime.database
+    .select({ id: reviews.id, title: reviews.title, body: reviews.body, rating: reviews.rating })
+    .from(reviews)
+    .innerJoin(reviewAnalyses, eq(reviewAnalyses.reviewId, reviews.id))
+    .where(
+      and(
+        eq(reviews.appId, app.id),
+        eq(reviews.organizationId, payload.organizationId),
+        eq(reviewAnalyses.uncovered, true),
+        isNull(reviewAnalyses.discoveredAt),
+      ),
+    )
+    .orderBy(desc(reviews.reviewedAt))
+    .limit(topicDiscoveryBatchSize)
+  return { app, topics, boundedTopics: boundDiscoveryTopics(topics), uncovered }
+}
+
+async function markDiscoveryComplete(runtime: WorkerRuntime, appId: string): Promise<void> {
+  await runtime.database
+    .update(apps)
+    .set({ lastTopicDiscoveryAt: new Date(), topicDiscoveryRequestedAt: null })
+    .where(eq(apps.id, appId))
+}
+
+function deduplicateTopicProposals(
+  proposals: Array<{ label: string; description: string }>,
+  topics: Array<{ label: string; aliases: string[] }>,
+): Array<{ label: string; description: string }> {
+  const knownLabels = new Set<string>()
+  for (const topic of topics) {
+    knownLabels.add(normalizeTopicLabel(topic.label))
+    for (const alias of topic.aliases) {
+      knownLabels.add(normalizeTopicLabel(alias))
+    }
+  }
+  return proposals.filter((proposal) => {
+    const normalized = normalizeTopicLabel(proposal.label)
+    if (normalized.length === 0 || knownLabels.has(normalized)) {
+      return false
+    }
+    knownLabels.add(normalized)
+    return true
+  })
+}
+
+async function persistDiscoveryResults(
+  runtime: WorkerRuntime,
+  payload: { organizationId: string; appId: string },
+  context: DiscoveryContext,
+  newProposals: Array<{ label: string; description: string }>,
+): Promise<void> {
+  await runtime.database.transaction((transaction) =>
+    persistDiscoveryResultsTransaction(transaction, payload, context, newProposals),
+  )
+}
+
+type WorkerTransaction = Parameters<Parameters<Database['transaction']>[0]>[0]
+
+async function persistDiscoveryResultsTransaction(
+  transaction: WorkerTransaction,
+  payload: { organizationId: string; appId: string },
+  context: DiscoveryContext,
+  newProposals: Array<{ label: string; description: string }>,
+): Promise<void> {
+  const [lockedApp] = await transaction
+    .select({
+      catalogVersion: apps.analysisCatalogVersion,
+      lastTopicDiscoveryAt: apps.lastTopicDiscoveryAt,
+    })
+    .from(apps)
+    .where(and(eq(apps.id, context.app.id), eq(apps.organizationId, payload.organizationId)))
+    .for('update')
+    .limit(1)
+  if (
+    lockedApp === undefined
+    || lockedApp.catalogVersion !== context.app.catalogVersion
+    || lockedApp.lastTopicDiscoveryAt?.getTime() !== context.app.lastTopicDiscoveryAt?.getTime()
+  ) {
+    throw new Error('topic_discovery_catalog_stale')
+  }
+  const insertedRows = await Promise.all(
+    newProposals.map((proposal) => insertDiscoveryTopic(transaction, payload, context, proposal)),
+  )
+  const insertedCount = insertedRows.reduce((total, rows) => total + rows.length, 0)
+  const now = new Date()
+  await markDiscoveryReviews(transaction, context)
+  const appUpdate =
+    insertedCount > 0
+      ? {
+          lastTopicDiscoveryAt: now,
+          topicDiscoveryRequestedAt: null,
+          analysisCatalogVersion: lockedApp.catalogVersion + 1,
+        }
+      : { lastTopicDiscoveryAt: now, topicDiscoveryRequestedAt: null }
+  await transaction.update(apps).set(appUpdate).where(eq(apps.id, context.app.id))
+  await transaction
+    .insert(usageEvents)
+    .values({
+      organizationId: payload.organizationId,
+      type: 'managed_ai_topic_discovery',
+      quantity: context.uncovered.length,
+      occurredAt: now,
+    })
+}
+
+async function markDiscoveryReviews(
+  transaction: WorkerTransaction,
+  context: DiscoveryContext,
+): Promise<void> {
+  await transaction
+    .update(reviewAnalyses)
+    .set({ discoveredAt: new Date() })
+    .where(
+      inArray(
+        reviewAnalyses.reviewId,
+        context.uncovered.map((review) => review.id),
+      ),
+    )
+}
+
+function insertDiscoveryTopic(
+  transaction: WorkerTransaction,
+  payload: { organizationId: string; appId: string },
+  context: DiscoveryContext,
+  proposal: { label: string; description: string },
+) {
+  return transaction
+    .insert(reviewTopics)
+    .values({
+      organizationId: payload.organizationId,
+      appId: context.app.id,
+      label: proposal.label,
+      normalizedLabel: normalizeTopicLabel(proposal.label),
+      description: proposal.description,
+      aliases: [],
+      status: 'pending',
+      origin: 'ai',
+    })
+    .onConflictDoNothing({ target: [reviewTopics.appId, reviewTopics.normalizedLabel] })
+    .returning({ id: reviewTopics.id })
+}
+
+function normalizeTopicLabel(label: string): string {
+  return label.trim().toLocaleLowerCase('en-US').replaceAll(/\s+/gu, ' ')
+}
+
+function boundDiscoveryTopics(
+  topics: Array<{ label: string; description: string; aliases: string[] }>,
+) {
+  let characters = 0
+  return topics.filter((topic) => {
+    const size = topic.label.length + topic.description.length + topic.aliases.join('').length
+    if (characters + size > topicDiscoveryCatalogueCharacterLimit) {
+      return false
+    }
+    characters += size
+    return true
+  })
+}
+
+async function enqueueAnalysisJobs(
+  runtime: WorkerRuntime,
+  organizationId: string,
+  reviewIds: readonly string[],
+): Promise<void> {
+  if (runtime.analysis === null) {
+    return
+  }
+  await Promise.all(
+    reviewIds.map((reviewId) => enqueueAnalysisJob(runtime, organizationId, reviewId)),
+  )
+}
+
+async function enqueueAnalysisJob(
+  runtime: WorkerRuntime,
+  organizationId: string,
+  reviewId: string,
+): Promise<void> {
+  try {
+    await runtime.queue.enqueueClassifyReview({ organizationId, reviewId })
+  } catch (error) {
+    logError('ReviewInbox worker analysis job enqueue failed after Store Connection sync', {
+      reviewId,
+      error: error instanceof Error ? error.message : 'Unknown worker error',
+    })
+  }
+}
+
+async function enqueuePendingAnalysisJobs(runtime: WorkerRuntime): Promise<void> {
+  if (runtime.analysis === null) {
+    return
+  }
+  const staleBefore = new Date(Date.now() - 15 * 60 * 1000)
+  const retryAfter = new Date(Date.now() - 5 * 60 * 1000)
+  const catalogMismatch = and(
+    eq(reviews.analysisStatus, 'completed'),
+    or(
+      isNull(reviewAnalyses.reviewId),
+      ne(reviewAnalyses.catalogVersion, apps.analysisCatalogVersion),
+      ne(reviewAnalyses.criteriaVersion, reviewAnalysisCriteriaVersion),
+    ),
+  )
+  const pendingReviews = await runtime.database
+    .select({ organizationId: reviews.organizationId, reviewId: reviews.id })
+    .from(reviews)
+    .innerJoin(
+      apps,
+      and(eq(apps.id, reviews.appId), eq(apps.organizationId, reviews.organizationId)),
+    )
+    .leftJoin(reviewAnalyses, eq(reviewAnalyses.reviewId, reviews.id))
+    .where(
+      or(
+        eq(reviews.analysisStatus, 'pending'),
+        and(eq(reviews.analysisStatus, 'failed'), lt(reviews.updatedAt, retryAfter)),
+        and(eq(reviews.analysisStatus, 'processing'), lt(reviews.analysisStartedAt, staleBefore)),
+        catalogMismatch,
+      ),
+    )
+    .orderBy(
+      asc(sql<number>`case when ${reviews.analysisStatus} = 'failed' then 1 else 0 end`),
+      asc(reviews.reviewedAt),
+    )
+    .limit(500)
+  await Promise.all(
+    pendingReviews.map((review) =>
+      enqueueAnalysisJob(runtime, review.organizationId, review.reviewId),
+    ),
+  )
+}
+
+function startAnalysisScanner(runtime: WorkerRuntime): ReturnType<typeof setTimeout> | null {
+  if (runtime.analysis === null) {
+    return null
+  }
+  return setTimeout(() => {
+    void enqueuePendingAnalysisJobs(runtime)
+      .catch(() => {
+        logError('ReviewInbox worker analysis scanner failed', { name: 'UnknownError' })
+      })
+      .finally(() => {
+        runtime.analysisScanTimer = startAnalysisScanner(runtime)
+      })
+  }, 60_000)
+}
+
+function startTopicDiscoveryScanner(runtime: WorkerRuntime): ReturnType<typeof setTimeout> | null {
+  if (runtime.topicDiscoveryProvider === null) {
+    return null
+  }
+  return setTimeout(
+    () => {
+      void enqueueTopicDiscoveryJobs(runtime)
+        .catch(() => {
+          logError('ReviewInbox worker topic discovery scanner failed', { name: 'UnknownError' })
+        })
+        .finally(() => {
+          runtime.topicDiscoveryScanTimer = startTopicDiscoveryScanner(runtime)
+        })
+    },
+    60 * 60 * 1000,
+  )
+}
+
+async function enqueueTopicDiscoveryJobs(runtime: WorkerRuntime): Promise<void> {
+  if (runtime.topicDiscoveryProvider === null) {
+    return
+  }
+  const dailyCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000)
+  const candidates = await runtime.database
+    .select({
+      organizationId: apps.organizationId,
+      appId: apps.id,
+      requestedAt: apps.topicDiscoveryRequestedAt,
+    })
+    .from(apps)
+    .where(
+      or(
+        isNotNull(apps.topicDiscoveryRequestedAt),
+        isNull(apps.lastTopicDiscoveryAt),
+        lt(apps.lastTopicDiscoveryAt, dailyCutoff),
+      ),
+    )
+  await Promise.all(
+    candidates.map((candidate) =>
+      runtime.queue.enqueueDiscoverReviewTopics({
+        organizationId: candidate.organizationId,
+        appId: candidate.appId,
+        trigger: candidate.requestedAt === null ? 'daily' : 'manual',
+      }),
+    ),
+  )
 }
 
 function runStoreConnectionSync(
@@ -375,6 +813,12 @@ async function waitForShutdown(runtime: WorkerRuntime): Promise<void> {
   logInfo(`ReviewInbox worker received ${signal}, shutting down`)
   if (runtime.autoSyncTimer) {
     clearTimeout(runtime.autoSyncTimer)
+  }
+  if (runtime.analysisScanTimer) {
+    clearTimeout(runtime.analysisScanTimer)
+  }
+  if (runtime.topicDiscoveryScanTimer) {
+    clearTimeout(runtime.topicDiscoveryScanTimer)
   }
   try {
     await runtime.queue.stop()

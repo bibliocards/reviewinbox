@@ -172,6 +172,22 @@
           </td>
           <td>
             <div class="flex justify-end gap-2">
+              <a
+                class="inline-flex min-h-8 items-center rounded-lg border border-hairline bg-surface-2 px-2.5 py-1.5 text-xs font-semibold text-ink no-underline transition hover:bg-surface-3"
+                [routerLink]="['/analysis']"
+                [queryParams]="{ appId: app.id }"
+              >
+                <i class="pi pi-chart-bar mr-1.5" aria-hidden="true"></i>{{
+                t('apps.actions.analysis') }}
+              </a>
+              <a
+                class="inline-flex min-h-8 items-center rounded-lg border border-hairline bg-surface-2 px-2.5 py-1.5 text-xs font-semibold text-ink no-underline transition hover:bg-surface-3"
+                [routerLink]="['/analysis/catalogue']"
+                [queryParams]="{ appId: app.id }"
+              >
+                <i class="pi pi-tags mr-1.5" aria-hidden="true"></i>{{ t('apps.actions.catalogue')
+                }}
+              </a>
               @if (canEditReplySettings()) {
               <p-button
                 size="small"

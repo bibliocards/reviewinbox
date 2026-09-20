@@ -10,6 +10,7 @@ import { bodyLimit } from 'hono/body-limit'
 import { auth } from './auth'
 import { requireInvitationForSelfHostedSignUp } from './auth/sign-up-policy'
 import { serverConfig } from './db'
+import { analysisRoutes } from './routes/analysis'
 import { appsRoutes } from './routes/apps'
 import { clientConfigRoutes } from './routes/client-config'
 import { invitationsRoutes } from './routes/invitations'
@@ -110,4 +111,5 @@ function registerRoutes(app: ApiApp): void {
   app.route('/', replyInboxRoutes)
   app.route('/', replySettingsRoutes)
   app.route('/', storeConnectionsRoutes)
+  app.route('/', analysisRoutes)
 }

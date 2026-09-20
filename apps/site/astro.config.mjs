@@ -28,6 +28,7 @@ export default defineConfig({
             { label: 'Connect App Store', slug: 'docs/connect-app-store' },
             { label: 'Connect Google Play', slug: 'docs/connect-google-play' },
             { label: 'Manage both stores', slug: 'docs/manage-both-stores' },
+            { label: 'Review analysis', slug: 'docs/review-analysis' },
             { label: 'Usage and limits', slug: 'docs/usage-limits' },
             { label: 'Self-hosting', slug: 'docs/self-hosting' },
           ],

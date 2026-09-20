@@ -60,6 +60,12 @@ export const reviews = pgTable(
     replyStatus: replyStatusEnum('reply_status').default('pending').notNull(),
     changedAfterReply: boolean('changed_after_reply').default(false).notNull(),
     replyBaseline: jsonb('reply_baseline').$type<ReplyBaseline | null>(),
+    analysisStatus: text('analysis_status')
+      .$type<'pending' | 'processing' | 'completed' | 'failed' | 'skipped'>()
+      .default('pending')
+      .notNull(),
+    analysisStartedAt: timestamp('analysis_started_at'),
+    analysisFailureCode: text('analysis_failure_code'),
     detectedReviewLanguage: text('detected_review_language'),
     chosenReplyLanguage: text('chosen_reply_language'),
     draftFailureCode: draftFailureCodeEnum('draft_failure_code'),
@@ -81,5 +87,6 @@ export const reviews = pgTable(
     index('reviews_store_connection_id_idx').on(table.storeConnectionId),
     index('reviews_reviewed_at_idx').on(table.reviewedAt),
     index('reviews_reply_status_idx').on(table.replyStatus),
+    index('reviews_analysis_status_idx').on(table.analysisStatus),
   ],
 )

@@ -1,0 +1,116 @@
+<div class="grid gap-3" *transloco="let t">
+  <section class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <article
+      class="grid min-h-36 gap-1 rounded-xl border border-primary-500/30 bg-primary-500/5 p-4"
+    >
+      <span class="text-sm text-ink-subtle">{{ t('analysis.metrics.reviews') }}</span
+      ><strong class="text-3xl font-semibold tracking-[-1.5px]">{{ analysis().total }}</strong
+      ><small class="text-xs text-ink-subtle">{{ t('analysis.metrics.inPeriod') }}</small>
+    </article>
+    <article class="grid min-h-36 gap-1 rounded-xl border border-hairline bg-surface-1 p-4">
+      <span class="text-sm text-ink-subtle">{{ t('analysis.metrics.coverage') }}</span
+      ><strong class="text-3xl font-semibold tracking-[-1.5px]">{{ coverage() }}%</strong>
+      <div class="h-1.5 overflow-hidden rounded-full bg-surface-3">
+        <span class="block h-full rounded-full bg-primary" [style.width.%]="coverage()"></span>
+      </div>
+      <small class="text-xs text-ink-subtle"
+        >{{ analysis().analyzed }} / {{ analysis().total }}
+        {{ t('analysis.metrics.analyzed') }}</small
+      >
+    </article>
+    <article class="grid min-h-36 gap-1 rounded-xl border border-hairline bg-surface-1 p-4">
+      <span class="text-sm text-ink-subtle">{{ t('analysis.metrics.topics') }}</span
+      ><strong class="text-3xl font-semibold tracking-[-1.5px]">{{
+        analysis().topics.length
+      }}</strong
+      ><small class="text-xs text-ink-subtle">{{ t('analysis.metrics.inCatalogue') }}</small>
+    </article>
+    <article class="grid min-h-36 gap-1 rounded-xl border border-hairline bg-surface-1 p-4">
+      <span class="text-sm text-ink-subtle">{{ t('analysis.metrics.flagged') }}</span
+      ><strong class="text-3xl font-semibold tracking-[-1.5px]">{{ flaggedCount() }}</strong
+      ><small class="text-xs text-ink-subtle">{{ t('analysis.metrics.blockingCritical') }}</small>
+    </article>
+  </section>
+  <section class="grid gap-3 lg:grid-cols-2">
+    <article class="rounded-xl border border-hairline bg-surface-1 p-5">
+      <div class="flex items-start justify-between">
+        <div>
+          <h2 class="m-0 text-lg font-semibold">{{ t('analysis.severity.title') }}</h2>
+          <p class="m-1 text-sm text-ink-subtle">{{ t('analysis.severity.description') }}</p>
+        </div>
+        <i class="pi pi-bolt text-primary" aria-hidden="true"></i>
+      </div>
+      <div class="mt-5 grid gap-1">
+        @for (item of analysis().severities; track item.severity) {
+          <button
+            type="button"
+            class="grid grid-cols-[8px_minmax(0,1.2fr)_minmax(0,2fr)_auto] items-center gap-2 rounded-lg border-0 bg-transparent p-2 text-left text-ink hover:bg-surface-2"
+            [class.bg-surface-2]="selectedSeverity() === item.severity"
+            (click)="severitySelected.emit(item.severity)"
+          >
+            <span class="size-2 rounded-full" [class]="severityClass(item.severity)"></span
+            ><span class="text-sm">{{ t('analysis.severity.' + item.severity) }}</span
+            ><span class="h-1.5 overflow-hidden rounded-full bg-surface-3"
+              ><span
+                class="block h-full min-w-1 rounded-full"
+                [class]="severityClass(item.severity)"
+                [style.width.%]="analysis().total ? (item.count / analysis().total) * 100 : 0"
+              ></span></span
+            ><strong class="text-right text-sm">{{ item.count }}</strong>
+          </button>
+        }
+      </div>
+    </article>
+    <article class="rounded-xl border border-hairline bg-surface-1 p-5">
+      <div class="flex items-start justify-between">
+        <div>
+          <h2 class="m-0 text-lg font-semibold">{{ t('analysis.trend.title') }}</h2>
+          <p class="m-1 text-sm text-ink-subtle">{{ t('analysis.trend.description') }}</p>
+        </div>
+        <i class="pi pi-chart-line text-primary" aria-hidden="true"></i>
+      </div>
+      <div class="mt-5 flex h-48 items-end gap-1 border-b border-hairline px-1">
+        @for (item of analysis().trend; track item.date) {
+          <button
+            type="button"
+            class="grid min-w-0 flex-1 items-end gap-1 border-0 bg-transparent px-0.5 text-ink-subtle hover:text-primary"
+            (click)="trendSelected.emit(item.date)"
+            [attr.aria-label]="item.date + ': ' + item.count"
+          >
+            <span class="text-[10px]">{{ item.count }}</span
+            ><span
+              class="block min-h-2 w-full rounded-t bg-primary"
+              [style.height]="barWidth(item.count)"
+            ></span
+            ><span class="truncate text-[10px]">{{ item.date.slice(5) }}</span>
+          </button>
+        }
+      </div>
+    </article>
+  </section>
+  <section class="grid gap-4 rounded-xl border border-hairline bg-surface-1 p-5">
+    <div class="flex items-start justify-between">
+      <div>
+        <h2 class="m-0 text-lg font-semibold">{{ t('analysis.topics.title') }}</h2>
+        <p class="m-1 text-sm text-ink-subtle">{{ t('analysis.topics.description') }}</p>
+      </div>
+    </div>
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-2">
+      @for (topic of analysis().topics; track topic.id) {
+        <button
+          type="button"
+          class="grid grid-cols-[8px_minmax(0,1fr)_auto] items-center gap-2 rounded-lg border border-hairline bg-surface-1 p-2.5 text-left text-ink hover:border-primary"
+          [class.border-dashed]="isPending(topic)"
+          [class.bg-primary-500/5]="selectedTopicId() === topic.id"
+          (click)="topicSelected.emit(topic.id)"
+        >
+          <span class="size-2 rounded-full bg-primary"></span><span>{{ topic.label }}</span
+          ><strong class="text-xs">{{ topic.reviewCount }}</strong
+          ><em class="col-span-2 text-[10px] not-italic text-ink-subtle">{{
+            t('analysis.topicStatus.' + topic.status)
+          }}</em>
+        </button>
+      }
+    </div>
+  </section>
+</div>

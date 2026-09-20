@@ -1,5 +1,5 @@
 <div class="app-shell" *transloco="let t">
-  <aside class="sidebar" [attr.aria-label]="t('shell.navigation.primary')">
+  <aside class="sidebar min-w-0" [attr.aria-label]="t('shell.navigation.primary')">
     @let organizationOptions = organizationList();
     @if (organizationOptions.length > 1) {
       <div>

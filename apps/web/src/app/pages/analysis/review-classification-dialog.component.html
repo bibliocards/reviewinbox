@@ -1,0 +1,91 @@
+<div class="grid gap-5" *transloco="let t">
+  <div class="rounded-xl bg-surface-2 px-4 py-3">
+    <p class="m-0 text-sm font-medium text-ink">
+      {{ review.title || t('analysis.review.untitled') }}
+    </p>
+    <p class="m-0 mt-1 line-clamp-3 text-sm text-ink-muted">{{ review.body }}</p>
+  </div>
+
+  @if (review.needsRecheck) {
+    <p class="m-0 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+      {{ t('analysis.editor.needsRecheck') }}
+    </p>
+  }
+
+  <label class="grid gap-2 text-sm font-medium text-ink">
+    {{ t('analysis.editor.severity') }}
+    <p-select
+      [options]="severities"
+      [(ngModel)]="severity"
+      [fluid]="true"
+      [ariaLabel]="t('analysis.editor.severity')"
+    >
+      <ng-template #item let-item>
+        {{ t('analysis.severity.' + item) }}
+      </ng-template>
+      <ng-template #selectedItem let-item>
+        {{ t('analysis.severity.' + item) }}
+      </ng-template>
+    </p-select>
+  </label>
+
+  <label class="grid gap-2 text-sm font-medium text-ink">
+    {{ t('analysis.editor.intents') }}
+    <p-multiselect
+      [options]="intents"
+      [(ngModel)]="selectedIntents"
+      [fluid]="true"
+      [showClear]="true"
+      [ariaLabel]="t('analysis.editor.intents')"
+    >
+      <ng-template #item let-item>
+        {{ t('analysis.intents.' + item) }}
+      </ng-template>
+      <ng-template #selecteditems let-items>
+        @if (items.length) {
+          @for (item of items; track item) {
+            <span>{{ t('analysis.intents.' + item) }}</span>
+            @if (!$last) {
+              <span>, </span>
+            }
+          }
+        } @else {
+          {{ t('analysis.editor.none') }}
+        }
+      </ng-template>
+    </p-multiselect>
+  </label>
+
+  <label class="grid gap-2 text-sm font-medium text-ink">
+    {{ t('analysis.editor.topics') }}
+    <p-multiselect
+      [options]="topics"
+      optionLabel="label"
+      optionValue="id"
+      [(ngModel)]="selectedTopicIds"
+      [fluid]="true"
+      [showClear]="true"
+      [ariaLabel]="t('analysis.editor.topics')"
+    />
+  </label>
+
+  <div class="flex justify-end gap-2 border-t border-hairline pt-4">
+    @if (review.hasOverride) {
+      <p-button
+        class="mr-auto"
+        severity="secondary"
+        [outlined]="true"
+        [label]="t('analysis.editor.reset')"
+        icon="pi pi-refresh"
+        (onClick)="reset()"
+      />
+    }
+    <p-button
+      severity="secondary"
+      [outlined]="true"
+      [label]="t('common.cancel')"
+      (onClick)="cancel()"
+    />
+    <p-button [label]="t('analysis.editor.save')" icon="pi pi-check" (onClick)="save()" />
+  </div>
+</div>
