@@ -169,11 +169,25 @@ async function generateAndStoreDraft(
     generated = await input.generateDraft(toGenerateDraftInput(draftableReview))
   } catch (error) {
     const errorCode = error instanceof AiDraftingError ? error.code : 'unknown'
-    await transaction.recordDraftFailure(input.organizationId, input.reviewId, errorCode)
+    await recordDraftFailureIfCurrent(transaction, draftableReview, input, errorCode)
     return { status: 'failed', errorCode }
   }
 
   return storeGeneratedDraft(transaction, draftableReview, generated, input)
+}
+
+async function recordDraftFailureIfCurrent(
+  transaction: ReplyDraftGenerationTransaction,
+  draftableReview: DraftableReview,
+  input: GenerateReplyDraftForReviewInput,
+  errorCode: string,
+): Promise<void> {
+  const latest = await transaction.selectLatestDraftableReview(draftableReview)
+  if (!latest || !hasSameReviewContent(draftableReview, latest) || getSkipReason(latest)) {
+    return
+  }
+
+  await transaction.recordDraftFailure(input.organizationId, input.reviewId, errorCode)
 }
 
 function toGenerateDraftInput(row: DraftableReview): GenerateReplyDraftInput {

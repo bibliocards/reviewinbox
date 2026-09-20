@@ -26,7 +26,7 @@ Saving or publishing a Reply Draft, ignoring a Review, and undoing ignore requir
 
 ### Reviews edited after publication
 
-A Sync Run compares title, body, and rating against the currently stored Review. A relevant change to a Review with a Published Reply sets `changedAfterReply` and returns it to `pending`, including when a draft already exists. Identical content and unrelated metadata do not reopen it. A Sync Run never publishes a reply.
+A Sync Run compares title, body, and rating against the currently stored Review. A relevant change to a Review with a Published Reply sets `changedAfterReply` and returns it to `pending`, including when a draft already exists. Identical content and unrelated metadata do not reopen it. A Sync Run never publishes a reply. AI generation results and failures are recorded only after rechecking the current Review content and draftable state under a row lock; a late result cannot override a newer edit or user action.
 
 `replyBaseline` retains the Review content associated with the latest successful publication. Further edits and ignoring a change preserve this comparison. Ignoring acknowledges the currently retrieved content, so only another relevant edit reopens the Review. Successful publication replaces the baseline with the current Review and clears the unresolved change.
 

@@ -125,6 +125,46 @@ describe('generateReplyDraftForReview', () => {
   })
 })
 
+describe('late Reply Draft failures', () => {
+  it.each([
+    ['ignored', { replyStatus: 'ignored' }, {}],
+    ['published', { replyStatus: 'published' }, {}],
+    ['manually drafted', { replyStatus: 'drafted' }, { replyDraft: { id: 'manual-draft' } }],
+    ['edited', { body: 'Edited after the AI request' }, {}],
+  ] as const)(
+    'does not mark a Review as failed after it becomes %s',
+    async (_state, reviewChange, rowChange) => {
+      const transaction = createTransaction()
+      const reopenedReview = {
+        ...reviewRow,
+        review: { ...reviewRow.review, changedAfterReply: true },
+        replyDraft: { id: 'previous-draft' },
+      }
+      transaction.selectDraftableReview.mockResolvedValue(reopenedReview)
+      transaction.selectLatestDraftableReview.mockResolvedValue({
+        ...reopenedReview,
+        review: { ...reopenedReview.review, ...reviewChange },
+        ...rowChange,
+      })
+      const generateDraft = createDraftGenerator().mockRejectedValue(
+        new AiDraftingError('provider_unavailable', 'Provider unavailable.'),
+      )
+
+      const result = await generateReplyDraftForReview({
+        transaction,
+        organizationId: 'org-1',
+        reviewId: 'review-1',
+        deploymentMode: 'self-hosted',
+        aiProvider: 'openai-compatible',
+        generateDraft,
+      })
+
+      expect(result).toEqual({ status: 'failed', errorCode: 'provider_unavailable' })
+      expect(transaction.recordDraftFailure).not.toHaveBeenCalled()
+    },
+  )
+})
+
 describe('generateReplyDraftForReview', () => {
   it('propagates persistence failures so the transaction can roll back', async () => {
     const transaction = createTransaction()
