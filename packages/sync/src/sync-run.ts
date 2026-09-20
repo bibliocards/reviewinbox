@@ -16,6 +16,8 @@ export type SyncReviewsForStoreConnectionInput = {
   organizationId: string
   storeConnectionId: string
   deploymentMode: 'self-hosted' | 'cloud'
+  /** The fixed UTC window for an automatic worker run. */
+  windowStartsAt?: Date
   maxPages?: number
 }
 
@@ -38,6 +40,7 @@ export async function syncReviewsForStoreConnection(input: SyncReviewsForStoreCo
       organizationId: scoped.connection.organizationId,
       appId: scoped.connection.appId,
       storeConnectionId: scoped.connection.id,
+      windowStartsAt: input.windowStartsAt ?? null,
       status: 'running',
       startedAt: new Date(),
     })

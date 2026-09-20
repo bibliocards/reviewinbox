@@ -1,0 +1,1 @@
+ALTER TABLE "sync_runs" ADD COLUMN "window_starts_at" timestamp;

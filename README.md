@@ -43,8 +43,8 @@ The recommended self-hosted setup uses pinned Docker images and Docker Compose:
 Quick start on a VPS:
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/reviewinbox/reviewinbox/main/docker-compose.self-hosted.yml
-curl -fsSLo .env.self-hosted https://raw.githubusercontent.com/reviewinbox/reviewinbox/main/.env.self-hosted.example
+curl -fsSLO https://raw.githubusercontent.com/bibliocards/reviewinbox/main/docker-compose.self-hosted.yml
+curl -fsSLo .env.self-hosted https://raw.githubusercontent.com/bibliocards/reviewinbox/main/.env.self-hosted.example
 openssl rand -base64 32 # BETTER_AUTH_SECRET
 openssl rand -base64 32 # APP_ENCRYPTION_KEY
 nano .env.self-hosted
@@ -70,6 +70,12 @@ docker compose --env-file .env.self-hosted -f docker-compose.self-hosted.yml up 
 ```
 
 See `docs/self-hosting.md` for VPS setup, upgrades, backups, and Traefik, Caddy, and Nginx reverse proxy examples.
+
+Store setup guides:
+
+- [Connect App Store reviews](https://reviewinbox.app/docs/connect-app-store/)
+- [Connect Google Play reviews](https://reviewinbox.app/docs/connect-google-play/)
+- [Manage App Store and Google Play reviews together](https://reviewinbox.app/docs/manage-both-stores/)
 
 ## Development
 
@@ -104,10 +110,10 @@ See `CONTEXT.md` for the project glossary and `docs/adr/` for architectural deci
 
 ## Store Review Sync Limits
 
-Store APIs do not expose the same historical review window.
+Store APIs do not expose the same historical review window. ReviewInbox's connection guides cover the credentials and permissions required by each provider.
 
-- Apple App Store: ReviewInbox uses the App Store Connect customer reviews API. The current implementation paginates through the API response and stores the app version when Apple provides `appVersionString`.
-- Google Play: ReviewInbox uses the Google Play Developer Reply to Reviews API. Google only exposes reviews that include comments and were created or modified within the last 7 days. Historical Google Play reviews must be imported from the Google Play Console CSV export if needed. ReviewInbox stores the app version when Google provides `appVersionName`.
+- Apple App Store: ReviewInbox uses the App Store Connect customer reviews API. The current implementation follows the API pagination links and stores the app version when Apple provides `appVersionString`. Apple allows a Published Reply to appear on the App Store after a delay of up to 24 hours.
+- Google Play: ReviewInbox uses the Google Play Developer Reply to Reviews API. Google exposes only production Reviews with written text and were created or modified within the last 7 days. Replies are limited to 350 characters; the API documents 200 GET requests per hour and 2,000 POST requests per day per app. Historical Google Play reviews must be imported from the Google Play Console CSV export if needed. ReviewInbox stores the app version when Google provides `appVersionName`.
 
 ## License
 

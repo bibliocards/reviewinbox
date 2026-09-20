@@ -43,6 +43,13 @@
       "when": 1782065678509,
       "tag": "0005_robust_scarlet_spider",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789903411107,
+      "tag": "0006_clever_human_cannonball",
+      "breakpoints": true
     }
   ]
 }

@@ -30,11 +30,13 @@ describe('enqueueInitialStoreConnectionSync', () => {
       organizationId: 'organization-id',
       storeConnectionId: 'connection-a',
       windowStartsAt: '2026-09-20T10:00:00.000Z',
+      trigger: 'initial',
     })
     expect(enqueueSyncStoreConnection).toHaveBeenNthCalledWith(2, {
       organizationId: 'organization-id',
       storeConnectionId: 'connection-b',
       windowStartsAt: '2026-09-20T10:01:00.000Z',
+      trigger: 'initial',
     })
   })
 
@@ -108,11 +110,13 @@ describe('enqueueInitialStoreConnectionSync', () => {
       organizationId: 'organization-id',
       storeConnectionId: 'connection-a',
       windowStartsAt: '2026-09-20T10:00:00.000Z',
+      trigger: 'initial',
     })
     expect(enqueueSyncStoreConnection).toHaveBeenNthCalledWith(2, {
       organizationId: 'organization-id',
       storeConnectionId: 'connection-a',
       windowStartsAt: '2026-09-20T10:05:00.000Z',
+      trigger: 'initial',
     })
   })
 
@@ -149,6 +153,7 @@ describe('enqueueInitialStoreConnectionSync', () => {
       organizationId: 'organization-id',
       storeConnectionId: 'connection-a',
       windowStartsAt: revisionAt,
+      trigger: 'initial',
     })
   })
 

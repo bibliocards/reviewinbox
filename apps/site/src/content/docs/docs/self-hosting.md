@@ -27,8 +27,8 @@ cd /opt/reviewinbox
 Download the Compose and environment files:
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/reviewinbox/reviewinbox/main/docker-compose.self-hosted.yml
-curl -fsSLo .env.self-hosted https://raw.githubusercontent.com/reviewinbox/reviewinbox/main/.env.self-hosted.example
+curl -fsSLO https://raw.githubusercontent.com/bibliocards/reviewinbox/main/docker-compose.self-hosted.yml
+curl -fsSLo .env.self-hosted https://raw.githubusercontent.com/bibliocards/reviewinbox/main/.env.self-hosted.example
 ```
 
 Generate secrets:

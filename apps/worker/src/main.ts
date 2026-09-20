@@ -13,9 +13,10 @@ import {
 import { createQueueClient } from '@reviewinbox/queue'
 import { generateReplyDraftForReview } from '@reviewinbox/reply-drafts'
 import { syncReviewsForStoreConnection } from '@reviewinbox/sync'
-import { and, asc, desc, eq } from 'drizzle-orm'
+import { and, asc, desc, eq, isNull, isNotNull } from 'drizzle-orm'
 
 import { createWorkerReplyDraftProvider } from './ai-provider'
+import { getAutoSyncJobStartsAt, isAutoSyncDueAt } from './auto-sync-scheduler'
 
 const shutdownSignals = ['SIGINT', 'SIGTERM'] as const
 
@@ -48,11 +49,14 @@ async function main() {
       windowStartsAt: job.payload.windowStartsAt,
     })
 
+    const payloadWindowStartsAt = new Date(job.payload.windowStartsAt)
+    const isAutomaticRun = job.payload.trigger === 'automatic'
     const syncRun = await syncReviewsForStoreConnection({
       database,
       organizationId: job.payload.organizationId,
       storeConnectionId: job.payload.storeConnectionId,
       deploymentMode: config.deploymentMode,
+      ...(isAutomaticRun ? { windowStartsAt: payloadWindowStartsAt } : {}),
     })
 
     if ((syncRun.status === 'succeeded' || syncRun.status === 'partial') && replyDraftProvider) {
@@ -166,21 +170,31 @@ async function main() {
       .where(eq(storeConnections.status, 'active'))
       .orderBy(asc(storeConnections.id))
 
-    const spreadMs = config.autoSyncReviewsSpreadWindowMinutes * 60 * 1000
     for (const [index, connection] of connections.entries()) {
-      const shouldSync = await shouldAutoSyncStoreConnection(connection.organizationId, connection.storeConnectionId, windowStartsAt)
+      const scheduledStartsAt = getAutoSyncJobStartsAt({
+        windowStartsAt,
+        connectionIndex: index,
+        connectionCount: connections.length,
+        spreadWindowMinutes: config.autoSyncReviewsSpreadWindowMinutes,
+      })
+      const shouldSync = await shouldAutoSyncStoreConnection(
+        connection.organizationId,
+        connection.storeConnectionId,
+        windowStartsAt,
+        scheduledStartsAt,
+      )
       if (!shouldSync) {
         continue
       }
 
-      const delayMs = connections.length <= 1 ? 0 : Math.floor((spreadMs * index) / connections.length)
       await queue.enqueueSyncStoreConnection(
         {
           organizationId: connection.organizationId,
           storeConnectionId: connection.storeConnectionId,
           windowStartsAt: windowStartsAt.toISOString(),
+          trigger: 'automatic',
         },
-        { startAfter: new Date(windowStartsAt.getTime() + delayMs) },
+        { startAfter: scheduledStartsAt },
       )
     }
 
@@ -191,7 +205,12 @@ async function main() {
     })
   }
 
-  async function shouldAutoSyncStoreConnection(organizationId: string, storeConnectionId: string, windowStartsAt: Date): Promise<boolean> {
+  async function shouldAutoSyncStoreConnection(
+    organizationId: string,
+    storeConnectionId: string,
+    windowStartsAt: Date,
+    scheduledStartsAt: Date,
+  ): Promise<boolean> {
     if (config.deploymentMode !== 'cloud') {
       return true
     }
@@ -205,14 +224,35 @@ async function main() {
     }
 
     const intervalMs = getPlanDefinition(billingOrganization.planName).autoSyncIntervalHours * 60 * 60 * 1000
-    const lastRun = await database.query.syncRuns.findFirst({
-      columns: { startedAt: true, createdAt: true },
-      where: and(eq(syncRuns.storeConnectionId, storeConnectionId), eq(syncRuns.organizationId, organizationId)),
-      orderBy: [desc(syncRuns.startedAt), desc(syncRuns.createdAt)],
-    })
-    const lastRunAt = lastRun?.startedAt ?? lastRun?.createdAt
+    const [lastAutomaticRun, lastNonAutomaticRun] = await Promise.all([
+      database.query.syncRuns.findFirst({
+        columns: { windowStartsAt: true },
+        where: and(
+          eq(syncRuns.storeConnectionId, storeConnectionId),
+          eq(syncRuns.organizationId, organizationId),
+          isNotNull(syncRuns.windowStartsAt),
+        ),
+        orderBy: [desc(syncRuns.windowStartsAt), desc(syncRuns.createdAt)],
+      }),
+      database.query.syncRuns.findFirst({
+        columns: { startedAt: true, createdAt: true },
+        where: and(
+          eq(syncRuns.storeConnectionId, storeConnectionId),
+          eq(syncRuns.organizationId, organizationId),
+          isNull(syncRuns.windowStartsAt),
+        ),
+        orderBy: [desc(syncRuns.startedAt), desc(syncRuns.createdAt)],
+      }),
+    ])
+    const lastNonAutomaticRunAt = lastNonAutomaticRun?.startedAt ?? lastNonAutomaticRun?.createdAt ?? null
 
-    return !lastRunAt || windowStartsAt.getTime() - lastRunAt.getTime() >= intervalMs
+    return isAutoSyncDueAt({
+      windowStartsAt,
+      scheduledStartsAt,
+      intervalMs,
+      lastAutomaticWindowStartsAt: lastAutomaticRun?.windowStartsAt ?? null,
+      lastNonAutomaticRunAt,
+    })
   }
 }
 
