@@ -895,12 +895,15 @@ async function updateIgnoredStatusInTransaction(
   if (row.review.replyStatus === 'published') {
     return { ok: false as const, status: 409 as const, error: 'Published Reply cannot be ignored.' }
   }
+  if (!input.ignored && row.review.replyStatus !== 'ignored') {
+    return { ok: false as const, status: 409 as const, error: 'Review is not ignored.' }
+  }
 
   await transaction
     .update(reviews)
     .set({
       replyStatus: ignoredReviewStatus(row, input.ignored),
-      changedAfterReply: ignoredChangedAfterReply(row, input.ignored),
+      changedAfterReply: false,
       updatedAt: new Date(),
     })
     .where(and(eq(reviews.id, row.review.id), eq(reviews.organizationId, input.organizationId)))
@@ -914,25 +917,15 @@ async function updateIgnoredStatusInTransaction(
   return { ok: true as const, reviewId: row.review.id }
 }
 
-function ignoredChangedAfterReply(row: ReviewActionRow, ignored: boolean): boolean {
-  if (ignored) {
-    return false
-  }
-  if (row.publishedReply !== null) {
-    return true
-  }
-  return row.review.changedAfterReply
-}
-
 function ignoredReviewStatus(
   row: ReviewActionRow,
   ignored: boolean,
-): 'ignored' | 'drafted' | 'pending' {
+): 'ignored' | 'drafted' | 'pending' | 'published' {
   if (ignored) {
     return 'ignored'
   }
   if (row.publishedReply !== null) {
-    return 'pending'
+    return 'published'
   }
   if (row.replyDraft !== null) {
     return 'drafted'

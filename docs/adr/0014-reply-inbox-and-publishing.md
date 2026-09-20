@@ -16,7 +16,7 @@ Any organization member may edit drafts, ignore reviews, unignore reviews, enque
 
 `failed` continues to mean draft generation failed. Publish failures do not move a review to `failed`; the review remains `drafted` and the failure is recorded in audit history.
 
-Ignoring is reversible. Unignoring returns a Review without a Published Reply to `drafted` when a Reply Draft exists, otherwise to `pending`. For a Review with a Published Reply, unignoring restores the unresolved change and returns it to `pending` so a retained, obsolete draft cannot be published directly.
+Ignoring is reversible. Unignoring returns a Review without a Published Reply to `drafted` when a Reply Draft exists, otherwise to `pending`. For a Review with a Published Reply, unignoring returns it to `published` while keeping the change acknowledged. Only a subsequent relevant edit makes it actionable again; a retained, obsolete draft cannot be published directly.
 
 Published Reply records store the latest successfully published reply text and the external store reply reference when the provider returns one. Editing a Reply Draft never changes this published snapshot. Raw store publish API responses are not stored by default.
 
