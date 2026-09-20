@@ -23,9 +23,10 @@ export async function verifyGooglePlayCredentialForApp(input: {
   timeoutMs?: number
 }): Promise<GooglePlayCredentialVerificationResult> {
   try {
+    const accessToken = await createGoogleAccessToken(input.credential, input.timeoutMs)
     await fetchGooglePlayReviewsPage({
       packageName: input.packageName,
-      credential: input.credential,
+      accessToken,
       maxResults: 1,
       ...(input.timeoutMs !== undefined ? { timeoutMs: input.timeoutMs } : {}),
     })
@@ -43,6 +44,7 @@ export async function verifyGooglePlayCredentialForApp(input: {
 export async function syncGooglePlayReviews(input: GooglePlayReviewSyncRequest): Promise<StoreReviewSyncResult> {
   const maxPages = input.maxPages ?? defaultMaxPages
   const pageLimit = input.pageLimit ?? defaultPageLimit
+  const accessToken = await createGoogleAccessToken(input.credential, input.timeoutMs)
   const reviews: NormalizedStoreReview[] = []
   let nextPageToken: string | null = null
   let newestReviewedAt = getCheckpointReviewedAt(input.checkpoint)
@@ -50,7 +52,7 @@ export async function syncGooglePlayReviews(input: GooglePlayReviewSyncRequest):
   for (let page = 0; page < maxPages; page += 1) {
     const response = await fetchGooglePlayReviewsPage({
       packageName: input.packageName,
-      credential: input.credential,
+      accessToken,
       maxResults: pageLimit,
       ...(nextPageToken ? { token: nextPageToken } : {}),
       ...(input.timeoutMs !== undefined ? { timeoutMs: input.timeoutMs } : {}),
@@ -118,12 +120,11 @@ export async function publishGooglePlayReply(input: GooglePlayReplyPublishReques
 
 async function fetchGooglePlayReviewsPage(input: {
   packageName: string
-  credential: GooglePlayReviewSyncRequest['credential']
+  accessToken: string
   maxResults: number
   token?: string
   timeoutMs?: number
 }): Promise<GooglePlayReviewsResponse> {
-  const accessToken = await createGoogleAccessToken(input.credential, input.timeoutMs)
   const url = new URL(`${googleReviewsBaseUrl}/${encodeURIComponent(input.packageName)}/reviews`)
   url.searchParams.set('maxResults', String(input.maxResults))
   if (input.token) {
@@ -135,7 +136,7 @@ async function fetchGooglePlayReviewsPage(input: {
 
   try {
     const response = await fetch(url, {
-      headers: { authorization: `Bearer ${accessToken}`, accept: 'application/json' },
+      headers: { authorization: `Bearer ${input.accessToken}`, accept: 'application/json' },
       redirect: 'error',
       signal: controller.signal,
     })
