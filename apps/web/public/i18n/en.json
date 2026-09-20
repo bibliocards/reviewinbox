@@ -399,5 +399,49 @@
   "common": {
     "useLightTheme": "Use light theme",
     "useDarkTheme": "Use dark theme"
+  },
+  "shell": {
+    "navigation": {
+      "primary": "Primary navigation",
+      "currentPage": "Current page",
+      "replyInbox": "Reply Inbox",
+      "apps": "Apps",
+      "auditHistory": "Audit History",
+      "organization": "Organization"
+    },
+    "organization": {
+      "selectAria": "Organization"
+    },
+    "menu": {
+      "accountSettings": "Account settings",
+      "newOrganization": "New organization",
+      "logout": "Log out",
+      "ownerAria": "Owner menu"
+    },
+    "actions": {
+      "connectApp": "Connect app"
+    },
+    "autoSync": {
+      "label": "Auto-sync",
+      "free": "Every 24h on Free",
+      "nextWindow": "Next window at {{time}}"
+    },
+    "links": {
+      "statusAria": "ReviewInbox status page",
+      "statusTitle": "ReviewInbox status",
+      "githubAria": "ReviewInbox GitHub repository",
+      "githubTitle": "GitHub repository",
+      "websiteAria": "ReviewInbox website",
+      "websiteTitle": "ReviewInbox website"
+    },
+    "states": {
+      "organizationError": "We could not open your Organization. Your session is still active.",
+      "returnToPreviousOrganization": "Return to the previous Organization",
+      "retry": "Try again",
+      "finishSetup": "Finish setting up ReviewInbox",
+      "createOrganizationDescription": "Create an Organization to connect your App and bring in its Reviews.",
+      "createOrganizationLink": "Create an Organization",
+      "openingOrganization": "Opening your Organization…"
+    }
   }
 }

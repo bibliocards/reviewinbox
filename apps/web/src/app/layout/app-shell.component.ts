@@ -1,7 +1,17 @@
-import { Component, computed, DestroyRef, effect, HostListener, inject, signal } from '@angular/core'
-import { toSignal } from '@angular/core/rxjs-interop'
+import { ChangeDetectorRef, Component, computed, DestroyRef, effect, HostListener, inject, signal } from '@angular/core'
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop'
 import { FormsModule } from '@angular/forms'
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router'
+import {
+  NavigationCancel,
+  NavigationEnd,
+  NavigationError,
+  NavigationSkipped,
+  NavigationStart,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+  RouterOutlet,
+} from '@angular/router'
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
 import type { ConnectAppResponse } from '@reviewinbox/contracts'
 import { addHours } from 'date-fns'
@@ -18,7 +28,7 @@ import { AuthCapabilitiesService } from '../shared/services/auth-capabilities.se
 import { OrganizationProfileService } from '../shared/services/organization-profile.service'
 
 type ShellNavItem = {
-  label: string
+  labelKey: string
   route: string
   icon: string
   exact?: boolean
@@ -50,20 +60,29 @@ export class AppShellComponent {
   private readonly transloco = inject(TranslocoService)
   private readonly authCapabilities = inject(AuthCapabilitiesService)
   private readonly organizationProfile = inject(OrganizationProfileService)
+  private readonly changeDetector = inject(ChangeDetectorRef)
   private readonly capabilities = this.authCapabilities.capabilities
   private readonly destroyRef = inject(DestroyRef)
 
   private readonly session = this.authService.session
   private readonly selectedOrganizationId = signal<string | undefined>(undefined)
+  private readonly organizationActivationTarget = signal<string | undefined>(undefined)
   private readonly sessionActiveOrganizationId = computed(
     () => (this.session()?.session as { activeOrganizationId?: string } | undefined)?.activeOrganizationId,
   )
   private readonly didInitializeActiveOrganization = signal(false)
-  private readonly loadedActiveMemberOrganizationId = signal<string | undefined>(undefined)
   private readonly activeMemberRole = signal<string | string[] | undefined>(undefined)
   private readonly now = signal(new Date())
   private readonly clientConfig = toSignal(this.authCapabilities.clientConfig(), { initialValue: null })
-  protected readonly organizationUsageResource = this.organizationProfile.usageResource()
+  private readonly activeLanguage = toSignal(this.transloco.langChanges$, { initialValue: this.transloco.getActiveLang() })
+  private readonly currentTranslation = toSignal(this.transloco.selectTranslation(), { initialValue: null })
+  private readonly routeUrl = signal(this.router.url)
+  private readonly committedRouteUrl = signal(this.router.url)
+  protected readonly organizationReady = signal(false)
+  protected readonly organizationError = signal(false)
+  protected readonly previousReadyOrganizationId = signal<string | undefined>(undefined)
+  protected readonly isChangingOrganization = signal(false)
+  protected readonly organizationUsageResource = this.organizationProfile.usageResource(() => this.organizationReady())
   protected readonly ownerInitials = computed(() => this.initialsFrom(this.session()?.user?.name))
   protected readonly isCloud = computed(() => this.capabilities().isCloud)
   protected readonly organizations = this.organizationService.organizationsResource()
@@ -75,21 +94,30 @@ export class AppShellComponent {
     return this.organizations.value() ?? []
   })
   protected readonly activeOrganizationId = computed(
-    () => this.selectedOrganizationId() ?? this.sessionActiveOrganizationId() ?? this.organizationList()[0]?.id,
+    () =>
+      this.selectedOrganizationId() ??
+      this.organizationList().find((organization) => organization.id === this.sessionActiveOrganizationId())?.id ??
+      this.organizationList()[0]?.id,
+  )
+  protected readonly organizationSelectValue = computed(() =>
+    this.organizationError() ? this.activeOrganizationId() : (this.organizationActivationTarget() ?? this.activeOrganizationId()),
   )
   protected readonly canManageOrganization = computed(() => {
     const role = this.roleLabel(this.activeMemberRole()).toLowerCase()
     return ['owner', 'admin'].includes(role)
   })
+  protected readonly isUserScopedRoute = computed(() => {
+    return this.isUserScopedUrl(this.routeUrl())
+  })
 
   protected readonly ownerMenuItems = computed<MenuItem[]>(() => [
     {
-      label: 'Account settings',
+      label: this.translate('shell.menu.accountSettings'),
       icon: 'pi pi-cog',
       routerLink: ['/settings'],
     },
     {
-      label: 'New organization',
+      label: this.translate('shell.menu.newOrganization'),
       icon: 'pi pi-plus',
       routerLink: ['/organizations/new'],
       visible: this.capabilities().isCloud,
@@ -98,7 +126,7 @@ export class AppShellComponent {
       separator: true,
     },
     {
-      label: 'Log out',
+      label: this.translate('shell.menu.logout'),
       icon: 'pi pi-power-off',
       command: () => this.logout(),
     },
@@ -106,22 +134,22 @@ export class AppShellComponent {
 
   protected readonly navItems = computed<ShellNavItem[]>(() => [
     {
-      label: 'Reply Inbox',
+      labelKey: 'shell.navigation.replyInbox',
       route: '/',
       icon: 'pi-inbox',
     },
     {
-      label: 'Apps',
+      labelKey: 'shell.navigation.apps',
       route: '/apps',
       icon: 'pi-mobile',
     },
     {
-      label: 'Audit History',
+      labelKey: 'shell.navigation.auditHistory',
       route: '/audit-history',
       icon: 'pi-history',
     },
     {
-      label: 'Organization',
+      labelKey: 'shell.navigation.organization',
       route: '/organization',
       icon: 'pi-users',
       exact: false,
@@ -134,10 +162,10 @@ export class AppShellComponent {
       return null
     }
 
-    const usage = this.organizationUsageResource.value()
+    const usage = this.organizationUsageResource.hasValue() ? this.organizationUsageResource.value() : undefined
     if (usage?.limitsEnforced && usage.planName === 'free') {
       return {
-        label: 'Every 24h on Free',
+        key: 'shell.autoSync.free',
       }
     }
 
@@ -147,7 +175,10 @@ export class AppShellComponent {
     }
 
     return {
-      label: `Next window at ${new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(nextWindow)}`,
+      key: 'shell.autoSync.nextWindow',
+      params: {
+        time: new Intl.DateTimeFormat(this.activeLanguage() || undefined, { hour: '2-digit', minute: '2-digit' }).format(nextWindow),
+      },
     }
   })
 
@@ -155,46 +186,102 @@ export class AppShellComponent {
     const clock = setInterval(() => this.now.set(new Date()), 60_000)
     this.destroyRef.onDestroy(() => clearInterval(clock))
 
-    effect(() => {
-      const organizationId = this.activeOrganizationId()
-
-      if (this.didInitializeActiveOrganization() || this.sessionActiveOrganizationId() || !organizationId) {
-        if (organizationId && this.loadedActiveMemberOrganizationId() !== organizationId) {
-          this.loadActiveMember(organizationId)
+    this.router.events.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
+      if (event instanceof NavigationStart) {
+        if (this.isUserScopedUrl(event.url)) {
+          // Wait until NavigationEnd before opening an outlet for Settings;
+          // opening it now could mount the previous page context.
+          return
         }
 
+        // NavigationEnd is emitted after the destination outlet is activated. Close
+        // the shell outlet immediately for Organization-scoped destinations so their
+        // components cannot start resources before the Organization is ready.
+        this.routeUrl.set(event.url)
+        this.changeDetector.detectChanges()
+        return
+      }
+
+      if (event instanceof NavigationEnd) {
+        this.committedRouteUrl.set(event.urlAfterRedirects)
+        this.routeUrl.set(event.urlAfterRedirects)
+        return
+      }
+
+      if (event instanceof NavigationCancel || event instanceof NavigationError || event instanceof NavigationSkipped) {
+        this.routeUrl.set(this.committedRouteUrl())
+        this.changeDetector.detectChanges()
+      }
+    })
+
+    effect(() => {
+      if (this.didInitializeActiveOrganization() || this.organizations.isLoading() || this.organizations.error()) {
+        return
+      }
+
+      const organizationId = this.activeOrganizationId()
+      if (!organizationId) {
         return
       }
 
       this.didInitializeActiveOrganization.set(true)
-      this.selectedOrganizationId.set(organizationId)
-      this.loadedActiveMemberOrganizationId.set(organizationId)
-      this.organizationService.setActive({ organizationId }).subscribe({
-        next: () => {
-          this.loadActiveMember(organizationId)
-          this.notifyActiveOrganizationChanged(organizationId)
-        },
-        error: () => this.activeMemberRole.set(undefined),
-      })
+      if (this.sessionActiveOrganizationId() === organizationId) {
+        this.organizationReady.set(true)
+        this.loadActiveMember()
+      } else {
+        this.activateOrganization(organizationId)
+      }
     })
   }
 
   protected switchOrganization(event: SelectChangeEvent): void {
     const organizationId = event.value as string | undefined
-
-    if (!organizationId || organizationId === this.activeOrganizationId()) {
+    if (!organizationId || (organizationId === this.activeOrganizationId() && !this.organizationError()) || this.isChangingOrganization()) {
       return
     }
 
-    this.selectedOrganizationId.set(organizationId)
-    this.loadedActiveMemberOrganizationId.set(organizationId)
+    this.activateOrganization(organizationId)
+  }
+
+  protected retryOrganization(): void {
+    const organizationId = this.organizationActivationTarget() ?? this.activeOrganizationId()
+    if (organizationId && this.organizationError()) {
+      this.activateOrganization(organizationId)
+    } else {
+      this.organizations.reload()
+    }
+  }
+
+  protected returnToPreviousOrganization(): void {
+    const organizationId = this.previousReadyOrganizationId()
+    if (organizationId && !this.isChangingOrganization()) {
+      this.activateOrganization(organizationId)
+    }
+  }
+
+  private activateOrganization(organizationId: string): void {
+    if (this.organizationReady()) {
+      this.previousReadyOrganizationId.set(this.activeOrganizationId())
+    }
+    this.organizationReady.set(false)
+    this.organizationError.set(false)
+    this.isChangingOrganization.set(true)
+    this.activeMemberRole.set(undefined)
+    this.organizationActivationTarget.set(organizationId)
     this.organizationService.setActive({ organizationId }).subscribe({
       next: () => {
-        this.organizationUsageResource.reload()
-        this.loadActiveMember(organizationId)
+        this.isChangingOrganization.set(false)
+        this.selectedOrganizationId.set(organizationId)
+        this.organizationActivationTarget.set(undefined)
+        this.previousReadyOrganizationId.set(undefined)
+        this.organizationReady.set(true)
+        this.loadActiveMember()
         this.notifyActiveOrganizationChanged(organizationId)
       },
-      error: () => this.activeMemberRole.set(undefined),
+      error: () => {
+        this.isChangingOrganization.set(false)
+        this.organizationError.set(true)
+      },
     })
   }
 
@@ -226,8 +313,7 @@ export class AppShellComponent {
     })
   }
 
-  private loadActiveMember(organizationId: string): void {
-    this.loadedActiveMemberOrganizationId.set(organizationId)
+  private loadActiveMember(): void {
     this.organizationService.getActiveMember().subscribe({
       next: (member) => this.activeMemberRole.set(member.role),
       error: () => this.activeMemberRole.set(undefined),
@@ -236,6 +322,17 @@ export class AppShellComponent {
 
   private notifyActiveOrganizationChanged(organizationId: string): void {
     dispatchEvent(new CustomEvent('reviewinbox:active-organization-changed', { detail: { organizationId } }))
+  }
+
+  private translate(key: string): string {
+    this.activeLanguage()
+    this.currentTranslation()
+    return this.transloco.translate(key)
+  }
+
+  private isUserScopedUrl(url: string): boolean {
+    const primarySegments = this.router.parseUrl(url).root.children['primary']?.segments ?? []
+    return primarySegments[0]?.path === 'settings'
   }
 
   private roleLabel(role: string | string[] | undefined): string {
@@ -248,8 +345,8 @@ export class AppShellComponent {
     })
   }
 
-  protected initialsFrom(name: string): string {
-    return name
+  protected initialsFrom(name: string | undefined): string {
+    return (name ?? '')
       .split(' ')
       .filter(Boolean)
       .slice(0, 2)

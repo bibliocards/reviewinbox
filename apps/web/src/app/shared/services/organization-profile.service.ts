@@ -18,8 +18,8 @@ export class OrganizationProfileService {
     return this.http.get<OrganizationUsageResponse>(`${this.apiUrl}/api/organization/usage`)
   }
 
-  usageResource() {
-    return httpResource<OrganizationUsageResponse>(() => `${this.apiUrl}/api/organization/usage`)
+  usageResource(enabled: () => boolean = () => true) {
+    return httpResource<OrganizationUsageResponse>(() => (enabled() ? `${this.apiUrl}/api/organization/usage` : undefined))
   }
 
   updateProfile(input: { name: string }): Observable<OrganizationProfileResponse> {
