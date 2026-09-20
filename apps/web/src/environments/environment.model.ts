@@ -2,6 +2,7 @@ export type DeploymentMode = 'self-hosted' | 'cloud'
 
 export type WebEnvironment = {
   production: boolean
+  primeNgLicenseKey: string
   apiUrl: string
   authBasePath: string
   deploymentMode: string

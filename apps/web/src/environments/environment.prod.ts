@@ -3,6 +3,7 @@ import type { WebEnvironment } from './environment.model'
 
 export const environment: WebEnvironment = {
   production: true,
+  primeNgLicenseKey: '${PRIMENG_LICENSE_KEY}',
   apiUrl: '${REVIEWINBOX_API_URL}',
   authBasePath: '${REVIEWINBOX_AUTH_BASE_PATH}',
   deploymentMode: '${DEPLOYMENT_MODE}',

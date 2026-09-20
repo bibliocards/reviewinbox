@@ -73,6 +73,7 @@ services:
     image: ghcr.io/bibliocards/reviewinbox-web:${REVIEWINBOX_VERSION:-latest}
     restart: unless-stopped
     environment:
+      PRIMENG_LICENSE_KEY: ${PRIMENG_LICENSE_KEY:-}
       REVIEWINBOX_API_URL: ${REVIEWINBOX_API_URL:-}
       REVIEWINBOX_AUTH_BASE_PATH: ${REVIEWINBOX_AUTH_BASE_PATH:-/api/auth}
       REVIEWINBOX_AUTH_GOOGLE_ENABLED: ${REVIEWINBOX_AUTH_GOOGLE_ENABLED:-false}

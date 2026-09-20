@@ -25,6 +25,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
     providePrimeNG({
+      license: resolveOptionalString(environment.primeNgLicenseKey) ?? '',
       theme: {
         preset: reviewInboxTheme,
         options: {

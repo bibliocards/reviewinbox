@@ -37,6 +37,7 @@ USER root
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /usr/src/app/dist/apps/web/browser /usr/share/nginx/html
 
+ENV PRIMENG_LICENSE_KEY=""
 ENV REVIEWINBOX_API_URL=""
 ENV REVIEWINBOX_AUTH_BASE_PATH="/api/auth"
 ENV DEPLOYMENT_MODE="self-hosted"
@@ -46,7 +47,7 @@ ENV NGINX_ENVSUBST_TEMPLATE_DIR="/usr/share/nginx/html"
 ENV NGINX_ENVSUBST_OUTPUT_DIR="/usr/share/nginx/html"
 ENV NGINX_ENVSUBST_TEMPLATE_SUFFIX=".template"
 
-RUN find /usr/share/nginx/html -type f -name 'main*.js' -exec cp {} {}.template \; \
+RUN find /usr/share/nginx/html -type f -name '*.js' -exec cp {} {}.template \; \
   && chown -R 101:0 /usr/share/nginx/html /etc/nginx/conf.d/default.conf
 
 USER 101
