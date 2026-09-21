@@ -68,12 +68,13 @@
     [analysis]="analysis()"
     [coverage]="coverage()"
     [flaggedCount]="flaggedCount()"
-    [trendMax]="trendMax()"
+    [from]="selectedFrom()"
+    [to]="selectedTo()"
     [selectedSeverity]="selectedSeverity()"
     [selectedTopicId]="selectedTopicId()"
     (severitySelected)="setSeverity($event)"
     (topicSelected)="setTopic($event)"
-    (trendSelected)="setTrendDay($event)"
+    (trendSelected)="setTrendPeriod($event)"
   />
   <ri-analysis-reviews
     [reviews]="analysis().reviews"

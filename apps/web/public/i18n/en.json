@@ -247,8 +247,16 @@
     },
     "trend": {
       "title": "Review volume",
-      "description": "Select a day to inspect its Reviews.",
-      "aria": "Review volume by day"
+      "description": "Select a period to inspect its Reviews.",
+      "aria": "Review volume over time",
+      "day": "By day",
+      "week": "By week",
+      "month": "By month",
+      "year": "By year",
+      "scroll": "Scroll horizontally to explore the timeline.",
+      "scale": "Peak: {{count}} Reviews",
+      "bucket": "{{period}}: {{count}} Reviews",
+      "empty": "No Reviews in this period."
     },
     "topicStatus": { "pending": "Pending", "approved": "Approved", "rejected": "Rejected" },
     "topics": {

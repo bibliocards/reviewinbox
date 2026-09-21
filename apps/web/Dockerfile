@@ -35,6 +35,7 @@ FROM nginxinc/nginx-unprivileged:${NGINX_VERSION} AS serve
 USER root
 
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --chmod=755 apps/web/40-update-ngsw-manifest.sh /docker-entrypoint.d/40-update-ngsw-manifest.sh
 COPY --from=build /usr/src/app/dist/apps/web/browser /usr/share/nginx/html
 
 ENV PRIMENG_LICENSE_KEY=""
@@ -48,6 +49,7 @@ ENV NGINX_ENVSUBST_OUTPUT_DIR="/usr/share/nginx/html"
 ENV NGINX_ENVSUBST_TEMPLATE_SUFFIX=".template"
 
 RUN find /usr/share/nginx/html -type f -name '*.js' -exec cp {} {}.template \; \
+  && cp /usr/share/nginx/html/ngsw.json /usr/share/nginx/html/ngsw.json.build \
   && chown -R 101:0 /usr/share/nginx/html /etc/nginx/conf.d/default.conf
 
 USER 101

@@ -249,8 +249,16 @@
     },
     "trend": {
       "title": "Volume de Reviews",
-      "description": "Sélectionnez un jour pour voir ses Reviews.",
-      "aria": "Volume de Reviews par jour"
+      "description": "Sélectionnez une période pour voir ses Reviews.",
+      "aria": "Volume de Reviews au fil du temps",
+      "day": "Par jour",
+      "week": "Par semaine",
+      "month": "Par mois",
+      "year": "Par an",
+      "scroll": "Faites défiler horizontalement pour parcourir la période.",
+      "scale": "Maximum : {{count}} Reviews",
+      "bucket": "{{period}} : {{count}} Reviews",
+      "empty": "Aucune Review sur cette période."
     },
     "topicStatus": { "pending": "En attente", "approved": "Validé", "rejected": "Rejeté" },
     "topics": {

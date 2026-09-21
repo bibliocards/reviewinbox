@@ -24,6 +24,7 @@ import { AppsService } from '../../shared/services/apps.service'
 import { AnalysisFiltersComponent } from './analysis-filters.component'
 import { AnalysisOverviewComponent } from './analysis-overview.component'
 import { AnalysisReviewsComponent } from './analysis-reviews.component'
+import type { TrendPeriod } from './analysis-trend'
 import {
   ReviewClassificationDialogComponent,
   type ReviewClassificationDialogResult,
@@ -169,9 +170,6 @@ export class AnalysisPageComponent {
     { label: this.transloco.translate('analysis.topicStatus.pending'), value: 'pending' },
     { label: this.transloco.translate('analysis.topicStatus.approved'), value: 'approved' },
   ])
-  protected readonly trendMax = computed(() =>
-    Math.max(1, ...this.analysis().trend.map((item) => item.count)),
-  )
   protected readonly flaggedCount = computed(() =>
     this.analysis()
       .severities.filter((item) => item.severity === 'critical' || item.severity === 'blocking')
@@ -247,9 +245,9 @@ export class AnalysisPageComponent {
     this.changeFilter('topicId', this.selectedTopicId() === topicId ? '' : topicId)
   }
 
-  protected setTrendDay(date: string): void {
-    this.selectedFrom.set(date)
-    this.selectedTo.set(date)
+  protected setTrendPeriod(period: TrendPeriod): void {
+    this.selectedFrom.set(period.from)
+    this.selectedTo.set(period.to)
     this.selectedPage.set(1)
     this.updateUrl()
   }
