@@ -12,3 +12,12 @@ export type {
   AppleReviewSyncRequest,
   AppleStoreAdapterErrorCode,
 } from './types'
+
+export {
+  createAppleVersionLookupCursor,
+  readAppleVersionLookupPage,
+  appleVersionLookupCursorSchema,
+  type AppleVersionLookupCursor,
+  type AppleVersionMatch,
+} from './version-lookup'
+export { appleCredentialQuotaKey, AppleVersionQuotaError } from './rate-limit'

@@ -1,6 +1,6 @@
 {
-  "id": "4b42ea7e-8704-4923-ab0d-9cab4f0583e4",
-  "prevId": "88d19106-6cc3-4fd3-b505-92d41947a23a",
+  "id": "612728b8-ef88-4293-8c4c-708fd99c6241",
+  "prevId": "4b42ea7e-8704-4923-ab0d-9cab4f0583e4",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1781,6 +1781,19 @@
           "primaryKey": false,
           "notNull": false
         },
+        "version_lookup_status": {
+          "name": "version_lookup_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "version_lookup_scan_id": {
+          "name": "version_lookup_scan_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "country": {
           "name": "country",
           "type": "text",
@@ -2098,6 +2111,12 @@
         "display_name": {
           "name": "display_name",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "apple_version_lookup": {
+          "name": "apple_version_lookup",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },

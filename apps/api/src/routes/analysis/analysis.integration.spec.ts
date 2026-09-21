@@ -735,3 +735,27 @@ function analysisRow(
     analyzedAt: new Date('2026-09-20T12:00:00.000Z'),
   }
 }
+
+it.skipIf(databaseUrl === undefined).each([
+  ['pending', null],
+  ['unavailable', null],
+  ['resolved', '2.1.3'],
+] as const)(
+  'exposes the Apple version lookup state %s to the analysis UI',
+  async (versionLookupStatus, version) => {
+    await withFixture(async (fixture) => {
+      await database
+        .update(reviews)
+        .set({ versionLookupStatus, version })
+        .where(eq(reviews.id, fixture.firstReviewId))
+      const { routes } = createRouteHarness(fixture)
+      const result = analysisResponseSchema.parse(
+        await (await routes.request(`/api/analysis?appId=${fixture.appId}`)).json(),
+      )
+      expect(result.reviews.find((review) => review.id === fixture.firstReviewId)).toMatchObject({
+        versionLookupStatus,
+        version,
+      })
+    })
+  },
+)

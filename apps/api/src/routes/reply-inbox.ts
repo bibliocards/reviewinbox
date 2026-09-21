@@ -1193,6 +1193,7 @@ function toReplyInboxReview(
     body: row.review.body,
     language: row.review.language,
     version: row.review.version,
+    versionLookupStatus: row.review.versionLookupStatus,
     country: row.review.country,
     locale: row.review.locale,
     reviewedAt: row.review.reviewedAt.toISOString(),

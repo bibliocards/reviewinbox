@@ -34,8 +34,6 @@ export type AppleCredentialVerificationResult =
 
 const appleCustomerReviewAttributesSchema = z
   .object({
-    appVersion: z.string().optional(),
-    appVersionString: z.string().optional(),
     body: z.string().optional(),
     createdDate: z.string().optional(),
     rating: z.number().optional(),

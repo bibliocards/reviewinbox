@@ -144,6 +144,7 @@ async function persistReviewBatches(state: PersistReviewState): Promise<StoredRe
       target: [reviews.storeConnectionId, reviews.externalReviewId],
       set: {
         ...reviewMetadataUpsertSet(),
+        ...reviewVersionLookupUpsertSet(),
         ...reviewReplyStateUpsertSet(),
         ...reviewAnalysisStateUpsertSet(),
       },
@@ -160,7 +161,7 @@ function reviewAnalysisStateUpsertSet() {
   const inputChanged = sql`reviews.title IS DISTINCT FROM excluded.title
     OR reviews.body IS DISTINCT FROM excluded.body
     OR reviews.rating IS DISTINCT FROM excluded.rating
-    OR reviews.version IS DISTINCT FROM excluded.version
+    OR reviews.version IS DISTINCT FROM coalesce(excluded.version, reviews.version)
     OR reviews.language IS DISTINCT FROM excluded.language`
   return {
     analysisStatus: sql`CASE WHEN ${inputChanged} THEN 'pending' ELSE reviews.analysis_status END`,
@@ -176,12 +177,20 @@ function reviewMetadataUpsertSet() {
     title: sql`excluded.title`,
     body: sql`excluded.body`,
     language: sql`excluded.language`,
-    version: sql`excluded.version`,
+    version: sql`coalesce(excluded.version, reviews.version)`,
     country: sql`excluded.country`,
     locale: sql`excluded.locale`,
     reviewedAt: sql`excluded.reviewed_at`,
     rawPayload: sql`excluded.raw_payload`,
     updatedAt: new Date(),
+  }
+}
+
+function reviewVersionLookupUpsertSet() {
+  const changed = sql`reviews.title IS DISTINCT FROM excluded.title OR reviews.body IS DISTINCT FROM excluded.body OR reviews.rating IS DISTINCT FROM excluded.rating`
+  return {
+    versionLookupStatus: sql`CASE WHEN excluded.version IS NOT NULL THEN 'resolved' WHEN ${changed} THEN 'pending' ELSE reviews.version_lookup_status END`,
+    versionLookupScanId: sql`CASE WHEN ${changed} OR excluded.version IS NOT NULL THEN NULL ELSE reviews.version_lookup_scan_id END`,
   }
 }
 
@@ -234,6 +243,10 @@ function toReviewInsertValues(
     body: review.body,
     language: review.language,
     version: review.version,
+    versionLookupStatus:
+      review.version === undefined || review.version === null
+        ? ('pending' as const)
+        : ('resolved' as const),
     country: review.country,
     locale: review.locale,
     reviewedAt: new Date(review.reviewedAt),

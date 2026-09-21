@@ -41,6 +41,7 @@ export const replyInboxReviewSchema = z.object({
   body: z.string(),
   language: z.string().nullable(),
   version: z.string().nullable(),
+  versionLookupStatus: z.enum(['pending', 'resolved', 'unavailable']),
   country: z.string().nullable(),
   locale: z.string().nullable(),
   reviewedAt: z.iso.datetime(),

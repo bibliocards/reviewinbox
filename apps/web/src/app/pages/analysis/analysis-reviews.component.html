@@ -37,6 +37,8 @@
               >
               @if (review.version) {
                 <span>v{{ review.version }}</span>
+              } @else if (review.provider === 'apple_app_store') {
+                <span>{{ t('reviewVersion.' + review.versionLookupStatus) }}</span>
               }
               <span>{{ review.reviewedAt.slice(0, 10) }}</span>
               @if (review.hasOverride) {

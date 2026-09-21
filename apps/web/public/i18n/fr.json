@@ -1,4 +1,9 @@
 {
+  "reviewVersion": {
+    "pending": "Version en cours de recherche",
+    "unavailable": "Version indisponible",
+    "resolved": "Version indisponible"
+  },
   "apps": {
     "actions": {
       "connectApp": "Connecter une App",

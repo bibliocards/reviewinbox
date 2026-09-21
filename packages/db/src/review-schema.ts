@@ -54,6 +54,11 @@ export const reviews = pgTable(
     body: text('body').notNull(),
     language: text('language'),
     version: text('version'),
+    versionLookupStatus: text('version_lookup_status')
+      .$type<'pending' | 'resolved' | 'unavailable'>()
+      .default('pending')
+      .notNull(),
+    versionLookupScanId: uuid('version_lookup_scan_id'),
     country: text('country'),
     locale: text('locale'),
     reviewedAt: timestamp('reviewed_at').notNull(),

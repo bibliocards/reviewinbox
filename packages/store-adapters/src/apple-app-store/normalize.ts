@@ -13,7 +13,7 @@ export function normalizeAppleReview(resource: AppleCustomerReviewResource): Nor
     title: readString(attributes['title']),
     body: readString(attributes['body']) ?? '',
     language: null,
-    version: readString(attributes['appVersionString']) ?? readString(attributes['appVersion']),
+    version: null,
     country: readString(attributes['territory']),
     locale: null,
     reviewedAt,

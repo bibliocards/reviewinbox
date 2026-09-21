@@ -83,6 +83,7 @@ export const analysisReviewSchema = z.object({
   body: z.string(),
   rating: z.number(),
   version: z.string().nullable(),
+  versionLookupStatus: z.enum(['pending', 'resolved', 'unavailable']),
   reviewedAt: z.iso.datetime(),
   status: reviewAnalysisStatusSchema,
   severity: reportedSeveritySchema.nullable(),

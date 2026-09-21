@@ -55,6 +55,26 @@ afterAll(async () => {
 })
 
 describe.skipIf(databaseUrl === undefined)('sync reply state and analysis invalidation', () => {
+  it('preserves an enriched version on identical Apple sync and rechecks edited Reviews', async () => {
+    const { reviewId, source } = await createPublishedReview()
+    await database
+      .update(reviews)
+      .set({ versionLookupStatus: 'resolved', versionLookupScanId: randomUUID() })
+      .where(eq(reviews.id, reviewId))
+    await storeSyncedReviews(database, scope, [{ ...source, version: null }])
+    expect(
+      await database.query.reviews.findFirst({ where: eq(reviews.id, reviewId) }),
+    ).toMatchObject({
+      version: '1.0',
+      versionLookupStatus: 'resolved',
+      analysisStatus: 'completed',
+    })
+    await storeSyncedReviews(database, scope, [{ ...source, version: null, body: 'Changed' }])
+    expect(
+      await database.query.reviews.findFirst({ where: eq(reviews.id, reviewId) }),
+    ).toMatchObject({ version: '1.0', versionLookupStatus: 'pending', versionLookupScanId: null })
+  })
+
   it('resurfaces changed replied Reviews and invalidates their analysis together', async () => {
     const { reviewId, source } = await createPublishedReview()
     const updated = { ...source, body: 'Now the app crashes.', rating: 1 }

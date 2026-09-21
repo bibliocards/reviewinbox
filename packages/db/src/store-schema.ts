@@ -1,6 +1,7 @@
 import {
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -30,6 +31,7 @@ export const storeConnections = pgTable(
     externalAppId: text('external_app_id'),
     externalStoreId: text('external_store_id'),
     displayName: text('display_name'),
+    appleVersionLookup: jsonb('apple_version_lookup').$type<unknown>(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at')
       .defaultNow()

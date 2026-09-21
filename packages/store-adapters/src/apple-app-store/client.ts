@@ -9,6 +9,7 @@ import type {
 import { AppleStoreAdapterError, toAppleStoreAdapterError } from './errors'
 import { createAppleAppStoreConnectJwt } from './jwt'
 import { normalizeAppleReview } from './normalize'
+import { recordAppleRateLimit, withAppleIngestionPriority } from './rate-limit'
 import { appleCustomerReviewResponseSchema, appleCustomerReviewsResponseSchema } from './types'
 import type {
   AppleCredentialVerificationResult,
@@ -66,7 +67,9 @@ export async function syncAppleAppStoreReviews(
   if (input.timeoutMs !== undefined) {
     state.timeoutMs = input.timeoutMs
   }
-  const result = await fetchAppleReviewPages(state)
+  const result = await withAppleIngestionPriority(input.credential, () =>
+    fetchAppleReviewPages(state),
+  )
 
   return {
     reviews: result.reviews,
@@ -103,6 +106,7 @@ export async function publishAppleAppStoreReply(
       },
       input.timeoutMs,
     )
+    recordAppleRateLimit(input.credential, response)
     if (!response.ok) {
       throw toAppleStoreAdapterError(response.status)
     }
@@ -195,12 +199,11 @@ async function fetchAppleCustomerReviewsPage(input: {
   url?: string
   timeoutMs?: number
 }): Promise<AppleCustomerReviewsResponse> {
-  const url = input.url ?? buildCustomerReviewsUrl(input.appStoreAppId, input.limit)
-  assertAppleApiUrl(url)
+  assertAppleApiUrl(input.url ?? buildCustomerReviewsUrl(input.appStoreAppId, input.limit))
 
   try {
     const response = await fetchWithTimeout(
-      url,
+      input.url ?? buildCustomerReviewsUrl(input.appStoreAppId, input.limit),
       {
         headers: {
           authorization: `Bearer ${createAppleAppStoreConnectJwt(input.credential)}`,
@@ -210,6 +213,7 @@ async function fetchAppleCustomerReviewsPage(input: {
       },
       input.timeoutMs,
     )
+    recordAppleRateLimit(input.credential, response)
     if (!response.ok) {
       throw toAppleStoreAdapterError(response.status)
     }

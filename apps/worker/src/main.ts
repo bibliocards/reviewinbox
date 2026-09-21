@@ -37,6 +37,7 @@ import {
 import { and, asc, desc, eq, isNull, isNotNull, lt, ne, or, sql } from 'drizzle-orm'
 
 import { createWorkerReplyDraftProvider } from './ai-provider'
+import { startAppleVersionScanner } from './apple-version-scanner'
 import { getAutoSyncJobStartsAt, isAutoSyncDueAt } from './auto-sync-scheduler'
 import {
   classifyReviewForAnalysis,
@@ -60,6 +61,7 @@ type WorkerRuntime = {
   topicDiscoveryScanTimer: ReturnType<typeof setTimeout> | null
   analysisScanTimer: ReturnType<typeof setTimeout> | null
   autoSyncTimer: ReturnType<typeof setTimeout> | null
+  appleVersionScanner: ReturnType<typeof startAppleVersionScanner> | null
 }
 
 type LogDetails = Readonly<Record<string, boolean | number | string | null>>
@@ -74,9 +76,17 @@ async function main(): Promise<void> {
   await enqueueTopicDiscoveryJobs(runtime)
   runtime.analysisScanTimer = startAnalysisScanner(runtime)
   runtime.topicDiscoveryScanTimer = startTopicDiscoveryScanner(runtime)
-  runtime.autoSyncTimer = startAutoSyncScheduler(runtime)
+  startWorkerScanners(runtime)
+
   logWorkerStarted(runtime)
   await waitForShutdown(runtime)
+}
+
+function startWorkerScanners(runtime: WorkerRuntime): void {
+  runtime.autoSyncTimer = startAutoSyncScheduler(runtime)
+  runtime.appleVersionScanner = startAppleVersionScanner(runtime.database, () => {
+    logWarn('Apple Review version lookup deferred; pending Reviews will be retried')
+  })
 }
 
 async function createWorkerRuntime(): Promise<WorkerRuntime> {
@@ -101,6 +111,7 @@ async function createWorkerRuntime(): Promise<WorkerRuntime> {
     topicDiscoveryScanTimer: null,
     analysisScanTimer: null,
     autoSyncTimer: null,
+    appleVersionScanner: null,
   }
 }
 
@@ -137,6 +148,7 @@ async function registerStoreSyncHandler(runtime: WorkerRuntime): Promise<void> {
     })
 
     const syncRun = await runStoreConnectionSync(runtime, job.payload)
+    runtime.appleVersionScanner?.wake()
     if (syncRun.status === 'succeeded' || syncRun.status === 'partial') {
       await enqueueAnalysisJobs(runtime, syncRun.organizationId, syncRun.newReviewIds)
     }
@@ -590,6 +602,7 @@ async function waitForShutdown(runtime: WorkerRuntime): Promise<void> {
     clearTimeout(runtime.topicDiscoveryScanTimer)
   }
   try {
+    await runtime.appleVersionScanner?.stop()
     await runtime.queue.stop()
   } finally {
     await closeDatabase(runtime.database)

@@ -164,6 +164,7 @@ export function toAnalysisReview(
     body: row.review.body,
     rating: row.review.rating,
     version: row.review.version,
+    versionLookupStatus: row.review.versionLookupStatus,
     reviewedAt: row.review.reviewedAt.toISOString(),
     status: row.review.analysisStatus,
     severity: classification.severity,

@@ -13,3 +13,5 @@ export {
   type SyncRunResult,
   syncReviewsForStoreConnection,
 } from './sync-run'
+
+export { enrichAppleReviewVersions } from './apple-version-lookup'

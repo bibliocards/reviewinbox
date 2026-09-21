@@ -123,6 +123,8 @@
             @if (review.version) {
             <span aria-hidden="true">·</span>
             <span>v{{ review.version }}</span>
+            } @else if (review.provider === 'apple_app_store') {
+            <span>{{ t('reviewVersion.' + review.versionLookupStatus) }}</span>
             }
             <span aria-hidden="true">·</span>
             <span
