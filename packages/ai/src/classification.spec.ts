@@ -130,6 +130,41 @@ describe('createTypeSafeReviewClassifier', () => {
   })
 })
 
+describe('topic catalogue request sequencing', () => {
+  it('waits for each chunk and stops submitting chunks after a failure', async () => {
+    const releaseFirst = vi.fn<() => void>()
+    const firstPending = new Promise<void>((resolve) => {
+      releaseFirst.mockImplementation(resolve)
+    })
+    const failure = new Error('Classification unavailable')
+    const systemOne = vi
+      .fn<TypeSafeReviewClassifierClient['systemOne']>()
+      .mockImplementationOnce(async (request) => {
+        await firstPending
+        return createChunkResponse(request)
+      })
+      .mockRejectedValueOnce(failure)
+    const classifier = createTypeSafeReviewClassifier({ client: { systemOne } })
+    const topics = Array.from({ length: 3 }, (_, index) => ({
+      id: `topic-${index}`,
+      label: `Topic ${index}`,
+      description: 'x'.repeat(7_000),
+      validationStatus: 'approved' as const,
+    }))
+
+    const classification = classifier.classify({ ...input, topics })
+
+    expect(systemOne).toHaveBeenCalledOnce()
+    const firstRequest = systemOne.mock.calls[0]?.[0]
+    expect(firstRequest?.state).toMatchObject({ activeTopics: [{ id: 'topic-0' }] })
+    releaseFirst()
+
+    await expect(classification).rejects.toBe(failure)
+    expect(systemOne).toHaveBeenCalledTimes(2)
+    expect(systemOne.mock.calls[1]?.[0]?.state).toMatchObject({ activeTopics: [{ id: 'topic-1' }] })
+  })
+})
+
 describe('topic catalogue chunks', () => {
   it('classifies every active topic across bounded catalogue chunks', async () => {
     const systemOne = vi

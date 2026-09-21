@@ -157,23 +157,17 @@ async function runClassificationChunks(context: {
   input: ReviewClassificationInput
   model: string
   topicChunks: readonly (readonly ReviewTopicForClassification[])[]
-  index?: number
-  responses?: TypeSafeSystemOneResponse[]
 }): Promise<TypeSafeSystemOneResponse[]> {
-  const index = context.index ?? 0
-  const responses = context.responses ?? []
-  const topics = context.topicChunks[index]
-  if (topics === undefined) {
-    return responses
+  const responses: TypeSafeSystemOneResponse[] = []
+  for (const topics of context.topicChunks) {
+    // Keep requests sequential and stop on failure rather than submitting later chunks.
+    // oxlint-disable-next-line no-await-in-loop
+    const response = await context.client.systemOne(
+      buildClassificationRequest(context.input, context.model, topics),
+    )
+    responses.push(response)
   }
-  const response = await context.client.systemOne(
-    buildClassificationRequest(context.input, context.model, topics),
-  )
-  return runClassificationChunks({
-    ...context,
-    index: index + 1,
-    responses: [...responses, response],
-  })
+  return responses
 }
 
 function buildClassificationRequest(
