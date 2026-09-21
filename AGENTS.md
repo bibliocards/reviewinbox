@@ -1,5 +1,20 @@
 # Agent Notes
 
+## Code Review Rules
+
+- Report actionable regressions introduced by this PR. Establish a reachable trigger and concrete user or operational impact; check existing validation, constraints, and callers first.
+- Distinguish severity from confidence. A demonstrable edge case is not automatically urgent; consider impact, likelihood, and recovery.
+- Prefer the smallest behavior-preserving correction. For low-impact edge cases, accept a documented limitation when fixing it would add disproportionate complexity.
+- Report credible security, data-loss, and financial-integrity risks even when uncommon. Leave mechanical checks to CI.
+- Respect explicitly accepted risks and settled product decisions; reopen them only with new evidence. An empty review is valid.
+- For Organization-scoped changes, prioritize cross-Organization access; for reply publication and Sync Run changes, check incorrect or duplicate external effects from retries. Apply the AI drafting boundary in Domain And Security Constraints below.
+- Require compatibility machinery only for an established supported consumer or deployment constraint; otherwise prefer direct replacement.
+
+## Handling Review Feedback
+
+- Before applying review feedback, verify the finding and assess whether the correction is proportionate. Fix confirmed actionable issues; briefly explain invalid reports and disproportionate fixes, distinguishing an already accepted risk from a proposed tradeoff.
+- After a fix, verify the reported scenario and affected behavior before resolving its review thread. Keep replies short and preserve unrelated changes.
+
 ## Commands
 
 - Package manager is the version pinned in `package.json`; install with `pnpm install`.
