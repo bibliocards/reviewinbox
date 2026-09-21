@@ -567,6 +567,7 @@
   "shell": {
     "navigation": {
       "primary": "Navigation principale",
+      "skipToContent": "Aller au contenu",
       "currentPage": "Page actuelle",
       "replyInbox": "Reply Inbox",
       "analysis": "Analyse",
