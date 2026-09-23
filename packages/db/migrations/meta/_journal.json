@@ -71,6 +71,13 @@
       "when": 1790029219641,
       "tag": "0009_apple_review_versions",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790158755295,
+      "tag": "0010_remove_analysis_catalog_version",
+      "breakpoints": true
     }
   ]
 }

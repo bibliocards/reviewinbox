@@ -48,8 +48,8 @@ export const analysisFiltersSchema = z
     pageSize: z.coerce.number().int().min(1).max(100).default(25),
   })
   .strict()
-  .refine((value) => value.version === undefined || value.provider !== undefined, {
-    message: 'A version filter requires its store.',
+  .refine((value) => value.version === undefined || value.appId !== undefined, {
+    message: 'A version filter requires an App.',
     path: ['version'],
   })
   .refine(

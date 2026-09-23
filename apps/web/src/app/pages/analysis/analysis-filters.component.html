@@ -7,16 +7,7 @@
     <h2 id="analysis-filters-title" class="m-0 text-base font-semibold text-ink">
       {{ t('analysis.filters.title') }}
     </h2>
-    @if (
-      from()
-      || to()
-      || provider()
-      || version()
-      || severity()
-      || intent()
-      || topicId()
-      || topicStatus()
-    ) {
+    @if (hasFilters()) {
       <p-button
         severity="secondary"
         [text]="true"
@@ -27,13 +18,18 @@
       />
     }
   </div>
-  <div class="grid grid-cols-1 items-end gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-    <ri-app-select
-      [options]="appOptions()"
-      [selectedAppId]="selectedAppId()"
-      [ariaLabel]="t('analysis.filters.app')"
-      (selectedAppIdChange)="emit('appId', $event)"
-    />
+
+  <div class="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 xl:grid-cols-6">
+    <div class="grid gap-1 sm:col-span-2 xl:col-span-2">
+      <span class="text-xs font-semibold text-ink-subtle">{{ t('analysis.filters.app') }}</span>
+      <ri-app-select
+        [options]="appOptions()"
+        [selectedAppId]="selectedAppId()"
+        [ariaLabel]="t('analysis.filters.app')"
+        styleClass="w-full"
+        (selectedAppIdChange)="emit('appId', $event)"
+      />
+    </div>
     <label class="grid gap-1 text-xs font-semibold text-ink-subtle" for="analysis-from-date"
       ><span>{{ t('analysis.filters.from') }}</span
       ><p-datepicker
@@ -58,71 +54,94 @@
         [ariaLabel]="t('analysis.filters.to')"
         (ngModelChange)="emitDate('to', $event)"
     /></label>
-    <p-select
-      appendTo="body"
-      [options]="storeOptions()"
-      optionLabel="label"
-      optionValue="value"
-      [ngModel]="provider()"
-      (ngModelChange)="emit('provider', $event)"
-      [fluid]="true"
-      [ariaLabel]="t('analysis.filters.store')"
-    />
-    <p-select
-      appendTo="body"
-      [options]="versionOptions()"
-      optionLabel="label"
-      optionValue="value"
-      [ngModel]="version()"
-      (ngModelChange)="emit('version', $event)"
-      [fluid]="true"
-      [ariaLabel]="t('analysis.filters.version')"
-    />
-    <p-select
-      appendTo="body"
-      [options]="severityOptions()"
-      optionLabel="label"
-      optionValue="value"
-      [ngModel]="severity()"
-      (ngModelChange)="emit('severity', $event)"
-      [fluid]="true"
-      [ariaLabel]="t('analysis.filters.severity')"
-    />
-    <p-select
-      appendTo="body"
-      [options]="intentOptions()"
-      optionLabel="label"
-      optionValue="value"
-      [ngModel]="intent()"
-      (ngModelChange)="emit('intent', $event)"
-      [fluid]="true"
-      [ariaLabel]="t('analysis.filters.intent')"
-    />
-    <p-select
-      appendTo="body"
-      [options]="topicOptions()"
-      optionLabel="label"
-      optionValue="value"
-      [ngModel]="topicId()"
-      (ngModelChange)="emit('topicId', $event)"
-      [fluid]="true"
-      [ariaLabel]="t('analysis.filters.topic')"
-    />
-    <p-select
-      appendTo="body"
-      [options]="topicStatusOptions()"
-      optionLabel="label"
-      optionValue="value"
-      [ngModel]="topicStatus()"
-      (ngModelChange)="emit('topicStatus', $event)"
-      [fluid]="true"
-      [ariaLabel]="t('analysis.filters.topicStatus')"
-    />
+    <label class="grid gap-1 text-xs font-semibold text-ink-subtle" for="analysis-store">
+      <span>{{ t('analysis.filters.store') }}</span>
+      <p-select
+        inputId="analysis-store"
+        appendTo="body"
+        [options]="storeOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="provider()"
+        (ngModelChange)="emit('provider', $event)"
+        [fluid]="true"
+        [ariaLabel]="t('analysis.filters.store')"
+      />
+    </label>
+    <label class="grid gap-1 text-xs font-semibold text-ink-subtle" for="analysis-version">
+      <span>{{ t('analysis.filters.version') }}</span>
+      <p-select
+        inputId="analysis-version"
+        appendTo="body"
+        [options]="versionOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="version()"
+        (ngModelChange)="emit('version', $event)"
+        [disabled]="!selectedAppId()"
+        [fluid]="true"
+        [ariaLabel]="t('analysis.filters.version')"
+      />
+    </label>
   </div>
-  @if (version() && !provider()) {
-    <p class="m-0 text-xs text-amber-700 dark:text-amber-300">
-      <i class="pi pi-info-circle mr-1" aria-hidden="true"></i
-      >{{ t('analysis.filters.versionNeedsStore') }}
-    </p>
-  }
+
+  <div class="grid gap-3 border-t border-hairline pt-3">
+    <button
+      type="button"
+      class="inline-flex w-fit items-center gap-2 rounded-lg px-2 py-1 text-sm font-semibold text-ink-muted hover:bg-surface-2 hover:text-ink"
+      [attr.aria-expanded]="additionalOpen()"
+      [attr.aria-controls]="additionalOpen() ? 'analysis-additional-filters' : null"
+      (click)="additionalOpen.set(!additionalOpen())"
+    >
+      <i
+        class="pi text-xs"
+        [class.pi-chevron-down]="!additionalOpen()"
+        [class.pi-chevron-up]="additionalOpen()"
+        aria-hidden="true"
+      ></i>
+      {{ t('analysis.filters.additional') }}
+      @if (activeAdditionalFilters().length) {
+        <span class="rounded-full bg-surface-3 px-2 py-0.5 text-xs text-ink">{{
+          activeAdditionalFilters().length
+        }}</span>
+      }
+    </button>
+
+    @if (activeAdditionalFilters().length) {
+      <div
+        class="flex flex-wrap gap-2"
+        role="group"
+        [attr.aria-label]="t('analysis.filters.active')"
+      >
+        @for (filter of activeAdditionalFilters(); track filter.name) {
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-full border border-hairline-strong bg-surface-2 px-3 py-1 text-xs text-ink hover:bg-surface-3"
+            [attr.aria-label]="t('analysis.filters.remove', { name: t(filter.labelKey) })"
+            (click)="emit(filter.name, '')"
+          >
+            {{ t(filter.labelKey) }}: {{ selectedOptionLabel(filter) }}
+            <i class="pi pi-times text-[0.65rem]" aria-hidden="true"></i>
+          </button>
+        }
+      </div>
+    }
+
+    @if (additionalOpen()) {
+      <div id="analysis-additional-filters" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        @for (filter of additionalFilters(); track filter.name) {
+          <p-select
+            appendTo="body"
+            [options]="filter.options"
+            optionLabel="label"
+            optionValue="value"
+            [ngModel]="filter.value"
+            (ngModelChange)="emit(filter.name, $event)"
+            [fluid]="true"
+            [ariaLabel]="t(filter.labelKey)"
+          />
+        }
+      </div>
+    }
+  </div>
 </section>

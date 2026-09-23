@@ -42,7 +42,7 @@ Current usage event types:
 
 `managed_ai_reply_draft_generated` is recorded only when the Cloud worker, using the operator's configured AI provider, creates a Reply Draft. This includes either the managed provider label or an OpenAI-compatible transport configured for the Cloud deployment. Failed generations and manual editing do not consume Managed AI quota. Self-hosted deployments do not enforce or record this billing usage.
 
-Review analysis is a separate capability. Jev classification is included for imported Reviews and the complete initial backfill, independently of Managed AI Reply Draft quotas. Luna topic discovery is bounded and separately metered per Organization; commercial discovery quotas are deferred until usage has been measured. Reprocessing caused by infrastructure retries or catalogue maintenance does not consume user-facing credits.
+Review analysis is a separate capability. Jev classification is included for imported Reviews and the complete initial backfill, independently of Managed AI Reply Draft quotas. Luna topic discovery is bounded and separately metered per Organization; commercial discovery quotas are deferred until usage has been measured. Reprocessing caused by infrastructure retries does not consume user-facing credits. Catalogue edits leave completed classifications in place.
 
 `published_reply_created` is recorded for visibility but is not directly limited.
 

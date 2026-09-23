@@ -36,6 +36,75 @@ afterAll(async () => {
   }
 })
 
+it.skipIf(databaseUrl === undefined)(
+  'filters one version across both stores and keeps other versions available',
+  async () => {
+    await withFixture(async (fixture) => {
+      const googleConnectionId = randomUUID()
+      const googleReviewId = randomUUID()
+      await database
+        .insert(storeConnections)
+        .values({
+          id: googleConnectionId,
+          organizationId: fixture.organizationId,
+          appId: fixture.appId,
+          provider: 'google_play',
+        })
+      await database
+        .insert(reviews)
+        .values([
+          reviewRow({
+            id: googleReviewId,
+            organizationId: fixture.organizationId,
+            appId: fixture.appId,
+            storeConnectionId: googleConnectionId,
+            reviewedAt: new Date('2026-09-20T12:00:00.000Z'),
+          }),
+          {
+            ...reviewRow({
+              id: randomUUID(),
+              organizationId: fixture.organizationId,
+              appId: fixture.appId,
+              storeConnectionId: googleConnectionId,
+              reviewedAt: new Date('2026-09-20T11:00:00.000Z'),
+            }),
+            version: '2.0.0',
+          },
+        ])
+
+      const { routes } = createRouteHarness(fixture)
+      const allAppsResponse = await routes.request('/api/analysis?version=1.0.0')
+      expect(allAppsResponse.status).toBe(400)
+
+      const response = await routes.request(`/api/analysis?appId=${fixture.appId}&version=1.0.0`)
+      expect(response.status).toBe(200)
+      const result = analysisResponseSchema.parse(await response.json())
+      expect(result.total).toBe(5)
+      expect(new Set(result.reviews.map((review) => review.provider))).toEqual(
+        new Set(['apple_app_store', 'google_play']),
+      )
+      expect(result.versions).toEqual(
+        expect.arrayContaining([
+          { provider: 'apple_app_store', version: '1.0.0' },
+          { provider: 'google_play', version: '1.0.0' },
+          { provider: 'google_play', version: '2.0.0' },
+        ]),
+      )
+
+      const datedResponse = await routes.request(
+        `/api/analysis?appId=${fixture.appId}&version=1.0.0&from=2026-09-20T11:30:00.000Z`,
+      )
+      const datedResult = analysisResponseSchema.parse(await datedResponse.json())
+      expect(datedResult.versions).toContainEqual({ provider: 'google_play', version: '2.0.0' })
+
+      const googleOnly = await routes.request(
+        `/api/analysis?appId=${fixture.appId}&provider=google_play&version=1.0.0`,
+      )
+      expect(analysisResponseSchema.parse(await googleOnly.json()).total).toBe(1)
+    })
+  },
+)
+
 describe.skipIf(databaseUrl === undefined)('analysis dashboard routes', () => {
   it('aggregates the full history and returns a bounded review page', async () => {
     await withFixture(async (fixture) => {
@@ -135,41 +204,6 @@ describe.skipIf(databaseUrl === undefined)('invalidated automatic analyses', () 
   )
 })
 
-describe.skipIf(databaseUrl === undefined)('catalogue fingerprint freshness', () => {
-  it('hides a completed analysis when the App catalogue version is newer', async () => {
-    await withFixture(async (fixture) => {
-      await database
-        .update(apps)
-        .set({ analysisCatalogVersion: 2 })
-        .where(eq(apps.id, fixture.appId))
-      await database
-        .update(reviewAnalyses)
-        .set({ intents: ['report_problem'] })
-        .where(eq(reviewAnalyses.reviewId, fixture.firstReviewId))
-      const { routes } = createRouteHarness(fixture)
-      const result = await readInvalidatedAutomaticAnalysis(routes, fixture)
-      expect(result.dashboard.analyzed).toBe(0)
-      expect(result.invalidatedDashboardReview).toMatchObject({
-        severity: null,
-        intents: [],
-        topics: [],
-        uncovered: false,
-        analyzedAt: null,
-      })
-      expect(result.detail).toMatchObject({
-        severity: null,
-        intents: [],
-        topics: [],
-        uncovered: false,
-        analyzedAt: null,
-      })
-      expect(result.filtered.total).toBe(0)
-      expect(result.topicFiltered.total).toBe(0)
-      expect(result.intentFiltered.total).toBe(0)
-    })
-  })
-})
-
 describe.skipIf(databaseUrl === undefined)('criteria fingerprint freshness', () => {
   it('hides a completed analysis when its criteria version is stale', async () => {
     await withFixture(async (fixture) => {
@@ -205,12 +239,8 @@ describe.skipIf(databaseUrl === undefined)('criteria fingerprint freshness', () 
 })
 
 describe.skipIf(databaseUrl === undefined)('manual fingerprint freshness', () => {
-  it('keeps manual corrections when both automatic fingerprints are stale', async () => {
+  it('keeps manual corrections when automatic criteria are stale', async () => {
     await withFixture(async (fixture) => {
-      await database
-        .update(apps)
-        .set({ analysisCatalogVersion: 2 })
-        .where(eq(apps.id, fixture.appId))
       await database
         .update(reviewAnalyses)
         .set({ criteriaVersion: `${reviewAnalysisCriteriaVersion}-stale` })
@@ -229,8 +259,9 @@ describe.skipIf(databaseUrl === undefined)('manual fingerprint freshness', () =>
           )
         ).json(),
       )
-      expect(dashboard.total).toBe(1)
-      expect(dashboard.reviews.map((review) => review.id)).toEqual([fixture.manualReviewId])
+      expect(dashboard.total).toBe(2)
+      expect(dashboard.reviews.map((review) => review.id)).toContain(fixture.manualReviewId)
+      expect(dashboard.reviews.map((review) => review.id)).toContain(fixture.thirdReviewId)
     })
   })
 })
@@ -350,6 +381,39 @@ describe.skipIf(databaseUrl === undefined)('analysis catalogue permissions', () 
   })
 })
 
+describe.skipIf(databaseUrl === undefined)('topic approval', () => {
+  it('keeps completed classifications visible when a pending Topic is approved', async () => {
+    await withFixture(async (fixture) => {
+      const { routes } = createRouteHarness(fixture)
+      const response = await routes.request(
+        `/api/apps/${fixture.appId}/topics/${fixture.pendingTopicId}`,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ status: 'approved' }),
+        },
+      )
+      expect(response.status).toBe(200)
+
+      const dashboard = analysisResponseSchema.parse(
+        await (await routes.request(`/api/analysis?appId=${fixture.appId}`)).json(),
+      )
+      expect(dashboard.analyzed).toBe(3)
+      expect(dashboard.severities).toContainEqual({ severity: 'blocking', count: 1 })
+      expect(dashboard.topics.find((topic) => topic.id === fixture.pendingTopicId)).toMatchObject({
+        status: 'approved',
+        reviewCount: 2,
+      })
+
+      const detail = analysisReviewSchema.parse(
+        await (await routes.request(`/api/analysis/reviews/${fixture.firstReviewId}`)).json(),
+      )
+      expect(detail.severity).toBe('blocking')
+      expect(detail.analyzedAt).not.toBeNull()
+    })
+  })
+})
+
 describe.skipIf(databaseUrl === undefined)('analysis catalogue mutations', () => {
   it('merges assignments without duplicate reviews and preserves aliases', async () => {
     await withFixture(async (fixture) => {
@@ -388,7 +452,9 @@ describe.skipIf(databaseUrl === undefined)('analysis catalogue mutations', () =>
       expect(target?.status).toBe('approved')
     })
   })
+})
 
+describe.skipIf(databaseUrl === undefined)('topic rejection', () => {
   it('rejects active assignments and supports returning to automatic classification', async () => {
     await withFixture(async (fixture) => {
       const { routes } = createRouteHarness(fixture, { role: 'owner' })
@@ -414,6 +480,17 @@ describe.skipIf(databaseUrl === undefined)('analysis catalogue mutations', () =>
         .where(eq(reviewAnalyses.reviewId, fixture.manualReviewId))
       expect(manualAnalysis?.manualOverride?.topicIds).toEqual([])
 
+      const dashboard = analysisResponseSchema.parse(
+        await (await routes.request(`/api/analysis?appId=${fixture.appId}`)).json(),
+      )
+      expect(dashboard.topics.some((topic) => topic.id === fixture.pendingTopicId)).toBe(false)
+      const catalogue = topicListResponseSchema.parse(
+        await (await routes.request(`/api/apps/${fixture.appId}/topics`)).json(),
+      )
+      expect(catalogue.topics.find((topic) => topic.id === fixture.pendingTopicId)?.status).toBe(
+        'rejected',
+      )
+
       const beforeReset = analysisReviewSchema.parse(
         await (await routes.request(`/api/analysis/reviews/${fixture.manualReviewId}`)).json(),
       )
@@ -424,7 +501,7 @@ describe.skipIf(databaseUrl === undefined)('analysis catalogue mutations', () =>
         { method: 'DELETE' },
       )
       const afterReset = analysisReviewSchema.parse(await resetResponse.json())
-      expect(afterReset).toMatchObject({ hasOverride: false, severity: null, topics: [] })
+      expect(afterReset).toMatchObject({ hasOverride: false, severity: 'degraded', topics: [] })
     })
   })
 })
@@ -726,7 +803,6 @@ function analysisRow(
     appId,
     inputHash: `hash-${reviewId}`,
     criteriaVersion: 'review-analysis-v1',
-    catalogVersion: 1,
     model: 'test',
     severity,
     intents: [],

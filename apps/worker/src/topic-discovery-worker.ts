@@ -24,12 +24,7 @@ const topicDiscoveryReviewCharacterLimit = 12_000
 const topicDiscoveryCatalogueCharacterLimit = 12_000
 
 export type DiscoveryContext = {
-  app: {
-    id: string
-    catalogVersion: number
-    lastTopicDiscoveryAt: Date | null
-    topicDiscoveryRequestedAt: Date | null
-  }
+  app: { id: string; lastTopicDiscoveryAt: Date | null; topicDiscoveryRequestedAt: Date | null }
   topics: Array<{ label: string; description: string; aliases: string[] }>
   boundedTopics: Array<{ label: string; description: string; aliases: string[] }>
   uncovered: Array<{
@@ -78,7 +73,6 @@ export async function loadDiscoveryContext(
   const [app] = await database
     .select({
       id: apps.id,
-      catalogVersion: apps.analysisCatalogVersion,
       lastTopicDiscoveryAt: apps.lastTopicDiscoveryAt,
       topicDiscoveryRequestedAt: apps.topicDiscoveryRequestedAt,
     })
@@ -102,7 +96,6 @@ export async function loadDiscoveryContext(
     database,
     organizationId: payload.organizationId,
     appId: app.id,
-    catalogVersion: app.catalogVersion,
     criteriaVersion: reviewAnalysisCriteriaVersion,
   })
   return { app, topics, boundedTopics: boundDiscoveryTopics(topics), uncovered }
@@ -116,7 +109,6 @@ async function markDiscoveryComplete(
   await runtime.database.transaction(async (transaction) => {
     const [lockedApp] = await transaction
       .select({
-        catalogVersion: apps.analysisCatalogVersion,
         lastTopicDiscoveryAt: apps.lastTopicDiscoveryAt,
         topicDiscoveryRequestedAt: apps.topicDiscoveryRequestedAt,
       })
@@ -126,14 +118,13 @@ async function markDiscoveryComplete(
       .limit(1)
     if (
       lockedApp === undefined
-      || lockedApp.catalogVersion !== snapshot.catalogVersion
       || lockedApp.lastTopicDiscoveryAt?.getTime() !== snapshot.lastTopicDiscoveryAt?.getTime()
       || lockedApp.topicDiscoveryRequestedAt?.getTime()
         !== snapshot.topicDiscoveryRequestedAt?.getTime()
     ) {
       return
     }
-    if (await hasOutstandingDiscoveryWork(transaction, payload, snapshot.catalogVersion)) {
+    if (await hasOutstandingDiscoveryWork(transaction, payload)) {
       return
     }
     await transaction
@@ -146,7 +137,6 @@ async function markDiscoveryComplete(
 async function hasOutstandingDiscoveryWork(
   transaction: WorkerTransaction,
   payload: { organizationId: string; appId: string },
-  catalogVersion: number,
 ): Promise<boolean> {
   const candidates = await transaction
     .select({ id: reviews.id })
@@ -160,7 +150,6 @@ async function hasOutstandingDiscoveryWork(
           inArray(reviews.analysisStatus, ['pending', 'processing']),
           and(
             eq(reviews.analysisStatus, 'completed'),
-            eq(reviewAnalyses.catalogVersion, catalogVersion),
             eq(reviewAnalyses.criteriaVersion, reviewAnalysisCriteriaVersion),
             eq(reviewAnalyses.uncovered, true),
             isNull(reviewAnalyses.discoveredAt),
@@ -214,7 +203,6 @@ async function persistDiscoveryResultsTransaction(
 ): Promise<void> {
   const [lockedApp] = await transaction
     .select({
-      catalogVersion: apps.analysisCatalogVersion,
       lastTopicDiscoveryAt: apps.lastTopicDiscoveryAt,
       topicDiscoveryRequestedAt: apps.topicDiscoveryRequestedAt,
     })
@@ -224,29 +212,20 @@ async function persistDiscoveryResultsTransaction(
     .limit(1)
   if (
     lockedApp === undefined
-    || lockedApp.catalogVersion !== context.app.catalogVersion
     || lockedApp.lastTopicDiscoveryAt?.getTime() !== context.app.lastTopicDiscoveryAt?.getTime()
     || lockedApp.topicDiscoveryRequestedAt?.getTime()
       !== context.app.topicDiscoveryRequestedAt?.getTime()
   ) {
-    throw new Error('topic_discovery_catalog_stale')
+    throw new Error('topic_discovery_request_stale')
   }
-  await assertDiscoveryCandidatesCurrent(transaction, payload, context, lockedApp.catalogVersion)
-  const insertedRows = await Promise.all(
-    newProposals.map((proposal) => insertDiscoveryTopic(transaction, payload, context, proposal)),
-  )
-  const insertedCount = insertedRows.reduce((total, rows) => total + rows.length, 0)
+  await assertDiscoveryCandidatesCurrent(transaction, payload, context)
+  await insertFreshTopics(transaction, payload, context, newProposals)
   const now = new Date()
   await markDiscoveryReviews(transaction, context)
-  const appUpdate =
-    insertedCount > 0
-      ? {
-          lastTopicDiscoveryAt: now,
-          topicDiscoveryRequestedAt: null,
-          analysisCatalogVersion: lockedApp.catalogVersion + 1,
-        }
-      : { lastTopicDiscoveryAt: now, topicDiscoveryRequestedAt: null }
-  await transaction.update(apps).set(appUpdate).where(eq(apps.id, context.app.id))
+  await transaction
+    .update(apps)
+    .set({ lastTopicDiscoveryAt: now, topicDiscoveryRequestedAt: null })
+    .where(eq(apps.id, context.app.id))
   await transaction
     .insert(usageEvents)
     .values({
@@ -257,17 +236,39 @@ async function persistDiscoveryResultsTransaction(
     })
 }
 
+async function insertFreshTopics(
+  transaction: WorkerTransaction,
+  payload: { organizationId: string; appId: string },
+  context: DiscoveryContext,
+  proposals: Array<{ label: string; description: string }>,
+): Promise<void> {
+  const currentTopics = await transaction
+    .select({ label: reviewTopics.label, aliases: reviewTopics.aliases })
+    .from(reviewTopics)
+    .where(
+      and(
+        eq(reviewTopics.appId, context.app.id),
+        eq(reviewTopics.organizationId, payload.organizationId),
+      ),
+    )
+  const currentProposals = deduplicateTopicProposals(proposals, currentTopics)
+  await Promise.all(
+    currentProposals.map((proposal) =>
+      insertDiscoveryTopic(transaction, payload, context, proposal),
+    ),
+  )
+}
+
 async function assertDiscoveryCandidatesCurrent(
   transaction: WorkerTransaction,
   payload: { organizationId: string; appId: string },
   context: DiscoveryContext,
-  catalogVersion: number,
 ): Promise<void> {
   const candidateIds = context.uncovered.map((candidate) => candidate.id)
   const currentCandidates = await loadCurrentDiscoveryCandidates(transaction, payload, candidateIds)
   const currentById = new Map(currentCandidates.map((candidate) => [candidate.id, candidate]))
   const allCurrent = context.uncovered.every((candidate) =>
-    isDiscoveryCandidateCurrent(currentById.get(candidate.id), candidate, catalogVersion),
+    isDiscoveryCandidateCurrent(currentById.get(candidate.id), candidate),
   )
   if (!allCurrent) {
     throw new Error('topic_discovery_candidates_stale')
@@ -284,7 +285,6 @@ type CurrentDiscoveryCandidate = {
   analysisStatus: string
   analysisInputHash: string
   analysisAnalyzedAt: Date
-  analysisCatalogVersion: number
   criteriaVersion: string
   uncovered: boolean
   discoveredAt: Date | null
@@ -306,7 +306,6 @@ function loadCurrentDiscoveryCandidates(
       analysisStatus: reviews.analysisStatus,
       analysisInputHash: reviewAnalyses.inputHash,
       analysisAnalyzedAt: reviewAnalyses.analyzedAt,
-      analysisCatalogVersion: reviewAnalyses.catalogVersion,
       criteriaVersion: reviewAnalyses.criteriaVersion,
       uncovered: reviewAnalyses.uncovered,
       discoveredAt: reviewAnalyses.discoveredAt,
@@ -326,12 +325,10 @@ function loadCurrentDiscoveryCandidates(
 function isDiscoveryCandidateCurrent(
   current: CurrentDiscoveryCandidate | undefined,
   candidate: DiscoveryContext['uncovered'][number],
-  catalogVersion: number,
 ): boolean {
   return (
     current !== undefined
     && current.analysisStatus === 'completed'
-    && current.analysisCatalogVersion === catalogVersion
     && current.criteriaVersion === reviewAnalysisCriteriaVersion
     && current.uncovered
     && current.discoveredAt === null

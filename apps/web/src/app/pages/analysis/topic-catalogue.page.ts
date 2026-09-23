@@ -12,8 +12,11 @@ import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, Router, RouterLink } from '@angular/router'
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
 import type { AppListItemResponse } from '@reviewinbox/contracts'
+import { ConfirmationService } from 'primeng/api'
 import { ButtonModule } from 'primeng/button'
+import { ConfirmDialogModule } from 'primeng/confirmdialog'
 import { SelectModule } from 'primeng/select'
+import { TabsModule } from 'primeng/tabs'
 import { Subject, takeUntil } from 'rxjs'
 
 import type { AppSelectOption } from '../../shared/components/app-select/app-select.component'
@@ -27,12 +30,15 @@ import { AppsService } from '../../shared/services/apps.service'
   imports: [
     AppSelectComponent,
     ButtonModule,
+    ConfirmDialogModule,
     FormsModule,
     RouterLink,
     SelectModule,
+    TabsModule,
     TranslocoDirective,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
+  providers: [ConfirmationService],
   templateUrl: './topic-catalogue.page.html',
 })
 export class TopicCataloguePageComponent {
@@ -43,6 +49,7 @@ export class TopicCataloguePageComponent {
   private readonly analysisService = inject(AnalysisService)
   private readonly appIcons = inject(AppIconsService)
   private readonly transloco = inject(TranslocoService)
+  private readonly confirmation = inject(ConfirmationService)
   private readonly mutationCancelled = new Subject<void>()
 
   protected readonly selectedAppId = signal(this.route.snapshot.queryParamMap.get('appId') ?? '')
@@ -51,6 +58,7 @@ export class TopicCataloguePageComponent {
   protected readonly draftDescription = signal('')
   protected readonly showCreateTopic = signal(false)
   protected readonly pendingAction = signal<string | null>(null)
+  protected readonly selectedView = signal<'active' | 'rejected'>('active')
   protected readonly mergeTargetByTopicId = signal<Record<string, string>>({})
   protected readonly message = signal<{ type: 'success' | 'error'; key: string } | null>(null)
   protected readonly appsResource = this.appsService.appsResource()
@@ -75,6 +83,25 @@ export class TopicCataloguePageComponent {
     this.catalogueResource.hasValue()
       ? this.catalogueResource.value().topics.filter((topic) => topic.mergedIntoId === null)
       : [],
+  )
+  protected readonly activeTopics = computed(() =>
+    this.catalogueTopics().filter((topic) => topic.status !== 'rejected'),
+  )
+  protected readonly rejectedTopics = computed(() =>
+    this.catalogueTopics().filter((topic) => topic.status === 'rejected'),
+  )
+  protected readonly visibleTopics = computed(() =>
+    this.selectedView() === 'rejected' ? this.rejectedTopics() : this.activeTopics(),
+  )
+  protected readonly emptyTitleKey = computed(() =>
+    this.selectedView() === 'rejected'
+      ? 'analysis.catalogue.emptyRejectedTitle'
+      : 'analysis.catalogue.emptyTitle',
+  )
+  protected readonly emptyDescriptionKey = computed(() =>
+    this.selectedView() === 'rejected'
+      ? 'analysis.catalogue.emptyRejectedDescription'
+      : 'analysis.catalogue.emptyDescription',
   )
   protected readonly canManageCatalogue = computed(() =>
     this.catalogueResource.hasValue() ? this.catalogueResource.value().canManage : false,
@@ -104,6 +131,7 @@ export class TopicCataloguePageComponent {
     this.draftLabel.set('')
     this.draftDescription.set('')
     this.pendingAction.set(null)
+    this.selectedView.set('active')
     this.mergeTargetByTopicId.set({})
     void this.router.navigate([], {
       relativeTo: this.route,
@@ -180,6 +208,32 @@ export class TopicCataloguePageComponent {
           this.pendingAction.set(null)
         },
       })
+  }
+
+  protected changeView(value: string | number | undefined): void {
+    if (value === 'active' || value === 'rejected') {
+      this.selectedView.set(value)
+      this.cancelTopicEdit()
+    }
+  }
+
+  protected confirmTopicRejection(topic: AnalysisTopic): void {
+    this.confirmation.confirm({
+      key: 'reject-topic',
+      header: this.transloco.translate('analysis.catalogue.rejectTitle'),
+      message: this.transloco.translate('analysis.catalogue.rejectDescription', {
+        name: topic.label,
+      }),
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: this.transloco.translate('analysis.actions.reject'),
+      rejectLabel: this.transloco.translate('common.cancel'),
+      acceptButtonProps: { severity: 'danger' },
+      rejectButtonProps: { severity: 'secondary', outlined: true },
+      defaultFocus: 'reject',
+      accept: () => {
+        this.setTopicStatus(topic, 'rejected')
+      },
+    })
   }
 
   protected mergeTarget(topicId: string): string {

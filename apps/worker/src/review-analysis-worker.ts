@@ -45,7 +45,6 @@ type ReviewForAnalysis = {
 type PersistClassificationInput = {
   database: Database
   review: Pick<ReviewForAnalysis, 'id' | 'organizationId' | 'appId'>
-  catalogVersion: number
   inputHash: string
   analysisAnalyzedAt: Date | null
   classification: ReviewClassificationResult
@@ -73,13 +72,12 @@ export async function classifyReviewForAnalysis(
     return { status: 'skipped', reviewId: review.id, reason: 'not_found' }
   }
 
-  return classifyLoadedReview(options, review, app.catalogVersion, now)
+  return classifyLoadedReview(options, review, now)
 }
 
 async function classifyLoadedReview(
   options: ReviewAnalysisWorkerOptions,
   review: ReviewForAnalysis,
-  catalogVersion: number,
   now: () => Date,
 ): Promise<ReviewAnalysisResult> {
   const inputHash = getReviewAnalysisInputHash({
@@ -90,7 +88,7 @@ async function classifyLoadedReview(
     language: review.language,
   })
   const existingAnalysis = await loadExistingAnalysis(options.database, review.id)
-  if (isAnalysisCurrent(review, catalogVersion, inputHash, existingAnalysis)) {
+  if (isAnalysisCurrent(review, inputHash, existingAnalysis)) {
     return { status: 'unchanged', reviewId: review.id }
   }
   await markReviewProcessing(options.database, review.id, now())
@@ -98,7 +96,6 @@ async function classifyLoadedReview(
   try {
     return await runReviewClassification(options, {
       review,
-      catalogVersion,
       inputHash,
       analysisAnalyzedAt: existingAnalysis?.analyzedAt ?? null,
       now,
@@ -118,13 +115,12 @@ async function runReviewClassification(
   options: ReviewAnalysisWorkerOptions,
   context: {
     review: ReviewForAnalysis
-    catalogVersion: number
     inputHash: string
     analysisAnalyzedAt: Date | null
     now: () => Date
   },
 ): Promise<ReviewAnalysisResult> {
-  const { review, catalogVersion, inputHash, analysisAnalyzedAt, now } = context
+  const { review, inputHash, analysisAnalyzedAt, now } = context
   const topics = await loadTopics(options.database, review)
   const classification = await options.classifier.classify({
     title: review.title,
@@ -140,7 +136,6 @@ async function runReviewClassification(
   const persisted = await persistClassification({
     database: options.database,
     review,
-    catalogVersion,
     inputHash,
     analysisAnalyzedAt,
     classification,
@@ -181,9 +176,9 @@ async function loadReview(
 async function loadApp(
   database: Database,
   review: Pick<ReviewForAnalysis, 'appId' | 'organizationId'>,
-): Promise<{ catalogVersion: number } | undefined> {
+): Promise<{ id: string } | undefined> {
   const [app] = await database
-    .select({ catalogVersion: apps.analysisCatalogVersion })
+    .select({ id: apps.id })
     .from(apps)
     .where(and(eq(apps.id, review.appId), eq(apps.organizationId, review.organizationId)))
     .limit(1)
@@ -211,12 +206,7 @@ function loadTopics(
     )
 }
 
-type ExistingAnalysis = {
-  inputHash: string
-  catalogVersion: number
-  criteriaVersion: string
-  analyzedAt: Date
-}
+type ExistingAnalysis = { inputHash: string; criteriaVersion: string; analyzedAt: Date }
 
 async function loadExistingAnalysis(
   database: Database,
@@ -225,7 +215,6 @@ async function loadExistingAnalysis(
   const [existing] = await database
     .select({
       inputHash: reviewAnalyses.inputHash,
-      catalogVersion: reviewAnalyses.catalogVersion,
       criteriaVersion: reviewAnalyses.criteriaVersion,
       analyzedAt: reviewAnalyses.analyzedAt,
     })
@@ -237,13 +226,11 @@ async function loadExistingAnalysis(
 
 function isAnalysisCurrent(
   review: Pick<ReviewForAnalysis, 'analysisStatus'>,
-  catalogVersion: number,
   inputHash: string,
   existing: ExistingAnalysis | undefined,
 ): boolean {
   return (
     existing?.inputHash === inputHash
-    && existing.catalogVersion === catalogVersion
     && existing.criteriaVersion === reviewAnalysisCriteriaVersion
     && review.analysisStatus === 'completed'
   )
@@ -454,7 +441,11 @@ async function lockPersistenceRows(
     .for('update')
     .limit(1)
   const activeTopics = await transaction
-    .select({ id: reviewTopics.id, status: reviewTopics.status })
+    .select({
+      id: reviewTopics.id,
+      status: reviewTopics.status,
+      mergedIntoId: reviewTopics.mergedIntoId,
+    })
     .from(reviewTopics)
     .where(
       and(
@@ -485,7 +476,7 @@ function isPersistenceCurrent(
   input: PersistClassificationInput,
 ): boolean {
   const sourceCurrent =
-    source.app?.catalogVersion === input.catalogVersion
+    source.app !== undefined
     && source.review !== undefined
     && getReviewAnalysisInputHash(source.review) === input.inputHash
   const analysisCurrent =
@@ -495,15 +486,21 @@ function isPersistenceCurrent(
   return sourceCurrent && analysisCurrent
 }
 
-function getActiveTopicIds(topics: Array<{ id: string; status: string }>): Set<string> {
-  return new Set(topics.filter((topic) => topic.status !== 'rejected').map((topic) => topic.id))
+function getActiveTopicIds(
+  topics: Array<{ id: string; status: string; mergedIntoId: string | null }>,
+): Set<string> {
+  return new Set(
+    topics
+      .filter((topic) => topic.status !== 'rejected' && topic.mergedIntoId === null)
+      .map((topic) => topic.id),
+  )
 }
 
 async function lockSourceRows(
   transaction: Transaction,
   input: PersistClassificationInput,
 ): Promise<{
-  app: { catalogVersion: number } | undefined
+  app: { id: string } | undefined
   review:
     | {
         title: string | null
@@ -515,7 +512,7 @@ async function lockSourceRows(
     | undefined
 }> {
   const [app] = await transaction
-    .select({ catalogVersion: apps.analysisCatalogVersion })
+    .select({ id: apps.id })
     .from(apps)
     .where(
       and(eq(apps.id, input.review.appId), eq(apps.organizationId, input.review.organizationId)),
@@ -570,7 +567,6 @@ async function upsertAnalysis(
     appId: input.review.appId,
     inputHash: input.inputHash,
     criteriaVersion: reviewAnalysisCriteriaVersion,
-    catalogVersion: input.catalogVersion,
     model: input.classification.model,
     severity: input.classification.severity.code,
     intents: automatic.baseIntents,

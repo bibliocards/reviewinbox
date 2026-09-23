@@ -180,8 +180,7 @@ export function toAnalysisReview(
 function currentAutomaticAnalysis(row: ReviewRow): ReviewRow['analysis'] {
   const analysis = row.analysis
   return row.review.analysisStatus === 'completed'
-    && analysis?.catalogVersion === row.app.analysisCatalogVersion
-    && analysis.criteriaVersion === reviewAnalysisCriteriaVersion
+    && analysis?.criteriaVersion === reviewAnalysisCriteriaVersion
     ? analysis
     : null
 }

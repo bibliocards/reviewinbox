@@ -1,4 +1,4 @@
-import { apps, reviewAnalyses, reviews, type Database } from '@reviewinbox/db'
+import { reviewAnalyses, reviews, type Database } from '@reviewinbox/db'
 import { and, desc, eq, isNull } from 'drizzle-orm'
 
 export const topicDiscoveryCandidateBatchSize = 50
@@ -7,7 +7,6 @@ export type TopicDiscoveryCandidateInput = {
   database: Database
   organizationId: string
   appId: string
-  catalogVersion: number
   criteriaVersion: string
 }
 
@@ -25,17 +24,11 @@ export function loadTopicDiscoveryCandidates(input: TopicDiscoveryCandidateInput
     })
     .from(reviews)
     .innerJoin(reviewAnalyses, eq(reviewAnalyses.reviewId, reviews.id))
-    .innerJoin(
-      apps,
-      and(eq(apps.id, reviews.appId), eq(apps.organizationId, reviews.organizationId)),
-    )
     .where(
       and(
         eq(reviews.appId, input.appId),
         eq(reviews.organizationId, input.organizationId),
-        eq(apps.analysisCatalogVersion, input.catalogVersion),
         eq(reviews.analysisStatus, 'completed'),
-        eq(reviewAnalyses.catalogVersion, input.catalogVersion),
         eq(reviewAnalyses.criteriaVersion, input.criteriaVersion),
         eq(reviewAnalyses.uncovered, true),
         isNull(reviewAnalyses.discoveredAt),

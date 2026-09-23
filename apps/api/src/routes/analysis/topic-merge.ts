@@ -5,7 +5,7 @@ import {
   reviewTopicAssignments,
   reviewTopics,
 } from '@reviewinbox/db'
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 
 import { database } from '../../db'
 import type { AnalysisRouteDependencies } from './index'
@@ -184,10 +184,6 @@ async function recordMergeAudit(
   transaction: DatabaseTransaction,
   input: { app: AppRow; topicId: string; actorUserId: string; metadata: AuditMetadata },
 ) {
-  await transaction
-    .update(apps)
-    .set({ analysisCatalogVersion: sql`${apps.analysisCatalogVersion} + 1` })
-    .where(eq(apps.id, input.app.id))
   await transaction
     .insert(reviewAnalysisEvents)
     .values({

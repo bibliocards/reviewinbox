@@ -28,7 +28,7 @@ Status: design confirmed and implementation authorized. Agreed requirements are 
 - Allow human correction of topics, intents and severity. Preserve overrides during reclassification, flag them for rechecking when the underlying review changes, and allow returning to automatic classification.
 - Generate topic labels and definitions in English initially. Future catalogue-language configuration belongs to the Organization, not the App; the topic catalogue itself remains app-scoped. This does not restrict the existing translated UI.
 - All organization members can read analysis and correct individual reviews; owner/admin manage the app catalogue. The global provider secret remains installation-operator configuration.
-- Use the store-provided review date for the primary dashboard period, documenting the Apple creation-date versus Google last-modified-date difference. Keep versions scoped to their store.
+- Use the store-provided review date for the primary dashboard period, documenting the Apple creation-date versus Google last-modified-date difference. A version filter requires an App and, without a Store, matches the same version label across both of that App's stores.
 
 ## Documentation and marketing delivery
 
@@ -42,7 +42,7 @@ An Analysis destination contains an overview, a filtered review list, and the se
 
 Show severity distribution, leading topics, topic trends, and analysis coverage. Clicking a chart segment filters the supporting reviews; opening a review leads to its reply workflow. Make filters shareable through the URL.
 
-Pending topics contribute to default aggregate metrics and main charts. Proposed visual treatment: outlined or hatched chart marks, dashed trend lines, and an explicit pending label in legends/tooltips. Keep text contrast and click/keyboard interactions intact; provisional does not mean disabled. Rejected topics are available only in catalogue administration.
+Pending topics contribute to default aggregate metrics and main charts. Proposed visual treatment: outlined or hatched chart marks, dashed trend lines, and an explicit pending label in legends/tooltips. Keep text contrast and click/keyboard interactions intact; provisional does not mean disabled. Rejected topics appear in a separate catalogue tab and can be reopened.
 
 Reuse existing product components, theme tokens, spacing and filter patterns in both supported themes. Chart and table selections share the same filter state; provide visible active filters, clear/reset actions, loading/empty/error states, and a predictable return from the reply inbox.
 
@@ -52,7 +52,7 @@ Fixed values use stable codes such as `request_refund` and `blocking`, with pres
 
 Agreed roles: all organization members can read analysis and correct a review, consistent with existing reply-inbox permissions; owner/admin can manage the app catalogue, consistent with app editing. Permission enforcement belongs on the API as well as the UI.
 
-Metrics count unique reviews within each slice. A review can belong to multiple topics, so topic counts must not be summed into a review total. Display the number and proportion of reviews successfully classified. Missing version, unknown severity, and unclassified reviews remain explicit states, not zero severity. Version labels are store-scoped unless deliberately mapped.
+Metrics count unique reviews within each slice. A review can belong to multiple topics, so topic counts must not be summed into a review total. Display the number and proportion of reviews successfully classified. Missing version, unknown severity, and unclassified reviews remain explicit states, not zero severity. Version labels are attributed to their source Store; the filter compares the label across one App's stores when no Store is selected. Version options are scoped to the App and optional Store, not to the current Review period or other filters.
 
 ## Proposed processing
 
@@ -61,7 +61,7 @@ Metrics count unique reviews within each slice. A review can belong to multiple 
 3. Jev evaluates known topics, fixed intents, severity, and whether the catalogue adequately covers the review.
 4. Luna proposes English labels and definitions for missing topics from eligible reviews in daily batches or on manual request. Reuse the configured generative-provider boundary; keep discovery metering separate from reply drafting under the agreed launch policy.
 5. Deduplicate proposals against the catalogue, including rejected topics; store new proposals as pending.
-6. Persist classification results with provider/model, criteria/catalogue version, input fingerprint, and processing status. Reject stale job results when the review or catalogue changes.
+6. Persist classification results with provider/model, criteria version, input fingerprint, and processing status. Reject stale job results when the Review changes. Catalogue edits do not trigger a global reclassification.
 
 Jev can select supplied candidates or detect that none fits. It does not generate arbitrary new topic labels. Creating candidates from extracted phrases is possible but would require a separate candidate-generation mechanism.
 
@@ -86,7 +86,7 @@ Add a durable per-review `analysisStatus` with `pending | processing | completed
 
 Repository inspection confirms there is no organization-owned AI credential configuration yet; Bring Your Own Key appears as plan metadata. Current monthly Cloud limits in `packages/billing/src/plans.ts` are 30 imported reviews and 5 managed reply drafts for Free, and 5,000 imported reviews and 1,000 managed reply drafts for Pro. No classification or discovery usage events exist yet.
 
-Keep Jev classification and Luna topic discovery separate from reply-draft quotas. Classification is included for all imported reviews and the complete initial backfill, subject to global cost controls and fair queue scheduling. Meter discovery separately at organization level, with bounded batches and limited frequency; reuse batches and cache results for repeated manual requests. Infrastructure retries and reprocessing caused by catalogue maintenance do not consume user-facing credits. Commercial plan-specific discovery quotas will be decided after measuring usage.
+Keep Jev classification and Luna topic discovery separate from reply-draft quotas. Classification is included for all imported reviews and the complete initial backfill, subject to global cost controls and fair queue scheduling. Meter discovery separately at organization level, with bounded batches and limited frequency; reuse batches and cache results for repeated manual requests. Infrastructure retries do not consume user-facing credits. Commercial plan-specific discovery quotas will be decided after measuring usage.
 
 ## Agreed topic lifecycle
 

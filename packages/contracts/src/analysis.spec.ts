@@ -9,10 +9,15 @@ import {
 const topicId = '11111111-1111-4111-8111-111111111111'
 
 describe('review analysis input contracts', () => {
-  it('requires a store for version filtering and rejects reversed periods', () => {
+  it('requires an App for a version and rejects reversed periods', () => {
     expect(analysisFiltersSchema.safeParse({ version: '1.0' }).success).toBe(false)
     expect(
       analysisFiltersSchema.safeParse({ provider: 'google_play', version: '1.0' }).success,
+    ).toBe(false)
+    expect(analysisFiltersSchema.safeParse({ appId: topicId, version: '1.0' }).success).toBe(true)
+    expect(
+      analysisFiltersSchema.safeParse({ appId: topicId, provider: 'google_play', version: '1.0' })
+        .success,
     ).toBe(true)
     expect(
       analysisFiltersSchema.safeParse({

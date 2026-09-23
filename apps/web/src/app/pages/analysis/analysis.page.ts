@@ -1,5 +1,13 @@
 import { NgClass } from '@angular/common'
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core'
 import { ActivatedRoute, Router, RouterLink } from '@angular/router'
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
 import {
@@ -21,7 +29,7 @@ import {
 } from '../../shared/services/analysis.service'
 import { AppIconsService } from '../../shared/services/app-icons.service'
 import { AppsService } from '../../shared/services/apps.service'
-import { AnalysisFiltersComponent } from './analysis-filters.component'
+import { AnalysisFiltersComponent, type AnalysisFilterChange } from './analysis-filters.component'
 import { AnalysisOverviewComponent } from './analysis-overview.component'
 import { AnalysisReviewsComponent } from './analysis-reviews.component'
 import type { TrendPeriod } from './analysis-trend'
@@ -46,6 +54,7 @@ const intents: readonly AnalysisIntent[] = [
   'express_satisfaction',
   'express_dissatisfaction',
 ]
+const versionCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
 
 @Component({
   selector: 'ri-analysis-page',
@@ -69,14 +78,16 @@ export class AnalysisPageComponent {
   private readonly dialogService = inject(DialogService)
   private readonly transloco = inject(TranslocoService)
 
-  protected readonly selectedAppId = signal(this.route.snapshot.queryParamMap.get('appId') ?? '')
+  protected readonly selectedAppId = signal(
+    z.uuid().safeParse(this.route.snapshot.queryParamMap.get('appId')).data ?? '',
+  )
   protected readonly selectedFrom = signal(this.route.snapshot.queryParamMap.get('from') ?? '')
   protected readonly selectedTo = signal(this.route.snapshot.queryParamMap.get('to') ?? '')
   protected readonly selectedProvider = signal(
     this.route.snapshot.queryParamMap.get('provider') ?? '',
   )
   protected readonly selectedVersion = signal(
-    this.route.snapshot.queryParamMap.get('version') ?? '',
+    this.selectedAppId() ? (this.route.snapshot.queryParamMap.get('version') ?? '') : '',
   )
   protected readonly selectedSeverity = signal(
     this.route.snapshot.queryParamMap.get('severity') ?? '',
@@ -144,9 +155,32 @@ export class AnalysisPageComponent {
     { label: this.transloco.translate('apps.stores.google'), value: 'google_play' },
   ])
   protected readonly versionFilterOptions = computed(() => [
-    { label: this.transloco.translate('analysis.filters.allVersions'), value: '' },
-    ...this.versionOptions().map((item) => ({ label: item.version, value: item.version })),
+    {
+      label: this.transloco.translate(
+        this.selectedAppId()
+          ? 'analysis.filters.allVersions'
+          : 'analysis.filters.selectAppForVersion',
+      ),
+      value: '',
+    },
+    ...[...new Set([...this.versionOptions().map((item) => item.version), this.selectedVersion()])]
+      .filter(Boolean)
+      // oxlint-disable-next-line unicorn/no-array-sort -- the web target lacks toSorted; this array is newly created.
+      .sort((left, right) => versionCollator.compare(right, left))
+      .map((version) => ({ label: version, value: version })),
   ])
+  protected readonly hasActiveFilters = computed(() =>
+    Boolean(
+      this.selectedFrom()
+      || this.selectedTo()
+      || this.selectedProvider()
+      || this.selectedVersion()
+      || this.selectedSeverity()
+      || this.selectedIntent()
+      || this.selectedTopicId()
+      || this.selectedTopicStatus(),
+    ),
+  )
   protected readonly severityFilterOptions = computed(() => [
     { label: this.transloco.translate('analysis.filters.allSeverities'), value: '' },
     ...severities.map((severity) => ({
@@ -183,12 +217,18 @@ export class AnalysisPageComponent {
     effect(() => {
       this.appIcons.loadIcons(this.apps())
     })
+    if (this.route.snapshot.queryParamMap.has('version') && !this.selectedAppId()) {
+      afterNextRender(() => {
+        this.updateUrl()
+      })
+    }
   }
 
-  protected changeFilter(name: string, value: string): void {
+  protected changeFilter(name: AnalysisFilterChange['name'], value: string): void {
     switch (name) {
       case 'appId':
         this.selectedAppId.set(value)
+        this.selectedProvider.set('')
         this.selectedTopicId.set('')
         this.selectedVersion.set('')
         break
@@ -200,7 +240,6 @@ export class AnalysisPageComponent {
         break
       case 'provider':
         this.selectedProvider.set(value)
-        this.selectedVersion.set('')
         break
       case 'version':
         this.selectedVersion.set(value)

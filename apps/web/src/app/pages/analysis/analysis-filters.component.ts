@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core'
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { TranslocoDirective } from '@jsverse/transloco'
 import { ButtonModule } from 'primeng/button'
@@ -11,7 +11,17 @@ import {
 } from '../../shared/components/app-select/app-select.component'
 import { formatAnalysisDate, parseAnalysisDate } from './analysis-date-filter'
 
-export type AnalysisFilterChange = { name: string; value: string }
+export type AnalysisFilterName =
+  | 'appId'
+  | 'from'
+  | 'to'
+  | 'provider'
+  | 'version'
+  | 'severity'
+  | 'intent'
+  | 'topicId'
+  | 'topicStatus'
+export type AnalysisFilterChange = { name: AnalysisFilterName; value: string }
 
 @Component({
   selector: 'ri-analysis-filters',
@@ -47,8 +57,57 @@ export class AnalysisFiltersComponent {
   readonly clear = output()
   protected readonly fromDate = computed(() => parseAnalysisDate(this.from()))
   protected readonly toDate = computed(() => parseAnalysisDate(this.to()))
+  protected readonly additionalOpen = signal(false)
+  protected readonly additionalFilters = computed(
+    () =>
+      [
+        {
+          name: 'severity',
+          labelKey: 'analysis.filters.severity',
+          value: this.severity(),
+          options: this.severityOptions(),
+        },
+        {
+          name: 'intent',
+          labelKey: 'analysis.filters.intent',
+          value: this.intent(),
+          options: this.intentOptions(),
+        },
+        {
+          name: 'topicId',
+          labelKey: 'analysis.filters.topic',
+          value: this.topicId(),
+          options: this.topicOptions(),
+        },
+        {
+          name: 'topicStatus',
+          labelKey: 'analysis.filters.topicStatus',
+          value: this.topicStatus(),
+          options: this.topicStatusOptions(),
+        },
+      ] as const,
+  )
+  protected readonly activeAdditionalFilters = computed(() =>
+    this.additionalFilters().filter((filter) => filter.value),
+  )
+  protected readonly hasFilters = computed(() =>
+    Boolean(
+      this.from()
+      || this.to()
+      || this.provider()
+      || this.version()
+      || this.activeAdditionalFilters().length > 0,
+    ),
+  )
 
-  protected emit(name: string, value: string): void {
+  protected selectedOptionLabel(filter: {
+    value: string
+    options: readonly { label: string; value: string }[]
+  }): string {
+    return filter.options.find((option) => option.value === filter.value)?.label ?? filter.value
+  }
+
+  protected emit(name: AnalysisFilterName, value: string): void {
     this.change.emit({ name, value })
   }
 

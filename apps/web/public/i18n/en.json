@@ -201,7 +201,11 @@
       "allStores": "All stores",
       "store": "Store",
       "allVersions": "All versions",
+      "selectAppForVersion": "Select an App first",
       "version": "Version",
+      "additional": "More filters",
+      "active": "Active filters",
+      "remove": "Remove {{name}} filter",
       "allSeverities": "All severities",
       "severity": "Severity",
       "allIntents": "All intents",
@@ -209,21 +213,26 @@
       "allTopics": "All topics",
       "topic": "Topic",
       "allTopicStatuses": "All topic statuses",
-      "topicStatus": "Topic status",
-      "versionNeedsStore": "Choose a store before filtering by version."
+      "topicStatus": "Topic status"
     },
     "catalogue": {
       "title": "Topic catalogue",
       "description": "Keep the shared vocabulary that makes Analysis useful for this App.",
       "sharedTitle": "One catalogue across stores",
       "sharedDescription": "Pending proposals stay visible until a human validates them.",
+      "activeTopics": "Active topics",
+      "rejectedTopics": "Rejected topics",
+      "rejectTitle": "Reject this topic?",
+      "rejectDescription": "Reject “{{name}}”? Its Review assignments and manual topic corrections will be removed. Reopening it will not restore them.",
       "newTopic": "Create a topic",
       "label": "Topic label",
       "definition": "Definition",
       "aliases": "Aliases",
       "reviews": "Reviews",
       "emptyTitle": "No topics yet",
-      "emptyDescription": "Create a topic or ask the classifier to discover a proposal."
+      "emptyDescription": "Create a topic or ask the classifier to discover a proposal.",
+      "emptyRejectedTitle": "No rejected topics",
+      "emptyRejectedDescription": "Topics you reject will appear here and can be reopened."
     },
     "loading": "Loading analysis…",
     "disabled": {
@@ -284,7 +293,7 @@
       "none": "None",
       "save": "Save correction",
       "reset": "Reset to automatic analysis",
-      "needsRecheck": "This Review needs analysis again after a catalogue change."
+      "needsRecheck": "This Review changed since its manual analysis was saved. Check the correction."
     },
     "intents": {
       "report_problem": "Report a problem",

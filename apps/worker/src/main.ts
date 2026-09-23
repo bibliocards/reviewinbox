@@ -237,11 +237,10 @@ async function enqueuePendingAnalysisJobs(runtime: WorkerRuntime): Promise<void>
   }
   const staleBefore = new Date(Date.now() - 15 * 60 * 1000)
   const retryAfter = new Date(Date.now() - 5 * 60 * 1000)
-  const catalogMismatch = and(
+  const staleCriteria = and(
     eq(reviews.analysisStatus, 'completed'),
     or(
       isNull(reviewAnalyses.reviewId),
-      ne(reviewAnalyses.catalogVersion, apps.analysisCatalogVersion),
       ne(reviewAnalyses.criteriaVersion, reviewAnalysisCriteriaVersion),
     ),
   )
@@ -258,7 +257,7 @@ async function enqueuePendingAnalysisJobs(runtime: WorkerRuntime): Promise<void>
         eq(reviews.analysisStatus, 'pending'),
         and(eq(reviews.analysisStatus, 'failed'), lt(reviews.updatedAt, retryAfter)),
         and(eq(reviews.analysisStatus, 'processing'), lt(reviews.analysisStartedAt, staleBefore)),
-        catalogMismatch,
+        staleCriteria,
       ),
     )
     .orderBy(

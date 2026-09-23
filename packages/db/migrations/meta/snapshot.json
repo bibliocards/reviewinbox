@@ -1,6 +1,6 @@
 {
-  "id": "612728b8-ef88-4293-8c4c-708fd99c6241",
-  "prevId": "4b42ea7e-8704-4923-ab0d-9cab4f0583e4",
+  "id": "7313ce63-8b7a-4b78-8cd0-b7af78fb59f8",
+  "prevId": "612728b8-ef88-4293-8c4c-708fd99c6241",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -33,13 +33,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": true
-        },
-        "analysis_catalog_version": {
-          "name": "analysis_catalog_version",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 1
         },
         "topic_discovery_requested_at": {
           "name": "topic_discovery_requested_at",
@@ -2600,12 +2593,6 @@
         "criteria_version": {
           "name": "criteria_version",
           "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "catalog_version": {
-          "name": "catalog_version",
-          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },

@@ -1,6 +1,6 @@
 import { getReviewAnalysisInputHash } from '@reviewinbox/ai'
 import { classificationOverrideSchema } from '@reviewinbox/contracts'
-import { apps, reviewAnalyses, reviewAnalysisEvents, reviewTopics } from '@reviewinbox/db'
+import { reviewAnalyses, reviewAnalysisEvents, reviewTopics } from '@reviewinbox/db'
 import { and, eq } from 'drizzle-orm'
 import type { Context } from 'hono'
 import { z } from 'zod'
@@ -150,7 +150,6 @@ async function saveOverride(
     actorUserId: string
   },
 ) {
-  const app = await transaction.query.apps.findFirst({ where: eq(apps.id, input.row.review.appId) })
   await transaction
     .insert(reviewAnalyses)
     .values({
@@ -160,7 +159,6 @@ async function saveOverride(
       inputHash: input.inputHash,
       overrideInputHash: input.inputHash,
       criteriaVersion: 'manual-v1',
-      catalogVersion: app?.analysisCatalogVersion ?? 1,
       model: 'manual',
       manualOverride: input.override,
       needsRecheck: false,

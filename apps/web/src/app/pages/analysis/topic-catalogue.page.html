@@ -1,4 +1,5 @@
 <div class="grid gap-6 p-6 text-ink sm:p-8" *transloco="let t">
+  <p-confirmdialog key="reject-topic" />
   <header
     class="flex flex-col items-start justify-between gap-6 border-b border-hairline pb-6 lg:flex-row lg:items-end"
   >
@@ -117,172 +118,178 @@
   </section>
   }
 
-  <section class="grid gap-3" aria-live="polite">
-    @if (catalogueResource.isLoading()) {
-    <div
-      class="grid justify-items-center gap-2 rounded-xl border border-dashed border-hairline-strong p-8 text-center text-ink-subtle"
-    >
-      <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>{{ t('analysis.loading') }}
-    </div>
-    } @else if (catalogueResource.error()) {
-    <div
-      class="rounded-xl border border-red-500/40 p-5 text-red-700 dark:text-red-300"
-      role="alert"
-    >
-      {{ t('analysis.errors.loadFailed') }}
-    </div>
-    } @else if (catalogueTopics().length === 0) {
-    <div
-      class="grid justify-items-center gap-2 rounded-xl border border-dashed border-hairline-strong p-8 text-center text-ink-subtle"
-    >
-      <i class="pi pi-tags" aria-hidden="true"></i
-      ><strong>{{ t('analysis.catalogue.emptyTitle') }}</strong
-      ><span>{{ t('analysis.catalogue.emptyDescription') }}</span>
-    </div>
-    } @else { @for (topic of catalogueTopics(); track topic.id) {
-    <article
-      class="grid gap-3 rounded-xl border border-hairline bg-surface-1 p-4"
-      [class.border-dashed]="isPending(topic)"
-      [class.opacity-70]="topic.status === 'rejected'"
-    >
-      <div class="flex items-start justify-between gap-3">
-        <div>
-          <div class="flex flex-wrap items-center gap-2">
-            <h2 class="m-0 text-base font-semibold text-ink">{{ topic.label }}</h2>
-            <span
-              class="rounded-full border px-2 py-0.5 text-xs font-medium"
-              [class.border-dashed]="topic.status === 'pending'"
-              [class.border-primary]="topic.status === 'pending'"
-              [class.text-primary]="topic.status === 'pending'"
-              [class.bg-success/10]="topic.status === 'approved'"
-              [class.border-success/30]="topic.status === 'approved'"
-              [class.text-success]="topic.status === 'approved'"
-              [class.border-hairline]="topic.status === 'rejected'"
-              [class.text-ink-subtle]="topic.status === 'rejected'"
-              >{{ t('analysis.topicStatus.' + topic.status) }}</span
-            >
+  <p-tabs [value]="selectedView()" (valueChange)="changeView($event)">
+    <p-tablist>
+      <p-tab value="active"
+        >{{ t('analysis.catalogue.activeTopics') }} ({{ activeTopics().length }})</p-tab
+      >
+      <p-tab value="rejected"
+        >{{ t('analysis.catalogue.rejectedTopics') }} ({{ rejectedTopics().length }})</p-tab
+      >
+    </p-tablist>
+    <p-tabpanels>
+      <p-tabpanel [value]="selectedView()">
+        <section class="grid gap-3" aria-live="polite">
+          @if (catalogueResource.status() === 'loading') {
+          <div
+            class="grid justify-items-center gap-2 rounded-xl border border-dashed border-hairline-strong p-8 text-center text-ink-subtle"
+          >
+            <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>{{ t('analysis.loading') }}
           </div>
-          <p class="m-0 mt-1.5 max-w-2xl text-sm text-ink-subtle">{{ topic.description }}</p>
-        </div>
-        <span class="shrink-0 text-lg font-semibold text-ink"
-          >{{ topic.reviewCount }}
-          <small class="text-xs font-normal text-ink-subtle"
-            >{{ t('analysis.catalogue.reviews') }}</small
-          ></span
-        >
-      </div>
-      @if (topic.aliases.length) {
-      <p class="m-0 text-xs text-ink-subtle">
-        <i class="pi pi-link" aria-hidden="true"></i>{{ t('analysis.catalogue.aliases') }}: {{
-        topic.aliases.join(', ') }}
-      </p>
-      } @if (editingTopicId() === topic.id) {
-      <div class="grid gap-3 sm:grid-cols-[1fr_1.6fr]">
-        <label class="grid gap-1 text-xs font-semibold text-ink-subtle"
-          ><span>{{ t('analysis.catalogue.label') }}</span
-          ><input
-            class="min-h-10 w-full rounded-lg border border-hairline-strong bg-surface-1 px-3 py-2 text-sm text-ink"
-            [ngModel]="draftLabel()"
-            (ngModelChange)="draftLabel.set($event)"
-        /></label>
-        <label class="grid gap-1 text-xs font-semibold text-ink-subtle"
-          ><span>{{ t('analysis.catalogue.definition') }}</span
-          ><textarea
-            class="min-h-10 w-full resize-y rounded-lg border border-hairline-strong bg-surface-1 px-3 py-2 text-sm text-ink"
-            rows="2"
-            [ngModel]="draftDescription()"
-            (ngModelChange)="draftDescription.set($event)"
-          ></textarea>
-        </label>
-      </div>
-      <div class="flex justify-end gap-2">
-        <p-button
-          severity="secondary"
-          [outlined]="true"
-          size="small"
-          [label]="t('common.cancel')"
-          (onClick)="cancelTopicEdit()"
-        /><p-button
-          size="small"
-          [label]="t('analysis.actions.saveTopic')"
-          [disabled]="!draftLabel().trim() || !draftDescription().trim()"
-          (onClick)="saveTopic()"
-        />
-      </div>
-      } @else if (canManageCatalogue()) {
-      <div class="flex flex-wrap items-center justify-end gap-2">
-        <p-button
-          severity="secondary"
-          [outlined]="true"
-          size="small"
-          icon="pi pi-pencil"
-          [label]="t('analysis.actions.rename')"
-          (onClick)="beginEditTopic(topic)"
-        />
-        @if (topic.status === 'pending') {
-        <p-button
-          size="small"
-          icon="pi pi-check"
-          [label]="t('analysis.actions.approve')"
-          [loading]="pendingAction() === topic.id"
-          (onClick)="setTopicStatus(topic, 'approved')"
-        />
-        <p-button
-          severity="secondary"
-          [outlined]="true"
-          size="small"
-          icon="pi pi-ban"
-          [label]="t('analysis.actions.reject')"
-          [loading]="pendingAction() === topic.id"
-          (onClick)="setTopicStatus(topic, 'rejected')"
-        />
-        } @if (topic.status === 'approved') {
-        <p-button
-          severity="secondary"
-          [outlined]="true"
-          size="small"
-          icon="pi pi-ban"
-          [label]="t('analysis.actions.reject')"
-          [loading]="pendingAction() === topic.id"
-          (onClick)="setTopicStatus(topic, 'rejected')"
-        />
-        } @if (topic.status === 'rejected') {
-        <p-button
-          severity="secondary"
-          [outlined]="true"
-          size="small"
-          icon="pi pi-undo"
-          [label]="t('analysis.actions.reopen')"
-          [loading]="pendingAction() === topic.id"
-          (onClick)="setTopicStatus(topic, 'pending')"
-        />
-        }
-        <p-select
-          appendTo="body"
-          class="w-full sm:w-48"
-          [options]="mergeTargets(topic)"
-          optionLabel="label"
-          optionValue="id"
-          [placeholder]="t('analysis.actions.mergeInto')"
-          [ariaLabel]="t('analysis.actions.mergeInto')"
-          [fluid]="true"
-          [ngModel]="mergeTarget(topic.id)"
-          (ngModelChange)="selectMergeTarget(topic.id, $event)"
-          [disabled]="pendingAction() === topic.id"
-        />
-        <p-button
-          severity="secondary"
-          [outlined]="true"
-          size="small"
-          icon="pi pi-code-branch"
-          [label]="t('analysis.actions.confirmMerge')"
-          [disabled]="!mergeTarget(topic.id)"
-          [loading]="pendingAction() === topic.id"
-          (onClick)="confirmMerge(topic)"
-        />
-      </div>
-      }
-    </article>
-    } }
-  </section>
+          } @else if (catalogueResource.error()) {
+          <div
+            class="rounded-xl border border-red-500/40 p-5 text-red-700 dark:text-red-300"
+            role="alert"
+          >
+            {{ t('analysis.errors.loadFailed') }}
+          </div>
+          } @else if (visibleTopics().length === 0) {
+          <div
+            class="grid justify-items-center gap-2 rounded-xl border border-dashed border-hairline-strong p-8 text-center text-ink-subtle"
+          >
+            <i class="pi pi-tags" aria-hidden="true"></i><strong>{{ t(emptyTitleKey()) }}</strong
+            ><span>{{ t(emptyDescriptionKey()) }}</span>
+          </div>
+          } @else { @for (topic of visibleTopics(); track topic.id) {
+          <article
+            class="grid gap-3 rounded-xl border border-hairline bg-surface-1 p-4"
+            [class.border-dashed]="isPending(topic)"
+            [class.opacity-70]="topic.status === 'rejected'"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <h2 class="m-0 text-base font-semibold text-ink">{{ topic.label }}</h2>
+                  <span
+                    class="rounded-full border px-2 py-0.5 text-xs font-medium"
+                    [class.border-dashed]="topic.status === 'pending'"
+                    [class.border-primary]="topic.status === 'pending'"
+                    [class.text-primary]="topic.status === 'pending'"
+                    [class.bg-success/10]="topic.status === 'approved'"
+                    [class.border-success/30]="topic.status === 'approved'"
+                    [class.text-success]="topic.status === 'approved'"
+                    [class.border-hairline]="topic.status === 'rejected'"
+                    [class.text-ink-subtle]="topic.status === 'rejected'"
+                    >{{ t('analysis.topicStatus.' + topic.status) }}</span
+                  >
+                </div>
+                <p class="m-0 mt-1.5 max-w-2xl text-sm text-ink-subtle">{{ topic.description }}</p>
+              </div>
+              <span class="shrink-0 text-lg font-semibold text-ink"
+                >{{ topic.reviewCount }}
+                <small class="text-xs font-normal text-ink-subtle"
+                  >{{ t('analysis.catalogue.reviews') }}</small
+                ></span
+              >
+            </div>
+            @if (topic.aliases.length) {
+            <p class="m-0 text-xs text-ink-subtle">
+              <i class="pi pi-link" aria-hidden="true"></i>{{ t('analysis.catalogue.aliases') }}: {{
+              topic.aliases.join(', ') }}
+            </p>
+            } @if (editingTopicId() === topic.id) {
+            <div class="grid gap-3 sm:grid-cols-[1fr_1.6fr]">
+              <label class="grid gap-1 text-xs font-semibold text-ink-subtle"
+                ><span>{{ t('analysis.catalogue.label') }}</span
+                ><input
+                  class="min-h-10 w-full rounded-lg border border-hairline-strong bg-surface-1 px-3 py-2 text-sm text-ink"
+                  [ngModel]="draftLabel()"
+                  (ngModelChange)="draftLabel.set($event)"
+              /></label>
+              <label class="grid gap-1 text-xs font-semibold text-ink-subtle"
+                ><span>{{ t('analysis.catalogue.definition') }}</span
+                ><textarea
+                  class="min-h-10 w-full resize-y rounded-lg border border-hairline-strong bg-surface-1 px-3 py-2 text-sm text-ink"
+                  rows="2"
+                  [ngModel]="draftDescription()"
+                  (ngModelChange)="draftDescription.set($event)"
+                ></textarea>
+              </label>
+            </div>
+            <div class="flex justify-end gap-2">
+              <p-button
+                severity="secondary"
+                [outlined]="true"
+                size="small"
+                [label]="t('common.cancel')"
+                (onClick)="cancelTopicEdit()"
+              /><p-button
+                size="small"
+                [label]="t('analysis.actions.saveTopic')"
+                [disabled]="!draftLabel().trim() || !draftDescription().trim()"
+                (onClick)="saveTopic()"
+              />
+            </div>
+            } @else if (canManageCatalogue()) {
+            <div class="flex flex-wrap items-center justify-end gap-2">
+              @if (topic.status !== 'rejected') {
+              <p-button
+                severity="secondary"
+                [outlined]="true"
+                size="small"
+                icon="pi pi-pencil"
+                [label]="t('analysis.actions.rename')"
+                (onClick)="beginEditTopic(topic)"
+              />
+              } @if (topic.status === 'pending') {
+              <p-button
+                size="small"
+                icon="pi pi-check"
+                [label]="t('analysis.actions.approve')"
+                [loading]="pendingAction() === topic.id"
+                (onClick)="setTopicStatus(topic, 'approved')"
+              />
+              } @if (topic.status !== 'rejected') {
+              <p-button
+                severity="secondary"
+                [outlined]="true"
+                size="small"
+                icon="pi pi-ban"
+                [label]="t('analysis.actions.reject')"
+                [loading]="pendingAction() === topic.id"
+                (onClick)="confirmTopicRejection(topic)"
+              />
+              } @if (topic.status === 'rejected') {
+              <p-button
+                severity="secondary"
+                [outlined]="true"
+                size="small"
+                icon="pi pi-undo"
+                [label]="t('analysis.actions.reopen')"
+                [loading]="pendingAction() === topic.id"
+                (onClick)="setTopicStatus(topic, 'pending')"
+              />
+              } @if (topic.status !== 'rejected') {
+              <p-select
+                appendTo="body"
+                class="w-full sm:w-48"
+                [options]="mergeTargets(topic)"
+                optionLabel="label"
+                optionValue="id"
+                [placeholder]="t('analysis.actions.mergeInto')"
+                [ariaLabel]="t('analysis.actions.mergeInto')"
+                [fluid]="true"
+                [ngModel]="mergeTarget(topic.id)"
+                (ngModelChange)="selectMergeTarget(topic.id, $event)"
+                [disabled]="pendingAction() === topic.id"
+              />
+              <p-button
+                severity="secondary"
+                [outlined]="true"
+                size="small"
+                icon="pi pi-code-branch"
+                [label]="t('analysis.actions.confirmMerge')"
+                [disabled]="!mergeTarget(topic.id)"
+                [loading]="pendingAction() === topic.id"
+                (onClick)="confirmMerge(topic)"
+              />
+              }
+            </div>
+            }
+          </article>
+          } }
+        </section>
+      </p-tabpanel>
+    </p-tabpanels>
+  </p-tabs>
 </div>

@@ -1,4 +1,4 @@
-import { boolean, index, integer, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
+import { boolean, index, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
 
 import { organization } from './auth-schema'
 
@@ -11,7 +11,6 @@ export const apps = pgTable(
       .references(() => organization.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
     autoDraftEnabled: boolean('auto_draft_enabled').default(true).notNull(),
-    analysisCatalogVersion: integer('analysis_catalog_version').default(1).notNull(),
     topicDiscoveryRequestedAt: timestamp('topic_discovery_requested_at'),
     lastTopicDiscoveryAt: timestamp('last_topic_discovery_at'),
     replyContext: text('reply_context').default('').notNull(),

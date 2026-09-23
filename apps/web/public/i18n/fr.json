@@ -203,7 +203,11 @@
       "allStores": "Tous les stores",
       "store": "Store",
       "allVersions": "Toutes les versions",
+      "selectAppForVersion": "Choisissez d’abord une App",
       "version": "Version",
+      "additional": "Autres filtres",
+      "active": "Filtres actifs",
+      "remove": "Retirer le filtre {{name}}",
       "allSeverities": "Toutes les gravités",
       "severity": "Gravité",
       "allIntents": "Toutes les intentions",
@@ -211,21 +215,26 @@
       "allTopics": "Tous les sujets",
       "topic": "Sujet",
       "allTopicStatuses": "Tous les statuts",
-      "topicStatus": "Statut du sujet",
-      "versionNeedsStore": "Choisissez un store avant de filtrer par version."
+      "topicStatus": "Statut du sujet"
     },
     "catalogue": {
       "title": "Catalogue de sujets",
       "description": "Définissez le vocabulaire partagé qui rend l’Analyse utile pour cette App.",
       "sharedTitle": "Un catalogue pour tous les stores",
       "sharedDescription": "Les propositions restent visibles jusqu’à leur validation humaine.",
+      "activeTopics": "Sujets actifs",
+      "rejectedTopics": "Sujets rejetés",
+      "rejectTitle": "Rejeter ce sujet ?",
+      "rejectDescription": "Rejeter « {{name}} » ? Ses associations aux Reviews et les corrections manuelles de sujet seront supprimées. Le rouvrir ne les rétablira pas.",
       "newTopic": "Créer un sujet",
       "label": "Libellé du sujet",
       "definition": "Définition",
       "aliases": "Alias",
       "reviews": "Reviews",
       "emptyTitle": "Aucun sujet",
-      "emptyDescription": "Créez un sujet ou demandez au classifieur de proposer un sujet."
+      "emptyDescription": "Créez un sujet ou demandez au classifieur de proposer un sujet.",
+      "emptyRejectedTitle": "Aucun sujet rejeté",
+      "emptyRejectedDescription": "Les sujets rejetés apparaîtront ici et pourront être rouverts."
     },
     "loading": "Chargement de l’analyse…",
     "disabled": {
@@ -286,7 +295,7 @@
       "none": "Aucune",
       "save": "Enregistrer la correction",
       "reset": "Revenir à l’analyse automatique",
-      "needsRecheck": "Cette Review doit être réanalysée après une modification du catalogue."
+      "needsRecheck": "Cette Review a changé depuis sa correction manuelle. Vérifiez la correction."
     },
     "intents": {
       "report_problem": "Signaler un problème",

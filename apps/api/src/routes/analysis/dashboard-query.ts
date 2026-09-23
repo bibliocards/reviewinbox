@@ -35,6 +35,20 @@ function sourceConditions(organizationId: string, filters: AnalysisFilters): SQL
   return sql.join(conditions, sql` and `)
 }
 
+function versionConditions(organizationId: string, filters: AnalysisFilters): SQL {
+  if (filters.appId === undefined) {
+    return sql`false`
+  }
+  const conditions = [
+    sql`r.organization_id = ${organizationId}`,
+    sql`r.app_id = ${filters.appId}::uuid`,
+  ]
+  if (filters.provider !== undefined) {
+    conditions.push(sql`s.provider = ${filters.provider}`)
+  }
+  return sql.join(conditions, sql` and `)
+}
+
 function classificationConditions(filters: AnalysisFilters): SQL {
   const conditions: SQL[] = [sql`true`]
   if (filters.severity !== undefined) {
@@ -58,7 +72,6 @@ function classificationConditions(filters: AnalysisFilters): SQL {
 
 function effectiveReviews(organizationId: string, filters: AnalysisFilters): SQL {
   const currentAnalysis = sql`r.analysis_status = 'completed'
-    and a.catalog_version = app.analysis_catalog_version
     and a.criteria_version = ${reviewAnalysisCriteriaVersion}`
   return sql`source as (
     select r.id, r.body, r.reviewed_at, (${currentAnalysis}) as analysis_current, s.provider, r.version,
@@ -103,7 +116,7 @@ function topicSummary(
   from review_topics t where t.organization_id = ${organizationId} and ${appCondition} and ${statusCondition}`
 }
 
-function distributionSummary(): SQL {
+function distributionSummary(organizationId: string, filters: AnalysisFilters): SQL {
   return sql`'severities', (select coalesce(jsonb_agg(v order by array_position(
     array['critical', 'blocking', 'degraded', 'minor', 'none', 'unknown'], v.severity)), '[]'::jsonb) from (
     select coalesce(severity, 'unknown') as severity, count(*) as count from filtered group by severity
@@ -115,7 +128,10 @@ function distributionSummary(): SQL {
     from filtered group by to_char(reviewed_at, 'YYYY-MM-DD')
   ) v),
   'versions', (select coalesce(jsonb_agg(v order by v.provider, v.version), '[]'::jsonb) from (
-    select distinct provider, version from source where version is not null
+    select distinct s.provider, r.version from reviews r
+    join apps app on app.id = r.app_id and app.organization_id = r.organization_id
+    join store_connections s on s.id = r.store_connection_id
+    where ${versionConditions(organizationId, filters)} and r.version is not null
   ) v)`
 }
 
@@ -135,7 +151,7 @@ export async function readAnalysisSummary(
           offset ${(filters.page - 1) * filters.pageSize}
       ) p),
       'topics', (${topicSummary(organizationId, filters, includeRejected)}),
-      ${distributionSummary()}
+      ${distributionSummary(organizationId, filters)}
     ) as summary`)
   return summarySchema.parse(result.rows[0]?.['summary'])
 }

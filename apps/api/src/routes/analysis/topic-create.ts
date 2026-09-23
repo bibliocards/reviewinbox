@@ -1,6 +1,5 @@
 import { reviewTopicSchema, saveTopicRequestSchema } from '@reviewinbox/contracts'
-import { apps, reviewAnalysisEvents, reviewTopics } from '@reviewinbox/db'
-import { eq, sql } from 'drizzle-orm'
+import { reviewAnalysisEvents, reviewTopics } from '@reviewinbox/db'
 import type { Context } from 'hono'
 
 import { parseJsonBody, parseUuidParam } from '../../http/validation'
@@ -104,10 +103,6 @@ function insertTopic(
     if (topic === undefined) {
       throw new Error('Topic creation did not return a row.')
     }
-    await transaction
-      .update(apps)
-      .set({ analysisCatalogVersion: sql`${apps.analysisCatalogVersion} + 1` })
-      .where(eq(apps.id, input.appId))
     await transaction
       .insert(reviewAnalysisEvents)
       .values({

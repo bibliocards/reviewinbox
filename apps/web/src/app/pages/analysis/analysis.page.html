@@ -63,6 +63,13 @@
     <i class="pi pi-spin pi-spinner text-xl text-primary" aria-hidden="true"></i>{{
     t('analysis.loading') }}
   </section>
+  } @else if (analysis().total === 0 && hasActiveFilters()) {
+  <section
+    class="grid min-h-64 place-content-center justify-items-center gap-2 rounded-xl border border-dashed border-hairline-strong p-8 text-center text-ink-subtle"
+  >
+    <i class="pi pi-inbox text-xl text-primary" aria-hidden="true"></i
+    ><strong class="text-base text-ink">{{ t('analysis.reviews.empty') }}</strong>
+  </section>
   } @else if (analysis().enabled || analysis().total > 0) {
   <ri-analysis-overview
     [analysis]="analysis()"

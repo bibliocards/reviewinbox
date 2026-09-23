@@ -12,6 +12,7 @@ import {
   createDatabase,
   organization,
   reviewAnalyses,
+  reviewTopicAssignments,
   reviewTopics,
   reviews,
   storeConnections,
@@ -88,7 +89,6 @@ async function createUncoveredAnalysis(
   reviewId: string,
   options: {
     status?: 'pending' | 'processing' | 'completed' | 'failed' | 'skipped'
-    catalogVersion?: number
     criteriaVersion?: string
     discoveredAt?: Date | null
   } = {},
@@ -105,7 +105,6 @@ async function createUncoveredAnalysis(
       appId,
       inputHash: randomUUID(),
       criteriaVersion: options.criteriaVersion ?? reviewAnalysisCriteriaVersion,
-      catalogVersion: options.catalogVersion ?? 1,
       model: 'fixture-jev',
       severity: 'critical',
       intents: ['report_problem'],
@@ -113,17 +112,6 @@ async function createUncoveredAnalysis(
       probabilities: { catalogue_gap: 0.99 },
       discoveredAt: options.discoveredAt ?? null,
     })
-}
-
-async function currentCatalogVersion() {
-  const [app] = await database
-    .select({ catalogVersion: apps.analysisCatalogVersion })
-    .from(apps)
-    .where(eq(apps.id, appId))
-  if (app === undefined) {
-    throw new Error('Expected the analysis test app')
-  }
-  return app.catalogVersion
 }
 
 async function requiredDiscoveryContext(payload: { organizationId: string; appId: string }) {
@@ -221,7 +209,9 @@ describe.skipIf(databaseUrl === undefined)('review analysis concurrency', () => 
     ).resolves.toMatchObject({ status: 'skipped', reason: 'stale' })
     expect(await storedAnalysis(input.reviewId)).toBeUndefined()
   })
+})
 
+describe.skipIf(databaseUrl === undefined)('rejected topics during classification', () => {
   it('does not restore a topic rejected while classification was in flight', async () => {
     const input = await createReview()
     const topicId = randomUUID()
@@ -240,7 +230,6 @@ describe.skipIf(databaseUrl === undefined)('review analysis concurrency', () => 
     const provider = classifier()
     provider.classify.mockImplementationOnce(async () => {
       await database.transaction(async (transaction) => {
-        await transaction.update(apps).set({ analysisCatalogVersion: 2 }).where(eq(apps.id, appId))
         await transaction
           .update(reviewTopics)
           .set({ status: 'rejected' })
@@ -250,10 +239,90 @@ describe.skipIf(databaseUrl === undefined)('review analysis concurrency', () => 
     })
     await expect(
       classifyReviewForAnalysis({ database, classifier: provider }, input),
-    ).resolves.toMatchObject({ status: 'skipped', reason: 'stale' })
-    expect(await storedAnalysis(input.reviewId)).toBeUndefined()
+    ).resolves.toMatchObject({ status: 'completed' })
+    expect((await requiredAnalysis(input.reviewId)).severity).toBe('critical')
+    expect(
+      await database.query.reviewTopicAssignments.findMany({
+        where: eq(reviewTopicAssignments.reviewId, input.reviewId),
+      }),
+    ).toHaveLength(0)
   })
+})
 
+describe.skipIf(databaseUrl === undefined)('merged topics during classification', () => {
+  it('does not restore a merged Topic from an in-flight classification', async () => {
+    const input = await createReview()
+    const sourceId = randomUUID()
+    const targetId = randomUUID()
+    await database.insert(reviewTopics).values([
+      {
+        id: sourceId,
+        organizationId,
+        appId,
+        label: `Source ${sourceId}`,
+        normalizedLabel: sourceId,
+        description: 'Source Topic',
+        origin: 'human',
+        status: 'approved',
+      },
+      {
+        id: targetId,
+        organizationId,
+        appId,
+        label: `Target ${targetId}`,
+        normalizedLabel: targetId,
+        description: 'Target Topic',
+        origin: 'human',
+        status: 'approved',
+      },
+    ])
+    const provider = classifier()
+    provider.classify.mockImplementationOnce(async () => {
+      await database
+        .update(reviewTopics)
+        .set({ mergedIntoId: targetId })
+        .where(eq(reviewTopics.id, sourceId))
+      return { ...result(), topicMatches: [{ topicId: sourceId, probability: 1 }] }
+    })
+
+    await expect(
+      classifyReviewForAnalysis({ database, classifier: provider }, input),
+    ).resolves.toMatchObject({ status: 'completed' })
+    expect(
+      await database.query.reviewTopicAssignments.findMany({
+        where: eq(reviewTopicAssignments.reviewId, input.reviewId),
+      }),
+    ).toHaveLength(0)
+  })
+})
+
+describe.skipIf(databaseUrl === undefined)('catalogue edits', () => {
+  it('keeps a completed Review unchanged after a new Topic is added', async () => {
+    const input = await createReview()
+    const provider = classifier()
+    await classifyReviewForAnalysis({ database, classifier: provider }, input)
+    const topicId = randomUUID()
+    await database
+      .insert(reviewTopics)
+      .values({
+        id: topicId,
+        organizationId,
+        appId,
+        label: `New topic ${topicId}`,
+        normalizedLabel: topicId,
+        description: 'A new Topic',
+        origin: 'human',
+        status: 'approved',
+      })
+
+    await expect(
+      classifyReviewForAnalysis({ database, classifier: provider }, input),
+    ).resolves.toMatchObject({ status: 'unchanged' })
+    expect(provider.classify).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe.skipIf(databaseUrl === undefined)('review analysis input', () => {
   it('classifies meaningful title-only reviews and skips reviews with no text', async () => {
     const provider = classifier()
     const titleOnly = await createReview('', 'The app no longer opens')
@@ -332,38 +401,30 @@ describe.skipIf(databaseUrl === undefined)('analysis retry and discovery markers
 
 describe.skipIf(databaseUrl === undefined)('topic discovery candidate selection', () => {
   it('selects only fresh completed analyses for topic discovery', async () => {
-    const catalogVersion = await currentCatalogVersion()
     const baselineCandidates = await loadTopicDiscoveryCandidates({
       database,
       organizationId,
       appId,
-      catalogVersion,
       criteriaVersion: reviewAnalysisCriteriaVersion,
     })
     const baselineIds = new Set(baselineCandidates.map((candidate) => candidate.id))
     const fresh = await createReview()
-    await createUncoveredAnalysis(fresh.reviewId, { catalogVersion })
+    await createUncoveredAnalysis(fresh.reviewId)
     await Promise.all(
       (['pending', 'processing', 'failed', 'skipped'] as const).map(async (status) => {
         const review = await createReview()
-        await createUncoveredAnalysis(review.reviewId, { status, catalogVersion })
+        await createUncoveredAnalysis(review.reviewId, { status })
       }),
     )
-    const oldCatalog = await createReview()
-    await createUncoveredAnalysis(oldCatalog.reviewId, { catalogVersion: catalogVersion - 1 })
     const oldCriteria = await createReview()
-    await createUncoveredAnalysis(oldCriteria.reviewId, {
-      catalogVersion,
-      criteriaVersion: 'review-analysis-old',
-    })
+    await createUncoveredAnalysis(oldCriteria.reviewId, { criteriaVersion: 'review-analysis-old' })
     const discovered = await createReview()
-    await createUncoveredAnalysis(discovered.reviewId, { catalogVersion, discoveredAt: new Date() })
+    await createUncoveredAnalysis(discovered.reviewId, { discoveredAt: new Date() })
 
     const candidates = await loadTopicDiscoveryCandidates({
       database,
       organizationId,
       appId,
-      catalogVersion,
       criteriaVersion: reviewAnalysisCriteriaVersion,
     })
 
@@ -431,9 +492,8 @@ describe.skipIf(databaseUrl === undefined)('analysis discovery markers', () => {
 
 describe.skipIf(databaseUrl === undefined)('discovery persistence races', () => {
   it('rejects discovery results when a candidate analysis changes in flight', async () => {
-    const catalogVersion = await currentCatalogVersion()
     const input = await createReview()
-    await createUncoveredAnalysis(input.reviewId, { catalogVersion })
+    await createUncoveredAnalysis(input.reviewId)
     const payload = { organizationId, appId }
     const context = await requiredDiscoveryContext(payload)
     const analyzedAt = new Date(Date.now() + 1_000)
@@ -468,9 +528,8 @@ describe.skipIf(databaseUrl === undefined)('discovery persistence races', () => 
   })
 
   it('rejects discovery results when a candidate source changes in flight', async () => {
-    const catalogVersion = await currentCatalogVersion()
     const input = await createReview()
-    await createUncoveredAnalysis(input.reviewId, { catalogVersion })
+    await createUncoveredAnalysis(input.reviewId)
     const payload = { organizationId, appId }
     const context = await requiredDiscoveryContext(payload)
     await database

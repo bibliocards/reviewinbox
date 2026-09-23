@@ -5,7 +5,7 @@ import {
   reviewTopicAssignments,
   reviewTopics,
 } from '@reviewinbox/db'
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 
 import { database } from '../../db'
 import type { AnalysisRouteDependencies } from './index'
@@ -70,7 +70,7 @@ export function persistTopicUpdate(
     if (input.rejecting) {
       await removeTopicReferences(transaction, input.app, input.existing.id)
     }
-    await bumpCatalogAndAudit(transaction, {
+    await auditTopicUpdate(transaction, {
       app: input.app,
       topicId: input.existing.id,
       actorUserId: input.actorUserId,
@@ -115,7 +115,7 @@ async function removeTopicReferences(
   await Promise.all(updates)
 }
 
-async function bumpCatalogAndAudit(
+async function auditTopicUpdate(
   transaction: DatabaseTransaction,
   input: {
     app: AppRow
@@ -125,10 +125,6 @@ async function bumpCatalogAndAudit(
     metadata: AuditMetadata
   },
 ) {
-  await transaction
-    .update(apps)
-    .set({ analysisCatalogVersion: sql`${apps.analysisCatalogVersion} + 1` })
-    .where(eq(apps.id, input.app.id))
   await transaction
     .insert(reviewAnalysisEvents)
     .values({
