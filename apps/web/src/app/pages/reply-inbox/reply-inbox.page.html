@@ -42,17 +42,22 @@
   </header>
   @if (selectedReviewId()) {
   <p class="m-0 text-sm text-ink-subtle">{{ t('replyInbox.focus.description') }}</p>
-  } @if (message(); as currentMessage) {
-  <p
-    class="m-0 rounded-xl border bg-surface-1 px-3 py-2 text-sm"
-    [class.border-green-500]="currentMessage.status === 'success'"
-    [class.text-green-700]="currentMessage.status === 'success'"
-    [class.border-red-400]="currentMessage.status === 'error'"
-    [class.text-red-600]="currentMessage.status === 'error'"
-  >
-    {{ t(currentMessage.key) }}
-  </p>
-  } @if (inboxResource.isLoading()) {
+  }
+  <!-- Keep the live region mounted before an action completes, without adding an empty grid row. -->
+  <div class="contents" role="status" aria-live="polite" aria-atomic="true">
+    @if (message(); as currentMessage) {
+    <p
+      class="m-0 rounded-xl border bg-surface-1 px-3 py-2 text-sm"
+      [class.border-green-500]="currentMessage.status === 'success'"
+      [class.text-green-700]="currentMessage.status === 'success'"
+      [class.border-red-400]="currentMessage.status === 'error'"
+      [class.text-red-600]="currentMessage.status === 'error'"
+    >
+      {{ t(currentMessage.key) }}
+    </p>
+    }
+  </div>
+  @if (inboxResource.isLoading()) {
   <div class="rounded-2xl border border-hairline bg-surface-1 p-5">
     <p class="m-0 text-sm text-ink-subtle">{{ t('replyInbox.loading') }}</p>
   </div>
