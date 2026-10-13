@@ -277,15 +277,17 @@
               ><i class="pi pi-tags" aria-hidden="true"></i>{{ t('apps.actions.catalogue') }}</a
             >
             @if (canEditReplySettings()) {
-            <p-button
+            <a
+              pButton
               severity="secondary"
               [text]="true"
               size="small"
-              icon="pi pi-sliders-h"
-              [label]="t('apps.actions.replySettingsAndContext')"
-              styleClass="min-h-10 [@media(pointer:coarse)]:min-h-11"
-              (onClick)="openReplySettingsDialog(app)"
-            />
+              [routerLink]="['/apps', app.id, 'reply-settings']"
+              class="min-h-10 [@media(pointer:coarse)]:min-h-11"
+            >
+              <i class="pi pi-sliders-h" aria-hidden="true"></i>{{
+              t('apps.actions.replySettingsAndContext') }}
+            </a>
             } @if (canManageApps()) {
             <p-button
               class="ms-auto"

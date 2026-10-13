@@ -16,7 +16,6 @@ import type {
   AppListItemResponse,
   ConnectAppResponse,
   OrganizationUsageResponse,
-  ReplySettingsResponse,
   StoreConnectionResponse,
   StoreProvider,
   SyncRunResponse,
@@ -35,7 +34,6 @@ import { z } from 'zod'
 
 import { badgeClasses } from '../../shared/badge-classes'
 import { ConnectAppDialogComponent } from '../../shared/components/connect-app-dialog/connect-app-dialog.component'
-import { ReplySettingsDialogComponent } from '../../shared/components/reply-settings-dialog/reply-settings-dialog.component'
 import { AppIconsService } from '../../shared/services/app-icons.service'
 import { AppsService } from '../../shared/services/apps.service'
 import { OrganizationProfileService } from '../../shared/services/organization-profile.service'
@@ -183,30 +181,6 @@ export class AppsPageComponent {
       this.initialSyncStatus.set(this.initialSyncStatusFrom(result))
       this.successAppName.set(result.app.name)
       this.successMessageKey.set('apps.list.updatedSuccess')
-      this.reloadApps()
-    })
-  }
-
-  protected openReplySettingsDialog(app: AppListItemResponse): void {
-    const dialog = this.dialogService.open(ReplySettingsDialogComponent, {
-      header: this.transloco.translate('apps.replySettings.title'),
-      modal: true,
-      closable: true,
-      dismissableMask: true,
-      width: 'min(680px, 94vw)',
-      contentStyle: { overflow: 'auto' },
-      data: { appId: app.id },
-      breakpoints: { '640px': '94vw' },
-    })
-
-    dialog?.onClose.subscribe((result?: ReplySettingsResponse) => {
-      if (!result) {
-        return
-      }
-
-      this.initialSyncStatus.set(null)
-      this.successAppName.set(app.name)
-      this.successMessageKey.set('apps.replySettings.saved')
       this.reloadApps()
     })
   }

@@ -94,15 +94,15 @@
       "saved": "Reply settings for {{name}} saved.",
       "loading": "Loading Reply settings...",
       "title": "Reply settings",
-      "description": "Set the guidance and language policy used when creating Reply Drafts for this App.",
+      "description": "How AI prepares Reply Drafts for this App. Drafts never publish on their own.",
       "contextLabel": "Reply Context",
       "contextHelp": "Describe your app, preferred tone, and support information to help prepare useful drafts. Maximum {{maxLength}} characters.",
       "languagePolicyTitle": "Reply Language Policy",
       "languagePolicyDescription": "Drafts use the default language unless the Review language is allowed below. Leave the list empty to always use the default language.",
       "defaultLanguageLabel": "Default language",
-      "mappedLanguagesLabel": "Allowed mapped languages",
-      "mappedLanguagesHelp": "Enter one language tag per line or separate tags with commas. Up to {{maxLanguages}} languages.",
-      "actions": { "cancel": "Cancel", "save": "Save settings" },
+      "mappedLanguagesLabel": "Reply in the Review’s language for",
+      "mappedLanguagesHelp": "Use language tags. Leave the list empty to always use the default language. Up to {{maxLanguages}} languages.",
+      "actions": { "cancel": "Cancel", "save": "Save settings", "back": "Back to Apps" },
       "errors": {
         "loadFailed": "We could not load Reply settings yet.",
         "updateFailed": "We could not save Reply settings yet.",
@@ -111,7 +111,15 @@
         "contextTooLong": "Reply Context is too long.",
         "languageTooLong": "A language tag is too long.",
         "tooManyMappedLanguages": "You can add up to 50 mapped languages."
-      }
+      },
+      "defaultLanguageHelp": "Select or enter a language tag, such as en, fr or pt-BR.",
+      "contextDescription": "Markdown guidance for drafting: known incidents, support policies and version-specific fixes.",
+      "guidanceLabel": "Guidance",
+      "draftingBoundary": "Treated as guidance, never as instructions to publish.",
+      "removeLanguage": "Remove {{language}}",
+      "addLanguage": "Add language",
+      "languagePlaceholder": "Language tag",
+      "savedHere": "Reply settings saved."
     },
     "connectDialog": {
       "title": "Connect app",
@@ -636,7 +644,8 @@
     "apps": "Apps",
     "auditHistory": "Audit History",
     "settings": "Settings",
-    "analysis": "Analysis"
+    "analysis": "Analysis",
+    "replySettings": "Reply settings"
   },
   "common": {
     "useLightTheme": "Use light theme",

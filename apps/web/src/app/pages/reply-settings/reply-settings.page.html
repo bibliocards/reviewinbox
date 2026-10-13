@@ -1,0 +1,206 @@
+<form
+  class="grid max-w-[1040px] min-w-0 gap-6 text-ink"
+  (submit)="submit($event)"
+  *transloco="let t"
+  [attr.aria-busy]="isLoading() || isSaving()"
+>
+  <header class="flex flex-wrap items-end justify-between gap-4">
+    <div class="grid min-w-0 flex-1 basis-80 gap-1">
+      <h1 class="m-0 text-[26px] leading-[1.2] font-semibold tracking-[-0.6px]">
+        {{ t('apps.replySettings.title') }}
+      </h1>
+      @if (appName(); as name) {
+      <p class="m-0 text-sm font-medium wrap-break-word">{{ name }}</p>
+      }
+      <p class="m-0 text-sm text-ink-muted">{{ t('apps.replySettings.description') }}</p>
+    </div>
+    <a
+      pButton
+      severity="secondary"
+      [outlined]="true"
+      routerLink="/apps"
+      class="min-h-10 [@media(pointer:coarse)]:min-h-11"
+      ><i class="pi pi-arrow-left" aria-hidden="true"></i>{{ t('apps.replySettings.actions.back')
+      }}</a
+    >
+  </header>
+  @if (isLoading()) {
+  <section
+    class="grid min-h-64 place-content-center justify-items-center gap-2 rounded-xl border border-border bg-surface-1 p-8 text-sm text-ink-muted"
+    role="status"
+  >
+    <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>{{ t('apps.replySettings.loading') }}
+  </section>
+  } @else if (isLoaded()) { @if (!canEdit()) {
+  <p
+    class="m-0 rounded-md border border-border-strong bg-surface-1 px-3 py-2 text-sm text-ink-muted"
+  >
+    {{ t('apps.replySettings.errors.ownerRequired') }}
+  </p>
+  } @if (saved()) {
+  <p
+    class="m-0 rounded-md border border-border-strong bg-surface-1 px-3 py-2 text-sm text-ink-muted"
+    role="status"
+  >
+    {{ t('apps.replySettings.savedHere') }}
+  </p>
+  }
+  <fieldset class="m-0 min-w-0 border-0 p-0" [disabled]="isSaving() || !canEdit()">
+    <legend class="sr-only">{{ t('apps.replySettings.title') }}</legend>
+    <div class="grid gap-6">
+      <section
+        class="flex flex-wrap gap-px overflow-clip rounded-xl border border-border bg-hairline"
+        aria-labelledby="reply-language-policy-title"
+      >
+        <header class="grid flex-1 basis-[260px] content-start gap-1.5 bg-surface-1 p-6">
+          <h2
+            id="reply-language-policy-title"
+            class="m-0 text-base font-semibold tracking-[-0.3px]"
+          >
+            {{ t('apps.replySettings.languagePolicyTitle') }}
+          </h2>
+          <p class="m-0 text-[13px] text-ink-muted">
+            {{ t('apps.replySettings.languagePolicyDescription') }}
+          </p>
+        </header>
+        <div class="grid min-w-0 flex-[2_1_420px] content-start gap-5 bg-surface-1 p-6">
+          <label for="default-language" class="grid gap-1.5 text-sm font-medium">
+            <span>{{ t('apps.replySettings.defaultLanguageLabel') }}</span>
+            <p-select
+              inputId="default-language"
+              class="w-full max-w-70 min-h-10 [@media(pointer:coarse)]:min-h-11"
+              [editable]="true"
+              [options]="defaultLanguageOptions()"
+              [ngModel]="settingsForm.defaultLanguage().value()"
+              [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="setDefaultLanguage($event)"
+              [disabled]="isSaving() || !canEdit()"
+              [ariaLabel]="t('apps.replySettings.defaultLanguageLabel')"
+              appendTo="body"
+            />
+            <span class="text-xs font-normal text-ink-subtle"
+              >{{ t('apps.replySettings.defaultLanguageHelp') }}</span
+            >
+          </label>
+          <div class="grid gap-2">
+            <label for="mapped-language" class="text-sm font-medium"
+              >{{ t('apps.replySettings.mappedLanguagesLabel') }}</label
+            >
+            <div class="flex flex-wrap gap-2">
+              @for (language of languages(); track language) {
+              <span
+                class="inline-flex min-w-0 items-center gap-1 rounded-md border border-border-strong bg-surface-3 ps-2.5 text-sm"
+              >
+                <span class="font-mono wrap-break-word">{{ language }}</span>
+                <p-button
+                  severity="secondary"
+                  [text]="true"
+                  icon="pi pi-times"
+                  [ariaLabel]="t('apps.replySettings.removeLanguage', { language })"
+                  styleClass="min-h-10 min-w-10 [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:min-w-11"
+                  [disabled]="isSaving() || !canEdit()"
+                  (onClick)="removeLanguage(language)"
+                />
+              </span>
+              }
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <input
+                pInputText
+                id="mapped-language"
+                class="min-h-10 min-w-0 flex-1 basis-32 [@media(pointer:coarse)]:min-h-11"
+                autocomplete="off"
+                [attr.maxlength]="maxLanguageTagLength"
+                [(ngModel)]="languageInput"
+                [ngModelOptions]="{ standalone: true }"
+                (keydown.enter)="addLanguage(); $event.preventDefault()"
+                [disabled]="isSaving() || !canEdit()"
+                [placeholder]="t('apps.replySettings.languagePlaceholder')"
+              />
+              <p-button
+                severity="secondary"
+                [outlined]="true"
+                icon="pi pi-plus"
+                [label]="t('apps.replySettings.addLanguage')"
+                styleClass="min-h-10 border-dashed [@media(pointer:coarse)]:min-h-11"
+                [disabled]="!languageInput().trim() || isSaving() || !canEdit()"
+                (onClick)="addLanguage()"
+              />
+            </div>
+            <p class="m-0 text-xs text-ink-subtle">
+              {{ t('apps.replySettings.mappedLanguagesHelp', { maxLanguages: maxMappedLanguages })
+              }}
+            </p>
+          </div>
+        </div>
+      </section>
+      <section
+        class="overflow-clip rounded-xl border border-border bg-surface-1"
+        aria-labelledby="reply-context-title"
+      >
+        <header class="grid gap-1 border-be border-hairline px-6 py-5">
+          <h2 id="reply-context-title" class="m-0 text-base font-semibold tracking-[-0.3px]">
+            {{ t('apps.replySettings.contextLabel') }}
+          </h2>
+          <p class="m-0 text-[13px] text-ink-muted">
+            {{ t('apps.replySettings.contextDescription') }}
+          </p>
+        </header>
+        <div class="grid gap-4 p-6">
+          <label for="reply-context" class="grid gap-1.5 text-sm font-medium">
+            <span
+              >{{ t('apps.replySettings.guidanceLabel') }}
+              <span class="font-normal text-ink-subtle">· Markdown</span></span
+            >
+            <textarea
+              pTextarea
+              id="reply-context"
+              class="w-full resize-y bg-sunken font-mono text-[13px] leading-relaxed [field-sizing:content] [min-block-size:10lh] [max-block-size:24lh]"
+              rows="10"
+              autocomplete="off"
+              [attr.maxlength]="maxReplyContextLength"
+              [formField]="settingsForm.replyContext"
+            ></textarea>
+          </label>
+          <div class="flex flex-wrap items-baseline justify-between gap-2 text-xs text-ink-subtle">
+            <p class="m-0 min-w-0 flex-1 basis-64">
+              {{ t('apps.replySettings.contextHelp', { maxLength: maxReplyContextLength }) }}
+            </p>
+            <span class="font-mono tabular-nums"
+              >{{ settingsForm.replyContext().value().length }} / {{ maxReplyContextLength }}</span
+            >
+          </div>
+        </div>
+      </section>
+    </div>
+  </fieldset>
+  } @if (errorMessageKey(); as messageKey) {
+  <section
+    class="flex flex-wrap items-center gap-3 rounded-lg border border-failure-border bg-failure px-4 py-3 text-sm text-failure-ink"
+    role="alert"
+  >
+    <p class="m-0 min-w-0 flex-1">{{ t(messageKey) }}</p>
+    @if (!isLoaded() && !isLoading()) {
+    <p-button
+      severity="secondary"
+      [outlined]="true"
+      [label]="t('shell.states.retry')"
+      (onClick)="retry()"
+    />
+    }
+  </section>
+  } @if (isLoaded()) {
+  <footer class="flex flex-wrap items-center gap-3">
+    <p-button
+      type="submit"
+      [label]="t('apps.replySettings.actions.save')"
+      [loading]="isSaving()"
+      [disabled]="isSaving() || !canEdit()"
+      styleClass="min-h-10 [@media(pointer:coarse)]:min-h-11"
+    />
+    <span class="min-w-0 flex-1 basis-64 text-xs text-ink-subtle"
+      >{{ t('apps.replySettings.draftingBoundary') }}</span
+    >
+  </footer>
+  }
+</form>

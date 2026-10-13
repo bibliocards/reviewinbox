@@ -66,6 +66,14 @@ export const appRoutes: Routes = [
       { path: '', title: () => pageTitle('inbox'), component: ReplyInboxPageComponent },
       { path: 'apps', title: () => pageTitle('apps'), component: AppsPageComponent },
       {
+        path: 'apps/:appId/reply-settings',
+        title: () => pageTitle('replySettings'),
+        loadComponent: () =>
+          import('./pages/reply-settings/reply-settings.page').then(
+            (page) => page.ReplySettingsPageComponent,
+          ),
+      },
+      {
         path: 'analysis',
         title: () => pageTitle('analysis'),
         loadComponent: () =>

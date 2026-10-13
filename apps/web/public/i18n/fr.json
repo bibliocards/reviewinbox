@@ -96,15 +96,19 @@
       "saved": "Les paramètres de reply de {{name}} sont enregistrés.",
       "loading": "Chargement des paramètres de reply...",
       "title": "Paramètres de reply",
-      "description": "Définissez la guidance et la politique de langue utilisées pour créer les Reply Drafts de cette App.",
+      "description": "Comment l’IA prépare les Reply Drafts pour cette App. Ils ne sont jamais publiés automatiquement.",
       "contextLabel": "Reply Context",
       "contextHelp": "Décris ton application, le ton souhaité et les informations de support pour préparer des brouillons utiles. Maximum {{maxLength}} caractères.",
       "languagePolicyTitle": "Reply Language Policy",
       "languagePolicyDescription": "Les drafts utilisent la langue par défaut, sauf si la langue de la Review est autorisée ci-dessous. Laissez la liste vide pour toujours utiliser la langue par défaut.",
       "defaultLanguageLabel": "Langue par défaut",
-      "mappedLanguagesLabel": "Langues mappées autorisées",
-      "mappedLanguagesHelp": "Saisissez un tag de langue par ligne ou séparez-les par des virgules. {{maxLanguages}} langues maximum.",
-      "actions": { "cancel": "Annuler", "save": "Enregistrer les paramètres" },
+      "mappedLanguagesLabel": "Utiliser la langue de la Review pour",
+      "mappedLanguagesHelp": "Utilisez des codes de langue. Laissez la liste vide pour toujours utiliser la langue par défaut. Jusqu’à {{maxLanguages}} langues.",
+      "actions": {
+        "cancel": "Annuler",
+        "save": "Enregistrer les paramètres",
+        "back": "Retour aux Apps"
+      },
       "errors": {
         "loadFailed": "Impossible de charger les paramètres de reply pour le moment.",
         "updateFailed": "Impossible d’enregistrer les paramètres de reply pour le moment.",
@@ -113,7 +117,15 @@
         "contextTooLong": "Le Reply Context est trop long.",
         "languageTooLong": "Un tag de langue est trop long.",
         "tooManyMappedLanguages": "Vous pouvez ajouter au maximum 50 langues mappées."
-      }
+      },
+      "defaultLanguageHelp": "Sélectionnez ou saisissez un code de langue, par exemple en, fr ou pt-BR.",
+      "contextDescription": "Consignes Markdown pour les Reply Drafts : incidents connus, règles de support et correctifs propres aux versions.",
+      "guidanceLabel": "Consignes",
+      "draftingBoundary": "Utilisé comme contexte, jamais comme instruction de publication.",
+      "removeLanguage": "Retirer {{language}}",
+      "addLanguage": "Ajouter une langue",
+      "languagePlaceholder": "Code de langue",
+      "savedHere": "Paramètres de reply enregistrés."
     },
     "connectDialog": {
       "title": "Connecter une App",
@@ -638,7 +650,8 @@
     "apps": "Apps",
     "auditHistory": "Historique",
     "settings": "Paramètres",
-    "analysis": "Analyse"
+    "analysis": "Analyse",
+    "replySettings": "Paramètres de reply"
   },
   "common": {
     "useLightTheme": "Utiliser le thème clair",

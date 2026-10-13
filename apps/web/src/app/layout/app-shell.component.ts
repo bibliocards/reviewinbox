@@ -143,6 +143,9 @@ export class AppShellComponent {
     if (path === '/settings') {
       return this.translate('shell.menu.accountSettings')
     }
+    if (/^\/apps\/[^/]+\/reply-settings$/u.test(path)) {
+      return this.translate('apps.replySettings.title')
+    }
     const item = this.navItems().find((nav) =>
       nav.route === '/' ? path === '/' : path.startsWith(nav.route),
     )
@@ -181,7 +184,7 @@ export class AppShellComponent {
   protected readonly navItems = computed<ShellNavItem[]>(() => [
     { labelKey: 'shell.navigation.replyInbox', route: '/', icon: 'pi-inbox' },
     { labelKey: 'shell.navigation.analysis', route: '/analysis', icon: 'pi-chart-bar' },
-    { labelKey: 'shell.navigation.apps', route: '/apps', icon: 'pi-mobile' },
+    { labelKey: 'shell.navigation.apps', route: '/apps', icon: 'pi-mobile', exact: false },
     { labelKey: 'shell.navigation.auditHistory', route: '/audit-history', icon: 'pi-history' },
     {
       labelKey: 'shell.navigation.organization',
