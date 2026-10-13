@@ -245,6 +245,7 @@ async function selectReplyAuditEvents(organizationId: string, query: ListReplyAu
       appId: row.event.appId,
       appName: row.app.name,
       reviewTitle: row.review.title,
+      reviewBody: row.review.body,
       reviewAuthorDisplayName: row.review.authorDisplayName,
       actorUserId: row.event.actorUserId,
       actorName: row.actor?.name ?? null,

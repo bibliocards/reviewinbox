@@ -457,11 +457,13 @@
       "review": "Review",
       "metadata": "Metadata"
     },
-    "noMetadata": "None",
     "empty": {
       "title": "No audit events yet",
       "description": "Change the App or action filter, or come back after Reply Inbox activity."
-    }
+    },
+    "today": "Today",
+    "loadFailed": "We could not load Audit History. Please try again.",
+    "failureUnknown": "Publication failed. Open the Review in Reply Inbox for details."
   },
   "errors": { "generic": "Something went wrong. Please try again." },
   "organization": {

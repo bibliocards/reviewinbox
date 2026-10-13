@@ -105,6 +105,7 @@ export const listReplyAuditEventResponseSchema = replyAuditEventResponseSchema.e
   appId: z.uuid(),
   appName: z.string(),
   reviewTitle: z.string().nullable(),
+  reviewBody: z.string(),
   reviewAuthorDisplayName: z.string().nullable(),
   actorName: z.string(),
   actorEmail: z.email().nullable(),
