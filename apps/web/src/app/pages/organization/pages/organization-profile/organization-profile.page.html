@@ -20,7 +20,7 @@
     <div class="grid gap-4 md:grid-cols-[auto_minmax(0,1fr)] md:items-center">
       <div class="grid gap-3">
         <div
-          class="grid size-24 place-items-center overflow-hidden rounded-2xl border border-hairline-strong bg-surface-2 text-2xl font-semibold text-ink"
+          class="grid size-24 place-items-center overflow-hidden rounded-2xl border border-border-strong bg-surface-2 text-2xl font-semibold text-ink"
         >
           @if (profile()?.logo; as logo) {
           <img
@@ -63,7 +63,7 @@
             [formField]="profileForm.name"
           />
         </div>
-        <p class="m-0 text-xs text-ink-tertiary">{{ t('organization.profile.logoHint') }}</p>
+        <p class="m-0 text-xs text-ink-subtle">{{ t('organization.profile.logoHint') }}</p>
       </div>
     </div>
     @if (errorMessageKey(); as messageKey) {

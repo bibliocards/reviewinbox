@@ -16,6 +16,7 @@ import { SelectModule } from 'primeng/select'
 import { firstValueFrom } from 'rxjs'
 import { z } from 'zod'
 
+import { badgeClasses } from '../../../../shared/badge-classes'
 import { betterAuthErrorKey } from '../../../../shared/better-auth-errors'
 import { AuthCapabilitiesService } from '../../../../shared/services/auth-capabilities.service'
 
@@ -49,6 +50,7 @@ const fullOrganizationViewSchema = z.object({ members: z.array(memberViewSchema)
   templateUrl: './organization-members.page.html',
 })
 export class OrganizationMembersPageComponent {
+  protected readonly badgeClasses = badgeClasses
   private readonly auth = inject(AuthService)
   private readonly organizations = inject(OrganizationService)
   private readonly authCapabilities = inject(AuthCapabilitiesService)

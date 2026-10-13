@@ -1,12 +1,18 @@
-<div class="app-shell" *transloco="let t">
+<div
+  class="grid min-h-dvh grid-cols-[200px_minmax(0,1fr)] bg-canvas text-ink max-[900px]:grid-cols-1"
+  *transloco="let t"
+>
   <a
-    class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:border focus:border-hairline-strong focus:bg-surface-1 focus:px-4 focus:py-3 focus:text-ink focus:outline-2 focus:outline-offset-2 focus:outline-primary-500"
+    class="sr-only focus:not-sr-only focus:fixed focus:inset-bs-3 focus:start-3 focus:z-50 focus:rounded-lg focus:border focus:border-border-strong focus:bg-surface-1 focus:px-4 focus:py-3 focus:text-ink focus:outline-2 focus:outline-offset-2 focus:outline-primary-500"
     href="#main-content"
     (click)="$event.preventDefault(); mainContent.focus()"
   >
     {{ t('shell.navigation.skipToContent') }}
   </a>
-  <aside class="sidebar min-w-0" [attr.aria-label]="t('shell.navigation.primary')">
+  <aside
+    class="sticky inset-bs-0 flex h-dvh min-w-0 flex-col gap-6 self-start overflow-y-auto border-e border-hairline bg-canvas px-3 py-3.5 [overscroll-behavior:contain] max-[900px]:static max-[900px]:h-auto max-[900px]:border-e-0 max-[900px]:border-be max-[900px]:px-4 max-[900px]:py-2"
+    [attr.aria-label]="t('shell.navigation.primary')"
+  >
     @let organizationOptions = organizationList();
     @if (organizationOptions.length > 1) {
       <div>
@@ -24,7 +30,11 @@
           <ng-template #item #selectedItem [typedTemplate]="organizationOptions" let-item>
             <div class="flex min-w-0 items-center gap-2">
               @if (item.logo) {
-                <img class="size-6 rounded-md object-cover" [src]="item.logo" [alt]="item.name" />
+                <img
+                  class="size-6 shrink-0 rounded-md object-cover"
+                  [src]="item.logo"
+                  [alt]="item.name"
+                />
               } @else if (item.id) {
                 <span
                   class="grid size-6 shrink-0 place-items-center rounded-md border border-hairline bg-surface-2 text-[0.65rem] font-semibold text-ink-subtle"
@@ -39,41 +49,53 @@
       </div>
     } @else if (organizationOptions.length == 1) {
       @let organization = organizationOptions[0]!;
-      <div class="organization-switcher">
+      <div class="inline-flex min-w-0 items-center gap-2.5">
         @if (organization.logo) {
-          <img [src]="organization.logo" [alt]="organization.name" />
+          <img
+            class="size-8 shrink-0 rounded-[10px] border border-border-strong object-cover"
+            [src]="organization.logo"
+            [alt]="organization.name"
+          />
         } @else {
-          <span class="organization-mark">{{ initialsFrom(organization.name) }}</span>
+          <span
+            class="grid size-7 shrink-0 place-items-center rounded-md border border-border-strong bg-surface-2 text-[13px] font-semibold text-ink"
+            >{{ initialsFrom(organization.name) }}</span
+          >
         }
-        <span class="organization-name">{{ organization.name }}</span>
+        <span
+          class="min-w-0 overflow-clip text-sm text-ellipsis whitespace-nowrap text-ink-muted max-[900px]:hidden"
+          >{{ organization.name }}</span
+        >
       </div>
     }
 
-    <nav class="nav-list">
+    <nav
+      class="flex flex-col gap-1 max-[900px]:flex-row max-[900px]:overflow-x-auto max-[900px]:pbe-1"
+    >
       @for (item of navItems(); track item.route) {
         @if (item.visible !== false) {
           <a
-            class="nav-item"
+            class="flex min-h-10 items-center gap-2.5 rounded-md border border-transparent px-2.5 py-1.75 text-sm leading-[1.2] text-ink-subtle no-underline transition-[background-color,border-color,color] duration-150 hover:border-hairline hover:bg-surface-1 hover:text-ink focus-visible:border-hairline focus-visible:bg-surface-1 focus-visible:text-ink active:border-border-strong active:bg-surface-3 active:text-ink [&.is-active]:border-border-strong [&.is-active]:bg-surface-3 [&.is-active]:text-ink [@media(pointer:coarse)]:min-h-11 max-[900px]:shrink-0"
             [routerLink]="item.route"
             routerLinkActive="is-active"
             ariaCurrentWhenActive="page"
             [routerLinkActiveOptions]="{ exact: item.exact ?? true }"
           >
-            <i class="pi {{ item.icon }}" aria-hidden="true"></i>
+            <i class="pi {{ item.icon }} shrink-0 text-[1em]" aria-hidden="true"></i>
             <span>{{ t(item.labelKey) }}</span>
           </a>
         }
       }
     </nav>
-    <div class="mt-auto flex flex-col items-center">
+    <div class="mbs-auto flex flex-col items-center">
       @if (autoSyncStatus(); as autoSync) {
-        <span class="ri-chip">{{ t('shell.autoSync.label') }}</span>
+        <span [class]="badgeClasses('metadata')">{{ t('shell.autoSync.label') }}</span>
         <span class="text-xs">{{ t(autoSync.key, autoSync.params) }}</span>
       }
-      <div class="mt-2 flex items-center justify-center gap-3">
+      <div class="mbs-2 flex items-center justify-center gap-3">
         @if (isCloud()) {
           <a
-            class="sidebar-link-icon"
+            class="inline-flex size-10 shrink-0 items-center justify-center rounded-md text-ink-muted no-underline hover:bg-surface-2 hover:text-ink focus-visible:text-ink active:bg-surface-3 active:text-ink [@media(pointer:coarse)]:size-11"
             href="https://status.reviewinbox.app"
             target="_blank"
             rel="noreferrer"
@@ -84,7 +106,7 @@
           </a>
         }
         <a
-          class="sidebar-link-icon"
+          class="inline-flex size-10 shrink-0 items-center justify-center rounded-md text-ink-muted no-underline hover:bg-surface-2 hover:text-ink focus-visible:text-ink active:bg-surface-3 active:text-ink [@media(pointer:coarse)]:size-11"
           href="https://github.com/bibliocards/reviewinbox"
           target="_blank"
           rel="noreferrer"
@@ -94,7 +116,7 @@
           <i class="pi pi-github text-xl" aria-hidden="true"></i>
         </a>
         <a
-          class="sidebar-link-icon"
+          class="inline-flex size-10 shrink-0 items-center justify-center rounded-md text-ink-muted no-underline hover:bg-surface-2 hover:text-ink focus-visible:text-ink active:bg-surface-3 active:text-ink [@media(pointer:coarse)]:size-11"
           href="https://reviewinbox.app"
           target="_blank"
           rel="noreferrer"
@@ -107,17 +129,15 @@
     </div>
   </aside>
 
-  <div class="workspace">
-    <header class="topbar">
+  <div
+    class="grid min-h-dvh min-w-0 grid-rows-[56px_minmax(0,1fr)] max-[900px]:grid-rows-[auto_minmax(0,1fr)]"
+  >
+    <header
+      class="sticky inset-bs-0 z-10 flex items-center justify-between gap-4 border-be border-hairline bg-[color-mix(in_oklch,var(--color-canvas)_92%,transparent)] px-6 py-2 backdrop-blur-[12px] max-[900px]:px-4 max-[900px]:py-2.5"
+    >
       <div></div>
 
-      <div class="topbar-actions">
-        <!--p-button
-          severity="secondary"
-          class="search-button"
-          icon="pi pi-search"
-          label="search" /-->
-
+      <div class="flex items-center gap-2">
         <p-button
           [label]="t('shell.actions.connectApp')"
           size="small"
@@ -132,19 +152,29 @@
         <p-button
           [label]="ownerInitials()"
           severity="secondary"
-          class="owner-button"
+          styleClass="size-10 min-w-10 px-0 [@media(pointer:coarse)]:size-11 [@media(pointer:coarse)]:min-w-11"
           [attr.aria-label]="t('shell.menu.ownerAria')"
           (onClick)="ownerMenu.toggle($event)"
         />
       </div>
     </header>
 
-    <main #mainContent id="main-content" class="content-shell scroll-mt-20" tabindex="-1">
-      <section class="content-container" [attr.aria-label]="t('shell.navigation.currentPage')">
+    <main
+      #mainContent
+      id="main-content"
+      class="min-w-0 p-6 scroll-mbs-20 max-[900px]:p-4"
+      tabindex="-1"
+    >
+      <section
+        class="min-h-[calc(100dvh-104px)] rounded-xl border border-hairline bg-surface-1 max-[900px]:min-h-[calc(100dvh-180px)]"
+        [attr.aria-label]="t('shell.navigation.currentPage')"
+      >
         @if (organizationReady() || isUserScopedRoute()) {
           @if (organizationError() || organizations.error()) {
-            <div role="alert" class="shell-state">
-              <p>{{ t('shell.states.organizationError') }}</p>
+            <div role="alert" class="flex flex-col items-start gap-4 p-8 max-[900px]:p-6">
+              <p class="m-0 max-w-[60ch] text-ink-muted leading-[1.6]">
+                {{ t('shell.states.organizationError') }}
+              </p>
               <p-button [label]="t('shell.states.retry')" (onClick)="retryOrganization()" />
               @if (previousReadyOrganizationId()) {
                 <p-button
@@ -157,8 +187,10 @@
           }
           <router-outlet />
         } @else if (organizationError() || organizations.error()) {
-          <div role="alert" class="shell-state">
-            <p>{{ t('shell.states.organizationError') }}</p>
+          <div role="alert" class="flex flex-col items-start gap-4 p-8 max-[900px]:p-6">
+            <p class="m-0 max-w-[60ch] text-ink-muted leading-[1.6]">
+              {{ t('shell.states.organizationError') }}
+            </p>
             <p-button [label]="t('shell.states.retry')" (onClick)="retryOrganization()" />
             @if (previousReadyOrganizationId()) {
               <p-button
@@ -169,9 +201,11 @@
             }
           </div>
         } @else if (!organizations.isLoading() && organizationList().length === 0) {
-          <div class="shell-state">
-            <h1 class="text-xl font-semibold">{{ t('shell.states.finishSetup') }}</h1>
-            <p>{{ t('shell.states.createOrganizationDescription') }}</p>
+          <div class="flex flex-col items-start gap-4 p-8 max-[900px]:p-6">
+            <h1 class="m-0 text-xl font-semibold">{{ t('shell.states.finishSetup') }}</h1>
+            <p class="m-0 max-w-[60ch] text-ink-muted leading-[1.6]">
+              {{ t('shell.states.createOrganizationDescription') }}
+            </p>
             <a pButton routerLink="/organizations/new">{{
               t('shell.states.createOrganizationLink')
             }}</a>

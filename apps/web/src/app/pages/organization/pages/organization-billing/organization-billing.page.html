@@ -126,15 +126,15 @@
             <p class="m-0 mt-2 text-sm text-ink-subtle">{{ plan.summary }}</p>
           </div>
           @if (plan.selected) {
-          <span class="ri-chip ri-chip-primary">Selected</span>
+          <span [class]="badgeClasses('metadata')">Selected</span>
           } @else if (plan.name === 'starter') {
-          <span class="ri-chip ri-chip-primary">Recommended</span>
+          <span [class]="badgeClasses('metadata')">Recommended</span>
           }
         </div>
 
         <div class="mt-5">
           <p class="m-0 text-2xl font-semibold tracking-[-0.6px] text-ink">{{ plan.price }}</p>
-          <p class="m-0 mt-1 text-xs text-ink-tertiary">{{ plan.subprice }}</p>
+          <p class="m-0 mt-1 text-xs text-ink-subtle">{{ plan.subprice }}</p>
         </div>
 
         <ul class="m-0 mt-5 grid list-none gap-2 p-0 text-sm text-ink-subtle">

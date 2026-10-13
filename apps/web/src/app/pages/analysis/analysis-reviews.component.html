@@ -8,13 +8,13 @@
   </div>
   @if (loading()) {
     <div
-      class="grid justify-items-center gap-2 border border-dashed border-hairline-strong p-8 text-ink-subtle"
+      class="grid justify-items-center gap-2 border border-dashed border-border-strong p-8 text-ink-subtle"
     >
       <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>{{ t('analysis.loading') }}
     </div>
   } @else if (reviews().length === 0) {
     <div
-      class="grid justify-items-center gap-2 border border-dashed border-hairline-strong p-8 text-ink-subtle"
+      class="grid justify-items-center gap-2 border border-dashed border-border-strong p-8 text-ink-subtle"
     >
       <i class="pi pi-inbox" aria-hidden="true"></i><span>{{ t('analysis.reviews.empty') }}</span>
     </div>
@@ -42,7 +42,7 @@
               }
               <span>{{ review.reviewedAt.slice(0, 10) }}</span>
               @if (review.hasOverride) {
-                <span class="text-primary"
+                <span class="text-primary-tint-ink"
                   ><i class="pi pi-pencil mr-1" aria-hidden="true"></i
                   >{{ t('analysis.reviews.manual') }}</span
                 >
@@ -55,7 +55,6 @@
             <div class="mt-2 flex flex-wrap gap-1">
               <button
                 type="button"
-                class="rounded-full px-2 py-0.5 text-xs text-white"
                 [class]="severityClass(review.severity ?? 'unknown')"
                 (click)="severitySelected.emit(review.severity ?? 'unknown')"
               >
@@ -92,7 +91,7 @@
               [loading]="pendingReviewId() === review.id"
               (onClick)="corrected.emit(review)"
             /><a
-              class="text-xs font-semibold text-primary no-underline"
+              class="text-xs font-semibold text-link no-underline"
               [routerLink]="['/']"
               [queryParams]="{ reviewId: review.id }"
               >{{ t('analysis.actions.openReview') }}

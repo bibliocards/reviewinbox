@@ -29,6 +29,7 @@ import { DialogService, type DynamicDialogConfig } from 'primeng/dynamicdialog'
 import { TableModule } from 'primeng/table'
 import { z } from 'zod'
 
+import { badgeClasses } from '../../shared/badge-classes'
 import { ConnectAppDialogComponent } from '../../shared/components/connect-app-dialog/connect-app-dialog.component'
 import { ReplySettingsDialogComponent } from '../../shared/components/reply-settings-dialog/reply-settings-dialog.component'
 import { TypedTemplateDirective } from '../../shared/directives/typed-template.directive'
@@ -322,10 +323,7 @@ export class AppsPageComponent {
   }
 
   protected storeStatusClass(app: AppListItemResponse, provider: StoreProvider): string {
-    const base = 'inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium'
-    return this.isStoreConfigured(app, provider)
-      ? `${base} border-green-500/40 bg-green-500/10 text-green-700`
-      : `${base} border-hairline-strong bg-surface-2 text-ink-tertiary`
+    return badgeClasses(this.isStoreConfigured(app, provider) ? 'connected' : 'metadata')
   }
 
   protected createdAgo(createdAt: string): string {

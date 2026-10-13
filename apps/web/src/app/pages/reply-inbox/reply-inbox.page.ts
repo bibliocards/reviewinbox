@@ -22,6 +22,7 @@ import { SelectModule } from 'primeng/select'
 import { finalize, forkJoin, type Observable } from 'rxjs'
 import { z } from 'zod'
 
+import { badgeClasses } from '../../shared/badge-classes'
 import {
   AppSelectComponent,
   type AppSelectOption,
@@ -328,17 +329,7 @@ export class ReplyInboxPageComponent {
     return this.transloco.translate('replyInbox.rating', { rating })
   }
 
-  protected statusClass(status: ReplyInboxReview['replyStatus']): string {
-    const base = 'inline-flex rounded-full border px-2.5 py-1 text-xs font-medium'
-    const classes: Record<ReplyInboxReview['replyStatus'], string> = {
-      pending: 'border-blue-500/30 bg-blue-500/10 text-blue-700',
-      drafted: 'border-green-500/30 bg-green-500/10 text-green-700',
-      failed: 'border-red-500/30 bg-red-500/10 text-red-700',
-      ignored: 'border-hairline bg-surface-2 text-ink-subtle',
-      published: 'border-purple-500/30 bg-purple-500/10 text-purple-700',
-    }
-    return `${base} ${classes[status]}`
-  }
+  protected readonly statusClass = badgeClasses
 
   private filterLabelKey(filter: ReplyInboxFilter): string {
     return filter === 'actionable' ? 'replyInbox.filters.actionable' : `replyInbox.status.${filter}`

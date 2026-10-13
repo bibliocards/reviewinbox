@@ -62,11 +62,11 @@
     }}
   </p>
   } @else if (reviews().length === 0) {
-  <div class="rounded-3xl border border-dashed border-hairline-strong bg-surface-1 p-8 text-center">
+  <div class="rounded-3xl border border-dashed border-border-strong bg-surface-1 p-8 text-center">
     <h2 class="m-0 text-xl font-semibold text-ink">{{ t('replyInbox.empty.title') }}</h2>
     <p class="m-0 mt-2 text-sm text-ink-subtle">{{ t('replyInbox.empty.description') }}</p>
     <a
-      class="mt-4 inline-flex items-center justify-center rounded-xl border border-hairline-strong px-4 py-2 text-sm font-medium text-ink transition hover:bg-surface-2"
+      class="mt-4 inline-flex items-center justify-center rounded-xl border border-border-strong px-4 py-2 text-sm font-medium text-ink transition hover:bg-surface-2"
       routerLink="/apps"
     >
       {{ t('replyInbox.empty.openApps') }}
@@ -323,7 +323,7 @@
         {{ review.body }}
       </blockquote>
       } @if (hasCurrentDraft(review)) {
-      <div class="rounded-2xl border border-hairline-strong bg-surface-2 p-4">
+      <div class="rounded-2xl border border-border-strong bg-surface-2 p-4">
         <p class="m-0 text-sm font-medium text-ink-subtle">{{ t('replyInbox.replyDraft') }}</p>
         <p class="m-0 mt-2 whitespace-pre-wrap text-sm leading-6 text-ink-muted">
           {{ review.replyDraft?.draftText }}

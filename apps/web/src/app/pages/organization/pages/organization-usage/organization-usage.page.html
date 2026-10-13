@@ -73,10 +73,10 @@
       />
       } @else {
       <p class="m-0 mt-4 text-sm font-medium text-ink">{{ item.usage.used }} used</p>
-      <p class="m-0 mt-2 text-xs text-ink-tertiary">No limit enforced in self-hosted mode.</p>
+      <p class="m-0 mt-2 text-xs text-ink-subtle">No limit enforced in self-hosted mode.</p>
       } @if (shouldShowUpgradeCta(item.usage)) {
       <a
-        class="mt-4 inline-flex w-fit rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-contrast no-underline transition hover:bg-primary-hover"
+        class="mt-4 inline-flex w-fit rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-contrast no-underline transition hover:bg-[var(--primary-button-hover)]"
         routerLink="/organization/billing"
         [queryParams]="{ reason: item.upgradeReason }"
       >

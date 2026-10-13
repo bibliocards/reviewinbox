@@ -10,14 +10,14 @@
     <label class="grid gap-1.5 text-sm font-medium text-ink">
       <span>{{ t('apps.replySettings.contextLabel') }}</span>
       <textarea
-        class="w-full rounded-md border border-hairline-strong bg-canvas px-3 py-2 text-sm text-ink outline-none transition focus:border-primary"
+        class="w-full rounded-md border border-border-strong bg-canvas px-3 py-2 text-sm text-ink transition focus:border-primary"
         rows="7"
         autocomplete="off"
         [attr.maxlength]="maxReplyContextLength"
         [attr.aria-label]="t('apps.replySettings.contextLabel')"
         [formField]="settingsForm.replyContext"
       ></textarea>
-      <span class="text-xs font-normal text-ink-tertiary">{{
+      <span class="text-xs font-normal text-ink-subtle">{{
         t('apps.replySettings.contextHelp', { maxLength: maxReplyContextLength })
       }}</span>
     </label>
@@ -27,7 +27,7 @@
         <h3 class="m-0 font-semibold text-ink">
           {{ t('apps.replySettings.languagePolicyTitle') }}
         </h3>
-        <p class="m-0 mt-1 text-xs font-normal text-ink-tertiary">
+        <p class="m-0 mt-1 text-xs font-normal text-ink-subtle">
           {{ t('apps.replySettings.languagePolicyDescription') }}
         </p>
       </div>
@@ -45,14 +45,14 @@
       <label class="grid gap-1.5 text-sm font-medium text-ink">
         <span>{{ t('apps.replySettings.mappedLanguagesLabel') }}</span>
         <textarea
-          class="w-full rounded-md border border-hairline-strong bg-canvas px-3 py-2 text-sm text-ink outline-none transition focus:border-primary"
+          class="w-full rounded-md border border-border-strong bg-canvas px-3 py-2 text-sm text-ink transition focus:border-primary"
           rows="4"
           autocomplete="off"
           [attr.maxlength]="maxMappedLanguages * (maxLanguageTagLength + 1)"
           [attr.aria-label]="t('apps.replySettings.mappedLanguagesLabel')"
           [formField]="settingsForm.mappedLanguagesText"
         ></textarea>
-        <span class="text-xs font-normal text-ink-tertiary">{{
+        <span class="text-xs font-normal text-ink-subtle">{{
           t('apps.replySettings.mappedLanguagesHelp', { maxLanguages: maxMappedLanguages })
         }}</span>
       </label>

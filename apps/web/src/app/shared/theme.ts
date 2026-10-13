@@ -1,290 +1,174 @@
 import { definePreset } from '@primeuix/themes'
 import Aura from '@primeuix/themes/aura'
 
-const darkCanvas = '#0f1117'
-const darkSurface1 = '#141821'
-const darkSurface2 = '#1a1f2a'
-const darkSurface3 = '#202635'
-const darkSurface4 = '#273044'
-const darkHairline = '#2a3140'
-const darkHairlineStrong = '#3a4356'
-const darkInk = '#f3f5f7'
-const darkInkMuted = '#c7ced8'
-const darkInkSubtle = '#9aa3b2'
-const lightCanvas = '#f7f7f2'
-const lightSurface1 = '#ffffff'
-const lightSurface2 = '#f0f1f6'
-const lightSurface3 = '#e6e8f0'
-const lightSurface4 = '#d9dce8'
-const lightHairline = '#d9dce8'
-const lightHairlineStrong = '#b8bdcc'
-const lightInk = '#17181c'
-const lightInkMuted = '#4b5160'
-const lightInkSubtle = '#6f7686'
-const primary = '#5e6ad2'
-const primaryHover = '#828fff'
-const primaryFocus = '#5e69d1'
-
-const darkSurfacePalette = {
-  0: '#ffffff',
-  50: '#f3f5f7',
-  100: '#c7ced8',
-  200: '#b2bbc8',
-  300: '#9aa3b2',
-  400: '#727b8c',
-  500: '#343844',
-  600: darkHairline,
-  700: darkSurface4,
-  800: darkSurface3,
-  900: darkSurface2,
-  950: darkCanvas,
+const color = (name: string): string => `var(--color-${name})`
+const focusRing = {
+  width: '2px',
+  style: 'solid',
+  color: `color-mix(in oklch, ${color('primary')} 50%, transparent)`,
+  offset: '2px',
+  shadow: 'none',
 }
-
-const lightSurfacePalette = {
-  0: '#ffffff',
-  50: lightCanvas,
-  100: lightSurface2,
-  200: lightSurface3,
-  300: lightSurface4,
-  400: lightHairlineStrong,
-  500: '#8e95a6',
-  600: '#6f7686',
-  700: lightInkMuted,
-  800: '#303440',
-  900: lightInk,
-  950: '#0f1117',
+const overlay = {
+  background: color('surface-1'),
+  borderColor: color('border'),
+  color: color('ink'),
+  shadow: 'none',
 }
-
-const darkColorScheme = {
-  surface: darkSurfacePalette,
-  primary: {
-    color: primary,
-    contrastColor: '#ffffff',
-    hoverColor: primaryHover,
-    activeColor: primaryFocus,
-  },
-  highlight: {
-    background: 'color-mix(in srgb, #5e6ad2 22%, transparent)',
-    focusBackground: 'color-mix(in srgb, #5e6ad2 28%, transparent)',
-    color: darkInk,
-    focusColor: darkInk,
-  },
-  mask: { background: 'rgba(0, 0, 0, 0.72)', color: darkInk },
-  formField: {
-    background: darkSurface1,
-    disabledBackground: darkSurface2,
-    filledBackground: darkSurface1,
-    filledHoverBackground: darkSurface2,
-    filledFocusBackground: darkSurface1,
-    borderColor: darkHairline,
-    hoverBorderColor: darkHairlineStrong,
-    focusBorderColor: primaryFocus,
-    color: darkInk,
-    disabledColor: '#727b8c',
-    placeholderColor: darkInkSubtle,
-    floatLabelColor: darkInkSubtle,
-    floatLabelFocusColor: primaryHover,
-    floatLabelActiveColor: darkInkMuted,
-    iconColor: darkInkSubtle,
-    shadow: 'none',
-  },
-  text: {
-    color: darkInk,
-    hoverColor: darkInk,
-    mutedColor: darkInkSubtle,
-    hoverMutedColor: darkInkMuted,
-  },
-  content: {
-    background: darkSurface1,
-    hoverBackground: darkSurface2,
-    borderColor: darkHairline,
-    color: darkInk,
-    hoverColor: darkInk,
-  },
-  overlay: {
-    select: { background: darkSurface3, borderColor: darkHairlineStrong, color: darkInk },
-    popover: { background: darkSurface3, borderColor: darkHairlineStrong, color: darkInk },
-    modal: { background: darkSurface2, borderColor: darkHairlineStrong, color: darkInk },
-  },
-  list: {
-    option: {
-      focusBackground: darkSurface2,
-      selectedBackground: 'color-mix(in srgb, #5e6ad2 22%, #1a1f2a)',
-      selectedFocusBackground: 'color-mix(in srgb, #5e6ad2 30%, #1a1f2a)',
-      color: darkInkMuted,
-      focusColor: darkInk,
-      selectedColor: darkInk,
-      selectedFocusColor: darkInk,
-    },
-    optionGroup: { background: darkSurface1, color: darkInkSubtle },
-  },
-  navigation: {
-    item: {
-      focusBackground: darkSurface2,
-      activeBackground: darkSurface3,
-      color: darkInkSubtle,
-      focusColor: darkInk,
-      activeColor: darkInk,
-    },
-    submenuLabel: { background: darkSurface1, color: darkInkSubtle },
-    submenuIcon: { color: darkInkSubtle, focusColor: darkInk, activeColor: darkInk },
-  },
-}
-
-const lightColorScheme = {
-  surface: lightSurfacePalette,
-  primary: {
-    color: primary,
-    contrastColor: '#ffffff',
-    hoverColor: '#4f5bc7',
-    activeColor: '#444fb3',
-  },
-  highlight: {
-    background: 'color-mix(in srgb, #5e6ad2 12%, #ffffff)',
-    focusBackground: 'color-mix(in srgb, #5e6ad2 18%, #ffffff)',
-    color: lightInk,
-    focusColor: lightInk,
-  },
-  mask: { background: 'rgba(15, 17, 23, 0.42)', color: lightInk },
-  formField: {
-    background: lightSurface1,
-    disabledBackground: lightSurface2,
-    filledBackground: lightSurface1,
-    filledHoverBackground: lightSurface2,
-    filledFocusBackground: lightSurface1,
-    borderColor: lightHairline,
-    hoverBorderColor: lightHairlineStrong,
-    focusBorderColor: primaryFocus,
-    color: lightInk,
-    disabledColor: '#8e95a6',
-    placeholderColor: lightInkSubtle,
-    floatLabelColor: lightInkSubtle,
-    floatLabelFocusColor: primary,
-    floatLabelActiveColor: lightInkMuted,
-    iconColor: lightInkSubtle,
-    shadow: 'none',
-  },
-  text: {
-    color: lightInk,
-    hoverColor: lightInk,
-    mutedColor: lightInkSubtle,
-    hoverMutedColor: lightInkMuted,
-  },
-  content: {
-    background: lightSurface1,
-    hoverBackground: lightSurface2,
-    borderColor: lightHairline,
-    color: lightInk,
-    hoverColor: lightInk,
-  },
-  overlay: {
-    select: { background: lightSurface1, borderColor: lightHairlineStrong, color: lightInk },
-    popover: { background: lightSurface1, borderColor: lightHairlineStrong, color: lightInk },
-    modal: { background: lightSurface1, borderColor: lightHairlineStrong, color: lightInk },
-  },
-  list: {
-    option: {
-      focusBackground: lightSurface2,
-      selectedBackground: 'color-mix(in srgb, #5e6ad2 12%, #ffffff)',
-      selectedFocusBackground: 'color-mix(in srgb, #5e6ad2 18%, #ffffff)',
-      color: lightInkMuted,
-      focusColor: lightInk,
-      selectedColor: lightInk,
-      selectedFocusColor: lightInk,
-    },
-    optionGroup: { background: lightSurface1, color: lightInkSubtle },
-  },
-  navigation: {
-    item: {
-      focusBackground: lightSurface2,
-      activeBackground: lightSurface3,
-      color: lightInkSubtle,
-      focusColor: lightInk,
-      activeColor: lightInk,
-    },
-    submenuLabel: { background: lightSurface1, color: lightInkSubtle },
-    submenuIcon: { color: lightInkSubtle, focusColor: lightInk, activeColor: lightInk },
-  },
+const quietButton = {
+  hoverBackground: color('surface-2'),
+  activeBackground: color('surface-3'),
+  borderColor: color('border-strong'),
+  color: color('ink-muted'),
 }
 
 export const reviewInboxTheme = definePreset(Aura, {
   primitive: { borderRadius: { xs: '4px', sm: '6px', md: '8px', lg: '12px', xl: '16px' } },
   semantic: {
+    typography: { fontFamily: 'var(--font-sans)', fontSize: '14px' },
     transitionDuration: '150ms',
     primary: {
-      50: '#f0f1ff',
-      100: '#dfe2ff',
-      200: '#c4c9ff',
-      300: '#a6afff',
-      400: primaryHover,
-      500: primary,
-      600: primaryFocus,
-      700: '#4b55b8',
-      800: '#3d4697',
-      900: '#303674',
-      950: '#20244d',
+      50: color('primary-tint'),
+      100: color('primary-tint'),
+      200: color('selected-border'),
+      300: color('primary-tint-ink'),
+      400: color('primary'),
+      500: color('primary'),
+      600: color('primary-hover'),
+      700: color('primary-tint-ink'),
+      800: color('primary-tint-ink'),
+      900: color('selected-border'),
+      950: color('selected'),
+      color: color('primary'),
+      contrastColor: '#ffffff',
+      hoverColor: color('primary-hover'),
+      activeColor: color('primary'),
     },
-    focusRing: {
-      width: '2px',
-      style: 'solid',
-      color: 'color-mix(in srgb, #5e69d1 50%, transparent)',
-      offset: '2px',
-      shadow: 'none',
+    // Aura's remaining component tokens use a light-to-dark surface palette.
+    surface: {
+      0: `light-dark(${color('surface-1')}, ${color('ink')})`,
+      50: `light-dark(${color('canvas')}, ${color('ink')})`,
+      100: `light-dark(${color('sunken')}, ${color('ink-muted')})`,
+      200: `light-dark(${color('surface-3')}, ${color('ink-muted')})`,
+      300: `light-dark(${color('border')}, ${color('ink-subtle')})`,
+      400: `light-dark(${color('border-strong')}, ${color('ink-subtle')})`,
+      500: color('ink-subtle'),
+      600: `light-dark(${color('ink-muted')}, ${color('border-strong')})`,
+      700: `light-dark(${color('ink-muted')}, ${color('border')})`,
+      800: `light-dark(${color('ink')}, ${color('surface-3')})`,
+      900: `light-dark(${color('ink')}, ${color('surface-1')})`,
+      950: `light-dark(${color('ink')}, ${color('canvas')})`,
+    },
+    focusRing,
+    highlight: {
+      background: color('selected'),
+      focusBackground: color('primary-tint'),
+      color: color('primary-tint-ink'),
+      focusColor: color('primary-tint-ink'),
     },
     formField: {
       paddingX: '12px',
-      paddingY: '8px',
+      paddingY: '9px',
       borderRadius: '8px',
-      focusRing: {
-        width: '2px',
-        style: 'solid',
-        color: 'color-mix(in srgb, #5e69d1 50%, transparent)',
-        offset: '0',
-        shadow: 'none',
-      },
+      focusRing,
+      background: color('surface-1'),
+      disabledBackground: color('surface-2'),
+      filledBackground: color('surface-1'),
+      filledHoverBackground: color('surface-2'),
+      filledFocusBackground: color('surface-1'),
+      borderColor: color('border'),
+      hoverBorderColor: color('border-strong'),
+      focusBorderColor: color('primary'),
+      invalidBorderColor: color('failure-ink'),
+      color: color('ink'),
+      disabledColor: color('ink-subtle'),
+      placeholderColor: color('ink-subtle'),
+      invalidPlaceholderColor: color('failure-ink'),
+      floatLabelColor: color('ink-subtle'),
+      floatLabelFocusColor: color('link'),
+      floatLabelActiveColor: color('ink-muted'),
+      floatLabelInvalidColor: color('failure-ink'),
+      iconColor: color('ink-subtle'),
+      shadow: 'none',
     },
-    content: { borderRadius: '12px' },
+    text: {
+      color: color('ink'),
+      hoverColor: color('ink'),
+      mutedColor: color('ink-muted'),
+      hoverMutedColor: color('ink'),
+    },
+    content: {
+      borderRadius: '12px',
+      background: color('surface-1'),
+      hoverBackground: color('surface-3'),
+      borderColor: color('border'),
+      color: color('ink'),
+      hoverColor: color('ink'),
+    },
     overlay: {
-      select: { borderRadius: '12px', shadow: 'none' },
-      popover: { borderRadius: '12px', shadow: 'none' },
-      modal: { borderRadius: '16px', shadow: 'none' },
+      select: { ...overlay, borderRadius: '12px' },
+      popover: { ...overlay, borderRadius: '12px' },
+      modal: { ...overlay, borderRadius: '16px' },
       navigation: { shadow: 'none' },
     },
-    colorScheme: { light: lightColorScheme, dark: darkColorScheme },
+    list: {
+      option: {
+        focusBackground: color('surface-3'),
+        selectedBackground: color('selected'),
+        selectedFocusBackground: color('primary-tint'),
+        color: color('ink-muted'),
+        focusColor: color('ink'),
+        selectedColor: color('primary-tint-ink'),
+        selectedFocusColor: color('primary-tint-ink'),
+      },
+      optionGroup: { background: color('sunken'), color: color('ink-subtle') },
+    },
+    navigation: {
+      item: {
+        focusBackground: color('surface-2'),
+        activeBackground: color('surface-3'),
+        color: color('ink-muted'),
+        focusColor: color('ink'),
+        activeColor: color('ink'),
+      },
+      submenuLabel: { background: color('surface-1'), color: color('ink-subtle') },
+      submenuIcon: {
+        color: color('ink-subtle'),
+        focusColor: color('ink'),
+        activeColor: color('ink'),
+      },
+    },
   },
   components: {
     button: {
       root: {
         borderRadius: '8px',
         roundedBorderRadius: '9999px',
-        paddingX: '14px',
-        paddingY: '8px',
+        paddingX: '16px',
+        paddingY: '10px',
         label: { fontWeight: '500' },
         raisedShadow: 'none',
         primary: {
-          background: primary,
-          hoverBackground: primaryHover,
-          activeBackground: primaryFocus,
-          borderColor: primary,
-          hoverBorderColor: primaryHover,
-          activeBorderColor: primaryFocus,
-          color: '#ffffff',
-          hoverColor: '#ffffff',
-          activeColor: '#ffffff',
-          focusRing: { color: 'color-mix(in srgb, #5e69d1 50%, transparent)', shadow: 'none' },
+          hoverBackground: 'var(--primary-button-hover)',
+          hoverBorderColor: 'var(--primary-button-hover)',
+          focusRing: { color: focusRing.color, shadow: 'none' },
         },
         secondary: {
-          background: '{content.background}',
-          hoverBackground: '{content.hover.background}',
-          activeBackground: '{surface.800}',
-          borderColor: '{content.border.color}',
-          hoverBorderColor: '{form.field.hover.border.color}',
-          activeBorderColor: '{form.field.hover.border.color}',
-          color: '{text.color}',
-          hoverColor: '{text.hover.color}',
-          activeColor: '{text.hover.color}',
+          background: color('surface-1'),
+          hoverBackground: color('surface-2'),
+          activeBackground: color('surface-3'),
+          borderColor: color('border-strong'),
+          hoverBorderColor: color('border-strong'),
+          activeBorderColor: color('border-strong'),
+          color: color('ink'),
+          hoverColor: color('ink'),
+          activeColor: color('ink'),
+          focusRing: { color: focusRing.color, shadow: 'none' },
         },
       },
+      outlined: { primary: { ...quietButton, color: color('link') }, secondary: quietButton },
+      text: { primary: { ...quietButton, color: color('link') }, secondary: quietButton },
+      link: { color: color('link'), hoverColor: color('link'), activeColor: color('link') },
     },
     card: {
       root: {

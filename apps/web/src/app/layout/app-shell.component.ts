@@ -34,6 +34,7 @@ import { MenuModule } from 'primeng/menu'
 import { type SelectChangeEvent, SelectModule } from 'primeng/select'
 import { z } from 'zod'
 
+import { badgeClasses } from '../shared/badge-classes'
 import { ConnectAppDialogComponent } from '../shared/components/connect-app-dialog/connect-app-dialog.component'
 import { ThemeToggleComponent } from '../shared/components/theme-toggle/theme-toggle.component'
 import { TypedTemplateDirective } from '../shared/directives/typed-template.directive'
@@ -66,9 +67,10 @@ const activeOrganizationSessionSchema = z.object({ activeOrganizationId: z.strin
   ],
   templateUrl: './app-shell.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  styleUrl: './app-shell.component.css',
+  host: { class: 'block min-h-dvh' },
 })
 export class AppShellComponent {
+  protected readonly badgeClasses = badgeClasses
   private readonly authService = inject(AuthService)
   private readonly organizationService = inject(OrganizationService)
   private readonly router = inject(Router)

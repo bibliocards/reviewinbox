@@ -66,8 +66,9 @@
         <label for="settings-current-password"
           >{{ t('accountSettings.password.currentLabel') }}</label
         >
+        <!-- Signal Forms marks invalid before interaction; keep the border neutral until its error is shown. -->
         <p-password
-          class="settings-password-field"
+          class="[&:not(.settings-password-field-invalid)]:[--p-inputtext-invalid-border-color:var(--p-inputtext-border-color)]"
           inputId="settings-current-password"
           [formField]="passwordForm.currentPassword"
           [class.settings-password-field-invalid]="passwordForm.currentPassword().touched() && passwordForm.currentPassword().invalid()"
@@ -91,7 +92,7 @@
       <div class="grid gap-1.5 text-sm font-medium text-ink">
         <label for="settings-new-password">{{ t('accountSettings.password.newLabel') }}</label>
         <p-password
-          class="settings-password-field"
+          class="[&:not(.settings-password-field-invalid)]:[--p-inputtext-invalid-border-color:var(--p-inputtext-border-color)]"
           inputId="settings-new-password"
           [formField]="passwordForm.newPassword"
           [class.settings-password-field-invalid]="passwordForm.newPassword().touched() && passwordForm.newPassword().invalid()"
@@ -114,7 +115,7 @@
           >{{ t('accountSettings.password.confirmLabel') }}</label
         >
         <p-password
-          class="settings-password-field"
+          class="[&:not(.settings-password-field-invalid)]:[--p-inputtext-invalid-border-color:var(--p-inputtext-border-color)]"
           inputId="settings-confirm-password"
           [formField]="passwordForm.confirmPassword"
           [class.settings-password-field-invalid]="passwordForm.confirmPassword().touched() && passwordForm.confirmPassword().invalid()"

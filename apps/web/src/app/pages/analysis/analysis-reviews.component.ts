@@ -5,6 +5,8 @@ import { TranslocoDirective } from '@jsverse/transloco'
 import type { AnalysisReview } from '@reviewinbox/contracts'
 import { ButtonModule } from 'primeng/button'
 
+import { badgeClasses } from '../../shared/badge-classes'
+
 @Component({
   selector: 'ri-analysis-reviews',
   imports: [ButtonModule, NgClass, RouterLink, TranslocoDirective],
@@ -26,20 +28,5 @@ export class AnalysisReviewsComponent {
   protected providerLabel(provider: string): string {
     return provider === 'apple_app_store' ? 'Apple App Store' : 'Google Play'
   }
-  protected severityClass(value: string): string {
-    switch (value) {
-      case 'unknown':
-        return 'bg-violet-400'
-      case 'minor':
-        return 'bg-yellow-500'
-      case 'degraded':
-        return 'bg-orange-500'
-      case 'blocking':
-        return 'bg-red-500'
-      case 'critical':
-        return 'bg-red-800'
-      default:
-        return 'bg-slate-400'
-    }
-  }
+  protected readonly severityClass = badgeClasses
 }

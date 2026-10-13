@@ -16,6 +16,7 @@ import { enUS, fr } from 'date-fns/locale'
 import { SelectModule } from 'primeng/select'
 import { type TableLazyLoadEvent, TableModule } from 'primeng/table'
 
+import { badgeClasses } from '../../shared/badge-classes'
 import {
   AppSelectComponent,
   type AppSelectOption,
@@ -144,18 +145,7 @@ export class AuditHistoryPageComponent {
       .toUpperCase()
   }
 
-  protected actionClass(action: ListReplyAuditEventResponse['action']): string {
-    const base = 'inline-flex whitespace-nowrap rounded-full border px-1.5 py-1 text-xs font-medium'
-    const classes: Record<ListReplyAuditEventResponse['action'], string> = {
-      draft_created: 'border-blue-500/30 bg-blue-500/10 text-blue-700',
-      draft_edited: 'border-green-500/30 bg-green-500/10 text-green-700',
-      ignored: 'border-hairline bg-surface-2 text-ink-subtle',
-      unignored: 'border-amber-500/30 bg-amber-500/10 text-amber-700',
-      publish_failed: 'border-red-500/30 bg-red-500/10 text-red-700',
-      published: 'border-purple-500/30 bg-purple-500/10 text-purple-700',
-    }
-    return `${base} ${classes[action]}`
-  }
+  protected readonly actionClass = badgeClasses
 
   protected formattedCreatedAt(createdAt: string): string {
     const locale = this.transloco.getActiveLang() === 'fr' ? fr : enUS

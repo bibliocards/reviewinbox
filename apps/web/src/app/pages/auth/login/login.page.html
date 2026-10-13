@@ -63,7 +63,7 @@
       />
     </div>
 
-    <div class="my-6 flex items-center gap-4 text-sm text-ink-tertiary">
+    <div class="my-6 flex items-center gap-4 text-sm text-ink-subtle">
       <span class="h-px flex-1 bg-hairline"></span>
       {{ t('auth.common.or') }}
       <span class="h-px flex-1 bg-hairline"></span>
@@ -127,7 +127,7 @@
       <p class="m-0">
         {{ t('auth.login.noAccount') }}
         <a
-          class="font-medium text-linear-primary underline-offset-4 hover:underline"
+          class="font-medium text-link underline-offset-4 hover:underline"
           routerLink="/sign-up"
           [queryParams]="signUpQueryParams()"
           >{{ t('auth.actions.signUp') }}</a
@@ -137,7 +137,7 @@
       <p class="m-0">
         {{ t('auth.login.forgotPassword') }}
         <a
-          class="font-medium text-linear-primary underline-offset-4 hover:underline"
+          class="font-medium text-link underline-offset-4 hover:underline"
           routerLink="/forgot-password"
           >{{ t('auth.actions.resetPassword') }}</a
         >

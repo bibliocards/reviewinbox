@@ -9,7 +9,7 @@
       <p class="m-0 mt-3 max-w-2xl text-sm text-ink-subtle">{{ t('analysis.description') }}</p>
     </div>
     <a
-      class="inline-flex min-h-10 items-center gap-2 rounded-lg border border-hairline-strong bg-surface-1 px-3 py-2 text-sm font-semibold text-ink no-underline hover:bg-surface-2"
+      class="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border-strong bg-surface-1 px-3 py-2 text-sm font-semibold text-ink no-underline hover:bg-surface-2"
       routerLink="/analysis/catalogue"
       [queryParams]="{ appId: selectedAppId() || null }"
       ><i class="pi pi-tags" aria-hidden="true"></i>{{ t('analysis.actions.openCatalogue') }}</a
@@ -65,7 +65,7 @@
   </section>
   } @else if (analysis().total === 0 && hasActiveFilters()) {
   <section
-    class="grid min-h-64 place-content-center justify-items-center gap-2 rounded-xl border border-dashed border-hairline-strong p-8 text-center text-ink-subtle"
+    class="grid min-h-64 place-content-center justify-items-center gap-2 rounded-xl border border-dashed border-border-strong p-8 text-center text-ink-subtle"
   >
     <i class="pi pi-inbox text-xl text-primary" aria-hidden="true"></i
     ><strong class="text-base text-ink">{{ t('analysis.reviews.empty') }}</strong>
@@ -98,7 +98,7 @@
   />
   } @else {
   <section
-    class="grid min-h-64 place-content-center justify-items-center gap-2 rounded-xl border border-dashed border-hairline-strong p-8 text-center text-ink-subtle"
+    class="grid min-h-64 place-content-center justify-items-center gap-2 rounded-xl border border-dashed border-border-strong p-8 text-center text-ink-subtle"
   >
     <i class="pi pi-chart-line text-xl text-primary" aria-hidden="true"></i
     ><strong class="text-base text-ink">{{ t('analysis.disabled.title') }}</strong

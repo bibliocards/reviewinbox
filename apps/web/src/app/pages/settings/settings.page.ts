@@ -13,7 +13,6 @@ import { firstValueFrom } from 'rxjs'
   imports: [ButtonModule, FormField, InputTextModule, PasswordModule, TranslocoDirective],
   templateUrl: './settings.page.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  styleUrl: './settings.page.css',
 })
 export class SettingsPageComponent {
   private readonly auth = inject(AuthService)

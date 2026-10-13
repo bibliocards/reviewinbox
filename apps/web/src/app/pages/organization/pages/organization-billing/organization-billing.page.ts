@@ -15,6 +15,7 @@ import { ButtonModule } from 'primeng/button'
 import { firstValueFrom } from 'rxjs'
 import { z } from 'zod'
 
+import { badgeClasses } from '../../../../shared/badge-classes'
 import {
   billingPlanHighlights,
   billingPlanLabels,
@@ -36,6 +37,7 @@ const activeOrganizationSessionSchema = z.object({ activeOrganizationId: z.strin
   templateUrl: 'organization-billing.page.html',
 })
 export class OrganizationBillingPageComponent {
+  protected readonly badgeClasses = badgeClasses
   private readonly auth = inject(AuthService)
   private readonly authCapabilities = inject(AuthCapabilitiesService)
   private readonly destroyRef = inject(DestroyRef)

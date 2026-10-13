@@ -12,7 +12,7 @@
           Email delivery is not configured. Create an invitation, then copy its link.
         </p>
         }
-        <p class="m-0 mt-1 text-xs text-ink-tertiary">
+        <p class="m-0 mt-1 text-xs text-ink-subtle">
           Invitation links should only be shared with the invited email owner.
         </p>
       </div>
@@ -93,7 +93,7 @@
       <article class="grid gap-3 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
         <div class="flex min-w-0 items-center gap-3">
           <span
-            class="grid size-9 shrink-0 place-items-center rounded-xl border border-hairline-strong bg-surface-2 text-sm font-semibold text-ink"
+            class="grid size-9 shrink-0 place-items-center rounded-xl border border-border-strong bg-surface-2 text-sm font-semibold text-ink"
             aria-hidden="true"
           >
             {{ initialsFrom(member) }}
@@ -104,7 +104,7 @@
                 {{ member.user?.name || member.user?.email || 'Member' }}
               </p>
               @if (isCurrentUser(member)) {
-              <span class="ri-chip ri-chip-primary shrink-0">You</span>
+              <span class="shrink-0" [class]="badgeClasses('metadata')">You</span>
               }
             </div>
             @if (member.user?.email && member.user?.name) {
@@ -112,7 +112,7 @@
             }
           </div>
         </div>
-        <span class="ri-chip">{{ roleLabel(member.role) }}</span>
+        <span [class]="badgeClasses('metadata')">{{ roleLabel(member.role) }}</span>
       </article>
       }
     </div>
@@ -140,7 +140,7 @@
           <p class="m-0 truncate text-sm font-medium text-ink">{{ invitation.email }}</p>
           <p class="m-0 text-sm text-ink-subtle">Role: {{ roleLabel(invitation.role) }}</p>
         </div>
-        <span class="ri-chip">{{ invitation.status || 'pending' }}</span>
+        <span [class]="badgeClasses('metadata')">{{ invitation.status || 'pending' }}</span>
         <p-button
           [label]="copiedInvitationId() === invitation.id ? 'Copied' : 'Copy link'"
           severity="secondary"

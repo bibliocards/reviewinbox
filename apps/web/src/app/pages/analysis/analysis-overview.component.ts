@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core'
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
-import type { AnalysisResponse, ReviewTopic } from '@reviewinbox/contracts'
+import type { AnalysisResponse, ReportedSeverity, ReviewTopic } from '@reviewinbox/contracts'
 
+import { badgeClasses } from '../../shared/badge-classes'
 import { buildAnalysisTrend, trendPeriodLabel, type TrendPeriod } from './analysis-trend'
 
 @Component({
@@ -55,21 +56,8 @@ export class AnalysisOverviewComponent {
     return trendPeriodLabel(period, this.transloco.getActiveLang())
   }
 
-  protected severityClass(value: string): string {
-    switch (value) {
-      case 'unknown':
-        return 'bg-violet-400'
-      case 'minor':
-        return 'bg-yellow-500'
-      case 'degraded':
-        return 'bg-orange-500'
-      case 'blocking':
-        return 'bg-red-500'
-      case 'critical':
-        return 'bg-red-800'
-      default:
-        return 'bg-slate-400'
-    }
+  protected severityClass(value: ReportedSeverity | 'unknown'): string {
+    return badgeClasses(value, 'indicator')
   }
   protected isPending(topic: ReviewTopic): boolean {
     return topic.status === 'pending'
