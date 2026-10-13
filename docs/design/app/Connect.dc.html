@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Connect app</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#08090B}
+a{color:#C9CCFF}a:hover{color:#FFFFFF}
+</style>
+</helmet>
+<div style="background: #08090B; color: #F4F5F6; font-family: 'Geist', system-ui, sans-serif; font-size: 14px; line-height: 1.5; min-height: 100vh; display: flex; flex-direction: column">
+<header style="display: flex; align-items: center; gap: 12px; padding: 14px 24px; border-bottom: 1px solid #1C1E22">
+<span style="width: 26px; height: 26px; border-radius: 7px; background: #5B63E0; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg></span>
+<span style="font-weight: 600">Connect an App</span>
+<a href="Apps.dc.html" style="margin-left: auto; color: #A9AEB8; text-decoration: none; padding: 8px 12px">Cancel</a>
+</header>
+
+<main style="width: 100%; max-width: 1040px; box-sizing: border-box; margin: 0 auto; padding: 40px 24px; display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start">
+<ol aria-label="Steps" style="flex: 1 1 220px; margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px">
+<li style="display: flex; gap: 12px; align-items: center; padding: 10px 0; color: #A9AEB8"><span style="width: 26px; height: 26px; border-radius: 50%; background: #1C2A20; color: #6BD38A; display: flex; align-items: center; justify-content: center; font-size: 13px">✓</span>App details</li>
+<li style="display: flex; gap: 12px; align-items: center; padding: 10px 0; color: #A9AEB8"><span style="width: 26px; height: 26px; border-radius: 50%; background: #1C2A20; color: #6BD38A; display: flex; align-items: center; justify-content: center; font-size: 13px">✓</span>Choose a store</li>
+<li aria-current="step" style="display: flex; gap: 12px; align-items: center; padding: 10px 0; font-weight: 500"><span style="width: 26px; height: 26px; border-radius: 50%; background: #5B63E0; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px">3</span>Store Credential</li>
+<li style="display: flex; gap: 12px; align-items: center; padding: 10px 0; color: #8A8F98"><span style="width: 26px; height: 26px; border-radius: 50%; border: 1px solid #2C2F35; display: flex; align-items: center; justify-content: center; font-size: 13px">4</span>Test &amp; first Sync Run</li>
+</ol>
+
+<section style="flex: 3 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 13px; font-weight: 500; color: #7A82F0">Bibliocards · Google Play</span>
+<h1 style="margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.7px">Add the Google Play Store Credential</h1>
+<p style="margin: 0; color: #A9AEB8">Use a service account with the <strong style="color: #F4F5F6; font-weight: 500">Reply to reviews</strong> permission in Play Console. <a href="#">Read the guide</a></p>
+</div>
+
+<div role="group" aria-label="Store" style="display: flex; border: 1px solid #23252A; border-radius: 10px; overflow: hidden; align-self: flex-start">
+<button type="button" style="font: inherit; background: transparent; border: 0; color: #A9AEB8; padding: 9px 16px">App Store</button>
+<button type="button" aria-pressed="true" style="font: inherit; background: #17181D; border: 0; color: #F4F5F6; padding: 9px 16px; font-weight: 500">Google Play</button>
+</div>
+
+<div style="border: 1px solid #23252A; background: #0E0F12; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="pkg" style="font-weight: 500">Package name</label>
+<input id="pkg" value="com.bibliocards.app" style="font-family: 'Geist Mono', monospace; font-size: 13px; background: #0B0C0E; color: #F4F5F6; border: 1px solid #23252A; border-radius: 8px; padding: 10px 12px">
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px">
+<span style="font-weight: 500">Service account key (JSON)</span>
+<div role="group" aria-label="Key input method" style="display: flex; border: 1px solid #23252A; border-radius: 8px; overflow: hidden">
+<button type="button" aria-pressed="{{uploadOn}}" onClick="{{showUpload}}" style="{{uploadStyle}}">Upload file</button>
+<button type="button" aria-pressed="{{pasteOn}}" onClick="{{showPaste}}" style="{{pasteStyle}}">Paste JSON</button>
+</div>
+</div>
+<sc-if value="{{uploadOn}}" hint-placeholder-val="{{ true }}">
+<label style="border: 1px dashed #2C2F35; border-radius: 10px; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 6px; color: #A9AEB8; text-align: center; cursor: pointer">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m17 8-5-5-5 5"></path><path d="M12 3v12"></path></svg>
+<span><span style="color: #F4F5F6; font-weight: 500">Drop the .json file</span> or browse</span>
+<input type="file" accept="application/json" style="position: absolute; width: 1px; height: 1px; opacity: 0">
+</label>
+</sc-if>
+<sc-if value="{{pasteOn}}" hint-placeholder-val="{{ false }}">
+<label for="key-json" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Service account key JSON</label>
+<textarea id="key-json" rows="7" spellcheck="false" autocomplete="off" placeholder='{ "type": "service_account", "client_email": "…", "private_key": "…" }' style="font-family: 'Geist Mono', monospace; font-size: 13px; line-height: 1.6; background: #0B0C0E; color: #E6E8EB; border: 1px solid #23252A; border-radius: 10px; padding: 12px; resize: vertical"></textarea>
+<span style="font-size: 12px; color: #8A8F98">Paste the whole key file. We check it's valid JSON with a client_email and private_key before testing.</span>
+</sc-if>
+</div>
+<div style="display: flex; gap: 10px; align-items: flex-start; border: 1px solid #1C1E22; background: #0B0C0E; border-radius: 10px; padding: 12px 14px; font-size: 13px; color: #A9AEB8">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6BD38A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+<span>Encrypted per Store Connection before it is stored. Never logged, never shown again, never sent to AI drafting.</span>
+</div>
+</div>
+
+<div style="border: 1px solid #23252A; border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-weight: 500">What Google Play allows</span>
+<ul style="margin: 0; padding-left: 18px; color: #A9AEB8; display: flex; flex-direction: column; gap: 4px">
+<li>Written production Reviews from the last week only.</li>
+<li>Replies are limited to 350 characters.</li>
+</ul>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<a href="Apps.dc.html" style="background: transparent; color: #F4F5F6; border: 1px solid #2C2F35; border-radius: 8px; padding: 10px 16px; text-decoration: none">Back</a>
+<button type="button" style="font: inherit; font-weight: 500; background: #5B63E0; color: #FFFFFF; border: 0; border-radius: 8px; padding: 10px 18px; min-height: 44px; margin-left: auto">Test connection</button>
+</div>
+</section>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+renderVals() {
+const paste = (this.state && this.state.mode) === 'paste';
+const on = 'font: inherit; font-size: 13px; border: 0; padding: 6px 12px; background: #17181D; color: #F4F5F6; font-weight: 500';
+const off = 'font: inherit; font-size: 13px; border: 0; padding: 6px 12px; background: transparent; color: #A9AEB8';
+return {
+uploadOn: !paste,
+pasteOn: paste,
+uploadStyle: paste ? off : on,
+pasteStyle: paste ? on : off,
+showUpload: () => this.setState({ mode: 'upload' }),
+showPaste: () => this.setState({ mode: 'paste' })
+};
+}
+}
+</script>
+</body>
+</html>

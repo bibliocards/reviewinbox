@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Topic catalogue</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#08090B}
+a{color:#C9CCFF}a:hover{color:#FFFFFF}
+</style>
+</helmet>
+<div style="background: #08090B; color: #F4F5F6; font-family: 'Geist', system-ui, sans-serif; font-size: 14px; line-height: 1.5; min-height: 100vh; display: flex; flex-wrap: wrap">
+
+<aside style="flex: 1 1 232px; max-width: 100%; box-sizing: border-box; border-right: 1px solid #1C1E22; background: #0B0C0E; padding: 14px 12px; display: flex; flex-direction: column; gap: 20px">
+<button type="button" style="font: inherit; display: flex; align-items: center; gap: 10px; background: transparent; border: 1px solid transparent; color: #F4F5F6; border-radius: 8px; padding: 6px 8px; text-align: left; min-height: 44px">
+<span style="width: 28px; height: 28px; border-radius: 7px; background: #5B63E0; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">B</span>
+<span style="display: flex; flex-direction: column; flex: 1; line-height: 1.25"><span style="font-weight: 600">Bibliocards</span><span style="font-size: 12px; color: #8A8F98">Free plan</span></span>
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8A8F98" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>
+</button>
+<nav aria-label="Main" style="display: flex; flex-direction: column; gap: 2px">
+<a href="Inbox.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; color: #A9AEB8; text-decoration: none">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+<span style="flex: 1">Reply Inbox</span><span style="font-family: 'Geist Mono', monospace; font-size: 12px; background: #5B63E0; color: #FFFFFF; border-radius: 999px; padding: 0 7px">4</span></a>
+<a href="Analysis.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; color: #A9AEB8; text-decoration: none">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"></path><path d="M8 17V11"></path><path d="M13 17V7"></path><path d="M18 17v-4"></path></svg>Analysis</a>
+<a href="Apps.dc.html" aria-current="page" style="display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; background: #17181D; color: #F4F5F6; text-decoration: none; font-weight: 500">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"></rect><path d="M11 18h2"></path></svg>Apps</a>
+<a href="Audit.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; color: #A9AEB8; text-decoration: none">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l3 2"></path></svg>Audit History</a>
+<a href="Organization.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; color: #A9AEB8; text-decoration: none">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="4"></circle><path d="M2 21a7 7 0 0 1 14 0"></path><path d="M16 4a4 4 0 0 1 0 8"></path><path d="M22 21a7 7 0 0 0-4-6.3"></path></svg>Organization</a>
+</nav>
+<div style="margin-top: auto; border: 1px solid #1C1E22; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: #0E0F12">
+<div style="display: flex; align-items: center; gap: 8px; font-size: 12px"><span style="width: 7px; height: 7px; border-radius: 50%; background: #6BD38A"></span><span style="font-weight: 500">Auto-Sync on</span><span style="margin-left: auto; color: #8A8F98">every 24h</span></div>
+<div style="font-size: 12px; color: #8A8F98">Next Sync Run at 02:00</div>
+<div style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #A9AEB8"><div style="display: flex; justify-content: space-between"><span>Review imports</span><span style="font-family: 'Geist Mono', monospace">[x] / 30</span></div><div style="height: 4px; border-radius: 2px; background: #1C1E22"><div style="width: 40%; height: 4px; border-radius: 2px; background: #5B63E0"></div></div></div>
+</div>
+</aside>
+
+<div style="flex: 999 1 640px; min-width: 0; display: flex; flex-direction: column">
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 24px; border-bottom: 1px solid #1C1E22">
+<a href="Apps.dc.html" style="color: #8A8F98; text-decoration: none">Apps</a><span style="color: #4A4E57" aria-hidden="true">/</span><span style="color: #8A8F98">Bibliocards</span><span style="color: #4A4E57" aria-hidden="true">/</span><span>Topic catalogue</span>
+<div style="margin-left: auto; display: flex; align-items: center; gap: 8px">
+<button type="button" aria-label="Account" style="width: 38px; height: 38px; border-radius: 50%; border: 1px solid #2C2F35; background: #17181D; color: #F4F5F6; font: inherit; font-size: 12px; font-weight: 600">TO</button>
+</div>
+</header>
+
+<main style="padding: 24px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px">
+<div style="flex: 1 1 320px; display: flex; flex-direction: column; gap: 4px">
+<h1 style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.6px">Topic catalogue</h1>
+<p style="margin: 0; color: #A9AEB8">Topics Jev assigns to Bibliocards Reviews. Shared by the App's Store Connections.</p>
+</div>
+<button type="button" style="font: inherit; display: flex; align-items: center; gap: 6px; background: #101114; color: #F4F5F6; border: 1px solid #2C2F35; border-radius: 8px; padding: 9px 14px; min-height: 40px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Add topic</button>
+</div>
+
+<section aria-label="Proposed by Luna" style="border: 1px solid #3A3F8F; background: #13152A; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+<span style="width: 24px; height: 24px; border-radius: 6px; background: #1D2040; color: #AEB3FF; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center">L</span>
+<h2 style="margin: 0; font-size: 16px; font-weight: 600">Proposed by Luna · 2 pending</h2>
+<span style="font-size: 13px; color: #A9AEB8">Pending topics are used provisionally and shown with lower prominence until you decide.</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px">
+<article style="border: 1px dashed #4A4E8F; background: #0E0F12; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; gap: 8px; align-items: baseline"><h3 style="margin: 0; font-size: 16px; font-weight: 600">Onboarding</h3><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">[n] Reviews</span></div>
+<p style="margin: 0; color: #A9AEB8; font-size: 13px">Difficulty understanding the first deck setup and the import flow.</p>
+<p style="margin: 0; font-size: 13px; color: #C7CAD1; border-left: 2px solid #2C2F35; padding-left: 10px">“I couldn't figure out how to create my first deck…”</p>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<button type="button" style="font: inherit; font-weight: 500; background: #5B63E0; color: #FFFFFF; border: 0; border-radius: 8px; padding: 8px 14px; min-height: 40px">Approve</button>
+<button type="button" style="font: inherit; background: transparent; color: #F4F5F6; border: 1px solid #2C2F35; border-radius: 8px; padding: 8px 14px; min-height: 40px">Rename</button>
+<button type="button" style="font: inherit; background: transparent; color: #A9AEB8; border: 1px solid #2C2F35; border-radius: 8px; padding: 8px 14px; min-height: 40px">Reject</button>
+</div>
+</article>
+<article style="border: 1px dashed #4A4E8F; background: #0E0F12; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; gap: 8px; align-items: baseline"><h3 style="margin: 0; font-size: 16px; font-weight: 600">Widgets</h3><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">[n] Reviews</span></div>
+<p style="margin: 0; color: #A9AEB8; font-size: 13px">Requests for a home-screen widget to review cards.</p>
+<p style="margin: 0; font-size: 13px; color: #C7CAD1; border-left: 2px solid #2C2F35; padding-left: 10px">“A widget with today's cards would be perfect.”</p>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<button type="button" style="font: inherit; font-weight: 500; background: #5B63E0; color: #FFFFFF; border: 0; border-radius: 8px; padding: 8px 14px; min-height: 40px">Approve</button>
+<button type="button" style="font: inherit; background: transparent; color: #F4F5F6; border: 1px solid #2C2F35; border-radius: 8px; padding: 8px 14px; min-height: 40px">Rename</button>
+<button type="button" style="font: inherit; background: transparent; color: #A9AEB8; border: 1px solid #2C2F35; border-radius: 8px; padding: 8px 14px; min-height: 40px">Reject</button>
+</div>
+</article>
+</div>
+</section>
+
+<div style="border: 1px solid #23252A; background: #0E0F12; border-radius: 12px; overflow-x: auto">
+<table style="width: 100%; min-width: 720px; border-collapse: collapse">
+<thead><tr style="text-align: left; color: #8A8F98; font-size: 12px; border-bottom: 1px solid #23252A"><th scope="col" style="padding: 12px 20px; font-weight: 500">Topic</th><th scope="col" style="padding: 12px 20px; font-weight: 500">Status</th><th scope="col" style="padding: 12px 20px; font-weight: 500">Reviews</th><th scope="col" style="padding: 12px 20px; font-weight: 500">Origin</th><th scope="col" style="padding: 12px 20px; font-weight: 500"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Actions</span></th></tr></thead>
+<tbody>
+<tr style="border-top: 1px solid #1C1E22"><td style="padding: 12px 20px"><span style="font-weight: 500">Sync</span><span style="display: block; font-size: 12px; color: #8A8F98">Data not syncing between devices</span></td><td style="padding: 12px 20px"><span style="font-size: 12px; background: #1C2A20; color: #6BD38A; border-radius: 4px; padding: 1px 6px">Approved</span></td><td style="padding: 12px 20px; font-family: 'Geist Mono', monospace">[n]</td><td style="padding: 12px 20px; color: #A9AEB8">Team</td><td style="padding: 12px 20px; text-align: right"><a href="Analysis.dc.html" style="font-size: 13px">View Reviews</a></td></tr>
+<tr style="border-top: 1px solid #1C1E22"><td style="padding: 12px 20px"><span style="font-weight: 500">Subscription price</span><span style="display: block; font-size: 12px; color: #8A8F98">Pricing, renewals and value for money</span></td><td style="padding: 12px 20px"><span style="font-size: 12px; background: #1C2A20; color: #6BD38A; border-radius: 4px; padding: 1px 6px">Approved</span></td><td style="padding: 12px 20px; font-family: 'Geist Mono', monospace">[n]</td><td style="padding: 12px 20px; color: #A9AEB8">Luna</td><td style="padding: 12px 20px; text-align: right"><a href="Analysis.dc.html" style="font-size: 13px">View Reviews</a></td></tr>
+<tr style="border-top: 1px solid #1C1E22"><td style="padding: 12px 20px"><span style="font-weight: 500">Dark mode</span><span style="display: block; font-size: 12px; color: #8A8F98">Theme and night-time reading</span></td><td style="padding: 12px 20px"><span style="font-size: 12px; background: #1C2A20; color: #6BD38A; border-radius: 4px; padding: 1px 6px">Approved</span></td><td style="padding: 12px 20px; font-family: 'Geist Mono', monospace">[n]</td><td style="padding: 12px 20px; color: #A9AEB8">Team</td><td style="padding: 12px 20px; text-align: right"><a href="Analysis.dc.html" style="font-size: 13px">View Reviews</a></td></tr>
+<tr style="border-top: 1px solid #1C1E22; color: #8A8F98"><td style="padding: 12px 20px"><span style="font-weight: 500; text-decoration: line-through">Ads</span><span style="display: block; font-size: 12px">Cannot be assigned</span></td><td style="padding: 12px 20px"><span style="font-size: 12px; border: 1px solid #2C2F35; border-radius: 4px; padding: 0 6px">Rejected</span></td><td style="padding: 12px 20px; font-family: 'Geist Mono', monospace">—</td><td style="padding: 12px 20px">Luna</td><td style="padding: 12px 20px; text-align: right"><button type="button" style="font: inherit; font-size: 13px; background: transparent; border: 0; color: #C9CCFF">Restore</button></td></tr>
+</tbody>
+</table>
+</div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

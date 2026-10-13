@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ReviewInbox design system</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#08090B}
+a{color:#C9CCFF}a:hover{color:#FFFFFF}
+</style>
+</helmet>
+<div style="width: 1440px; box-sizing: border-box; background: #08090B; color: #F4F5F6; font-family: 'Geist', system-ui, sans-serif; font-size: 14px; line-height: 1.5; padding: 72px; display: flex; flex-direction: column; gap: 72px">
+
+<div style="display: flex; flex-direction: column; gap: 12px">
+<span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">REVIEWINBOX · DESIGN SYSTEM · v1</span>
+<h1 style="margin: 0; font-size: 64px; line-height: 1.02; letter-spacing: -0.045em; font-weight: 600">One system for the site and the app.</h1>
+<p style="margin: 0; color: #A9AEB8; font-size: 18px; max-width: 760px">Dark-first, product-led. One indigo accent used sparingly; color carries meaning only for workflow status and reported severity.</p>
+</div>
+
+<section style="display: flex; flex-direction: column; gap: 20px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.4px">Surfaces &amp; ink</h2>
+<div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 88px; border-radius: 10px; background: #08090B; border: 1px solid #23252A"></div><span style="font-weight: 500">canvas</span><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">#08090B · page</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 88px; border-radius: 10px; background: #0B0C0E; border: 1px solid #23252A"></div><span style="font-weight: 500">sunken</span><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">#0B0C0E · sidebar, alt band</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 88px; border-radius: 10px; background: #0E0F12; border: 1px solid #23252A"></div><span style="font-weight: 500">surface-1</span><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">#0E0F12 · panels, cards</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 88px; border-radius: 10px; background: #121318; border: 1px solid #23252A"></div><span style="font-weight: 500">surface-2</span><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">#121318 · nested, draft box</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 88px; border-radius: 10px; background: #17181D; border: 1px solid #23252A"></div><span style="font-weight: 500">surface-3</span><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">#17181D · hover, active nav</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 88px; border-radius: 10px; background: #13152A; border: 1px solid #3A3F8F"></div><span style="font-weight: 500">selected</span><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">#13152A / #3A3F8F</span></div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 40px; border-radius: 8px; background: #1C1E22"></div><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">hairline #1C1E22</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 40px; border-radius: 8px; background: #23252A"></div><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">border #23252A</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 40px; border-radius: 8px; background: #2C2F35"></div><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">border-strong #2C2F35</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px; justify-content: flex-end"><span style="font-size: 20px; font-weight: 600; color: #F4F5F6">Aa ink</span><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">#F4F5F6</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px; justify-content: flex-end"><span style="font-size: 20px; font-weight: 600; color: #A9AEB8">Aa muted</span><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">#A9AEB8</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px; justify-content: flex-end"><span style="font-size: 20px; font-weight: 600; color: #8A8F98">Aa subtle</span><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">#8A8F98 · meta only</span></div>
+</div>
+</section>
+
+<section style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px">
+<div style="display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.4px">Accent</h2>
+<div style="display: flex; gap: 8px"><div style="flex: 1; height: 72px; border-radius: 10px; background: #5B63E0"></div><div style="flex: 1; height: 72px; border-radius: 10px; background: #7A82F0"></div><div style="flex: 1; height: 72px; border-radius: 10px; background: #1D2040"></div></div>
+<span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">primary #5B63E0 · hover #7A82F0 · tint #1D2040 / #AEB3FF · link #C9CCFF</span>
+<p style="margin: 0; color: #A9AEB8">Primary CTA, focus ring, active tab, count badge, drafted state. Never decorative.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.4px">Workflow status</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px">
+<span style="border: 1px solid #2C2F35; color: #C7CAD1; border-radius: 4px; padding: 1px 7px">Imported</span>
+<span style="background: #1D2040; color: #AEB3FF; border-radius: 4px; padding: 2px 7px">Drafted</span>
+<span style="background: #1C2A20; color: #6BD38A; border-radius: 4px; padding: 2px 7px">Published</span>
+<span style="border: 1px dashed #4A4E57; color: #A9AEB8; border-radius: 4px; padding: 1px 7px">Ignored</span>
+<span style="background: #241214; color: #FF8C8F; border-radius: 4px; padding: 2px 7px">Failed</span>
+</div>
+<p style="margin: 0; color: #A9AEB8">Green means “done in the store”. Indigo means “waiting on a human”. Red only for failures and blocking severity.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.4px">Reported severity</h2>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="display: flex; align-items: center; gap: 10px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #B4232A"></span>Critical<span style="margin-left: auto; font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">#B4232A</span></span>
+<span style="display: flex; align-items: center; gap: 10px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #E5484D"></span>Blocking<span style="margin-left: auto; font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">#E5484D</span></span>
+<span style="display: flex; align-items: center; gap: 10px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #F76B15"></span>Degraded<span style="margin-left: auto; font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">#F76B15</span></span>
+<span style="display: flex; align-items: center; gap: 10px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #F0B54A"></span>Minor<span style="margin-left: auto; font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">#F0B54A</span></span>
+<span style="display: flex; align-items: center; gap: 10px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #4A4E57"></span>No problem<span style="margin-left: auto; font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">#4A4E57</span></span>
+<span style="display: flex; align-items: center; gap: 10px"><span style="width: 10px; height: 10px; border-radius: 50%; border: 1.5px dashed #8A8F98; box-sizing: border-box"></span>Unknown<span style="margin-left: auto; font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">dashed</span></span>
+</div>
+<p style="margin: 0; color: #A9AEB8">Ordered warm-to-neutral, so the scale still reads by lightness. Stars stay #F0B54A.</p>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 20px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.4px">Type · Geist / Geist Mono</h2>
+<div style="display: flex; flex-direction: column; border-top: 1px solid #1C1E22">
+<div style="display: grid; grid-template-columns: 220px 1fr; align-items: baseline; gap: 24px; padding: 14px 0; border-bottom: 1px solid #1C1E22"><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">display · 84/1.02 · 600 · -0.045em · site</span><span style="font-size: 64px; line-height: 1.02; letter-spacing: -0.045em; font-weight: 600">Every review answered</span></div>
+<div style="display: grid; grid-template-columns: 220px 1fr; align-items: baseline; gap: 24px; padding: 14px 0; border-bottom: 1px solid #1C1E22"><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">h2 · 48/1.1 · 600 · -0.035em · site</span><span style="font-size: 44px; line-height: 1.1; letter-spacing: -0.035em; font-weight: 600">Turn Reviews into signal</span></div>
+<div style="display: grid; grid-template-columns: 220px 1fr; align-items: baseline; gap: 24px; padding: 14px 0; border-bottom: 1px solid #1C1E22"><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">page title · 26 · 600 · -0.6px · app</span><span style="font-size: 26px; font-weight: 600; letter-spacing: -0.6px">Reply Inbox</span></div>
+<div style="display: grid; grid-template-columns: 220px 1fr; align-items: baseline; gap: 24px; padding: 14px 0; border-bottom: 1px solid #1C1E22"><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">section · 16–22 · 600</span><span style="font-size: 18px; font-weight: 600">Reported severity</span></div>
+<div style="display: grid; grid-template-columns: 220px 1fr; align-items: baseline; gap: 24px; padding: 14px 0; border-bottom: 1px solid #1C1E22"><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">body · 14 app / 16–18 site · 400</span><span style="color: #C7CAD1">Review, edit, ignore and publish replies for imported Reviews.</span></div>
+<div style="display: grid; grid-template-columns: 220px 1fr; align-items: baseline; gap: 24px; padding: 14px 0; border-bottom: 1px solid #1C1E22"><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">eyebrow · 13 · 500 · accent</span><span style="font-size: 13px; font-weight: 500; letter-spacing: 0.04em; color: #7A82F0">Review analysis</span></div>
+<div style="display: grid; grid-template-columns: 220px 1fr; align-items: baseline; gap: 24px; padding: 14px 0; border-bottom: 1px solid #1C1E22"><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">mono · 11–13 · counts, IDs, labels</span><span style="font-family: 'Geist Mono', monospace; font-size: 13px; color: #A9AEB8">REPLY DRAFT · AI    214 / 350</span></div>
+</div>
+</section>
+
+<section style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px">
+<div style="display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.4px">Buttons</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+<button type="button" style="font: inherit; font-weight: 500; background: #5B63E0; color: #FFFFFF; border: 0; border-radius: 8px; padding: 10px 16px; min-height: 40px">Primary</button>
+<button type="button" style="font: inherit; background: #101114; color: #F4F5F6; border: 1px solid #2C2F35; border-radius: 8px; padding: 10px 16px; min-height: 40px">Secondary</button>
+<button type="button" style="font: inherit; background: transparent; color: #A9AEB8; border: 1px solid #2C2F35; border-radius: 8px; padding: 10px 16px; min-height: 40px">Quiet</button>
+<button type="button" style="font: inherit; background: transparent; color: #C9CCFF; border: 0; padding: 10px 8px">Link action</button>
+<button type="button" style="font: inherit; background: transparent; color: #FF8C8F; border: 1px solid #4A1F22; border-radius: 8px; padding: 10px 16px; min-height: 40px">Delete</button>
+<button type="button" aria-label="More" style="width: 40px; height: 40px; border-radius: 8px; border: 1px solid #2C2F35; background: transparent; color: #A9AEB8; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg></button>
+</div>
+<p style="margin: 0; color: #A9AEB8">One primary per view. Radius 8. Height 40 (44 on touch). Site CTAs use 15px / 13×20 padding.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.4px">Inputs &amp; filters</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+<label style="display: flex; align-items: center; gap: 8px; border: 1px solid #23252A; background: #0E0F12; border-radius: 8px; padding: 0 10px; color: #8A8F98; width: 240px"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search</span><input type="search" placeholder="Search Reviews…" style="font: inherit; background: transparent; border: 0; color: #F4F5F6; padding: 9px 0; flex: 1; min-width: 0; outline: none"></label>
+<button type="button" style="font: inherit; display: flex; gap: 8px; border: 1px solid #23252A; background: #0E0F12; color: #F4F5F6; border-radius: 8px; padding: 8px 12px"><span style="color: #8A8F98">Store</span> All stores</button>
+<span style="display: flex; border: 1px solid #23252A; border-radius: 8px; overflow: hidden"><span style="padding: 7px 12px; color: #A9AEB8">Week</span><span style="padding: 7px 12px; background: #17181D">Month</span></span>
+</div>
+<p style="margin: 0; color: #A9AEB8">Filter chips show “Label value”. Focus: 2px #5B63E0 ring at 50%.</p>
+</div>
+</section>
+
+<section style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; align-items: start">
+<div style="display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.4px">Review item</h2>
+<div style="display: flex; flex-direction: column; gap: 6px; background: #13152A; border: 1px solid #3A3F8F; border-radius: 10px; padding: 12px 14px">
+<span style="display: flex; gap: 8px; align-items: center; font-size: 12px; color: #A9AEB8"><span style="color: #F0B54A; letter-spacing: 1px">★★☆☆☆</span><span>Google Play</span><span style="width: 6px; height: 6px; border-radius: 50%; background: #E5484D"></span><span style="margin-left: auto; color: #8A8F98">2h</span></span>
+<span style="font-weight: 500">Sync lost my decks after update</span>
+<span style="font-size: 13px; color: #A9AEB8">Since 4.2 my cards don't sync between…</span>
+<span style="font-size: 11px"><span style="background: #1D2040; color: #AEB3FF; border-radius: 4px; padding: 1px 6px">Drafted</span></span>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.4px">Stat tile</h2>
+<div style="border: 1px solid #4A1F22; background: #170D0F; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 6px"><span style="color: #FF8C8F">Needs attention</span><span style="font-size: 32px; font-weight: 600; letter-spacing: -1px; line-height: 1.1">13</span><span style="font-size: 12px; color: #C7A0A2">blocking or critical</span></div>
+<div style="border: 1px solid #23252A; background: #0E0F12; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 6px"><span style="color: #A9AEB8">Reviews</span><span style="font-size: 32px; font-weight: 600; letter-spacing: -1px; line-height: 1.1">42</span><span style="font-size: 12px; color: #8A8F98">in the selected period</span></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.4px">Radius · spacing</h2>
+<div style="display: flex; gap: 10px; align-items: flex-end">
+<div style="width: 44px; height: 44px; border: 1px solid #2C2F35; border-radius: 4px"></div><div style="width: 44px; height: 44px; border: 1px solid #2C2F35; border-radius: 8px"></div><div style="width: 44px; height: 44px; border: 1px solid #2C2F35; border-radius: 12px"></div><div style="width: 44px; height: 44px; border: 1px solid #2C2F35; border-radius: 16px"></div><div style="width: 64px; height: 28px; border: 1px solid #2C2F35; border-radius: 999px"></div>
+</div>
+<span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">4 pill/chip · 8 control · 12 card · 14–16 panel · full avatar/badge</span>
+<div style="display: flex; gap: 6px; align-items: flex-end"><div style="width: 4px; height: 24px; background: #5B63E0"></div><div style="width: 8px; height: 24px; background: #5B63E0"></div><div style="width: 12px; height: 24px; background: #5B63E0"></div><div style="width: 16px; height: 24px; background: #5B63E0"></div><div style="width: 24px; height: 24px; background: #5B63E0"></div><div style="width: 32px; height: 24px; background: #5B63E0"></div><div style="width: 48px; height: 24px; background: #5B63E0"></div></div>
+<span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">4 · 8 · 12 · 16 · 24 · 32 · 48 — sections 96–112 on site</span>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2200}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
