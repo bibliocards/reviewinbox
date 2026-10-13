@@ -6,6 +6,7 @@ import {
   effect,
   HostListener,
   inject,
+  linkedSignal,
   signal,
   ChangeDetectionStrategy,
 } from '@angular/core'
@@ -25,7 +26,7 @@ import { ButtonModule } from 'primeng/button'
 import { DialogService } from 'primeng/dynamicdialog'
 import { TabsModule } from 'primeng/tabs'
 import { TextareaModule } from 'primeng/textarea'
-import { catchError, finalize, forkJoin, of, switchMap, type Observable } from 'rxjs'
+import { finalize, forkJoin, type Observable } from 'rxjs'
 import { z } from 'zod'
 
 import { badgeClasses } from '../../shared/badge-classes'
@@ -47,6 +48,7 @@ import {
   type ReplyDraftDialogResult,
 } from './components/reply-draft-dialog.component'
 import { buildPublishRequest, type ReplyDraftEdit } from './reply-draft-edit'
+import { loadReviewDetail } from './review-detail'
 
 const changedReviewErrorSchema = z.object({
   status: z.literal(409),
@@ -126,9 +128,18 @@ export class ReplyInboxPageComponent {
     appId: this.selectedReviewId() === undefined ? this.selectedAppId() : undefined,
     reviewId: this.selectedReviewId(),
   }))
-  protected readonly reviews = computed(() =>
-    this.inboxResource.hasValue() ? this.inboxResource.value().reviews : [],
-  )
+  // Preserve the current Inbox during reloads; the template disables its interactions.
+  protected readonly reviews = linkedSignal<
+    { loading: boolean; reviews: ReplyInboxReview[] },
+    ReplyInboxReview[]
+  >({
+    source: () => ({
+      loading: this.inboxResource.isLoading(),
+      reviews: this.inboxResource.hasValue() ? this.inboxResource.value().reviews : [],
+    }),
+    computation: (current, previous) =>
+      current.loading ? (previous?.value ?? []) : current.reviews,
+  })
 
   protected readonly focusedReviewId = signal<string | null>(null)
   protected readonly focusedReview = computed(
@@ -137,16 +148,18 @@ export class ReplyInboxPageComponent {
       ?? this.reviews()[0]
       ?? null,
   )
-  protected readonly classification = toSignal(
-    toObservable(this.focusedReview).pipe(
-      switchMap((review) =>
-        review === null
-          ? of(null)
-          : this.analysisService.reviewAnalysis(review.id).pipe(catchError(() => of(null))),
-      ),
+  private readonly reviewDetail = toSignal(
+    loadReviewDetail(toObservable(this.focusedReview), (reviewId) =>
+      this.analysisService.reviewAnalysis(reviewId),
     ),
     { initialValue: null },
   )
+  protected readonly displayedReview = computed(() => {
+    const review = this.reviewDetail()?.review
+    return this.reviews().some((item) => item.id === review?.id) ? (review ?? null) : null
+  })
+  protected readonly classification = computed(() => this.reviewDetail()?.classification ?? null)
+  protected readonly detailLoading = computed(() => this.focusedReview() !== this.displayedReview())
   private readonly draftEdits = signal<Record<string, ReplyDraftEdit>>({})
 
   protected selectFilter(value: string | number | undefined): void {
@@ -238,6 +251,7 @@ export class ReplyInboxPageComponent {
 
   @HostListener('window:reviewinbox:active-organization-changed')
   protected reloadForActiveOrganization(): void {
+    this.reviews.set([])
     this.selectedAppId.set('')
     this.focusedReviewId.set(null)
     this.draftEdits.set({})

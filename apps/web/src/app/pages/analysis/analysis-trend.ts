@@ -1,6 +1,8 @@
 export type TrendPeriod = { from: string; to: string }
-export type TrendBucket = TrendPeriod & { count: number }
-type Granularity = 'day' | 'week' | 'month' | 'year'
+type TrendTotals = { count: number; critical: number; blocking: number }
+export type TrendBucket = TrendPeriod & TrendTotals
+type TrendPoint = { date: string; count: number; critical?: number; blocking?: number }
+export type Granularity = 'day' | 'week' | 'month' | 'year'
 const dayMs = 86_400_000
 const dateString = (date: Date) => date.toISOString().slice(0, 10)
 const utcDate = (value: string) => new Date(`${value}T00:00:00Z`)
@@ -47,18 +49,19 @@ function chooseGranularity(start: string, end: string): Granularity {
   return 'year'
 }
 
-function sumPeriods(
-  points: readonly { date: string; count: number }[],
-  range: TrendPeriod,
-  granularity: Granularity,
-) {
-  const counts = new Map<string, number>()
+function sumPeriods(points: readonly TrendPoint[], range: TrendPeriod, granularity: Granularity) {
+  const counts = new Map<string, TrendTotals>()
   for (const point of points) {
     if (point.date < range.from || point.date > range.to) {
       continue
     }
     const key = dateString(periodStart(point.date, granularity))
-    counts.set(key, (counts.get(key) ?? 0) + point.count)
+    const current = counts.get(key) ?? { count: 0, critical: 0, blocking: 0 }
+    counts.set(key, {
+      count: current.count + point.count,
+      critical: current.critical + (point.critical ?? 0),
+      blocking: current.blocking + (point.blocking ?? 0),
+    })
   }
   return counts
 }
@@ -66,7 +69,7 @@ function sumPeriods(
 function fillPeriods(
   range: TrendPeriod,
   granularity: Granularity,
-  counts: Map<string, number>,
+  counts: Map<string, TrendTotals>,
 ): TrendBucket[] {
   const buckets: TrendBucket[] = []
   for (let cursor = periodStart(range.from, granularity); dateString(cursor) <= range.to;) {
@@ -76,26 +79,32 @@ function fillPeriods(
     buckets.push({
       from: key < range.from ? range.from : key,
       to: last > range.to ? range.to : last,
-      count: counts.get(key) ?? 0,
+      ...(counts.get(key) ?? { count: 0, critical: 0, blocking: 0 }),
     })
     cursor = next
   }
   return buckets
 }
 
+function trendRange(points: readonly TrendPoint[], from: string, to: string): TrendPeriod {
+  const dates = points.map((point) => point.date)
+  return {
+    from: from || dates.reduce((min, date) => (date < min ? date : min), dates[0] ?? ''),
+    to: to || dates.reduce((max, date) => (date > max ? date : max), dates[0] ?? ''),
+  }
+}
+
 export function buildAnalysisTrend(
-  points: readonly { date: string; count: number }[],
+  points: readonly TrendPoint[],
   from = '',
   to = '',
+  requestedGranularity?: Granularity,
 ): AnalysisTrend {
-  const dates = points.map((point) => point.date)
-  const start = from || dates.reduce((min, date) => (date < min ? date : min), dates[0] ?? '')
-  const end = to || dates.reduce((max, date) => (date > max ? date : max), dates[0] ?? '')
-  if (start === '' || end === '' || start > end) {
+  const range = trendRange(points, from, to)
+  if (range.from === '' || range.to === '' || range.from > range.to) {
     return { granularity: 'day', buckets: [], max: 1 }
   }
-  const granularity = chooseGranularity(start, end)
-  const range = { from: start, to: end }
+  const granularity = requestedGranularity ?? chooseGranularity(range.from, range.to)
   const buckets = fillPeriods(range, granularity, sumPeriods(points, range, granularity))
   return { granularity, buckets, max: Math.max(1, ...buckets.map((bucket) => bucket.count)) }
 }

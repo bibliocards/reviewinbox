@@ -35,10 +35,11 @@
     <p-tablist [attr.aria-label]="t('replyInbox.editor.statusTabs')">
       @for (option of filterOptions(); track option.value) {
       <p-tab [value]="option.value">
-        {{ option.label }} @if (selectedFilter() === option.value && !inboxResource.isLoading() &&
-        !inboxResource.error()) {
-        <span class="font-mono text-xs text-ink-muted">{{ reviews().length }}</span>
-        }
+        {{ option.label }}
+        <span class="inline-block w-[4ch] text-end font-mono text-xs text-ink-muted">
+          @if (selectedFilter() === option.value && !inboxResource.isLoading() &&
+          !inboxResource.error()) { {{ reviews().length }} }
+        </span>
       </p-tab>
       }
     </p-tablist>
@@ -50,8 +51,18 @@
   </p-tabs>
   }
   <ng-template #inboxContent>
-    <div class="grid gap-4" [attr.aria-busy]="inboxResource.isLoading()">
-      @if (message(); as currentMessage) {
+    <div
+      class="relative grid min-h-[70dvh] content-start gap-4"
+      [attr.aria-busy]="inboxResource.isLoading()"
+    >
+      @if (inboxResource.isLoading() && reviews().length > 0 || detailLoading()) {
+      <span
+        class="absolute inset-bs-2 end-2 z-10 inline-flex items-center gap-2 rounded-md border border-border bg-surface-1 px-3 py-2 text-xs text-ink-muted"
+        role="status"
+      >
+        <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>{{ t('replyInbox.loading') }}
+      </span>
+      } @if (message(); as currentMessage) {
       <p
         class="m-0 rounded-md border border-border-strong bg-surface-1 px-3 py-2 text-sm text-ink-muted"
         [class.border-failure-border]="currentMessage.status === 'error'"
@@ -61,16 +72,16 @@
       >
         {{ t(currentMessage.key) }}
       </p>
-      } @if (inboxResource.isLoading()) {
+      } @if (inboxResource.isLoading() && reviews().length === 0) {
       <div
-        class="flex items-center gap-2 rounded-xl border border-border bg-surface-1 p-5 text-sm text-ink-muted"
+        class="flex min-h-[70dvh] items-center justify-center gap-2 rounded-xl border border-border bg-surface-1 p-5 text-sm text-ink-muted"
         role="status"
       >
         <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>{{ t('replyInbox.loading') }}
       </div>
       } @else if (inboxResource.error()) {
       <div
-        class="grid justify-items-start gap-3 rounded-xl border border-failure-border bg-failure p-5 text-failure-ink"
+        class="grid min-h-[70dvh] content-center justify-items-start gap-3 rounded-xl border border-failure-border bg-failure p-5 text-failure-ink"
         role="alert"
       >
         <p class="m-0">
@@ -86,7 +97,7 @@
       </div>
       } @else if (reviews().length === 0) {
       <div
-        class="grid justify-items-center gap-3 rounded-xl border border-dashed border-border-strong bg-surface-1 p-8 text-center"
+        class="grid min-h-[70dvh] content-center justify-items-center gap-3 rounded-xl border border-dashed border-border-strong bg-surface-1 p-8 text-center"
       >
         <i class="pi pi-inbox text-2xl text-ink-muted" aria-hidden="true"></i>
         <h2 class="m-0 text-lg font-semibold">{{ t('replyInbox.empty.title') }}</h2>
@@ -101,9 +112,10 @@
       <section
         class="grid min-w-0 items-start gap-4 min-[900px]:grid-cols-[minmax(240px,0.65fr)_minmax(0,1.35fr)]"
         aria-labelledby="reply-inbox-title"
+        [attr.inert]="inboxResource.isLoading() ? '' : null"
       >
         <ul
-          class="m-0 grid [max-block-size:70dvh] min-w-0 list-none gap-1.5 overflow-y-auto p-1 [overscroll-behavior:contain] max-[900px]:[max-block-size:40svh]"
+          class="m-0 grid [max-block-size:70dvh] min-w-0 list-none gap-1.5 overflow-y-auto p-1 [overscroll-behavior:contain] [scrollbar-gutter:stable] max-[900px]:[max-block-size:40svh]"
           [attr.aria-label]="t('replyInbox.editor.reviews')"
         >
           @for (item of reviews(); track item.id) {
@@ -167,11 +179,13 @@
           </li>
           }
         </ul>
-        @if (focusedReview(); as review) {
+        @if (displayedReview(); as review) {
         <article
           id="reply-inbox-detail"
-          class="grid min-w-0 gap-5 rounded-xl border border-border bg-surface-1 p-6"
+          class="grid min-w-0 content-start gap-5 rounded-xl border border-border bg-surface-1 p-6 [scrollbar-gutter:stable] min-[900px]:h-[70dvh] min-[900px]:overflow-y-auto"
           aria-labelledby="review-detail-title"
+          [attr.aria-busy]="detailLoading()"
+          [attr.inert]="detailLoading() ? '' : null"
         >
           <div class="flex min-w-0 flex-wrap items-center gap-2">
             <span [class]="statusClass(review.replyStatus)"

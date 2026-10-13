@@ -28,5 +28,5 @@ export class AnalysisReviewsComponent {
   protected providerLabel(provider: string): string {
     return provider === 'apple_app_store' ? 'Apple App Store' : 'Google Play'
   }
-  protected readonly severityClass = badgeClasses
+  protected readonly badgeClasses = badgeClasses
 }

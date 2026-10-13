@@ -1,8 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core'
 import { FormsModule } from '@angular/forms'
-import { TranslocoDirective } from '@jsverse/transloco'
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
 import { ButtonModule } from 'primeng/button'
 import { DatePickerModule } from 'primeng/datepicker'
+import { PopoverModule } from 'primeng/popover'
 import { SelectModule } from 'primeng/select'
 
 import {
@@ -30,6 +39,7 @@ export type AnalysisFilterChange = { name: AnalysisFilterName; value: string }
     ButtonModule,
     DatePickerModule,
     FormsModule,
+    PopoverModule,
     SelectModule,
     TranslocoDirective,
   ],
@@ -55,6 +65,12 @@ export class AnalysisFiltersComponent {
   readonly topicStatusOptions = input.required<readonly { label: string; value: string }[]>()
   readonly change = output<AnalysisFilterChange>()
   readonly clear = output()
+  private readonly transloco = inject(TranslocoService)
+  protected readonly periodLabel = computed(() =>
+    !this.from() && !this.to()
+      ? this.transloco.translate('analysis.filters.allTime')
+      : `${this.from() || '…'} – ${this.to() || '…'}`,
+  )
   protected readonly fromDate = computed(() => parseAnalysisDate(this.from()))
   protected readonly toDate = computed(() => parseAnalysisDate(this.to()))
   protected readonly additionalOpen = signal(false)

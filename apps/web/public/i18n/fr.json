@@ -215,7 +215,9 @@
       "allTopics": "Tous les sujets",
       "topic": "Sujet",
       "allTopicStatuses": "Tous les statuts",
-      "topicStatus": "Statut du sujet"
+      "topicStatus": "Statut du sujet",
+      "period": "Période",
+      "allTime": "Tout l’historique"
     },
     "catalogue": {
       "title": "Catalogue de sujets",
@@ -249,7 +251,9 @@
       "topics": "Sujets",
       "inCatalogue": "dans le catalogue",
       "flagged": "À surveiller",
-      "blockingCritical": "bloquantes ou critiques"
+      "blockingCritical": "bloquantes ou critiques",
+      "title": "Synthèse de l’Analysis",
+      "pendingTopics": "{{count}} en attente"
     },
     "severity": {
       "title": "Gravité signalée",
@@ -263,7 +267,7 @@
     },
     "trend": {
       "title": "Volume de Reviews",
-      "description": "Sélectionnez une période pour voir ses Reviews.",
+      "description": "Reviews critiques, bloquantes et autres. Sélectionne une période pour consulter ses Reviews.",
       "aria": "Volume de Reviews au fil du temps",
       "day": "Par jour",
       "week": "Par semaine",
@@ -271,15 +275,25 @@
       "year": "Par an",
       "scroll": "Faites défiler horizontalement pour parcourir la période.",
       "scale": "Maximum : {{count}} Reviews",
-      "bucket": "{{period}} : {{count}} Reviews",
-      "empty": "Aucune Review sur cette période."
+      "bucket": "{{period}} : {{count}} Reviews · Critiques {{critical}} · Bloquantes {{blocking}} · Autres {{other}}",
+      "empty": "Aucune Review sur cette période.",
+      "auto": "Auto",
+      "granularity": "Granularité du graphique",
+      "legend": "Groupes de gravité",
+      "other": "Autres Reviews"
     },
     "topicStatus": { "pending": "En attente", "approved": "Validé", "rejected": "Rejeté" },
     "topics": {
-      "title": "Sujets principaux",
-      "description": "Les sujets en attente sont en pointillés et restent interactifs."
+      "title": "Topics",
+      "description": "Les sujets en attente sont en pointillés et restent interactifs.",
+      "status": "Statut",
+      "empty": "Aucun topic dans cette vue."
     },
-    "pagination": { "previous": "Page précédente", "next": "Page suivante" },
+    "pagination": {
+      "previous": "Page précédente",
+      "next": "Page suivante",
+      "label": "Pagination des Reviews"
+    },
     "reviews": {
       "title": "Reviews dans cette vue",
       "description": "Chaque compteur mène aux Reviews concernées.",

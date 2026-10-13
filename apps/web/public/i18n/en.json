@@ -213,7 +213,9 @@
       "allTopics": "All topics",
       "topic": "Topic",
       "allTopicStatuses": "All topic statuses",
-      "topicStatus": "Topic status"
+      "topicStatus": "Topic status",
+      "period": "Period",
+      "allTime": "All time"
     },
     "catalogue": {
       "title": "Topic catalogue",
@@ -247,7 +249,9 @@
       "topics": "Topics",
       "inCatalogue": "in the catalogue",
       "flagged": "Needs attention",
-      "blockingCritical": "blocking or critical"
+      "blockingCritical": "blocking or critical",
+      "title": "Analysis summary",
+      "pendingTopics": "{{count}} pending"
     },
     "severity": {
       "title": "Reported severity",
@@ -261,7 +265,7 @@
     },
     "trend": {
       "title": "Review volume",
-      "description": "Select a period to inspect its Reviews.",
+      "description": "Critical, Blocking and other Reviews. Select a period to inspect its Reviews.",
       "aria": "Review volume over time",
       "day": "By day",
       "week": "By week",
@@ -269,15 +273,25 @@
       "year": "By year",
       "scroll": "Scroll horizontally to explore the timeline.",
       "scale": "Peak: {{count}} Reviews",
-      "bucket": "{{period}}: {{count}} Reviews",
-      "empty": "No Reviews in this period."
+      "bucket": "{{period}}: {{count}} Reviews · Critical {{critical}} · Blocking {{blocking}} · Other {{other}}",
+      "empty": "No Reviews in this period.",
+      "auto": "Auto",
+      "granularity": "Chart granularity",
+      "legend": "Severity groups",
+      "other": "Other Reviews"
     },
     "topicStatus": { "pending": "Pending", "approved": "Approved", "rejected": "Rejected" },
     "topics": {
-      "title": "Leading topics",
-      "description": "Pending topics are outlined and remain interactive."
+      "title": "Topics",
+      "description": "Pending topics are outlined and remain interactive.",
+      "status": "Status",
+      "empty": "No topics in this view."
     },
-    "pagination": { "previous": "Previous page", "next": "Next page" },
+    "pagination": {
+      "previous": "Previous page",
+      "next": "Next page",
+      "label": "Review pagination"
+    },
     "reviews": {
       "title": "Reviews in this view",
       "description": "Every count drills down to the source Reviews.",

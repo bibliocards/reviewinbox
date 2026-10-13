@@ -18,6 +18,7 @@ import {
   type AnalysisReview,
   type AppListItemResponse,
 } from '@reviewinbox/contracts'
+import { ButtonModule } from 'primeng/button'
 import { DialogService } from 'primeng/dynamicdialog'
 import { z } from 'zod'
 
@@ -62,6 +63,7 @@ const versionCollator = new Intl.Collator(undefined, { numeric: true, sensitivit
     AnalysisFiltersComponent,
     AnalysisOverviewComponent,
     AnalysisReviewsComponent,
+    ButtonModule,
     NgClass,
     RouterLink,
     TranslocoDirective,
