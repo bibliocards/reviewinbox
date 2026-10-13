@@ -241,8 +241,7 @@
     },
     "catalogue": {
       "title": "Catalogue de sujets",
-      "description": "Définissez le vocabulaire partagé qui rend l’Analyse utile pour cette App.",
-      "sharedTitle": "Un catalogue pour tous les stores",
+      "description": "Sujets que Jev associe aux Reviews de cette App, partagés entre ses Store Connections.",
       "sharedDescription": "Les propositions restent visibles jusqu’à leur validation humaine.",
       "activeTopics": "Sujets actifs",
       "rejectedTopics": "Sujets rejetés",
@@ -256,7 +255,22 @@
       "emptyTitle": "Aucun sujet",
       "emptyDescription": "Créez un sujet ou demandez au classifieur de proposer un sujet.",
       "emptyRejectedTitle": "Aucun sujet rejeté",
-      "emptyRejectedDescription": "Les sujets rejetés apparaîtront ici et pourront être rouverts."
+      "emptyRejectedDescription": "Les sujets rejetés apparaîtront ici et pourront être rouverts.",
+      "proposedByLuna": "Proposés par Luna",
+      "pendingDescription": "Les sujets en attente sont utilisés provisoirement jusqu’à votre décision.",
+      "status": "Statut",
+      "origin": "Origine",
+      "human": "Équipe",
+      "luna": "Luna",
+      "actions": "Actions",
+      "manageTopic": "Gérer {{name}}",
+      "mergeTopic": "Fusionner {{name}}",
+      "editTopic": "Renommer un sujet",
+      "cannotAssign": "Ne peut pas être associé",
+      "noAppTitle": "Sélectionnez une App",
+      "noAppDescription": "Connectez une App pour gérer son catalogue de sujets partagé.",
+      "discoveryUnavailable": "La découverte de sujets est indisponible pour cette installation.",
+      "viewReviews": "Voir les Reviews"
     },
     "loading": "Chargement de l’analyse…",
     "disabled": {

@@ -239,8 +239,7 @@
     },
     "catalogue": {
       "title": "Topic catalogue",
-      "description": "Keep the shared vocabulary that makes Analysis useful for this App.",
-      "sharedTitle": "One catalogue across stores",
+      "description": "Topics Jev assigns to this App’s Reviews. Shared by its Store Connections.",
       "sharedDescription": "Pending proposals stay visible until a human validates them.",
       "activeTopics": "Active topics",
       "rejectedTopics": "Rejected topics",
@@ -254,7 +253,22 @@
       "emptyTitle": "No topics yet",
       "emptyDescription": "Create a topic or ask the classifier to discover a proposal.",
       "emptyRejectedTitle": "No rejected topics",
-      "emptyRejectedDescription": "Topics you reject will appear here and can be reopened."
+      "emptyRejectedDescription": "Topics you reject will appear here and can be reopened.",
+      "proposedByLuna": "Proposed by Luna",
+      "pendingDescription": "Pending topics are used provisionally until you decide.",
+      "status": "Status",
+      "origin": "Origin",
+      "human": "Team",
+      "luna": "Luna",
+      "actions": "Actions",
+      "manageTopic": "Manage {{name}}",
+      "mergeTopic": "Merge {{name}}",
+      "editTopic": "Rename topic",
+      "cannotAssign": "Cannot be assigned",
+      "noAppTitle": "Select an App",
+      "noAppDescription": "Connect an App to manage its shared Topic catalogue.",
+      "discoveryUnavailable": "Topic discovery is unavailable for this installation.",
+      "viewReviews": "View Reviews"
     },
     "loading": "Loading analysis…",
     "disabled": {

@@ -7,20 +7,29 @@ import {
   inject,
   signal,
 } from '@angular/core'
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop'
 import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, Router, RouterLink } from '@angular/router'
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
 import type { AppListItemResponse } from '@reviewinbox/contracts'
-import { ConfirmationService } from 'primeng/api'
+import { saveTopicRequestSchema } from '@reviewinbox/contracts'
+import { ConfirmationService, type MenuItem } from 'primeng/api'
 import { ButtonModule } from 'primeng/button'
+import { CardModule } from 'primeng/card'
 import { ConfirmDialogModule } from 'primeng/confirmdialog'
+import { DialogModule } from 'primeng/dialog'
+import { InputTextModule } from 'primeng/inputtext'
+import { MenuModule } from 'primeng/menu'
 import { SelectModule } from 'primeng/select'
+import { TableModule } from 'primeng/table'
 import { TabsModule } from 'primeng/tabs'
+import { TextareaModule } from 'primeng/textarea'
 import { Subject, takeUntil } from 'rxjs'
 
+import { badgeClasses } from '../../shared/badge-classes'
 import type { AppSelectOption } from '../../shared/components/app-select/app-select.component'
 import { AppSelectComponent } from '../../shared/components/app-select/app-select.component'
+import { TypedTemplateDirective } from '../../shared/directives/typed-template.directive'
 import { AnalysisService, type AnalysisTopic } from '../../shared/services/analysis.service'
 import { AppIconsService } from '../../shared/services/app-icons.service'
 import { AppsService } from '../../shared/services/apps.service'
@@ -36,6 +45,13 @@ import { AppsService } from '../../shared/services/apps.service'
     SelectModule,
     TabsModule,
     TranslocoDirective,
+    CardModule,
+    DialogModule,
+    InputTextModule,
+    TextareaModule,
+    TableModule,
+    MenuModule,
+    TypedTemplateDirective,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   providers: [ConfirmationService],
@@ -51,12 +67,16 @@ export class TopicCataloguePageComponent {
   private readonly transloco = inject(TranslocoService)
   private readonly confirmation = inject(ConfirmationService)
   private readonly mutationCancelled = new Subject<void>()
+  private readonly activeLanguage = toSignal(this.transloco.langChanges$, {
+    initialValue: this.transloco.getActiveLang(),
+  })
 
   protected readonly selectedAppId = signal(this.route.snapshot.queryParamMap.get('appId') ?? '')
   protected readonly editingTopicId = signal<string | null>(null)
   protected readonly draftLabel = signal('')
   protected readonly draftDescription = signal('')
   protected readonly showCreateTopic = signal(false)
+  protected readonly mergingTopicId = signal<string | null>(null)
   protected readonly pendingAction = signal<string | null>(null)
   protected readonly selectedView = signal<'active' | 'rejected'>('active')
   protected readonly mergeTargetByTopicId = signal<Record<string, string>>({})
@@ -106,6 +126,43 @@ export class TopicCataloguePageComponent {
   protected readonly canManageCatalogue = computed(() =>
     this.catalogueResource.hasValue() ? this.catalogueResource.value().canManage : false,
   )
+  protected readonly canAct = computed(
+    () =>
+      this.canManageCatalogue()
+      && !this.catalogueResource.isLoading()
+      && this.pendingAction() === null,
+  )
+  protected readonly discoveryEnabled = computed(
+    () => this.catalogueResource.hasValue() && this.catalogueResource.value().discoveryEnabled,
+  )
+  protected readonly lunaProposals = computed(() =>
+    this.selectedView() === 'active'
+      ? this.activeTopics().filter((topic) => topic.status === 'pending' && topic.origin === 'ai')
+      : [],
+  )
+  protected readonly tableTopics = computed(() =>
+    this.visibleTopics().filter((topic) => topic.status !== 'pending' || topic.origin !== 'ai'),
+  )
+  protected readonly mergingTopic = computed(
+    () => this.catalogueTopics().find((topic) => topic.id === this.mergingTopicId()) ?? null,
+  )
+  protected readonly canSaveTopic = computed(
+    () =>
+      this.canAct()
+      && saveTopicRequestSchema.safeParse({
+        label: this.draftLabel(),
+        description: this.draftDescription(),
+      }).success,
+  )
+  protected readonly topicMenus = computed(() => {
+    this.activeLanguage()
+    return new Map(this.catalogueTopics().map((topic) => [topic.id, this.topicMenuItems(topic)]))
+  })
+  protected readonly cardTokens = { body: { padding: '16px' } }
+  protected readonly tableTokens = {
+    headerCell: { padding: '12px 20px' },
+    bodyCell: { padding: '12px 20px' },
+  }
 
   constructor() {
     effect(() => {
@@ -131,6 +188,8 @@ export class TopicCataloguePageComponent {
     this.draftLabel.set('')
     this.draftDescription.set('')
     this.pendingAction.set(null)
+    this.mergingTopicId.set(null)
+    this.confirmation.close()
     this.selectedView.set('active')
     this.mergeTargetByTopicId.set({})
     void this.router.navigate([], {
@@ -141,6 +200,10 @@ export class TopicCataloguePageComponent {
   }
 
   protected beginCreateTopic(): void {
+    if (!this.canAct()) {
+      return
+    }
+    this.message.set(null)
     this.editingTopicId.set(null)
     this.draftLabel.set('')
     this.draftDescription.set('')
@@ -148,6 +211,10 @@ export class TopicCataloguePageComponent {
   }
 
   protected beginEditTopic(topic: AnalysisTopic): void {
+    if (!this.canAct()) {
+      return
+    }
+    this.message.set(null)
     this.showCreateTopic.set(false)
     this.editingTopicId.set(topic.id)
     this.draftLabel.set(topic.label)
@@ -160,6 +227,9 @@ export class TopicCataloguePageComponent {
   }
 
   protected saveTopic(): void {
+    if (!this.canSaveTopic()) {
+      return
+    }
     const appId = this.catalogueAppId()
     const label = this.draftLabel().trim()
     const description = this.draftDescription().trim()
@@ -188,6 +258,9 @@ export class TopicCataloguePageComponent {
   }
 
   protected setTopicStatus(topic: AnalysisTopic, status: AnalysisTopic['status']): void {
+    if (!this.canAct()) {
+      return
+    }
     const appId = this.catalogueAppId()
     if (appId === undefined || appId === '') {
       return
@@ -218,6 +291,9 @@ export class TopicCataloguePageComponent {
   }
 
   protected confirmTopicRejection(topic: AnalysisTopic): void {
+    if (!this.canAct()) {
+      return
+    }
     this.confirmation.confirm({
       key: 'reject-topic',
       header: this.transloco.translate('analysis.catalogue.rejectTitle'),
@@ -254,6 +330,9 @@ export class TopicCataloguePageComponent {
   }
 
   protected confirmMerge(topic: AnalysisTopic): void {
+    if (!this.canAct()) {
+      return
+    }
     const appId = this.catalogueAppId()
     const targetTopicId = this.mergeTarget(topic.id)
     if (appId === undefined || appId === '' || targetTopicId === '') {
@@ -267,6 +346,7 @@ export class TopicCataloguePageComponent {
       .subscribe({
         next: () => {
           this.message.set({ type: 'success', key: 'analysis.messages.topicMerged' })
+          this.mergingTopicId.set(null)
           this.mergeTargetByTopicId.update((targets) => ({ ...targets, [topic.id]: '' }))
           this.catalogueResource.reload()
           this.pendingAction.set(null)
@@ -279,6 +359,9 @@ export class TopicCataloguePageComponent {
   }
 
   protected discoverTopics(): void {
+    if (!this.canAct() || !this.discoveryEnabled()) {
+      return
+    }
     const appId = this.catalogueAppId()
     if (appId === undefined || appId === '') {
       return
@@ -305,7 +388,74 @@ export class TopicCataloguePageComponent {
     this.mutationCancelled.next()
   }
 
-  protected isPending(topic: AnalysisTopic): boolean {
+  protected topicStatusClass(topic: AnalysisTopic): string {
     return topic.status === 'pending'
+      ? `${badgeClasses('metadata')} border-dashed`
+      : badgeClasses('metadata')
+  }
+
+  protected beginMerge(topic: AnalysisTopic): void {
+    if (!this.canAct()) {
+      return
+    }
+    this.message.set(null)
+    this.mergingTopicId.set(topic.id)
+  }
+
+  protected closeEditor(visible: boolean): void {
+    if (!visible) {
+      this.cancelTopicEdit()
+    }
+  }
+
+  protected closeMerge(visible: boolean): void {
+    if (!visible) {
+      this.mergingTopicId.set(null)
+    }
+  }
+
+  protected reloadCatalogue(): void {
+    this.catalogueResource.reload()
+  }
+
+  private topicMenuItems(topic: AnalysisTopic): MenuItem[] {
+    if (topic.status === 'rejected') {
+      return [
+        {
+          label: this.transloco.translate('analysis.actions.reopen'),
+          icon: 'pi pi-undo',
+          disabled: !this.canAct(),
+          command: () => {
+            this.setTopicStatus(topic, 'pending')
+          },
+        },
+      ]
+    }
+    return [
+      {
+        label: this.transloco.translate('analysis.actions.rename'),
+        icon: 'pi pi-pencil',
+        disabled: !this.canAct(),
+        command: () => {
+          this.beginEditTopic(topic)
+        },
+      },
+      {
+        label: this.transloco.translate('analysis.actions.reject'),
+        icon: 'pi pi-ban',
+        disabled: !this.canAct(),
+        command: () => {
+          this.confirmTopicRejection(topic)
+        },
+      },
+      {
+        label: this.transloco.translate('analysis.actions.confirmMerge'),
+        icon: 'pi pi-code-branch',
+        disabled: !this.canAct(),
+        command: () => {
+          this.beginMerge(topic)
+        },
+      },
+    ]
   }
 }
