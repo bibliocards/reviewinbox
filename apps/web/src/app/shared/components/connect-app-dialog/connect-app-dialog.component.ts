@@ -1,5 +1,13 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core'
+import {
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core'
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormsModule } from '@angular/forms'
 import { FormField, form, required } from '@angular/forms/signals'
 import { TranslocoDirective } from '@jsverse/transloco'
@@ -10,13 +18,18 @@ import type {
   UpdateAppRequest,
 } from '@reviewinbox/contracts'
 import { ButtonModule } from 'primeng/button'
+import { CheckboxModule } from 'primeng/checkbox'
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog'
+import { FileUploadModule, type FileSelectEvent } from 'primeng/fileupload'
 import { InputTextModule } from 'primeng/inputtext'
+import { SelectButtonModule } from 'primeng/selectbutton'
 import { Step, StepList, StepPanel, StepPanels, Stepper } from 'primeng/stepper'
+import { TextareaModule } from 'primeng/textarea'
 import { finalize } from 'rxjs'
 
 import { connectAppErrorMessageKey } from '../../connect-app-errors'
 import { AppsService } from '../../services/apps.service'
+import { googleCredentialError, maxCredentialFileSize } from './google-credential-input'
 
 type ConnectAppDialogData = { app?: AppListItemResponse }
 
@@ -33,12 +46,18 @@ type ConnectAppDialogData = { app?: AppListItemResponse }
     StepPanels,
     Stepper,
     TranslocoDirective,
+    CheckboxModule,
+    SelectButtonModule,
+    FileUploadModule,
+    TextareaModule,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './connect-app-dialog.component.html',
 })
 export class ConnectAppDialogComponent {
   private readonly apps = inject(AppsService)
+  private readonly destroyRef = inject(DestroyRef)
+  private fileReadVersion = 0
   private readonly dialogRef = inject(DynamicDialogRef)
   private readonly dialogConfig =
     inject<DynamicDialogConfig<ConnectAppDialogData>>(DynamicDialogConfig)
@@ -54,6 +73,44 @@ export class ConnectAppDialogComponent {
   protected readonly isSaving = signal(false)
   protected readonly errorMessageKey = signal<string | null>(null)
   protected readonly isEditing = computed(() => this.editableApp !== undefined)
+  protected readonly appleSelected = signal(this.existingAppleConnection !== undefined)
+  protected readonly googleSelected = signal(this.existingGoogleConnection !== undefined)
+  protected readonly credentialStore = signal<'apple' | 'google'>('apple')
+  protected readonly googleInputMethod = signal<'upload' | 'paste'>('paste')
+  protected readonly maxCredentialFileSize = maxCredentialFileSize
+  protected readonly stepperTokens = {
+    separator: { size: '0px' },
+    step: { padding: '0', gap: '12px' },
+    stepHeader: { padding: '9px 0' },
+    stepTitle: { activeColor: 'var(--color-ink)' },
+    stepNumber: {
+      size: '26px',
+      fontSize: '13px',
+      shadow: 'none',
+      activeBackground: 'var(--color-primary)',
+      activeBorderColor: 'var(--color-primary)',
+      activeColor: 'white',
+    },
+  }
+  protected readonly isReadingFile = signal(false)
+  private readonly credentialFileError = signal<string | null>(null)
+  protected readonly appName = computed(() => this.model().appName)
+  protected readonly appleAppId = computed(() => this.model().appleAppStoreAppId)
+  protected readonly googlePackageName = computed(() => this.model().googlePackageName)
+  protected readonly credentialStoreOptions = computed(() => [
+    ...(this.appleSelected() ? [{ label: 'Apple App Store', value: 'apple' }] : []),
+    ...(this.googleSelected() ? [{ label: 'Google Play', value: 'google' }] : []),
+  ])
+  protected readonly inputMethods = [
+    { labelKey: 'apps.connectDialog.credentials.upload', value: 'upload' },
+    { labelKey: 'apps.connectDialog.credentials.paste', value: 'paste' },
+  ]
+
+  constructor() {
+    this.destroyRef.onDestroy(() => {
+      this.fileReadVersion += 1
+    })
+  }
 
   private readonly model = signal({
     appName: this.editableApp?.name ?? '',
@@ -74,7 +131,8 @@ export class ConnectAppDialogComponent {
       return 'apps.connectDialog.actions.save'
     }
 
-    return this.hasCompleteAppleConnection() || this.hasCompleteGoogleConnection()
+    return (this.appleSelected() && this.hasCompleteAppleConnection())
+      || (this.googleSelected() && this.hasCompleteGoogleConnection())
       ? 'apps.connectDialog.actions.createAndConnect'
       : 'apps.connectDialog.actions.create'
   })
@@ -92,27 +150,50 @@ export class ConnectAppDialogComponent {
   )
 
   protected nextStep(): void {
-    if (!this.connectAppForm.appName().valid()) {
-      this.connectAppForm.appName().markAsTouched()
+    if (!this.validateAppName()) {
       return
     }
 
-    this.activeStep.set(2)
+    if (this.isSaving() || this.isReadingFile()) {
+      return
+    }
+    if (this.activeStep() === 3 && !this.validateProviders()) {
+      return
+    }
+    if (this.activeStep() === 2) {
+      this.credentialStore.set(this.appleSelected() ? 'apple' : 'google')
+    }
+    this.errorMessageKey.set(null)
+    this.activeStep.update((step) => Math.min(step + 1, 4))
   }
 
   protected previousStep(): void {
-    this.activeStep.set(1)
+    if (this.isSaving() || this.isReadingFile()) {
+      return
+    }
+    this.errorMessageKey.set(null)
+    this.activeStep.update((step) => Math.max(step - 1, 1))
   }
 
   protected submit(event: Event): void {
     event.preventDefault()
 
-    if (!this.connectAppForm().valid() || !this.providerFieldsAreValid()) {
-      this.connectAppForm().markAsTouched()
-      this.errorMessageKey.set('apps.connectDialog.errors.partialStoreConnection')
+    if (this.isSaving() || this.isReadingFile()) {
+      return
+    }
+    if (this.activeStep() !== 4) {
+      this.nextStep()
       return
     }
 
+    if (!this.validateAppName() || !this.validateProviders()) {
+      return
+    }
+
+    this.saveApp()
+  }
+
+  private saveApp(): void {
     this.errorMessageKey.set(null)
     this.isSaving.set(true)
 
@@ -126,6 +207,7 @@ export class ConnectAppDialogComponent {
         finalize(() => {
           this.isSaving.set(false)
         }),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: (result) => {
@@ -145,14 +227,107 @@ export class ConnectAppDialogComponent {
   }
 
   private providerFieldsAreValid(): boolean {
-    return this.appleFieldsAreValid() && this.googleFieldsAreValid()
+    return (
+      (!this.appleSelected() || this.appleFieldsAreValid())
+      && (!this.googleSelected() || this.googleFieldsAreValid())
+    )
+  }
+
+  private validateAppName(): boolean {
+    if (this.connectAppForm.appName().valid() && this.appName().trim()) {
+      return true
+    }
+    this.connectAppForm.appName().markAsTouched()
+    this.errorMessageKey.set('apps.connectDialog.errors.appNameRequired')
+    return false
+  }
+
+  private validateProviders(): boolean {
+    if (
+      this.googleSelected()
+      && this.googleInputMethod() === 'upload'
+      && this.credentialFileError() !== null
+    ) {
+      this.errorMessageKey.set(this.credentialFileError())
+      return false
+    }
+    if (!this.providerFieldsAreValid() || !this.newConnectionsAreComplete()) {
+      this.errorMessageKey.set('apps.connectDialog.errors.partialStoreConnection')
+      return false
+    }
+    const credential = this.model().googleServiceAccountJson.trim()
+    const error = this.googleSelected() && credential ? googleCredentialError(credential) : null
+    this.errorMessageKey.set(error)
+    return error === null
+  }
+
+  private newConnectionsAreComplete(): boolean {
+    const appleComplete =
+      !this.appleSelected()
+      || this.existingAppleConnection !== undefined
+      || this.hasCompleteAppleConnection()
+    const googleComplete =
+      !this.googleSelected()
+      || this.existingGoogleConnection !== undefined
+      || this.hasCompleteGoogleConnection()
+    return appleComplete && googleComplete
+  }
+
+  protected async readGoogleCredential(event: FileSelectEvent): Promise<void> {
+    const file = event.files[0]
+    if (!file || this.isSaving()) {
+      return
+    }
+    const version = ++this.fileReadVersion
+    this.credentialFileError.set(null)
+    this.model.update((model) => ({ ...model, googleServiceAccountJson: '' }))
+    this.isReadingFile.set(true)
+    await this.readCredential(file, version)
+  }
+
+  private async readCredential(file: File, version: number): Promise<void> {
+    try {
+      const text = await file.text()
+      if (version === this.fileReadVersion) {
+        this.applyGoogleCredential(text, file.size)
+      }
+    } catch {
+      if (version === this.fileReadVersion) {
+        this.credentialFileError.set('apps.connectDialog.errors.credentialFileFailed')
+        this.errorMessageKey.set('apps.connectDialog.errors.credentialFileFailed')
+      }
+    } finally {
+      if (version === this.fileReadVersion) {
+        this.isReadingFile.set(false)
+      }
+    }
+  }
+
+  private applyGoogleCredential(text: string, size: number): void {
+    const error =
+      size > maxCredentialFileSize
+        ? 'apps.connectDialog.errors.credentialTooLarge'
+        : googleCredentialError(text)
+    this.errorMessageKey.set(error)
+    this.credentialFileError.set(error)
+    if (error === null) {
+      this.model.update((model) => ({ ...model, googleServiceAccountJson: text }))
+    }
+  }
+
+  protected clearGoogleFile(): void {
+    this.fileReadVersion += 1
+    this.isReadingFile.set(false)
+    this.credentialFileError.set(null)
+    this.errorMessageKey.set(null)
+    this.model.update((model) => ({ ...model, googleServiceAccountJson: '' }))
   }
 
   private toCreateRequest(): ConnectAppRequest {
     const value = this.connectAppForm().value()
     const connections: ConnectAppRequest['connections'] = {}
 
-    if (this.hasCompleteAppleConnection()) {
+    if (this.appleSelected() && this.hasCompleteAppleConnection()) {
       connections.apple = {
         appStoreAppId: value.appleAppStoreAppId.trim(),
         issuerId: value.appleIssuerId.trim(),
@@ -161,7 +336,7 @@ export class ConnectAppDialogComponent {
       }
     }
 
-    if (this.hasCompleteGoogleConnection()) {
+    if (this.googleSelected() && this.hasCompleteGoogleConnection()) {
       connections.google = {
         packageName: value.googlePackageName.trim(),
         serviceAccountJson: value.googleServiceAccountJson.trim(),
@@ -175,7 +350,7 @@ export class ConnectAppDialogComponent {
     const value = this.connectAppForm().value()
     const connections: UpdateAppRequest['connections'] = {}
 
-    if (this.hasCompleteApplePublicFields()) {
+    if (this.appleSelected() && this.hasCompleteApplePublicFields()) {
       connections.apple = {
         appStoreAppId: value.appleAppStoreAppId.trim(),
         issuerId: value.appleIssuerId.trim(),
@@ -187,7 +362,7 @@ export class ConnectAppDialogComponent {
       }
     }
 
-    if (value.googlePackageName.trim()) {
+    if (this.googleSelected() && value.googlePackageName.trim()) {
       connections.google = { packageName: value.googlePackageName.trim() }
 
       if (value.googleServiceAccountJson.trim()) {

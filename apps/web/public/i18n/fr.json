@@ -134,7 +134,11 @@
         "createApp": "Créer l’App",
         "editApp": "Modifier l’App",
         "addStoreConnections": "Ajouter des Store Connections",
-        "editStoreConnections": "Modifier les Store Connections"
+        "editStoreConnections": "Modifier les Store Connections",
+        "details": "Détails de l’App",
+        "stores": "Choisir les stores",
+        "credential": "Store Credential",
+        "test": "Test et premier Sync Run"
       },
       "createApp": {
         "title": "Créer l’App",
@@ -154,7 +158,13 @@
         "description": "Mettez à jour les identifiants publics des stores. Laissez les champs de credential vides pour conserver le Store Credential existant."
       },
       "credentials": {
-        "keepExistingPlaceholder": "Laissez vide pour conserver le Store Credential existant"
+        "keepExistingPlaceholder": "Laissez vide pour conserver le Store Credential existant",
+        "upload": "Choisir un fichier",
+        "paste": "Coller le JSON",
+        "inputMethod": "Méthode de saisie du Store Credential",
+        "dropJson": "Déposez le fichier .json ici ou choisissez un fichier.",
+        "localFile": "Le fichier est lu localement. Son contenu est envoyé uniquement lors de la confirmation finale.",
+        "encryption": "Chiffré par Store Connection avant enregistrement. Les Store Credentials ne sont jamais envoyés à l’IA de drafting."
       },
       "apple": {
         "skipHint": "Laissez tous les champs vides pour ignorer Apple pour le moment.",
@@ -170,7 +180,11 @@
         "editHint": "Mettez à jour le package name. Remplissez le JSON du service account seulement pour remplacer le Store Credential.",
         "guide": "Lire le guide de connexion Google Play",
         "packageNameLabel": "Package name",
-        "serviceAccountJsonLabel": "JSON du service account"
+        "serviceAccountJsonLabel": "JSON du service account",
+        "jsonHelp": "Renseignez le JSON complet du service account, avec client_email et private_key.",
+        "limitsTitle": "Ce que Google Play permet",
+        "reviewWindow": "Reviews écrites en production, créées ou modifiées pendant la dernière semaine.",
+        "replyLimit": "Les Published Replies sont limitées à 350 caractères."
       },
       "actions": {
         "back": "Retour",
@@ -202,8 +216,15 @@
         "googleRateLimited": "Google Play limite temporairement les appels API. Réessayez dans quelques minutes.",
         "googleUnavailable": "Impossible de vérifier le Store Credential Google Play pour le moment. Réessayez plus tard.",
         "createFailed": "Impossible de créer cette App pour le moment.",
-        "updateFailed": "Impossible de modifier cette App pour le moment."
-      }
+        "updateFailed": "Impossible de modifier cette App pour le moment.",
+        "appNameRequired": "Renseignez un nom d’App.",
+        "credentialTooLarge": "Le Store Credential ne doit pas dépasser 64 Kio.",
+        "credentialFileFailed": "Impossible de lire ce fichier de Store Credential. Réessayez ou collez le JSON."
+      },
+      "keepConnections": "Les Store Connections existantes non sélectionnées restent inchangées.",
+      "credentialDescription": "Renseignez les Store Credentials nécessaires pour lire et publier les Reviews.",
+      "noStore": "Continuez sans nouvelle Store Connection. Vous pourrez connecter un store depuis Apps plus tard.",
+      "testDescription": "L’action finale vérifie les Store Credentials renseignés et enregistre l’App. Le premier Sync Run des Store Connections éligibles est ensuite mis en file ; les résultats apparaissent dans Apps."
     }
   },
   "analysis": {

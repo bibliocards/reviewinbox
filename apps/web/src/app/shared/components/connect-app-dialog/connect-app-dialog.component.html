@@ -1,24 +1,35 @@
-<form class="grid gap-5" (submit)="submit($event)" *transloco="let t">
-  <p-stepper [value]="activeStep()" [linear]="true">
-    <p-step-list>
-      <p-step [value]="1">{{
-        t(isEditing() ? 'apps.connectDialog.steps.editApp' : 'apps.connectDialog.steps.createApp')
+<form
+  class="grid min-w-0 gap-5 text-ink"
+  (submit)="submit($event)"
+  *transloco="let t"
+  [attr.aria-busy]="isSaving() || isReadingFile()"
+>
+  <p-stepper
+    [value]="activeStep()"
+    [linear]="true"
+    class="flex flex-wrap gap-8"
+    [dt]="stepperTokens"
+  >
+    <p-step-list class="flex-1 basis-52 flex-col items-stretch p-0" aria-orientation="vertical">
+      <p-step class="opacity-100" [value]="1" [disabled]="isSaving()">{{
+        t('apps.connectDialog.steps.details')
       }}</p-step>
-      <p-step [value]="2">{{
-        t(
-          isEditing()
-            ? 'apps.connectDialog.steps.editStoreConnections'
-            : 'apps.connectDialog.steps.addStoreConnections'
-        )
+      <p-step class="opacity-100" [value]="2" [disabled]="isSaving()">{{
+        t('apps.connectDialog.steps.stores')
+      }}</p-step>
+      <p-step class="opacity-100" [value]="3" [disabled]="isSaving()">{{
+        t('apps.connectDialog.steps.credential')
+      }}</p-step>
+      <p-step class="opacity-100" [value]="4" [disabled]="isSaving()">{{
+        t('apps.connectDialog.steps.test')
       }}</p-step>
     </p-step-list>
-
-    <p-step-panels>
-      <p-step-panel [value]="1">
-        <ng-template #content>
-          <div class="grid gap-4 pt-4">
-            <div>
-              <h2 class="m-0 text-lg font-semibold text-ink">
+    <p-step-panels class="min-w-0 flex-[3_1_520px] p-0">
+      <p-step-panel [value]="1"
+        ><ng-template #content>
+          <section class="grid gap-5">
+            <header class="grid gap-1.5">
+              <h2 class="m-0 text-[26px] leading-[1.2] font-semibold tracking-[-0.6px]">
                 {{
                   t(
                     isEditing()
@@ -27,7 +38,7 @@
                   )
                 }}
               </h2>
-              <p class="m-0 mt-1 text-sm text-ink-subtle">
+              <p class="m-0 text-sm text-ink-muted">
                 {{
                   t(
                     isEditing()
@@ -36,198 +47,346 @@
                   )
                 }}
               </p>
-            </div>
-
-            <label class="grid gap-1.5 text-sm font-medium text-ink">
-              <span>{{ t('apps.connectDialog.createApp.nameLabel') }}</span>
-              <input
+            </header>
+            <label
+              for="connect-app-name"
+              class="grid gap-1.5 rounded-xl border border-border bg-surface-1 p-6 text-sm font-medium"
+              ><span>{{ t('apps.connectDialog.createApp.nameLabel') }}</span
+              ><input
                 pInputText
-                type="text"
+                id="connect-app-name"
+                class="min-h-10 w-full [@media(pointer:coarse)]:min-h-11"
                 autocomplete="off"
-                [attr.aria-label]="t('apps.connectDialog.createApp.nameLabel')"
+                maxlength="120"
                 [formField]="connectAppForm.appName"
               />
+              @if (connectAppForm.appName().touched() && connectAppForm.appName().invalid()) {
+                <span class="text-xs text-failure-ink">{{
+                  t('apps.connectDialog.errors.appNameRequired')
+                }}</span>
+              }
             </label>
-          </div>
-        </ng-template>
-      </p-step-panel>
-
-      <p-step-panel [value]="2">
-        <ng-template #content>
-          <div class="grid gap-4 pt-4">
-            <div>
-              <h2 class="m-0 text-lg font-semibold text-ink">
-                {{
-                  t(
-                    isEditing()
-                      ? 'apps.connectDialog.editStoreConnections.title'
-                      : 'apps.connectDialog.storeConnections.title'
-                  )
-                }}
+          </section>
+        </ng-template></p-step-panel
+      >
+      <p-step-panel [value]="2"
+        ><ng-template #content>
+          <section class="grid gap-5">
+            <header class="grid gap-1.5">
+              <h2 class="m-0 text-[26px] leading-[1.2] font-semibold tracking-[-0.6px]">
+                {{ t('apps.connectDialog.steps.stores') }}
               </h2>
-              <p class="m-0 mt-1 text-sm text-ink-subtle">
-                {{
-                  t(
-                    isEditing()
-                      ? 'apps.connectDialog.editStoreConnections.description'
-                      : 'apps.connectDialog.storeConnections.description'
-                  )
-                }}
+              <p class="m-0 text-sm text-ink-muted">
+                {{ t('apps.connectDialog.storeConnections.description') }}
               </p>
+            </header>
+            <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,240px),1fr))] gap-3">
+              <label
+                for="connect-apple"
+                class="flex min-h-11 items-center gap-3 rounded-xl border border-border bg-surface-1 p-5 text-sm font-medium hover:bg-surface-2 active:bg-surface-3"
+                [class.border-selected-border]="appleSelected()"
+                [class.bg-selected]="appleSelected()"
+                ><p-checkbox
+                  inputId="connect-apple"
+                  [binary]="true"
+                  [(ngModel)]="appleSelected"
+                  [ngModelOptions]="{ standalone: true }"
+                /><i class="pi pi-apple" aria-hidden="true"></i>{{ t('apps.stores.apple') }}</label
+              >
+              <label
+                for="connect-google"
+                class="flex min-h-11 items-center gap-3 rounded-xl border border-border bg-surface-1 p-5 text-sm font-medium hover:bg-surface-2 active:bg-surface-3"
+                [class.border-selected-border]="googleSelected()"
+                [class.bg-selected]="googleSelected()"
+                ><p-checkbox
+                  inputId="connect-google"
+                  [binary]="true"
+                  [(ngModel)]="googleSelected"
+                  [ngModelOptions]="{ standalone: true }"
+                /><i class="pi pi-google" aria-hidden="true"></i
+                >{{ t('apps.stores.google') }}</label
+              >
             </div>
-
-            <section class="grid gap-3 rounded-2xl border border-hairline bg-surface-1 p-4">
-              <div>
-                <h3 class="m-0 font-semibold text-ink flex gap-2 items-center">
-                  <i class="pi pi-apple" aria-hidden="true"></i>
-                  <span>{{ t('apps.stores.apple') }}</span>
-                </h3>
-                <p class="m-0 mt-1 text-xs text-ink-subtle">
-                  {{
-                    t(
-                      isEditing()
-                        ? 'apps.connectDialog.apple.editHint'
-                        : 'apps.connectDialog.apple.skipHint'
-                    )
-                  }}
-                </p>
-                <a
-                  class="inline-flex w-fit items-center gap-1 text-xs font-medium text-primary-700 hover:underline dark:text-primary-300"
-                  href="https://reviewinbox.app/docs/connect-app-store/"
-                  target="_blank"
-                  rel="noreferrer"
+            @if (isEditing()) {
+              <p class="m-0 text-xs text-ink-subtle">
+                {{ t('apps.connectDialog.keepConnections') }}
+              </p>
+            }
+          </section>
+        </ng-template></p-step-panel
+      >
+      <p-step-panel [value]="3"
+        ><ng-template #content>
+          <section class="grid gap-5">
+            <header class="grid gap-1.5">
+              <p class="m-0 text-[13px] font-medium text-ink-muted wrap-break-word">
+                {{ appName() }}
+              </p>
+              <h2 class="m-0 text-[26px] leading-[1.2] font-semibold tracking-[-0.6px]">
+                {{ t('apps.connectDialog.steps.credential') }}
+              </h2>
+              <p class="m-0 text-sm text-ink-muted">
+                {{ t('apps.connectDialog.credentialDescription') }}
+              </p>
+            </header>
+            @if (credentialStoreOptions().length) {
+              <p-selectbutton
+                class="flex flex-wrap"
+                [options]="credentialStoreOptions()"
+                optionLabel="label"
+                optionValue="value"
+                [(ngModel)]="credentialStore"
+                [ngModelOptions]="{ standalone: true }"
+                [allowEmpty]="false"
+                [ariaLabel]="t('apps.connectDialog.steps.stores')"
+              />
+              <div class="grid gap-5 rounded-xl border border-border bg-surface-1 p-6">
+                @if (credentialStore() === 'apple') {
+                  <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))] gap-4">
+                    <label for="connect-apple-app-id" class="grid gap-1.5 text-sm font-medium"
+                      ><span>{{ t('apps.connectDialog.apple.appStoreAppIdLabel') }}</span
+                      ><input
+                        pInputText
+                        id="connect-apple-app-id"
+                        class="min-h-10 w-full font-mono text-[13px] [@media(pointer:coarse)]:min-h-11"
+                        autocomplete="off"
+                        maxlength="512"
+                        [formField]="connectAppForm.appleAppStoreAppId"
+                    /></label>
+                    <label for="connect-apple-issuer" class="grid gap-1.5 text-sm font-medium"
+                      ><span>{{ t('apps.connectDialog.apple.issuerIdLabel') }}</span
+                      ><input
+                        pInputText
+                        id="connect-apple-issuer"
+                        class="min-h-10 w-full font-mono text-[13px] [@media(pointer:coarse)]:min-h-11"
+                        autocomplete="off"
+                        maxlength="512"
+                        [formField]="connectAppForm.appleIssuerId"
+                    /></label>
+                  </div>
+                  <label for="connect-apple-key-id" class="grid gap-1.5 text-sm font-medium"
+                    ><span>{{ t('apps.connectDialog.apple.keyIdLabel') }}</span
+                    ><input
+                      pInputText
+                      id="connect-apple-key-id"
+                      class="min-h-10 w-full font-mono text-[13px] [@media(pointer:coarse)]:min-h-11"
+                      autocomplete="off"
+                      maxlength="512"
+                      [attr.placeholder]="
+                        appleCredentialPlaceholderKey() ? t(appleCredentialPlaceholderKey()!) : null
+                      "
+                      [formField]="connectAppForm.appleKeyId"
+                  /></label>
+                  <label for="connect-apple-private-key" class="grid gap-1.5 text-sm font-medium"
+                    ><span>{{ t('apps.connectDialog.apple.privateKeyLabel') }}</span
+                    ><textarea
+                      pTextarea
+                      id="connect-apple-private-key"
+                      class="w-full resize-y bg-sunken font-mono text-[13px] [field-sizing:content] [min-block-size:7lh] [max-block-size:18lh]"
+                      rows="7"
+                      autocomplete="off"
+                      autocapitalize="off"
+                      [spellcheck]="false"
+                      maxlength="65536"
+                      [attr.placeholder]="
+                        appleCredentialPlaceholderKey() ? t(appleCredentialPlaceholderKey()!) : null
+                      "
+                      [formField]="connectAppForm.applePrivateKey"
+                    ></textarea>
+                  </label>
+                  @if (isEditing()) {
+                    <p class="m-0 text-xs text-ink-subtle">
+                      {{ t('apps.connectDialog.apple.editHint') }}
+                    </p>
+                  }
+                  <a
+                    class="inline-flex min-h-10 w-fit items-center gap-2 rounded-xs text-[13px] text-link no-underline hover:underline active:bg-surface-3 [@media(pointer:coarse)]:min-h-11"
+                    href="https://reviewinbox.app/docs/connect-app-store/"
+                    target="_blank"
+                    rel="noreferrer"
+                    >{{ t('apps.connectDialog.apple.guide')
+                    }}<i class="pi pi-external-link text-xs" aria-hidden="true"></i
+                  ></a>
+                } @else {
+                  <label for="connect-google-package" class="grid gap-1.5 text-sm font-medium"
+                    ><span>{{ t('apps.connectDialog.google.packageNameLabel') }}</span
+                    ><input
+                      pInputText
+                      id="connect-google-package"
+                      class="min-h-10 w-full font-mono text-[13px] [@media(pointer:coarse)]:min-h-11"
+                      autocomplete="off"
+                      maxlength="512"
+                      [formField]="connectAppForm.googlePackageName"
+                  /></label>
+                  <div class="grid gap-2">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                      <label for="connect-google-json" class="text-sm font-medium">{{
+                        t('apps.connectDialog.google.serviceAccountJsonLabel')
+                      }}</label
+                      ><p-selectbutton
+                        class="flex flex-wrap"
+                        [options]="inputMethods"
+                        optionLabel="labelKey"
+                        optionValue="value"
+                        [(ngModel)]="googleInputMethod"
+                        [ngModelOptions]="{ standalone: true }"
+                        [allowEmpty]="false"
+                        [disabled]="isReadingFile()"
+                        [ariaLabel]="t('apps.connectDialog.credentials.inputMethod')"
+                        ><ng-template #item let-item>{{
+                          t(item.labelKey)
+                        }}</ng-template></p-selectbutton
+                      >
+                    </div>
+                    @if (googleInputMethod() === 'upload') {
+                      <p-fileupload
+                        mode="advanced"
+                        accept=".json,application/json"
+                        [maxFileSize]="maxCredentialFileSize"
+                        [multiple]="false"
+                        [customUpload]="true"
+                        [showUploadButton]="false"
+                        [showCancelButton]="false"
+                        [chooseLabel]="t('apps.connectDialog.credentials.upload')"
+                        [chooseButtonProps]="{ severity: 'secondary', outlined: true }"
+                        [disabled]="isReadingFile()"
+                        (onSelect)="readGoogleCredential($event)"
+                        (onRemove)="clearGoogleFile()"
+                        (onClear)="clearGoogleFile()"
+                      >
+                        <ng-template #empty
+                          ><p class="m-0 text-center text-sm text-ink-muted">
+                            {{ t('apps.connectDialog.credentials.dropJson') }}
+                          </p></ng-template
+                        >
+                      </p-fileupload>
+                      <p class="m-0 text-xs text-ink-subtle">
+                        {{ t('apps.connectDialog.credentials.localFile') }}
+                      </p>
+                    }
+                    <textarea
+                      pTextarea
+                      id="connect-google-json"
+                      [class.hidden]="googleInputMethod() === 'upload'"
+                      class="w-full resize-y bg-sunken font-mono text-[13px] [field-sizing:content] [min-block-size:7lh] [max-block-size:18lh]"
+                      rows="7"
+                      autocomplete="off"
+                      autocapitalize="off"
+                      [spellcheck]="false"
+                      maxlength="65536"
+                      [attr.placeholder]="
+                        googleCredentialPlaceholderKey()
+                          ? t(googleCredentialPlaceholderKey()!)
+                          : null
+                      "
+                      [formField]="connectAppForm.googleServiceAccountJson"
+                    ></textarea>
+                    <p class="m-0 text-xs text-ink-subtle">
+                      {{ t('apps.connectDialog.google.jsonHelp') }}
+                    </p>
+                  </div>
+                  @if (isEditing()) {
+                    <p class="m-0 text-xs text-ink-subtle">
+                      {{ t('apps.connectDialog.google.editHint') }}
+                    </p>
+                  }
+                  <a
+                    class="inline-flex min-h-10 w-fit items-center gap-2 rounded-xs text-[13px] text-link no-underline hover:underline active:bg-surface-3 [@media(pointer:coarse)]:min-h-11"
+                    href="https://reviewinbox.app/docs/connect-google-play/"
+                    target="_blank"
+                    rel="noreferrer"
+                    >{{ t('apps.connectDialog.google.guide')
+                    }}<i class="pi pi-external-link text-xs" aria-hidden="true"></i
+                  ></a>
+                }
+                <p
+                  class="m-0 flex items-start gap-2 rounded-lg border border-hairline bg-sunken px-3 py-3 text-[13px] text-ink-muted"
                 >
-                  {{ t('apps.connectDialog.apple.guide') }}
-                  <i class="pi pi-external-link text-[0.7rem]" aria-hidden="true"></i>
-                </a>
-              </div>
-              <div class="grid gap-3 md:grid-cols-2">
-                <label class="grid gap-1.5 text-sm font-medium text-ink">
-                  <span>{{ t('apps.connectDialog.apple.appStoreAppIdLabel') }}</span>
-                  <input
-                    pInputText
-                    type="text"
-                    autocomplete="off"
-                    [attr.aria-label]="t('apps.connectDialog.apple.appStoreAppIdLabel')"
-                    [formField]="connectAppForm.appleAppStoreAppId"
-                  />
-                </label>
-                <label class="grid gap-1.5 text-sm font-medium text-ink">
-                  <span>{{ t('apps.connectDialog.apple.issuerIdLabel') }}</span>
-                  <input
-                    pInputText
-                    type="text"
-                    autocomplete="off"
-                    [attr.aria-label]="t('apps.connectDialog.apple.issuerIdLabel')"
-                    [formField]="connectAppForm.appleIssuerId"
-                  />
-                </label>
-                <label class="grid gap-1.5 text-sm font-medium text-ink md:col-span-2">
-                  <span>{{ t('apps.connectDialog.apple.keyIdLabel') }}</span>
-                  <input
-                    pInputText
-                    type="text"
-                    autocomplete="off"
-                    [attr.placeholder]="
-                      appleCredentialPlaceholderKey() ? t(appleCredentialPlaceholderKey()!) : null
-                    "
-                    [attr.aria-label]="t('apps.connectDialog.apple.keyIdLabel')"
-                    [formField]="connectAppForm.appleKeyId"
-                  />
-                </label>
-                <label class="grid gap-1.5 text-sm font-medium text-ink md:col-span-2">
-                  <span>{{ t('apps.connectDialog.apple.privateKeyLabel') }}</span>
-                  <textarea
-                    class="w-full rounded-md border border-border-strong bg-canvas px-3 py-2 text-sm text-ink transition focus:border-primary"
-                    rows="6"
-                    autocomplete="off"
-                    [attr.placeholder]="
-                      appleCredentialPlaceholderKey() ? t(appleCredentialPlaceholderKey()!) : null
-                    "
-                    [attr.aria-label]="t('apps.connectDialog.apple.privateKeyLabel')"
-                    [formField]="connectAppForm.applePrivateKey"
-                  ></textarea>
-                </label>
-              </div>
-            </section>
-
-            <section class="grid gap-3 rounded-2xl border border-hairline bg-surface-1 p-4">
-              <div>
-                <h3 class="m-0 font-semibold text-ink flex gap-2 items-center">
-                  <i class="pi pi-google" aria-hidden="true"></i>
-                  <span>{{ t('apps.stores.google') }}</span>
-                </h3>
-                <p class="m-0 mt-1 text-xs text-ink-subtle">
-                  {{
-                    t(
-                      isEditing()
-                        ? 'apps.connectDialog.google.editHint'
-                        : 'apps.connectDialog.google.skipHint'
-                    )
-                  }}
+                  <i class="pi pi-lock shrink-0" aria-hidden="true"></i
+                  >{{ t('apps.connectDialog.credentials.encryption') }}
                 </p>
-                <a
-                  class="inline-flex w-fit items-center gap-1 text-xs font-medium text-primary-700 hover:underline dark:text-primary-300"
-                  href="https://reviewinbox.app/docs/connect-google-play/"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {{ t('apps.connectDialog.google.guide') }}
-                  <i class="pi pi-external-link text-[0.7rem]" aria-hidden="true"></i>
-                </a>
               </div>
-              <div class="grid gap-3">
-                <label class="grid gap-1.5 text-sm font-medium text-ink">
-                  <span>{{ t('apps.connectDialog.google.packageNameLabel') }}</span>
-                  <input
-                    pInputText
-                    type="text"
-                    autocomplete="off"
-                    [attr.aria-label]="t('apps.connectDialog.google.packageNameLabel')"
-                    [formField]="connectAppForm.googlePackageName"
-                  />
-                </label>
-                <label class="grid gap-1.5 text-sm font-medium text-ink">
-                  <span>{{ t('apps.connectDialog.google.serviceAccountJsonLabel') }}</span>
-                  <textarea
-                    class="w-full rounded-md border border-border-strong bg-canvas px-3 py-2 text-sm text-ink transition focus:border-primary"
-                    rows="6"
-                    autocomplete="off"
-                    [attr.placeholder]="
-                      googleCredentialPlaceholderKey() ? t(googleCredentialPlaceholderKey()!) : null
-                    "
-                    [attr.aria-label]="t('apps.connectDialog.google.serviceAccountJsonLabel')"
-                    [formField]="connectAppForm.googleServiceAccountJson"
-                  ></textarea>
-                </label>
-              </div>
-            </section>
-          </div>
-        </ng-template>
-      </p-step-panel>
+              @if (credentialStore() === 'google') {
+                <section class="grid gap-2 rounded-xl border border-border p-5">
+                  <h3 class="m-0 text-sm font-medium">
+                    {{ t('apps.connectDialog.google.limitsTitle') }}
+                  </h3>
+                  <ul class="m-0 grid gap-1 ps-5 text-[13px] text-ink-muted">
+                    <li>{{ t('apps.connectDialog.google.reviewWindow') }}</li>
+                    <li>{{ t('apps.connectDialog.google.replyLimit') }}</li>
+                  </ul>
+                </section>
+              }
+            } @else {
+              <p
+                class="m-0 rounded-xl border border-dashed border-border-strong bg-surface-1 p-6 text-sm text-ink-muted"
+              >
+                {{ t('apps.connectDialog.noStore') }}
+              </p>
+            }
+          </section>
+        </ng-template></p-step-panel
+      >
+      <p-step-panel [value]="4"
+        ><ng-template #content>
+          <section class="grid gap-5">
+            <header class="grid gap-1.5">
+              <h2 class="m-0 text-[26px] leading-[1.2] font-semibold tracking-[-0.6px]">
+                {{ t('apps.connectDialog.steps.test') }}
+              </h2>
+              <p class="m-0 text-sm text-ink-muted">
+                {{ t('apps.connectDialog.testDescription') }}
+              </p>
+            </header>
+            <dl
+              class="m-0 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3 rounded-xl border border-border bg-surface-1 p-6 text-sm"
+            >
+              <dt class="text-ink-subtle">{{ t('apps.connectDialog.createApp.nameLabel') }}</dt>
+              <dd class="m-0 wrap-break-word">{{ appName() }}</dd>
+              @if (appleSelected()) {
+                <dt class="text-ink-subtle">{{ t('apps.stores.apple') }}</dt>
+                <dd class="m-0 font-mono text-[13px] wrap-break-word">{{ appleAppId() }}</dd>
+              }
+              @if (googleSelected()) {
+                <dt class="text-ink-subtle">{{ t('apps.stores.google') }}</dt>
+                <dd class="m-0 font-mono text-[13px] wrap-break-word">{{ googlePackageName() }}</dd>
+              }
+            </dl>
+            @if (!appleSelected() && !googleSelected()) {
+              <p class="m-0 text-sm text-ink-muted">{{ t('apps.connectDialog.noStore') }}</p>
+            }
+            <p class="m-0 text-xs text-ink-subtle">
+              {{ t('apps.connectDialog.credentials.encryption') }}
+            </p>
+          </section>
+        </ng-template></p-step-panel
+      >
     </p-step-panels>
   </p-stepper>
   @if (errorMessageKey(); as messageKey) {
-    <p class="m-0 rounded-xl border border-red-400 bg-surface-2 px-3 py-2 text-sm text-ink-muted">
+    <p
+      class="m-0 rounded-lg border border-failure-border bg-failure px-4 py-3 text-sm text-failure-ink"
+      role="alert"
+    >
       {{ t(messageKey) }}
     </p>
   }
-
-  <div class="flex flex-wrap justify-end gap-2">
-    @if (activeStep() === 2) {
+  <footer class="flex flex-wrap justify-end gap-2 border-bs border-hairline pbs-4">
+    @if (activeStep() > 1) {
       <p-button
-        type="button"
         severity="secondary"
         [outlined]="true"
         [label]="t('apps.connectDialog.actions.back')"
-        [disabled]="isSaving()"
+        [disabled]="isSaving() || isReadingFile()"
+        styleClass="min-h-10 [@media(pointer:coarse)]:min-h-11"
         (onClick)="previousStep()"
       />
     }
-    @if (activeStep() === 1) {
+    @if (activeStep() < 4) {
       <p-button
-        type="button"
         [label]="t('apps.connectDialog.actions.continue')"
+        [disabled]="isSaving() || isReadingFile()"
+        styleClass="min-h-10 [@media(pointer:coarse)]:min-h-11"
         (onClick)="nextStep()"
       />
     } @else {
@@ -235,8 +394,9 @@
         type="submit"
         [label]="t(submitLabelKey())"
         [loading]="isSaving()"
-        [disabled]="isSaving()"
+        [disabled]="isSaving() || isReadingFile()"
+        styleClass="min-h-10 [@media(pointer:coarse)]:min-h-11"
       />
     }
-  </div>
+  </footer>
 </form>
