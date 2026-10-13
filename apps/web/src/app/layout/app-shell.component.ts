@@ -34,7 +34,7 @@ import { MenuModule } from 'primeng/menu'
 import { type SelectChangeEvent, SelectModule } from 'primeng/select'
 import { z } from 'zod'
 
-import { badgeClasses } from '../shared/badge-classes'
+import { billingPlanLabels } from '../shared/billing-plan-display'
 import { ConnectAppDialogComponent } from '../shared/components/connect-app-dialog/connect-app-dialog.component'
 import { ThemeToggleComponent } from '../shared/components/theme-toggle/theme-toggle.component'
 import { TypedTemplateDirective } from '../shared/directives/typed-template.directive'
@@ -70,7 +70,6 @@ const activeOrganizationSessionSchema = z.object({ activeOrganizationId: z.strin
   host: { class: 'block min-h-dvh' },
 })
 export class AppShellComponent {
-  protected readonly badgeClasses = badgeClasses
   private readonly authService = inject(AuthService)
   private readonly organizationService = inject(OrganizationService)
   private readonly router = inject(Router)
@@ -132,6 +131,23 @@ export class AppShellComponent {
       ? this.activeOrganizationId()
       : (this.organizationActivationTarget() ?? this.activeOrganizationId()),
   )
+  protected readonly organizationPlanLabel = computed(() => {
+    if (!this.isCloud() || !this.organizationUsageResource.hasValue()) {
+      return null
+    }
+    const plan = this.organizationUsageResource.value().planName
+    return plan === 'free' ? this.translate('shell.organization.free') : billingPlanLabels[plan]
+  })
+  protected readonly currentPageLabel = computed(() => {
+    const path = this.routeUrl().split('?')[0] ?? '/'
+    if (path === '/settings') {
+      return this.translate('shell.menu.accountSettings')
+    }
+    const item = this.navItems().find((nav) =>
+      nav.route === '/' ? path === '/' : path.startsWith(nav.route),
+    )
+    return this.translate(item?.labelKey ?? 'shell.navigation.currentPage')
+  })
   protected readonly canManageOrganization = computed(() => {
     const role = this.roleLabel(this.activeMemberRole()).toLowerCase()
     return ['owner', 'admin'].includes(role)

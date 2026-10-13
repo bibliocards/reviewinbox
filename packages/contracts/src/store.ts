@@ -3,6 +3,12 @@ import { z } from 'zod'
 export const storeProviderSchema = z.enum(['apple_app_store', 'google_play'])
 export type StoreProvider = z.infer<typeof storeProviderSchema>
 
+export const storeReplyCharacterLimits: Readonly<Record<StoreProvider, number>> = {
+  apple_app_store: 4000,
+  google_play: 350,
+}
+export const maxReplyDraftLength = Math.max(...Object.values(storeReplyCharacterLimits))
+
 export const storeConnectionStatusSchema = z.enum(['active', 'disabled'])
 export type StoreConnectionStatus = z.infer<typeof storeConnectionStatusSchema>
 

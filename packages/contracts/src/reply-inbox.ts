@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { replyStatusSchema } from './store'
+import { maxReplyDraftLength, replyStatusSchema } from './store'
 
 export const replyInboxFilterSchema = z.enum([
   'actionable',
@@ -122,7 +122,7 @@ export type ListReplyAuditEventsResponse = z.infer<typeof listReplyAuditEventsRe
 
 export const saveReplyDraftRequestSchema = z
   .object({
-    draftText: z.string().trim().min(1).max(4000),
+    draftText: z.string().trim().min(1).max(maxReplyDraftLength),
     reviewContentToken: z.string().regex(/^[a-f0-9]{64}$/u),
   })
   .strict()
@@ -140,7 +140,7 @@ export const publishReplyRequestSchema = z
     reviewContentToken: z.string().regex(/^[a-f0-9]{64}$/u),
     replyDraftId: z.uuid().optional(),
     replyDraftUpdatedAt: z.iso.datetime().optional(),
-    draftText: z.string().trim().min(1).max(4000).optional(),
+    draftText: z.string().trim().min(1).max(maxReplyDraftLength).optional(),
   })
   .strict()
 export type PublishReplyRequest = z.infer<typeof publishReplyRequestSchema>

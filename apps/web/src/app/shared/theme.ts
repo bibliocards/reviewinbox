@@ -140,6 +140,18 @@ export const reviewInboxTheme = definePreset(Aura, {
     },
   },
   components: {
+    tabs: {
+      tablist: { background: 'transparent', borderColor: color('hairline') },
+      tab: {
+        color: color('ink-muted'),
+        hoverColor: color('ink'),
+        activeColor: color('ink'),
+        padding: '10px 12px',
+        fontWeight: '500',
+      },
+      tabpanel: { background: 'transparent', padding: '20px 0 0 0' },
+      activeBar: { height: '2px', background: color('primary') },
+    },
     button: {
       root: {
         borderRadius: '8px',

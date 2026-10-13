@@ -1,5 +1,5 @@
 <div
-  class="grid min-h-dvh grid-cols-[200px_minmax(0,1fr)] bg-canvas text-ink max-[900px]:grid-cols-1"
+  class="grid min-h-dvh grid-cols-[232px_minmax(0,1fr)] bg-canvas text-ink max-[900px]:grid-cols-1"
   *transloco="let t"
 >
   <a
@@ -10,7 +10,7 @@
     {{ t('shell.navigation.skipToContent') }}
   </a>
   <aside
-    class="sticky inset-bs-0 flex h-dvh min-w-0 flex-col gap-6 self-start overflow-y-auto border-e border-hairline bg-canvas px-3 py-3.5 [overscroll-behavior:contain] max-[900px]:static max-[900px]:h-auto max-[900px]:border-e-0 max-[900px]:border-be max-[900px]:px-4 max-[900px]:py-2"
+    class="sticky inset-bs-0 flex h-dvh min-w-0 flex-col gap-5 self-start overflow-y-auto border-e border-hairline bg-sunken px-3 py-3.5 [overscroll-behavior:contain] max-[900px]:static max-[900px]:h-auto max-[900px]:border-e-0 max-[900px]:border-be max-[900px]:px-4 max-[900px]:py-2"
     [attr.aria-label]="t('shell.navigation.primary')"
   >
     @let organizationOptions = organizationList();
@@ -31,13 +31,13 @@
             <div class="flex min-w-0 items-center gap-2">
               @if (item.logo) {
                 <img
-                  class="size-6 shrink-0 rounded-md object-cover"
+                  class="size-7 shrink-0 rounded-md object-cover"
                   [src]="item.logo"
                   [alt]="item.name"
                 />
               } @else if (item.id) {
                 <span
-                  class="grid size-6 shrink-0 place-items-center rounded-md border border-hairline bg-surface-2 text-[0.65rem] font-semibold text-ink-subtle"
+                  class="grid size-7 shrink-0 place-items-center rounded-md bg-primary text-[13px] font-semibold text-white"
                 >
                   {{ initialsFrom(item.name) }}
                 </span>
@@ -49,7 +49,7 @@
       </div>
     } @else if (organizationOptions.length == 1) {
       @let organization = organizationOptions[0]!;
-      <div class="inline-flex min-w-0 items-center gap-2.5">
+      <div class="inline-flex min-h-11 min-w-0 items-center gap-2.5 px-2 py-1.5">
         @if (organization.logo) {
           <img
             class="size-8 shrink-0 rounded-[10px] border border-border-strong object-cover"
@@ -58,14 +58,21 @@
           />
         } @else {
           <span
-            class="grid size-7 shrink-0 place-items-center rounded-md border border-border-strong bg-surface-2 text-[13px] font-semibold text-ink"
+            class="grid size-7 shrink-0 place-items-center rounded-md bg-primary text-[13px] font-semibold text-white"
             >{{ initialsFrom(organization.name) }}</span
           >
         }
-        <span
-          class="min-w-0 overflow-clip text-sm text-ellipsis whitespace-nowrap text-ink-muted max-[900px]:hidden"
-          >{{ organization.name }}</span
-        >
+        <span class="grid min-w-0 gap-0.5 leading-tight">
+          <span
+            class="overflow-clip text-sm font-semibold text-ellipsis whitespace-nowrap text-ink"
+            >{{ organization.name }}</span
+          >
+          @if (organizationPlanLabel(); as plan) {
+            <span class="text-xs text-ink-subtle">{{
+              t('shell.organization.plan', { name: plan })
+            }}</span>
+          }
+        </span>
       </div>
     }
 
@@ -75,7 +82,7 @@
       @for (item of navItems(); track item.route) {
         @if (item.visible !== false) {
           <a
-            class="flex min-h-10 items-center gap-2.5 rounded-md border border-transparent px-2.5 py-1.75 text-sm leading-[1.2] text-ink-subtle no-underline transition-[background-color,border-color,color] duration-150 hover:border-hairline hover:bg-surface-1 hover:text-ink focus-visible:border-hairline focus-visible:bg-surface-1 focus-visible:text-ink active:border-border-strong active:bg-surface-3 active:text-ink [&.is-active]:border-border-strong [&.is-active]:bg-surface-3 [&.is-active]:text-ink [@media(pointer:coarse)]:min-h-11 max-[900px]:shrink-0"
+            class="flex min-h-10 items-center gap-2.5 rounded-md border border-transparent px-2.5 py-1.75 text-sm leading-[1.2] text-ink-muted no-underline transition-[background-color,border-color,color] duration-150 hover:border-hairline hover:bg-surface-1 hover:text-ink focus-visible:border-hairline focus-visible:bg-surface-1 focus-visible:text-ink active:border-border-strong active:bg-surface-3 active:text-ink [&.is-active]:font-medium [&.is-active]:bg-surface-3 [&.is-active]:text-ink [@media(pointer:coarse)]:min-h-11 max-[900px]:shrink-0"
             [routerLink]="item.route"
             routerLinkActive="is-active"
             ariaCurrentWhenActive="page"
@@ -87,10 +94,15 @@
         }
       }
     </nav>
-    <div class="mbs-auto flex flex-col items-center">
+    <div class="mbs-auto grid gap-3">
       @if (autoSyncStatus(); as autoSync) {
-        <span [class]="badgeClasses('metadata')">{{ t('shell.autoSync.label') }}</span>
-        <span class="text-xs">{{ t(autoSync.key, autoSync.params) }}</span>
+        <div class="grid gap-2 rounded-lg border border-hairline bg-surface-1 p-3 text-xs">
+          <span class="flex items-center gap-2 font-medium text-ink"
+            ><i class="pi pi-clock text-ink-muted" aria-hidden="true"></i
+            >{{ t('shell.autoSync.label') }}</span
+          >
+          <span class="text-ink-subtle">{{ t(autoSync.key, autoSync.params) }}</span>
+        </div>
       }
       <div class="mbs-2 flex items-center justify-center gap-3">
         @if (isCloud()) {
@@ -129,17 +141,25 @@
     </div>
   </aside>
 
-  <div
-    class="grid min-h-dvh min-w-0 grid-rows-[56px_minmax(0,1fr)] max-[900px]:grid-rows-[auto_minmax(0,1fr)]"
-  >
+  <div class="grid min-h-dvh min-w-0 grid-rows-[auto_minmax(0,1fr)]">
     <header
-      class="sticky inset-bs-0 z-10 flex items-center justify-between gap-4 border-be border-hairline bg-[color-mix(in_oklch,var(--color-canvas)_92%,transparent)] px-6 py-2 backdrop-blur-[12px] max-[900px]:px-4 max-[900px]:py-2.5"
+      class="sticky inset-bs-0 z-10 flex min-h-[62px] flex-wrap items-center justify-between gap-3 border-be border-hairline bg-canvas px-6 py-2.5 max-[900px]:px-4"
     >
-      <div></div>
+      <nav
+        class="flex min-w-0 items-center gap-2 text-sm text-ink-muted"
+        [attr.aria-label]="t('shell.navigation.currentPage')"
+      >
+        <span>ReviewInbox</span
+        ><i class="pi pi-angle-right text-xs text-ink-subtle" aria-hidden="true"></i>
+        <span class="overflow-clip text-ellipsis whitespace-nowrap text-ink">{{
+          currentPageLabel()
+        }}</span>
+      </nav>
 
-      <div class="flex items-center gap-2">
+      <div class="ms-auto flex flex-wrap items-center gap-2">
         <p-button
           [label]="t('shell.actions.connectApp')"
+          severity="secondary"
           size="small"
           [disabled]="!organizationReady()"
           (onClick)="openConnectAppDialog()"
@@ -152,8 +172,8 @@
         <p-button
           [label]="ownerInitials()"
           severity="secondary"
-          styleClass="size-10 min-w-10 px-0 [@media(pointer:coarse)]:size-11 [@media(pointer:coarse)]:min-w-11"
-          [attr.aria-label]="t('shell.menu.ownerAria')"
+          styleClass="size-10 min-w-10 rounded-full bg-surface-3 px-0 font-semibold [@media(pointer:coarse)]:size-11 [@media(pointer:coarse)]:min-w-11"
+          [ariaLabel]="t('shell.menu.ownerAria')"
           (onClick)="ownerMenu.toggle($event)"
         />
       </div>
@@ -165,10 +185,7 @@
       class="min-w-0 p-6 scroll-mbs-20 max-[900px]:p-4"
       tabindex="-1"
     >
-      <section
-        class="min-h-[calc(100dvh-104px)] rounded-xl border border-hairline bg-surface-1 max-[900px]:min-h-[calc(100dvh-180px)]"
-        [attr.aria-label]="t('shell.navigation.currentPage')"
-      >
+      <section class="min-w-0" [attr.aria-label]="t('shell.navigation.currentPage')">
         @if (organizationReady() || isUserScopedRoute()) {
           @if (organizationError() || organizations.error()) {
             <div role="alert" class="flex flex-col items-start gap-4 p-8 max-[900px]:p-6">

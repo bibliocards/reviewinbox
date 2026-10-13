@@ -393,6 +393,15 @@
       "back": "Retour à la boîte de réception",
       "description": "Avis sélectionné, quel que soit le statut de sa réponse.",
       "unavailable": "Impossible de charger cet avis. Il peut ne plus être disponible dans l’organisation active."
+    },
+    "editor": {
+      "statusTabs": "Statut de la reply",
+      "reviews": "Reviews",
+      "language": "Langue de la reply · {{language}}",
+      "replyLimit": "Limite du Reply Draft",
+      "googleLimit": "Limite Google Play",
+      "publishReply": "Publier la reply",
+      "discardChanges": "Annuler les modifications"
     }
   },
   "auditHistory": {
@@ -597,7 +606,7 @@
       "auditHistory": "Historique d’audit",
       "organization": "Organization"
     },
-    "organization": { "selectAria": "Organization" },
+    "organization": { "selectAria": "Organization", "plan": "Offre {{name}}", "free": "Gratuite" },
     "menu": {
       "accountSettings": "Paramètres du compte",
       "newOrganization": "Nouvelle Organization",

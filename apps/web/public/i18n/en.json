@@ -391,6 +391,15 @@
       "back": "Back to Reply Inbox",
       "description": "Showing the selected Review, regardless of its reply status.",
       "unavailable": "This Review could not be loaded. It may no longer be available in the active Organization."
+    },
+    "editor": {
+      "statusTabs": "Reply status",
+      "reviews": "Reviews",
+      "language": "Reply language · {{language}}",
+      "replyLimit": "Reply Draft limit",
+      "googleLimit": "Google Play limit",
+      "publishReply": "Publish reply",
+      "discardChanges": "Discard changes"
     }
   },
   "auditHistory": {
@@ -595,7 +604,7 @@
       "auditHistory": "Audit History",
       "organization": "Organization"
     },
-    "organization": { "selectAria": "Organization" },
+    "organization": { "selectAria": "Organization", "plan": "{{name}} plan", "free": "Free" },
     "menu": {
       "accountSettings": "Account settings",
       "newOrganization": "New organization",

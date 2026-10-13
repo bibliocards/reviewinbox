@@ -1,4 +1,4 @@
-import { NgClass } from '@angular/common'
+import { NgClass, NgTemplateOutlet } from '@angular/common'
 import type { HttpErrorResponse } from '@angular/common/http'
 import {
   Component,
@@ -9,17 +9,23 @@ import {
   signal,
   ChangeDetectionStrategy,
 } from '@angular/core'
-import { toSignal } from '@angular/core/rxjs-interop'
+import { toObservable, toSignal } from '@angular/core/rxjs-interop'
 import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, RouterLink } from '@angular/router'
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
 import type { QueueReplyDraftResponse, ReplyInboxReview } from '@reviewinbox/contracts'
+import {
+  replyInboxFilterSchema,
+  saveReplyDraftRequestSchema,
+  storeReplyCharacterLimits,
+} from '@reviewinbox/contracts'
 import { formatDistanceToNow } from 'date-fns/formatDistanceToNow'
 import { enUS, fr } from 'date-fns/locale'
 import { ButtonModule } from 'primeng/button'
 import { DialogService } from 'primeng/dynamicdialog'
-import { SelectModule } from 'primeng/select'
-import { finalize, forkJoin, type Observable } from 'rxjs'
+import { TabsModule } from 'primeng/tabs'
+import { TextareaModule } from 'primeng/textarea'
+import { catchError, finalize, forkJoin, of, switchMap, type Observable } from 'rxjs'
 import { z } from 'zod'
 
 import { badgeClasses } from '../../shared/badge-classes'
@@ -40,6 +46,7 @@ import {
   type ReplyDraftDialogData,
   type ReplyDraftDialogResult,
 } from './components/reply-draft-dialog.component'
+import { buildPublishRequest, type ReplyDraftEdit } from './reply-draft-edit'
 
 const changedReviewErrorSchema = z.object({
   status: z.literal(409),
@@ -53,10 +60,10 @@ type SelectOption = AppSelectOption
 const filterValues: readonly ReplyInboxFilter[] = [
   'actionable',
   'drafted',
+  'published',
+  'ignored',
   'failed',
   'pending',
-  'ignored',
-  'published',
 ]
 
 @Component({
@@ -66,7 +73,9 @@ const filterValues: readonly ReplyInboxFilter[] = [
     AppSelectComponent,
     ButtonModule,
     FormsModule,
-    SelectModule,
+    TabsModule,
+    TextareaModule,
+    NgTemplateOutlet,
     TranslocoDirective,
     NgClass,
   ],
@@ -91,6 +100,7 @@ export class ReplyInboxPageComponent {
   protected readonly selectedAppId = signal<string>('')
   protected readonly selectedFilter = signal<ReplyInboxFilter>('actionable')
   protected readonly activeReviewId = signal<string | null>(null)
+  protected readonly pendingActionKey = signal<string | null>(null)
   protected readonly activeClassificationReviewId = signal<string | null>(null)
   protected readonly message = signal<{ status: 'success' | 'error'; key: string } | null>(null)
   protected readonly appsResource = this.appsService.appsResource()
@@ -120,6 +130,102 @@ export class ReplyInboxPageComponent {
     this.inboxResource.hasValue() ? this.inboxResource.value().reviews : [],
   )
 
+  protected readonly focusedReviewId = signal<string | null>(null)
+  protected readonly focusedReview = computed(
+    () =>
+      this.reviews().find((review) => review.id === this.focusedReviewId())
+      ?? this.reviews()[0]
+      ?? null,
+  )
+  protected readonly classification = toSignal(
+    toObservable(this.focusedReview).pipe(
+      switchMap((review) =>
+        review === null
+          ? of(null)
+          : this.analysisService.reviewAnalysis(review.id).pipe(catchError(() => of(null))),
+      ),
+    ),
+    { initialValue: null },
+  )
+  private readonly draftEdits = signal<Record<string, ReplyDraftEdit>>({})
+
+  protected selectFilter(value: string | number | undefined): void {
+    const parsed = replyInboxFilterSchema.safeParse(value)
+    if (parsed.success) {
+      this.selectedFilter.set(parsed.data)
+      this.focusedReviewId.set(null)
+    }
+  }
+
+  protected draftText(review: ReplyInboxReview): string {
+    return this.draftEdits()[review.id]?.text ?? review.replyDraft?.draftText ?? ''
+  }
+
+  protected editDraft(review: ReplyInboxReview, text: string): void {
+    const previous = this.draftEdits()[review.id]
+    if (text === review.replyDraft?.draftText && !this.draftIsStale(review)) {
+      this.resetDraft(review)
+      return
+    }
+    this.draftEdits.update((edits) => ({
+      ...edits,
+      [review.id]: {
+        text,
+        reviewContentToken: previous?.reviewContentToken ?? review.reviewContentToken,
+      },
+    }))
+  }
+
+  protected hasDraftEdit(review: ReplyInboxReview): boolean {
+    return this.draftEdits()[review.id] !== undefined
+  }
+
+  protected resetDraft(review: ReplyInboxReview): void {
+    this.draftEdits.update((edits) => {
+      const next = { ...edits }
+      delete next[review.id]
+      return next
+    })
+  }
+
+  protected draftIsStale(review: ReplyInboxReview): boolean {
+    const edit = this.draftEdits()[review.id]
+    return edit !== undefined && edit.reviewContentToken !== review.reviewContentToken
+  }
+
+  protected canSaveDraft(review: ReplyInboxReview): boolean {
+    return (
+      !this.draftIsStale(review)
+      && saveReplyDraftRequestSchema.safeParse({
+        draftText: this.draftText(review),
+        reviewContentToken: review.reviewContentToken,
+      }).success
+    )
+  }
+
+  protected replyLimit(review: ReplyInboxReview): number {
+    return storeReplyCharacterLimits[review.provider]
+  }
+
+  protected saveDraft(review: ReplyInboxReview): void {
+    if (!this.hasCurrentDraft(review) || !this.canSaveDraft(review)) {
+      return
+    }
+    const edit = this.draftEdits()[review.id]
+    this.runAction(
+      review.id,
+      this.replyInboxService.saveDraft(review.id, {
+        draftText: this.draftText(review).trim(),
+        reviewContentToken: edit?.reviewContentToken ?? review.reviewContentToken,
+      }),
+      'replyInbox.messages.draftSaved',
+      () => {
+        this.resetDraft(review)
+        return { status: 'success', key: 'replyInbox.messages.draftSaved' }
+      },
+    )
+  }
+
   constructor() {
     effect(() => {
       this.appIcons.loadIcons(this.apps())
@@ -133,7 +239,10 @@ export class ReplyInboxPageComponent {
   @HostListener('window:reviewinbox:active-organization-changed')
   protected reloadForActiveOrganization(): void {
     this.selectedAppId.set('')
+    this.focusedReviewId.set(null)
+    this.draftEdits.set({})
     this.activeReviewId.set(null)
+    this.pendingActionKey.set(null)
     this.message.set(null)
     this.appsResource.reload()
     this.inboxResource.reload()
@@ -152,21 +261,25 @@ export class ReplyInboxPageComponent {
   }
 
   protected publish(review: ReplyInboxReview): void {
-    const draft = review.replyDraft
-    if (!this.hasCurrentDraft(review) || draft === null) {
+    const input = buildPublishRequest(review, this.draftEdits()[review.id])
+    if (
+      input === null
+      || !this.canSaveDraft(review)
+      || this.draftText(review).trim().length > this.replyLimit(review)
+    ) {
       return
     }
-
+    const successKey = review.changedAfterReply
+      ? 'replyInbox.messages.updatedReplyPublished'
+      : 'replyInbox.messages.published'
     this.runAction(
       review.id,
-      this.replyInboxService.publishReply(review.id, {
-        reviewContentToken: review.reviewContentToken,
-        replyDraftId: draft.id,
-        replyDraftUpdatedAt: draft.updatedAt,
-      }),
-      review.changedAfterReply
-        ? 'replyInbox.messages.updatedReplyPublished'
-        : 'replyInbox.messages.published',
+      this.replyInboxService.publishReply(review.id, input),
+      successKey,
+      () => {
+        this.resetDraft(review)
+        return { status: 'success', key: successKey }
+      },
     )
   }
 
@@ -379,10 +492,12 @@ export class ReplyInboxPageComponent {
     }
 
     this.activeReviewId.set(reviewId)
+    this.pendingActionKey.set(resultKey)
     request
       .pipe(
         finalize(() => {
           this.activeReviewId.set(null)
+          this.pendingActionKey.set(null)
         }),
       )
       .subscribe({
