@@ -1,0 +1,48 @@
+---
+interface Props {
+  pricing?: boolean
+}
+
+const { pricing = false } = Astro.props
+const appUrl = import.meta.env.PUBLIC_APP_URL ?? 'http://localhost:4200'
+const signInUrl = new URL('/login', appUrl).toString()
+const signUpUrl = new URL('/sign-up', appUrl).toString()
+const links = [
+  { label: 'Product', href: '/#product' },
+  { label: 'Analysis', href: '/#analysis' },
+  { label: 'Pricing', href: '/pricing/' },
+  { label: 'Docs', href: '/docs/' },
+  { label: 'GitHub', href: 'https://github.com/bibliocards/reviewinbox' },
+]
+const linkClass = 'inline-flex min-h-11 items-center text-sm active:text-site-ink [@media(hover:hover)_and_(pointer:fine)]:hover:text-site-ink'
+---
+
+<a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:inset-bs-3 focus:inset-s-3 focus:z-50 focus:rounded-md focus:bg-site-surface focus:p-4">Skip to content</a>
+<header class="border-be border-site-hairline">
+  <nav aria-label="Main navigation" class="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-8 gap-y-3 px-6 py-[18px]">
+    <a href="/" class="inline-flex min-h-11 items-center gap-2.5 text-[15px] font-semibold tracking-[-0.2px] active:text-site-muted">
+      <span class="flex size-[26px] shrink-0 items-center justify-center rounded-[7px] bg-site-primary">
+        <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M22 12h-6l-2 3h-4l-2-3H2"></path>
+          <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+        </svg>
+      </span>
+      ReviewInbox
+    </a>
+    <div class="hidden flex-1 flex-wrap items-center gap-x-6 lg:flex">
+      {links.map((link) => <a href={link.href} aria-current={pricing && link.label === 'Pricing' ? 'page' : undefined} class:list={[linkClass, pricing && link.label === 'Pricing' ? 'text-site-ink' : 'text-site-muted']}>{link.label}</a>)}
+    </div>
+    <div class="ms-auto flex items-center gap-2">
+      <a href={signInUrl} class:list={[linkClass, 'hidden rounded-md px-3.5 sm:inline-flex']}>Sign in</a>
+      <a href={signUpUrl} class="hidden min-h-11 items-center justify-center rounded-md bg-site-primary px-4 text-sm font-medium text-white active:brightness-90 [@media(hover:hover)_and_(pointer:fine)]:hover:bg-site-primary/90 sm:inline-flex">Start free</a>
+      <details class="relative lg:hidden">
+        <summary class="flex min-h-11 cursor-pointer list-none items-center rounded-md border border-site-border-strong px-3 text-sm active:bg-site-surface [&::-webkit-details-marker]:hidden">Menu</summary>
+        <div class="absolute inset-e-0 inset-bs-full z-30 mbs-2 grid w-56 gap-1 rounded-lg border border-site-border bg-site-panel p-2 shadow-xl">
+          {links.map((link) => <a href={link.href} aria-current={pricing && link.label === 'Pricing' ? 'page' : undefined} class:list={[linkClass, 'rounded-md px-3 text-site-muted']}>{link.label}</a>)}
+          <a href={signInUrl} class:list={[linkClass, 'rounded-md px-3']}>Sign in</a>
+          <a href={signUpUrl} class="inline-flex min-h-11 items-center rounded-md bg-site-primary px-3 text-sm font-medium text-white active:brightness-90">Start free</a>
+        </div>
+      </details>
+    </div>
+  </nav>
+</header>

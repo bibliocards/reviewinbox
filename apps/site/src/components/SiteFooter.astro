@@ -1,0 +1,17 @@
+---
+const links = [
+  { label: 'Docs', href: '/docs/' },
+  { label: 'Self-hosting', href: '/docs/self-hosting/' },
+  { label: 'Pricing', href: '/pricing/' },
+  { label: 'GitHub', href: 'https://github.com/bibliocards/reviewinbox' },
+]
+---
+
+<footer class="border-bs border-site-hairline">
+  <div class="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-x-8 gap-y-4 px-6 py-10 text-[13px] text-site-subtle">
+    <span>ReviewInbox — open-source reply inbox for app store reviews.</span>
+    <nav aria-label="Footer navigation" class="flex flex-wrap gap-x-5">
+      {links.map((link) => <a href={link.href} class="inline-flex min-h-11 items-center text-site-muted active:text-site-ink [@media(hover:hover)_and_(pointer:fine)]:hover:text-site-ink">{link.label}</a>)}
+    </nav>
+  </div>
+</footer>

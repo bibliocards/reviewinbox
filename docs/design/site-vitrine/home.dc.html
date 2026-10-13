@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ReviewInbox — Nuit</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#08090B}
+a{color:#C9CCFF}a:hover{color:#FFFFFF}
+</style>
+</helmet>
+<div style="background: #08090B; color: #F4F5F6; font-family: 'Geist', system-ui, sans-serif; font-size: 16px; line-height: 1.5; min-height: 100vh">
+
+<header style="border-bottom: 1px solid #1C1E22">
+<nav style="max-width: 1200px; margin: 0 auto; padding: 18px 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 16px 32px">
+<a href="#" style="display: flex; align-items: center; gap: 10px; color: #F4F5F6; text-decoration: none; font-weight: 600; letter-spacing: -0.2px">
+<span style="width: 26px; height: 26px; border-radius: 7px; background: {{accent}}; display: flex; align-items: center; justify-content: center">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+</span>
+ReviewInbox
+</a>
+<div style="display: flex; flex-wrap: wrap; gap: 4px 24px; font-size: 14px; flex: 1 1 auto">
+<a href="#product" style="color: #A9AEB8; text-decoration: none">Product</a>
+<a href="#analysis" style="color: #A9AEB8; text-decoration: none">Analysis</a>
+<a href="Pricing.dc.html" style="color: #A9AEB8; text-decoration: none">Pricing</a>
+<a href="#" style="color: #A9AEB8; text-decoration: none">Docs</a>
+<a href="#" style="color: #A9AEB8; text-decoration: none">GitHub</a>
+</div>
+<div style="display: flex; gap: 8px; align-items: center">
+<a href="#" style="color: #F4F5F6; text-decoration: none; font-size: 14px; padding: 10px 14px; border-radius: 8px">Sign in</a>
+<a href="#" style="background: {{accent}}; color: #FFFFFF; text-decoration: none; font-size: 14px; font-weight: 500; padding: 10px 16px; border-radius: 8px">Start free</a>
+</div>
+</nav>
+</header>
+
+<main>
+<section style="max-width: 1200px; margin: 0 auto; padding: 96px 24px 56px; display: flex; flex-direction: column; align-items: flex-start; gap: 28px">
+<a href="#" style="display: inline-flex; align-items: center; gap: 10px; font-size: 13px; color: #C7CAD1; text-decoration: none; border: 1px solid #23252A; border-radius: 999px; padding: 6px 14px 6px 6px; background: #101114">
+<span style="background: #1C2A20; color: #6BD38A; border-radius: 999px; padding: 2px 8px; font-size: 12px; font-weight: 500">Open source</span>
+Self-host with Docker Compose, or use the Cloud →
+</a>
+<h1 style="margin: 0; font-size: clamp(44px, 6.4vw, 84px); line-height: 1.02; letter-spacing: -0.045em; font-weight: 600; max-width: 980px">Every store review answered.<br><span style="color: #7D828C">Nothing published without you.</span></h1>
+<p style="margin: 0; font-size: 19px; line-height: 1.55; color: #A9AEB8; max-width: 640px">ReviewInbox brings App Store and Google Play reviews into one Reply Inbox, drafts replies with AI, and shows the recurring pain behind them. Your team edits and approves every reply.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 12px">
+<a href="#" style="background: {{accent}}; color: #FFFFFF; text-decoration: none; font-weight: 500; padding: 13px 20px; border-radius: 8px; font-size: 15px">Start free — 1 App included</a>
+<a href="#" style="border: 1px solid #2C2F35; color: #F4F5F6; text-decoration: none; font-weight: 500; padding: 13px 20px; border-radius: 8px; font-size: 15px; background: #101114">Self-host it</a>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 13px; color: #8A8F98">
+<span>App Store</span><span aria-hidden="true">·</span><span>Google Play</span><span aria-hidden="true">·</span><span>Bring your own AI provider</span><span aria-hidden="true">·</span><span>Apache 2.0 on GitHub</span>
+</div>
+</section>
+
+<section id="product" style="max-width: 1200px; margin: 0 auto; padding: 0 24px 112px">
+<div style="border: 1px solid #23252A; border-radius: 16px; background: #0E0F12; box-shadow: inset 0 1px 0 rgba(255,255,255,0.06); overflow: hidden">
+<div style="display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid #1C1E22; font-size: 12px; color: #8A8F98; font-family: 'Geist Mono', ui-monospace, monospace">
+<span style="width: 10px; height: 10px; border-radius: 50%; background: #2A2D33"></span><span style="width: 10px; height: 10px; border-radius: 50%; background: #2A2D33"></span><span style="width: 10px; height: 10px; border-radius: 50%; background: #2A2D33"></span>
+<span style="margin-left: 12px">app.reviewinbox.app / reply-inbox</span>
+</div>
+<div style="display: flex; flex-wrap: wrap">
+<div style="flex: 1 1 300px; min-width: 0; border-right: 1px solid #1C1E22; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 4px 8px">
+<span style="font-weight: 600; font-size: 15px">Reply Inbox</span>
+<span style="font-size: 12px; color: #8A8F98; font-family: 'Geist Mono', monospace">12 actionable</span>
+</div>
+<div style="background: #17181D; border: 1px solid #2C2F35; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; gap: 8px; align-items: center; font-size: 12px; color: #A9AEB8"><span style="color: #F0B54A">★★☆☆☆</span><span>Google Play</span><span style="margin-left: auto; color: #8A8F98">2h</span></div>
+<div style="font-size: 14px; font-weight: 500">Sync lost my decks after update</div>
+<div style="font-size: 13px; color: #8A8F98; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Since 4.2 my cards don't sync between phone and…</div>
+</div>
+<div style="border: 1px solid transparent; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; gap: 8px; align-items: center; font-size: 12px; color: #A9AEB8"><span style="color: #F0B54A">★★★★★</span><span>App Store</span><span style="margin-left: auto; color: #8A8F98">5h</span></div>
+<div style="font-size: 14px; font-weight: 500">Best flashcard app I've tried</div>
+<div style="font-size: 13px; color: #8A8F98; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Clean, fast, and the spaced repetition just works…</div>
+</div>
+<div style="border: 1px solid transparent; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; gap: 8px; align-items: center; font-size: 12px; color: #A9AEB8"><span style="color: #F0B54A">★★★☆☆</span><span>App Store</span><span style="margin-left: auto; color: #8A8F98">1d</span></div>
+<div style="font-size: 14px; font-weight: 500">Please add a dark mode</div>
+<div style="font-size: 13px; color: #8A8F98; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Studying at night hurts my eyes, would love…</div>
+</div>
+</div>
+<div style="flex: 999 1 520px; min-width: 0; padding: 28px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12px">
+<span style="background: #1C2A20; color: #6BD38A; border-radius: 6px; padding: 3px 8px">Drafted</span>
+<span style="border: 1px solid #2C2F35; border-radius: 6px; padding: 2px 8px; color: #C7CAD1">Google Play</span>
+<span style="border: 1px solid #2C2F35; border-radius: 6px; padding: 2px 8px; color: #C7CAD1">v4.2.0</span>
+<span style="border: 1px solid #3A2E1A; background: #221B10; border-radius: 6px; padding: 2px 8px; color: #F0B54A">Severity: high</span>
+<span style="border: 1px solid #2C2F35; border-radius: 6px; padding: 2px 8px; color: #C7CAD1">Topic: Sync</span>
+</div>
+<div>
+<div style="font-size: 22px; font-weight: 600; letter-spacing: -0.4px">Sync lost my decks after update</div>
+<p style="margin: 8px 0 0; color: #C7CAD1; font-size: 15px">Since 4.2 my cards don't sync between phone and tablet anymore. I lost two weeks of reviews. Please fix this.</p>
+</div>
+<div style="border: 1px solid #2C2F35; border-radius: 12px; background: #121318; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #8A8F98; font-family: 'Geist Mono', monospace"><span>Reply Draft · AI</span><span>214 / 350</span></div>
+<p style="margin: 0; font-size: 15px; color: #E6E8EB">Sorry about this — a sync regression shipped in 4.2 and is fixed in 4.2.1, rolling out now. Your decks are safe on our servers: update the app and they'll reappear. Reply here if anything is still missing.</p>
+<div style="font-size: 12px; color: #8A8F98">Used Reply Context: “Sync incident 4.2”</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" style="font: inherit; font-size: 14px; font-weight: 500; background: {{accent}}; color: #FFFFFF; border: 0; border-radius: 8px; padding: 11px 16px; min-height: 44px">Publish reply</button>
+<button type="button" style="font: inherit; font-size: 14px; background: transparent; color: #F4F5F6; border: 1px solid #2C2F35; border-radius: 8px; padding: 11px 16px; min-height: 44px">Edit draft</button>
+<button type="button" style="font: inherit; font-size: 14px; background: transparent; color: #A9AEB8; border: 1px solid #2C2F35; border-radius: 8px; padding: 11px 16px; min-height: 44px">Ignore</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<section style="border-top: 1px solid #1C1E22; border-bottom: 1px solid #1C1E22; background: #0B0C0E">
+<div style="max-width: 1200px; margin: 0 auto; padding: 96px 24px; display: flex; flex-direction: column; gap: 48px">
+<div style="display: flex; flex-direction: column; gap: 14px; max-width: 720px">
+<span style="font-size: 13px; font-weight: 500; letter-spacing: 0.04em; color: {{accent}}">How it works</span>
+<h2 style="margin: 0; font-size: clamp(32px, 4vw, 48px); line-height: 1.1; letter-spacing: -0.035em; font-weight: 600">Draft faster without giving up control.</h2>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1px; background: #1C1E22; border: 1px solid #1C1E22; border-radius: 12px; overflow: hidden">
+<div style="background: #0B0C0E; padding: 28px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">01</span>
+<h3 style="margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.3px">Import Reviews</h3>
+<p style="margin: 0; font-size: 14px; color: #A9AEB8">New App Store and Google Play reviews arrive with the App and store beside them.</p>
+</div>
+<div style="background: #0B0C0E; padding: 28px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">02</span>
+<h3 style="margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.3px">Draft replies</h3>
+<p style="margin: 0; font-size: 14px; color: #A9AEB8">AI prepares a Reply Draft from the review and your Reply Context.</p>
+</div>
+<div style="background: #0B0C0E; padding: 28px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">03</span>
+<h3 style="margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.3px">Review changes</h3>
+<p style="margin: 0; font-size: 14px; color: #A9AEB8">Edit, skip, or approve each draft before anything is published.</p>
+</div>
+<div style="background: #0B0C0E; padding: 28px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #8A8F98">04</span>
+<h3 style="margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.3px">Publish safely</h3>
+<p style="margin: 0; font-size: 14px; color: #A9AEB8">Published Replies stay separate from drafts, so you always see what was sent.</p>
+</div>
+</div>
+</div>
+</section>
+
+<section id="analysis" style="max-width: 1200px; margin: 0 auto; padding: 112px 24px; display: flex; flex-wrap: wrap; gap: 56px; align-items: center">
+<div style="flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 18px">
+<span style="font-size: 13px; font-weight: 500; letter-spacing: 0.04em; color: {{accent}}">Review analysis</span>
+<h2 style="margin: 0; font-size: clamp(32px, 4vw, 48px); line-height: 1.1; letter-spacing: -0.035em; font-weight: 600">Turn a queue of Reviews into a product signal.</h2>
+<p style="margin: 0; color: #A9AEB8; font-size: 17px">Jev classifies every Review by topic, intent and reported severity. Luna proposes missing topics. Your team approves the catalogue — then drills from any chart segment to the Reviews behind it.</p>
+<a href="#" style="font-size: 15px; font-weight: 500">Read how analysis works →</a>
+</div>
+<div style="flex: 1 1 480px; min-width: 0; border: 1px solid #23252A; border-radius: 16px; background: #0E0F12; padding: 24px; display: flex; flex-direction: column; gap: 18px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.06)">
+<div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px">
+<span style="font-weight: 600">Top topics · last 30 days</span>
+<span style="font-size: 12px; color: #8A8F98; font-family: 'Geist Mono', monospace">by reported severity</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="display: flex; justify-content: space-between; font-size: 14px"><span>Sync</span><span style="color: #8A8F98">[n] Reviews</span></div><div style="height: 10px; border-radius: 4px; background: #1A1C20; display: flex; overflow: hidden"><span style="width: 52%; background: #E5484D"></span><span style="width: 26%; background: #F0B54A"></span><span style="width: 8%; background: #4A4E57"></span></div></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="display: flex; justify-content: space-between; font-size: 14px"><span>Dark mode</span><span style="color: #8A8F98">[n] Reviews</span></div><div style="height: 10px; border-radius: 4px; background: #1A1C20; display: flex; overflow: hidden"><span style="width: 6%; background: #E5484D"></span><span style="width: 18%; background: #F0B54A"></span><span style="width: 40%; background: #4A4E57"></span></div></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="display: flex; justify-content: space-between; font-size: 14px"><span>Subscription price</span><span style="color: #8A8F98">[n] Reviews</span></div><div style="height: 10px; border-radius: 4px; background: #1A1C20; display: flex; overflow: hidden"><span style="width: 10%; background: #E5484D"></span><span style="width: 22%; background: #F0B54A"></span><span style="width: 14%; background: #4A4E57"></span></div></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="display: flex; justify-content: space-between; font-size: 14px"><span>Onboarding <span style="font-size: 11px; color: #8A8F98; border: 1px dashed #4A4E57; border-radius: 4px; padding: 0 5px; margin-left: 6px">pending</span></span><span style="color: #8A8F98">[n] Reviews</span></div><div style="height: 10px; border-radius: 4px; background: #1A1C20; display: flex; overflow: hidden; opacity: 0.6"><span style="width: 4%; background: #E5484D"></span><span style="width: 10%; background: #F0B54A"></span><span style="width: 16%; background: #4A4E57"></span></div></div>
+</div>
+<div style="display: flex; gap: 16px; font-size: 12px; color: #A9AEB8; flex-wrap: wrap">
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 2px; background: #E5484D"></span>High</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 2px; background: #F0B54A"></span>Medium</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 2px; background: #4A4E57"></span>Low</span>
+</div>
+</div>
+</section>
+
+<section id="pricing" style="border-top: 1px solid #1C1E22">
+<div style="max-width: 1200px; margin: 0 auto; padding: 112px 24px; display: flex; flex-direction: column; gap: 40px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 20px">
+<h2 style="margin: 0; font-size: clamp(32px, 4vw, 48px); line-height: 1.1; letter-spacing: -0.035em; font-weight: 600; max-width: 620px">Free to start. Free to self-host.</h2>
+<a href="Pricing.dc.html" style="font-size: 15px; font-weight: 500">Compare all plans →</a>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px">
+<div style="border: 1px solid #23252A; background: #101114; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+<span style="font-weight: 600">Free</span>
+<span style="font-size: 36px; font-weight: 600; letter-spacing: -1px">$0<span style="font-size: 15px; color: #8A8F98; font-weight: 400">/mo</span></span>
+<span style="font-size: 14px; color: #A9AEB8">1 App · 30 Review imports/month · 5 AI Reply Drafts/month</span>
+</div>
+<div style="border: 1px solid #3A3F8F; background: #13152A; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+<span style="font-weight: 600">Starter</span>
+<span style="font-size: 36px; font-weight: 600; letter-spacing: -1px">$9.99<span style="font-size: 15px; color: #8A8F98; font-weight: 400">/mo</span></span>
+<span style="font-size: 14px; color: #A9AEB8">2 Apps · 500 Review imports/month · 100 AI Reply Drafts/month</span>
+</div>
+<div style="border: 1px solid #23252A; background: #101114; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+<span style="font-weight: 600">Pro</span>
+<span style="font-size: 36px; font-weight: 600; letter-spacing: -1px">$29.99<span style="font-size: 15px; color: #8A8F98; font-weight: 400">/mo</span></span>
+<span style="font-size: 14px; color: #A9AEB8">10 Apps · 5,000 Review imports/month · 1,000 AI Reply Drafts/month</span>
+</div>
+<div style="border: 1px dashed #2C2F35; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+<span style="font-weight: 600">Self-hosted</span>
+<span style="font-size: 36px; font-weight: 600; letter-spacing: -1px">$0</span>
+<span style="font-size: 14px; color: #A9AEB8">No billing limits · your AI provider · your Postgres and backups</span>
+</div>
+</div>
+</div>
+</section>
+
+<section style="border-top: 1px solid #1C1E22; background: #0B0C0E">
+<div style="max-width: 1200px; margin: 0 auto; padding: 112px 24px; display: flex; flex-direction: column; gap: 40px">
+<div style="display: flex; flex-direction: column; gap: 14px; max-width: 720px">
+<span style="font-size: 13px; font-weight: 500; letter-spacing: 0.04em; color: {{accent}}">Store Connections</span>
+<h2 style="margin: 0; font-size: clamp(32px, 4vw, 48px); line-height: 1.1; letter-spacing: -0.035em; font-weight: 600">Connect the store you use. Or both.</h2>
+<p style="margin: 0; color: #A9AEB8; font-size: 17px">Each store exposes different permissions and review windows. The setup guides walk you through it before you paste a Store Credential — encrypted per Store Connection, never logged.</p>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px">
+<div style="border: 1px solid #23252A; background: #101114; border-radius: 12px; padding: 28px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: center; gap: 12px">
+<span style="width: 36px; height: 36px; border-radius: 9px; background: #1A1C22; border: 1px solid #2C2F35; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F4F5F6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 17 16 3"></path><path d="M6 13h12"></path><path d="m4 21 2-4"></path><path d="m18 17 2 4"></path></svg></span>
+<h3 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.3px">App Store</h3>
+</div>
+<p style="margin: 0; font-size: 15px; color: #A9AEB8">Use an App Store Connect API key. Apple exposes paginated customer reviews, and a Published Reply can take up to 24 hours to appear.</p>
+<a href="#" style="font-size: 14px; font-weight: 500">App Store guide →</a>
+</div>
+<div style="border: 1px solid #23252A; background: #101114; border-radius: 12px; padding: 28px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: center; gap: 12px">
+<span style="width: 36px; height: 36px; border-radius: 9px; background: #1A1C22; border: 1px solid #2C2F35; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F4F5F6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3.5v17l14-8.5z"></path></svg></span>
+<h3 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.3px">Google Play</h3>
+</div>
+<p style="margin: 0; font-size: 15px; color: #A9AEB8">Use a service account with Reply to reviews permission. The API exposes written production reviews from the last week and limits replies to 350 characters.</p>
+<a href="#" style="font-size: 14px; font-weight: 500">Google Play guide →</a>
+</div>
+</div>
+</div>
+</section>
+
+<section style="border-top: 1px solid #1C1E22">
+<div style="max-width: 1200px; margin: 0 auto; padding: 112px 24px; display: flex; flex-wrap: wrap; gap: 48px">
+<h2 style="flex: 1 1 320px; margin: 0; font-size: clamp(32px, 4vw, 48px); line-height: 1.1; letter-spacing: -0.035em; font-weight: 600">Questions</h2>
+<div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+<details open style="border-top: 1px solid #23252A; padding: 22px 0">
+<summary style="cursor: pointer; font-size: 18px; font-weight: 500; letter-spacing: -0.2px">Does AI publish replies automatically?</summary>
+<p style="margin: 12px 0 0; color: #A9AEB8; max-width: 640px">No. AI drafting creates Reply Drafts only. Publishing remains an explicit action controlled by your team.</p>
+</details>
+<details style="border-top: 1px solid #23252A; padding: 22px 0">
+<summary style="cursor: pointer; font-size: 18px; font-weight: 500; letter-spacing: -0.2px">Can ReviewInbox be self-hosted?</summary>
+<p style="margin: 12px 0 0; color: #A9AEB8; max-width: 640px">Yes. The self-hosted stack runs with Docker Compose and keeps your data on your own infrastructure.</p>
+</details>
+<details style="border-top: 1px solid #23252A; padding: 22px 0">
+<summary style="cursor: pointer; font-size: 18px; font-weight: 500; letter-spacing: -0.2px">Which stores are supported?</summary>
+<p style="margin: 12px 0 0; color: #A9AEB8; max-width: 640px">App Store and Google Play. Each store has its own access and review-history limits.</p>
+</details>
+<details style="border-top: 1px solid #23252A; border-bottom: 1px solid #23252A; padding: 22px 0">
+<summary style="cursor: pointer; font-size: 18px; font-weight: 500; letter-spacing: -0.2px">How does Review analysis work?</summary>
+<p style="margin: 12px 0 0; color: #A9AEB8; max-width: 640px">Jev classifies imported Reviews by topic, intent and reported severity. Luna proposes missing topics for human approval. Analysis stays separate from drafting and never publishes replies.</p>
+</details>
+</div>
+</div>
+</section>
+
+<section style="max-width: 1200px; margin: 0 auto; padding: 0 24px 112px">
+<div style="border: 1px solid #23252A; border-radius: 20px; background: #0E0F12; padding: clamp(32px, 6vw, 72px); display: flex; flex-wrap: wrap; gap: 32px; align-items: center; justify-content: space-between; box-shadow: inset 0 1px 0 rgba(255,255,255,0.06)">
+<div style="flex: 1 1 420px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: clamp(28px, 3.4vw, 40px); line-height: 1.1; letter-spacing: -0.03em; font-weight: 600">Clear your review backlog this week.</h2>
+<p style="margin: 0; color: #A9AEB8">Connect one App for free. AI never publishes on its own.</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 12px">
+<a href="#" style="background: {{accent}}; color: #FFFFFF; text-decoration: none; font-weight: 500; padding: 13px 20px; border-radius: 8px; font-size: 15px">Start free</a>
+<a href="#" style="border: 1px solid #2C2F35; color: #F4F5F6; text-decoration: none; font-weight: 500; padding: 13px 20px; border-radius: 8px; font-size: 15px">View on GitHub</a>
+</div>
+</div>
+</section>
+</main>
+
+<footer style="border-top: 1px solid #1C1E22">
+<div style="max-width: 1200px; margin: 0 auto; padding: 40px 24px; display: flex; flex-wrap: wrap; gap: 16px 32px; justify-content: space-between; font-size: 13px; color: #8A8F98">
+<span>ReviewInbox — open-source reply inbox for app store reviews.</span>
+<div style="display: flex; flex-wrap: wrap; gap: 20px">
+<a href="#" style="color: #A9AEB8; text-decoration: none">Docs</a>
+<a href="#" style="color: #A9AEB8; text-decoration: none">Self-hosting</a>
+<a href="#" style="color: #A9AEB8; text-decoration: none">Pricing</a>
+<a href="#" style="color: #A9AEB8; text-decoration: none">GitHub</a>
+</div>
+</div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#5B63E0","options":["#5B63E0","#2F7DF6","#D9573B","#1F9D6B"]},"$preview":{"width":1440,"height":3600}}'>
+class Component extends DCLogic {
+renderVals() {
+return { accent: this.props.accent ?? '#5B63E0' };
+}
+}
+</script>
+</body>
+</html>

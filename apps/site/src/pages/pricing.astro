@@ -1,9 +1,11 @@
 ---
+import SiteHeader from '../components/SiteHeader.astro'
+import SiteFooter from '../components/SiteFooter.astro'
+
+import { cloudPlans, comparisonRows } from '../lib/pricing'
 import '../styles.css'
 
 const appUrl = import.meta.env.PUBLIC_APP_URL ?? 'http://localhost:4200'
-const signInUrl = new URL('/login', appUrl).toString()
-const signUpUrl = new URL('/sign-up', appUrl).toString()
 const planSignUpUrl = (plan: string) => {
   const url = new URL('/sign-up', appUrl)
   url.searchParams.set('plan', plan)
@@ -14,95 +16,14 @@ const ogImageUrl = new URL('/screenshots/reply-inbox-hero.png', 'https://reviewi
 const pageTitle = 'ReviewInbox Pricing | App Store & Google Play review workflows'
 const pageDescription = 'ReviewInbox pricing plans for Cloud and self-hosted deployments, including Review imports, Managed AI Reply Drafts, Apps, Store Connections, and members.'
 
-const plans = [
-  {
-    name: 'Free',
-    price: '$0',
-    interval: '/month',
-    note: 'Available now',
-    description: 'Try ReviewInbox with one App and low monthly volume.',
-    featured: true,
-    members: '1',
-    apps: '1',
-    storeConnections: '2',
-    reviews: '30/month',
-    drafts: '5/month',
-    autoSync: 'Every 24 hours',
-    manualSync: 'Not available',
-    cta: 'Start free',
-    href: planSignUpUrl('free'),
-  },
-  {
-    name: 'Starter',
-    price: '$9.99',
-    interval: '/month',
-    note: 'Available now',
-    description: 'For small teams managing a couple of Apps.',
-    featured: false,
-    members: '3 included',
-    apps: '2',
-    storeConnections: '4',
-    reviews: '500/month',
-    drafts: '100/month',
-    autoSync: 'Every 6 hours',
-    manualSync: 'Available',
-    cta: 'Select Starter',
-    href: planSignUpUrl('starter'),
-  },
-  {
-    name: 'Pro',
-    price: '$29.99',
-    interval: '/month',
-    note: 'Available now',
-    description: 'For teams with several Apps and regular review operations.',
-    featured: false,
-    members: '10 included',
-    apps: '10',
-    storeConnections: '20',
-    reviews: '5,000/month',
-    drafts: '1,000/month',
-    autoSync: 'Every 6 hours',
-    manualSync: 'Available',
-    cta: 'Select Pro',
-    href: planSignUpUrl('pro'),
-  },
-  {
-    name: 'Business',
-    price: '$99.99',
-    interval: '/month',
-    note: 'Scale',
-    description: 'For larger teams, higher limits, and operational needs.',
-    featured: false,
-    members: '25 included',
-    apps: '50 included, 100 limit',
-    storeConnections: '100 included, 200 limit',
-    reviews: '50,000/month',
-    drafts: '10,000/month',
-    autoSync: 'Every 6 hours',
-    manualSync: 'Available',
-    cta: 'Select Business',
-    href: planSignUpUrl('business'),
-  },
-]
-
-const rows = [
-  ['Members', 'members'],
-  ['Apps', 'apps'],
-  ['Connections', 'storeConnections'],
-  ['Review imports', 'reviews'],
-  ['AI drafts', 'drafts'],
-  ['Automatic sync', 'autoSync'],
-  ['Manual sync', 'manualSync'],
-] as const
 ---
-
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <meta name="description" content={pageDescription} />
     <meta name="robots" content="index, follow" />
-    <meta name="theme-color" content="#010102" />
+    <meta name="theme-color" content="#08090B" />
     <link rel="icon" href="/favicon.png" type="image/png" />
     <link rel="canonical" href={siteUrl} />
     <meta property="og:type" content="website" />
@@ -121,123 +42,95 @@ const rows = [
     <meta name="twitter:image" content={ogImageUrl} />
     <meta name="twitter:image:alt" content="ReviewInbox Reply Inbox with app reviews and reply drafts" />
     <title>{pageTitle}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet" />
   </head>
-  <body>
-    <div class="min-h-screen bg-canvas text-ink">
-      <header class="sticky top-0 z-20 border-hairline/80 border-b bg-canvas/85 backdrop-blur-xl">
-        <nav class="mx-auto flex h-14 max-w-7xl items-center justify-between px-md sm:px-lg">
-          <a href="/" class="inline-flex min-h-10 items-center gap-xs font-semibold text-[15px] tracking-[-0.2px] text-ink">
-            <img src="/icons/icon-96x96.png" alt="" class="size-7 rounded-md" width="28" height="28" />
-            <span>ReviewInbox</span>
-          </a>
-          <div class="hidden items-center gap-md text-sm text-ink-subtle md:flex">
-            <a class="inline-flex min-h-10 items-center px-xs transition hover:text-ink" href="/">Product</a>
-            <a class="inline-flex min-h-10 items-center px-xs text-ink" href="/pricing/">Pricing</a>
-            <a class="inline-flex min-h-10 items-center px-xs transition hover:text-ink" href="/docs/">Docs</a>
-          </div>
-          <details class="relative md:hidden">
-            <summary class="inline-flex min-h-10 cursor-pointer list-none items-center rounded-md border border-hairline bg-surface-1 px-sm py-xs text-sm font-medium text-ink">
-              Menu
-            </summary>
-            <div class="absolute right-0 top-12 z-30 grid min-w-52 gap-xxs rounded-lg border border-hairline bg-surface-2 p-xs text-sm shadow-xl">
-              <a class="inline-flex min-h-10 items-center rounded-md px-sm transition hover:bg-surface-3" href="/">Product</a>
-              <a class="inline-flex min-h-10 items-center rounded-md px-sm transition hover:bg-surface-3" href="/pricing/">Pricing</a>
-              <a class="inline-flex min-h-10 items-center rounded-md px-sm transition hover:bg-surface-3" href="/docs/">Docs</a>
-              <a class="inline-flex min-h-10 items-center rounded-md px-sm transition hover:bg-surface-3" href={signInUrl}>Sign in</a>
-              <a class="inline-flex min-h-10 items-center rounded-md px-sm transition hover:bg-surface-3" href="https://github.com/bibliocards/reviewinbox">GitHub</a>
+  <body class="[&_:focus-visible]:outline-site-link overflow-x-visible bg-site-canvas font-site-sans text-site-ink">
+    <SiteHeader pricing />
+    <main id="main" tabindex="-1">
+      <section class="max-w-300 mx-auto pbs-22 px-6 pbe-12 flex flex-col items-center text-center gap-5">
+        <span class="text-[13px] font-medium tracking-[0.04em] text-site-primary-text">Pricing</span>
+        <h1 class="m-0 text-[length:clamp(40px,_5.6vw,_72px)] leading-[1.04] tracking-[-0.045em] font-semibold max-w-215">Pay for convenience.<br><span class="text-site-heading-muted">The core stays open source.</span></h1>
+        <p class="m-0 text-[18px] text-site-muted max-w-155">Cloud plans attach to an Organization and cover hosting, scheduling, backups and managed AI drafts. Self-hosted ReviewInbox has no billing limits.</p>
+      </section>
+
+      <section class="max-w-300 mx-auto pbs-6 px-6 pbe-20">
+        <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,250px),1fr))] gap-4">
+          {cloudPlans.map((plan) => (
+          <article class:list={['grid row-span-4 grid-rows-subgrid gap-y-5 rounded-lg border p-7', plan.id === 'starter' ? 'border-site-featured-border bg-site-featured' : 'border-site-border bg-site-surface']}>
+            <div class="flex flex-col gap-1.5">
+              <h2 class="text-[17px] font-semibold">{plan.name}</h2>
+              <p class="text-sm text-site-muted">{plan.description}</p>
             </div>
-          </details>
-          <div class="flex items-center gap-xs">
-            <a class="hidden min-h-10 items-center rounded-md px-sm py-xs text-sm font-medium text-ink transition hover:bg-surface-1 sm:inline-flex" href={signInUrl}>Sign in</a>
-            <a class="inline-flex min-h-10 items-center rounded-md bg-linear-primary px-sm py-xs text-sm font-medium text-white transition hover:bg-linear-primary-focus" href={signUpUrl}>Start free</a>
+            <p class="text-[44px] font-semibold leading-none tracking-[-1.5px] tabular-nums">{plan.price}<span class="ms-1 text-[15px] font-normal tracking-normal text-site-subtle">/month</span></p>
+            <a href={planSignUpUrl(plan.id)} class:list={['inline-flex min-h-11 items-center justify-center rounded-md px-4 py-3 text-sm font-medium active:brightness-90', plan.id === 'starter' ? 'bg-site-primary text-white [@media(hover:hover)_and_(pointer:fine)]:hover:bg-site-primary/90' : 'border border-site-border-strong text-site-ink [@media(hover:hover)_and_(pointer:fine)]:hover:bg-site-selected']}>
+              {plan.id === 'free' ? 'Start free' : `Select ${plan.name}`}
+            </a>
+            <ul class:list={['flex flex-col gap-2.5 border-bs pbs-5 text-sm text-site-body', plan.id === 'starter' ? 'border-site-featured-divider' : 'border-site-hairline']}>
+              {plan.features.map((feature) => <li>{feature}</li>)}
+            </ul>
+          </article>
+          ))}
+        </div>
+
+        <div class="mbs-4 border border-dashed border-site-border-strong rounded-lg p-7 flex flex-wrap gap-6 items-center justify-between">
+          <div class="min-w-0 flex-[1_1_480px] flex flex-col gap-[6px]">
+            <div class="flex items-center gap-[10px] flex-wrap"><span class="font-semibold text-[17px]">Self-hosted</span><span class="bg-site-success-bg text-site-success rounded-full py-[2px] px-[10px] text-[12px]">Apache 2.0</span></div>
+            <span class="text-[15px] text-site-muted">Run ReviewInbox yourself without Cloud billing limits. You operate the AI provider, Postgres, backups, SMTP, storage and updates.</span>
           </div>
-        </nav>
-      </header>
-
-      <main>
-        <section class="mx-auto max-w-7xl px-md pt-20 pb-section sm:px-lg lg:pt-28">
-          <div class="grid gap-xl lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
-            <div>
-              <h1 class="max-w-4xl text-4xl font-semibold leading-[1.04] tracking-[-1.4px] text-ink sm:text-6xl sm:tracking-[-2.3px]">Pricing that follows Review operations.</h1>
-            </div>
-            <p class="max-w-2xl text-lg leading-8 text-ink-muted lg:justify-self-end">
-              ReviewInbox plans are scoped to an Organization. Usage limits apply to Cloud deployments; self-hosted deployments stay billing-free.
-            </p>
-          </div>
-        </section>
-
-        <section class="mx-auto max-w-7xl px-md pb-section sm:px-lg">
-          <div class="overflow-x-auto rounded-xl border border-hairline bg-surface-1">
-            <div class="grid min-w-[1040px] grid-cols-[190px_repeat(4,minmax(190px,1fr))]">
-              <div class="border-hairline border-r p-lg">
-                <p class="text-sm leading-6 text-ink-subtle">Pick the Organization plan that matches your review volume.</p>
-              </div>
-
-              {plans.map((plan) => (
-                <article class:list={['border-hairline border-r p-lg last:border-r-0', plan.featured ? 'bg-surface-2' : 'bg-surface-1']}>
-                  <div class="flex items-center justify-between gap-sm">
-                    <h2 class="text-xl font-semibold text-ink">{plan.name}</h2>
-                    <span class="rounded-full border border-hairline bg-canvas px-xs py-xxs text-xs text-ink-subtle">{plan.note}</span>
-                  </div>
-                  <div class="mt-xl flex items-end gap-xxs">
-                    <p class="text-4xl font-semibold tracking-[-1px] text-ink">{plan.price}</p>
-                    <p class="pb-1 font-mono text-xs uppercase tracking-[0.08em] text-ink-subtle">{plan.interval}</p>
-                  </div>
-                  <p class="mt-md min-h-14 text-sm leading-6 text-ink-muted">{plan.description}</p>
-                  <a class:list={['mt-lg inline-flex min-h-10 w-full items-center justify-center rounded-md px-md py-sm text-sm font-medium transition', plan.featured ? 'bg-linear-primary text-white hover:bg-linear-primary-focus' : 'border border-hairline bg-canvas text-ink hover:border-hairline-strong hover:bg-surface-2']} href={plan.href}>{plan.cta}</a>
-                </article>
-              ))}
-
-              {rows.map(([label, key]) => (
-                <>
-                  <div class="border-hairline border-t border-r bg-canvas p-lg text-sm font-medium text-ink-subtle">{label}</div>
-                  {plans.map((plan) => (
-                    <div class="border-hairline border-t border-r p-lg text-sm font-medium text-ink last:border-r-0">{plan[key]}</div>
-                  ))}
-                </>
-              ))}
-            </div>
-          </div>
-          <p class="mt-md text-sm leading-6 text-ink-subtle">
-            Automatic sync depends on the worker being enabled and may be spread across its scheduled window. Review imports and Managed AI Reply Drafts still stop at the plan cap. Review analysis classification is included; Luna topic discovery is separately metered while usage is measured, with no public numerical quota yet.
-          </p>
-        </section>
-
-        <section class="mx-auto max-w-7xl px-md pb-section sm:px-lg">
-          <div class="grid gap-md lg:grid-cols-3">
-            <article class="rounded-xl border border-hairline bg-surface-1 p-lg">
-              <h2 class="text-2xl font-semibold tracking-[-0.5px] text-ink">Connect a store</h2>
-              <p class="mt-md text-sm leading-6 text-ink-muted">App Store and Google Play use different credentials, permissions, and review-history windows.</p>
-              <div class="mt-lg flex flex-wrap gap-sm text-sm">
-                <a class="inline-flex min-h-10 items-center rounded-md border border-hairline bg-canvas px-md py-sm font-medium text-ink transition hover:border-hairline-strong hover:bg-surface-2" href="/docs/connect-app-store/">App Store guide</a>
-                <a class="inline-flex min-h-10 items-center rounded-md border border-hairline bg-canvas px-md py-sm font-medium text-ink transition hover:border-hairline-strong hover:bg-surface-2" href="/docs/connect-google-play/">Google Play guide</a>
-              </div>
-            </article>
-            <article class="rounded-xl border border-hairline bg-surface-1 p-lg">
-              <h2 class="text-2xl font-semibold tracking-[-0.5px] text-ink">Self-hosted</h2>
-              <p class="mt-md text-sm leading-6 text-ink-muted">Run ReviewInbox yourself without Cloud billing limits. You operate the AI provider, Postgres, backups, SMTP, storage, and updates.</p>
-              <a class="mt-lg inline-flex min-h-10 items-center rounded-md border border-hairline bg-canvas px-md py-sm text-sm font-medium text-ink transition hover:border-hairline-strong hover:bg-surface-2" href="/docs/self-hosting/">Read self-hosting docs</a>
-            </article>
-            <article class="rounded-xl border border-hairline bg-surface-1 p-lg">
-              <h2 class="text-2xl font-semibold tracking-[-0.5px] text-ink">Organization billing</h2>
-              <p class="mt-md text-sm leading-6 text-ink-muted">Plans attach to Organizations, not individual users. A user can belong to multiple Organizations, each with its own limits and usage.</p>
-              <a class="mt-lg inline-flex min-h-10 items-center rounded-md border border-hairline bg-canvas px-md py-sm text-sm font-medium text-ink transition hover:border-hairline-strong hover:bg-surface-2" href="/docs/usage-limits/">Read usage docs</a>
-            </article>
-          </div>
-        </section>
-      </main>
-
-      <footer class="border-hairline border-t py-xl">
-        <div class="mx-auto flex max-w-7xl flex-col gap-md px-md text-sm text-ink-subtle sm:flex-row sm:items-center sm:justify-between sm:px-lg">
-          <p class="font-medium text-ink">ReviewInbox</p>
-          <div class="flex gap-md">
-            <a class="inline-flex min-h-10 items-center hover:text-ink" href="/docs/">Docs</a>
-            <a class="inline-flex min-h-10 items-center hover:text-ink" href="https://github.com/bibliocards/reviewinbox">GitHub</a>
-            <a class="inline-flex min-h-10 items-center hover:text-ink" href={signInUrl}>Sign in</a>
-            <a class="inline-flex min-h-10 items-center hover:text-ink" href={signUpUrl}>Start free</a>
+          <div class="flex flex-wrap gap-[10px]">
+            <a href="/docs/self-hosting/" class="border border-site-border-strong text-site-ink no-underline font-medium py-3 px-4 rounded-md text-[14px] inline-flex items-center min-h-11 active:brightness-90 [@media(hover:hover)_and_(pointer:fine)]:hover:brightness-125">Self-hosting guide</a>
+            <a href="https://github.com/bibliocards/reviewinbox" class="border border-site-border-strong text-site-ink no-underline font-medium py-3 px-4 rounded-md text-[14px] inline-flex items-center min-h-11 active:brightness-90 [@media(hover:hover)_and_(pointer:fine)]:hover:brightness-125">View on GitHub</a>
           </div>
         </div>
-      </footer>
-    </div>
+      </section>
+
+      <section class="border-bs border-site-hairline bg-site-alt">
+        <div class="max-w-300 mx-auto py-24 px-6 flex flex-col gap-8">
+          <h2 class="m-0 text-[length:clamp(28px,_3.4vw,_40px)] leading-[1.1] tracking-[-0.03em] font-semibold">Compare plans</h2>
+          <div role="region" aria-label="Cloud plan comparison" tabindex="0" class="overflow-x-auto border border-site-border rounded-lg">
+            <table class="tabular-nums w-full min-w-190 border-collapse text-[14px]">
+              <caption class="sr-only">Monthly Cloud plan limits by Organization</caption><thead>
+                <tr class="text-start text-site-muted">
+                  <th scope="col" class="border-be border-site-border px-5 py-4 font-medium"><span class="sr-only">Feature</span></th>
+                  {cloudPlans.map((plan) => <th scope="col" class:list={['border-be border-site-border px-5 py-4 font-semibold text-site-ink', { 'bg-site-featured': plan.id === 'starter' }]}>{plan.name}</th>)}
+                </tr>
+              </thead>
+              <tbody class="text-site-body">
+                {comparisonRows.map(([label, key]) => (
+                <tr class="border-be border-site-hairline last:border-0">
+                  <th scope="row" class="px-5 py-3.5 text-start font-normal text-site-muted">{label}</th>
+                  {cloudPlans.map((plan) => <td class:list={['px-5 py-3.5', { 'bg-site-featured': plan.id === 'starter' }]}>{plan[key]}</td>)}
+                </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="border-bs border-site-hairline">
+        <div class="max-w-300 mx-auto py-24 px-6 flex flex-wrap gap-12">
+          <h2 class="min-w-0 flex-[1_1_320px] m-0 text-[length:clamp(28px,_3.4vw,_40px)] leading-[1.1] tracking-[-0.03em] font-semibold">Billing questions</h2>
+          <div class="min-w-0 flex-[999_1_560px] flex flex-col">
+            <details open class="border-bs border-site-border py-[22px] px-0">
+              <summary class="min-h-11 active:text-site-muted [@media(hover:hover)_and_(pointer:fine)]:hover:text-site-body cursor-pointer text-[18px] font-medium">Who is a plan attached to?</summary>
+              <p class="mbs-3 text-site-muted max-w-160">Plans attach to Organizations, not individual users. A user can belong to several Organizations, each with its own limits and usage.</p>
+            </details>
+            <details class="border-bs border-site-border py-[22px] px-0">
+              <summary class="min-h-11 active:text-site-muted [@media(hover:hover)_and_(pointer:fine)]:hover:text-site-body cursor-pointer text-[18px] font-medium">Do usage limits apply when self-hosting?</summary>
+              <p class="mbs-3 text-site-muted max-w-160">No. Usage limits apply to Cloud deployments only. Self-hosted deployments stay billing-free.</p>
+            </details>
+            <details class="border-bs border-site-border border-be py-[22px] px-0">
+              <summary class="min-h-11 active:text-site-muted [@media(hover:hover)_and_(pointer:fine)]:hover:text-site-body cursor-pointer text-[18px] font-medium">What counts as an AI Reply Draft?</summary>
+              <p class="mbs-3 text-site-muted max-w-160">Usage counts when managed AI creates a Reply Draft. Manual drafts, manual edits, and failed generation without a created draft do not count.</p>
+            </details>
+            <a href="/docs/usage-limits/" class="mbs-5 text-[15px] font-medium text-site-link inline-flex items-center min-h-11 active:brightness-90 [@media(hover:hover)_and_(pointer:fine)]:hover:brightness-125">Read the usage limits docs →</a>
+          </div>
+        </div>
+      </section>
+    </main>
+    <SiteFooter />
   </body>
 </html>

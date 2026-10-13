@@ -3,6 +3,42 @@
 @import 'tailwindcss';
 
 @theme {
+  --font-site-sans: 'Geist', system-ui, sans-serif;
+  --font-site-mono: 'Geist Mono', ui-monospace, monospace;
+
+  --color-site-canvas: oklch(0.139451 0.004826 262.8021);
+  --color-site-alt: oklch(0.154098 0.004578 264.4321);
+  --color-site-surface: oklch(0.177869 0.00637 271.0422);
+  --color-site-panel: oklch(0.168659 0.006459 271.0139);
+  --color-site-draft: oklch(0.187949 0.010266 276.4419);
+  --color-site-selected: oklch(0.210179 0.00997 276.5574);
+  --color-site-track: oklch(0.226045 0.008332 264.3947);
+  --color-site-icon: oklch(0.226987 0.012026 270.8402);
+  --color-site-featured: oklch(0.20576 0.041636 277.9463);
+  --color-site-featured-border: oklch(0.409846 0.130187 276.3215);
+  --color-site-featured-divider: oklch(0.31813 0.069274 277.2696);
+  --color-site-hairline: oklch(0.234622 0.008252 264.4038);
+  --color-site-border: oklch(0.264497 0.009761 268.3063);
+  --color-site-border-strong: oklch(0.304635 0.011602 264.388);
+  --color-site-ink: oklch(0.969671 0.001713 247.8393);
+  --color-site-muted: oklch(0.749928 0.015382 264.4756);
+  --color-site-subtle: oklch(0.648812 0.014593 262.3594);
+  --color-site-heading-muted: oklch(0.605733 0.016248 264.4463);
+  --color-site-body: oklch(0.838743 0.010251 267.3463);
+  --color-site-draft-ink: oklch(0.930322 0.004589 258.3252);
+  --color-site-primary: oklch(0.562112 0.187271 275.8139);
+  --color-site-primary-text: color-mix(in oklch, var(--color-site-primary) 85%, oklch(1 0 none));
+  --color-site-link: oklch(0.859913 0.070737 282.1593);
+  --color-site-success-bg: oklch(0.268662 0.026617 153.2888);
+  --color-site-success: oklch(0.785776 0.142806 151.5455);
+  --color-site-severity-high: oklch(0.625565 0.19334 23.0261);
+  --color-site-severity-medium: oklch(0.808599 0.138812 79.1863);
+  --color-site-severity-low: oklch(0.423598 0.01579 266.5384);
+  --color-site-warning-bg: oklch(0.226993 0.022576 78.5192);
+  --color-site-warning-border: oklch(0.309086 0.036774 79.5315);
+  --color-site-window-dot: oklch(0.296612 0.011682 264.3808);
+  --shadow-site-panel: inset 0 1px 0 oklch(1 0 none / 6%);
+
   --font-sans:
     'Inter Variable', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono Variable', 'SF Mono', ui-monospace, Menlo, monospace;

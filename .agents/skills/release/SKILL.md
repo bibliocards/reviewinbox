@@ -61,10 +61,6 @@ Stop and ask the user before making release changes unless every condition is tr
 
 - ...
 
-## Self-hosted notes
-
-- No self-hosted action required.
-
 ## Contributors
 
 - Thanks @alice for improving store sync reliability.
@@ -72,11 +68,11 @@ Stop and ask the user before making release changes unless every condition is tr
 ```
 
    - Omit empty `Highlights`, `Changes`, or `Fixes` sections only when there is genuinely nothing to say.
-   - Always include `Self-hosted notes`; replace the default sentence when migrations, environment variables, compose changes, or operator action matter.
+   - Add `Self-hosted notes` only for verified extra operator steps or compatibility changes. Check the release diff against the supported self-hosted Compose, API startup behavior, environment defaults, and deployment docs before writing one. A new migration alone does not require a note when the API already applies migrations at startup. Do not speculate about custom deployments; omit the section when no action is required.
    - Include `Contributors` only when at least one contributor beyond the release author is detected.
    - Use `First contribution from @user.` for first-time contributors.
    - Use `Thanks @user for ...` for returning contributors when the PR title or change summary makes a concise acknowledgement possible.
-   - Completion criterion: the notes file exists in `/tmp`, has the final approved version in its filename, and covers every release input.
+   - Completion criterion: the notes file exists in `/tmp`, has the final approved version in its filename, covers every release input, and has no unverified self-hosted instructions.
 
 4. Apply the version bump.
    - Update the root `package.json` `version` field to `X.Y.Z`.
@@ -86,9 +82,9 @@ Stop and ask the user before making release changes unless every condition is tr
 
 5. Commit and tag locally.
    - Commit the intended tracked changes with `chore: release vX.Y.Z`.
-   - Create an annotated tag `vX.Y.Z` on that commit using the `/tmp` release notes as the tag message.
-   - Verify that `HEAD` is the release commit and that `vX.Y.Z` points to `HEAD`.
-   - Completion criterion: the release commit and annotated tag exist locally and point at the same commit.
+   - Create an annotated tag `vX.Y.Z` on that commit using `git tag -a vX.Y.Z --cleanup=verbatim -F /tmp/reviewinbox-release-vX.Y.Z.md` so Markdown headings remain in the tag message.
+   - Verify that `HEAD` is the release commit, `vX.Y.Z` points to `HEAD`, and the tag message exactly matches the notes file.
+   - Completion criterion: the release commit and annotated tag exist locally, point at the same commit, and carry the approved notes verbatim.
 
 6. Ask for explicit publication confirmation.
    - Show the target tag, commit hash, release notes path, and the exact commands that will publish.
