@@ -186,8 +186,9 @@ export class OrganizationProfilePageComponent {
     return 'organization.profile.errors.deleteFailed'
   }
 
-  private loadProfile(): void {
+  protected loadProfile(): void {
     this.isLoading.set(true)
+    this.errorMessageKey.set(null)
 
     this.organizationProfile
       .getProfile()

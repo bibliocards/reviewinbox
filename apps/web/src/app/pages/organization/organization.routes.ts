@@ -13,7 +13,7 @@ export const organizationRoutes: Routes = [
       import('./organization.page').then((page) => page.OrganizationPageComponent),
     ...canActivate(hasOrganizationRole(['owner', 'admin'], ['/'])),
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'members' },
+      { path: '', pathMatch: 'full', redirectTo: 'usage' },
       {
         path: 'profile',
         title: 'Organization profile | ReviewInbox',

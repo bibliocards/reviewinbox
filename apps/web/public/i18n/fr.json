@@ -524,6 +524,30 @@
         "cancelFailed": "Impossible d’annuler cette invitation pour le moment.",
         "copyFailed": "Impossible de copier ce lien d’invitation.",
         "inviteFailed": "Impossible d’envoyer cette invitation pour le moment."
+      },
+      "labels": {
+        "invite": "Inviter un membre",
+        "emailEnabled": "Envoyez une invitation par e-mail ou copiez son lien après sa création.",
+        "emailDisabled": "L’envoi d’e-mails n’est pas configuré. Créez une invitation puis copiez son lien.",
+        "shareHint": "Partagez les liens uniquement avec le propriétaire de l’adresse e-mail invitée.",
+        "email": "E-mail",
+        "role": "Rôle",
+        "sendInvite": "Envoyer l’invitation",
+        "copyLink": "Copier le lien",
+        "copied": "Copié",
+        "manage": "Gérer les membres",
+        "loading": "Chargement des membres…",
+        "loadFailed": "Impossible de charger les membres.",
+        "empty": "Aucun membre trouvé.",
+        "member": "Membre",
+        "admin": "Admin",
+        "you": "Vous",
+        "pendingTitle": "Invitations en attente",
+        "pendingDescription": "Invitations créées mais pas encore acceptées.",
+        "loadingInvitations": "Chargement des invitations…",
+        "invitationsFailed": "Impossible de charger les invitations.",
+        "noInvitations": "Aucune invitation en attente.",
+        "pending": "En attente"
       }
     },
     "profile": {
@@ -559,6 +583,42 @@
         "nameRequired": "Le nom de l’Organization est requis.",
         "saveFailed": "Impossible d’enregistrer le profil de cette Organization pour le moment."
       }
+    },
+    "title": "Organization",
+    "description": "Membres, offre et usage de cette Organization.",
+    "navigation": {
+      "usage": "Offre et usage",
+      "members": "Membres",
+      "profile": "Profil",
+      "billing": "Facturation"
+    },
+    "usage": {
+      "currentPlan": "Offre actuelle",
+      "selfHosted": "Self-hosted",
+      "noLimits": "L’usage est enregistré à titre indicatif. Les limites de facturation ne sont pas appliquées sur ce déploiement.",
+      "resets": "L’usage est réinitialisé le {{date}}. Les offres appartiennent à cette Organization.",
+      "loading": "Chargement de l’usage de l’Organization…",
+      "loadFailed": "Impossible de charger l’usage de l’Organization. Réessayez.",
+      "unlimited": "Aucune limite appliquée.",
+      "nearLimit": "Limite proche.",
+      "limitReached": "Limite atteinte.",
+      "comparePlans": "Comparer les offres",
+      "meterLabel": "Usage {{label}} : {{used}} sur {{limit}}",
+      "items": {
+        "members": "Membres",
+        "apps": "Apps",
+        "storeConnections": "Store Connections",
+        "monthlyReviewImports": "Reviews importées",
+        "monthlyManagedAiReplyDrafts": "Reply Drafts avec Managed AI"
+      },
+      "descriptions": {
+        "members": "Personnes ayant accès à cette Organization.",
+        "apps": "Apps mobiles suivies dans ReviewInbox.",
+        "storeConnections": "Connexions Apple App Store et Google Play.",
+        "monthlyReviewImports": "Nouvelles Reviews importées pendant cette période mensuelle.",
+        "monthlyManagedAiReplyDrafts": "Reply Drafts générés avec Managed AI pendant cette période mensuelle."
+      },
+      "upgradeToStarter": "Passer à Starter"
     }
   },
   "organizations": {

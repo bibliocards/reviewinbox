@@ -3,11 +3,13 @@ import {
   computed,
   HostListener,
   inject,
+  input,
   signal,
   ChangeDetectionStrategy,
 } from '@angular/core'
 import { toSignal } from '@angular/core/rxjs-interop'
 import { email, FormField, form, required, submit } from '@angular/forms/signals'
+import { RouterLink } from '@angular/router'
 import { TranslocoDirective } from '@jsverse/transloco'
 import { AuthService, OrganizationService } from 'ngx-better-auth'
 import { ButtonModule } from 'primeng/button'
@@ -45,11 +47,13 @@ const fullOrganizationViewSchema = z.object({ members: z.array(memberViewSchema)
 
 @Component({
   selector: 'ri-organization-members-page',
-  imports: [ButtonModule, FormField, InputTextModule, SelectModule, TranslocoDirective],
+  imports: [ButtonModule, FormField, InputTextModule, SelectModule, TranslocoDirective, RouterLink],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './organization-members.page.html',
 })
 export class OrganizationMembersPageComponent {
+  readonly preview = input(false)
+  readonly memberCount = input<number | null>(null)
   protected readonly badgeClasses = badgeClasses
   private readonly auth = inject(AuthService)
   private readonly organizations = inject(OrganizationService)
@@ -71,8 +75,8 @@ export class OrganizationMembersPageComponent {
   protected readonly isSubmitting = signal(false)
 
   protected readonly roleOptions = [
-    { label: 'Member', value: 'member' },
-    { label: 'Admin', value: 'admin' },
+    { labelKey: 'organization.members.labels.member', value: 'member' },
+    { labelKey: 'organization.members.labels.admin', value: 'admin' },
   ]
 
   private readonly inviteModel = signal({ email: '', role: 'member' })

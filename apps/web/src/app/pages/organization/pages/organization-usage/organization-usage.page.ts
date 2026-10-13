@@ -1,4 +1,3 @@
-import { DatePipe } from '@angular/common'
 import {
   Component,
   computed,
@@ -8,32 +7,40 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core'
 import { RouterLink } from '@angular/router'
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
 import type { OrganizationUsageItem, OrganizationUsageResponse } from '@reviewinbox/contracts'
 import { ButtonModule } from 'primeng/button'
-import { MeterGroupModule } from 'primeng/metergroup'
+import { ProgressBarModule } from 'primeng/progressbar'
 
+import { billingPlanLabels } from '../../../../shared/billing-plan-display'
 import { OrganizationProfileService } from '../../../../shared/services/organization-profile.service'
+import { OrganizationMembersPageComponent } from '../organization-members/organization-members.page'
 
-type UsageCard = {
-  key: string
-  label: string
-  description: string
-  upgradeReason: string
-  usage: OrganizationUsageItem
-}
+type UsageCard = { key: string; upgradeReason: string; usage: OrganizationUsageItem }
 
 @Component({
   selector: 'ri-organization-usage-page',
-  imports: [ButtonModule, DatePipe, MeterGroupModule, RouterLink],
+  imports: [
+    ButtonModule,
+    ProgressBarModule,
+    RouterLink,
+    TranslocoDirective,
+    OrganizationMembersPageComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: 'organization-usage.page.html',
 })
 export class OrganizationUsagePageComponent {
   private readonly organizationProfile = inject(OrganizationProfileService)
+  private readonly transloco = inject(TranslocoService)
 
   protected readonly usage = signal<OrganizationUsageResponse | null>(null)
   protected readonly isLoading = signal(true)
   protected readonly errorMessage = signal<string | null>(null)
+  protected readonly currentPlanLabel = computed(() => {
+    const plan = this.usage()?.planName
+    return plan === undefined || plan === 'free' ? 'Free' : billingPlanLabels[plan]
+  })
   protected readonly usageItems = computed<UsageCard[]>(() => {
     const usage = this.usage()
     if (!usage) {
@@ -41,38 +48,20 @@ export class OrganizationUsagePageComponent {
     }
 
     return [
-      {
-        key: 'members',
-        label: 'Members',
-        description: 'People who can access this Organization.',
-        upgradeReason: 'members-limit',
-        usage: usage.usage.members,
-      },
-      {
-        key: 'apps',
-        label: 'Apps',
-        description: 'Mobile Apps tracked in ReviewInbox.',
-        upgradeReason: 'apps-limit',
-        usage: usage.usage.apps,
-      },
+      { key: 'members', upgradeReason: 'members-limit', usage: usage.usage.members },
+      { key: 'apps', upgradeReason: 'apps-limit', usage: usage.usage.apps },
       {
         key: 'storeConnections',
-        label: 'Store Connections',
-        description: 'Apple App Store and Google Play connections.',
         upgradeReason: 'store-connections-limit',
         usage: usage.usage.storeConnections,
       },
       {
         key: 'monthlyReviewImports',
-        label: 'Monthly Review imports',
-        description: 'New Reviews imported for this usage period.',
         upgradeReason: 'review-imports-limit',
         usage: usage.usage.monthlyReviewImports,
       },
       {
         key: 'monthlyManagedAiReplyDrafts',
-        label: 'Managed AI Reply Drafts',
-        description: 'Reply Drafts generated with ReviewInbox managed AI.',
         upgradeReason: 'reply-drafts-limit',
         usage: usage.usage.monthlyManagedAiReplyDrafts,
       },
@@ -98,24 +87,23 @@ export class OrganizationUsagePageComponent {
         this.isLoading.set(false)
       },
       error: () => {
-        this.errorMessage.set('We could not load Organization usage. Please try again.')
+        this.errorMessage.set('organization.usage.loadFailed')
         this.isLoading.set(false)
       },
     })
   }
 
-  protected meterValue(usage: OrganizationUsageItem) {
-    return [
-      {
-        label: `${usage.used} of ${usage.limit} used. Included: ${usage.included}.`,
-        value: usage.percent ?? 0,
-        color: this.meterColor(usage),
-      },
-    ]
+  protected meterTokens(usage: OrganizationUsageItem) {
+    return {
+      root: { height: '6px', background: 'var(--color-surface-3)' },
+      value: { background: this.meterColor(usage) },
+    }
   }
 
-  protected meterAriaLabel(label: string, usage: OrganizationUsageItem): string {
-    return `${label} usage: ${usage.used} of ${usage.limit ?? 'unlimited'} used`
+  protected formattedDate(value: string): string {
+    return new Intl.DateTimeFormat(this.transloco.getActiveLang(), { dateStyle: 'medium' }).format(
+      new Date(value),
+    )
   }
 
   protected shouldShowUpgradeCta(usage: OrganizationUsageItem): boolean {
@@ -130,13 +118,13 @@ export class OrganizationUsagePageComponent {
 
   private meterColor(usage: OrganizationUsageItem): string {
     if (usage.severity === 'danger') {
-      return '#dc2626'
+      return 'var(--color-failure-ink)'
     }
 
     if (usage.severity === 'warning') {
-      return '#d97706'
+      return 'var(--color-severity-minor)'
     }
 
-    return '#16a34a'
+    return 'var(--color-primary)'
   }
 }

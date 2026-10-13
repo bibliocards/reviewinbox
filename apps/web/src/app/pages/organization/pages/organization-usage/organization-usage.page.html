@@ -1,90 +1,124 @@
-<section class="grid gap-5">
-  <div class="rounded-2xl border border-hairline bg-surface-1 p-5">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-      <div>
-        <h2 class="m-0 text-lg font-semibold text-ink">Usage and limits</h2>
-        @if (isLoading()) {
-        <p class="m-0 mt-2 text-sm text-ink-subtle">Loading current usage period...</p>
-        } @else if (usage()?.limitsEnforced) {
-        <p class="m-0 mt-2 text-sm text-ink-subtle">
-          Current monthly period:
-          <strong
-            >{{ $safeNavigationMigration(usage()?.usagePeriod?.startsAt) | date: 'mediumDate'
-            }}</strong
-          >
-          to
-          <strong
-            >{{ $safeNavigationMigration(usage()?.usagePeriod?.endsAt) | date: 'mediumDate'
-            }}</strong
-          >.
-        </p>
-        } @else {
-        <p class="m-0 mt-2 text-sm text-ink-subtle">
-          Usage is recorded for visibility. Billing limits are not enforced on this self-hosted
-          deployment.
-        </p>
-        }
-      </div>
-      @if (!isLoading() && usage()?.limitsEnforced) {
-      <a
-        class="w-fit rounded-lg border border-hairline bg-surface-2 px-3 py-2 text-sm font-semibold text-ink no-underline transition hover:bg-surface-3"
-        routerLink="/organization/billing"
-      >
-        View Billing
-      </a>
-      }
-    </div>
-  </div>
+<section class="grid min-w-0 gap-6" *transloco="let t" [attr.aria-busy]="isLoading()">
   @if (isLoading()) {
   <div
-    class="rounded-2xl border border-hairline bg-surface-1 p-5 text-sm text-ink-subtle"
+    class="grid min-h-64 place-content-center justify-items-center gap-2 rounded-xl border border-border bg-surface-1 p-8 text-sm text-ink-muted"
     role="status"
-    aria-busy="true"
   >
-    Loading usage...
+    <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>{{ t('organization.usage.loading') }}
   </div>
-  } @else if (errorMessage()) {
+  } @else if (errorMessage(); as error) {
   <div
-    class="flex flex-col gap-3 rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-sm text-red-700"
+    class="flex flex-wrap items-center gap-3 rounded-xl border border-failure-border bg-failure p-5 text-sm text-failure-ink"
     role="alert"
   >
-    <span>{{ errorMessage() }}</span>
-    <button
-      class="w-fit rounded-lg border border-red-500/30 px-3 py-2 font-semibold"
-      type="button"
-      (click)="loadUsage()"
-    >
-      Try again
-    </button>
+    <p class="m-0 min-w-0 flex-1">{{ t(error) }}</p>
+    <p-button
+      severity="secondary"
+      [outlined]="true"
+      [label]="t('shell.states.retry')"
+      styleClass="min-h-10 [@media(pointer:coarse)]:min-h-11"
+      (onClick)="loadUsage()"
+    />
   </div>
-  } @else {
-  <div class="grid gap-4 lg:grid-cols-2">
+  } @else if (usage(); as data) {
+  <section
+    class="flex flex-wrap items-center gap-5 rounded-xl border border-border bg-surface-1 p-6"
+    aria-labelledby="organization-current-plan"
+  >
+    <div class="grid min-w-0 flex-1 basis-80 gap-1">
+      <h2 id="organization-current-plan" class="m-0 text-sm font-normal text-ink-muted">
+        {{ t('organization.usage.currentPlan') }}
+      </h2>
+      <p class="m-0 text-[28px] leading-tight font-semibold tracking-[-0.6px]">
+        {{ data.limitsEnforced ? currentPlanLabel() : t('organization.usage.selfHosted') }}
+      </p>
+      @if (data.limitsEnforced) {
+      <p class="m-0 text-[13px] text-ink-subtle">
+        {{ t('organization.usage.resets', { date: formattedDate(data.usagePeriod.endsAt) }) }}
+      </p>
+      } @else {
+      <p class="m-0 text-[13px] text-ink-subtle">{{ t('organization.usage.noLimits') }}</p>
+      }
+    </div>
+    @if (data.limitsEnforced) {
+    <div class="flex flex-wrap items-center gap-2">
+      <a
+        pButton
+        severity="secondary"
+        [outlined]="true"
+        routerLink="/organization/billing"
+        class="min-h-10 [@media(pointer:coarse)]:min-h-11"
+        >{{ t('organization.usage.comparePlans') }}</a
+      >
+      @if (data.planName === 'free') {
+      <a
+        pButton
+        routerLink="/organization/billing"
+        class="min-h-10 [@media(pointer:coarse)]:min-h-11"
+        >{{ t('organization.usage.upgradeToStarter') }}</a
+      >
+      }
+    </div>
+    }
+  </section>
+  <section
+    class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))] gap-3"
+    [attr.aria-label]="t('organization.navigation.usage')"
+  >
     @for (item of usageItems(); track item.key) {
-    <article class="rounded-2xl border border-hairline bg-surface-1 p-5 shadow-sm">
-      <div>
-        <h3 class="m-0 text-base font-semibold text-ink">{{ item.label }}</h3>
-        <p class="m-0 mt-1 text-sm text-ink-subtle">{{ item.description }}</p>
-      </div>
+    <article
+      class="grid content-start gap-2.5 rounded-xl border px-5 py-4"
+      [class.border-border]="item.usage.severity !== 'warning' && item.usage.severity !== 'danger'"
+      [class.bg-surface-1]="item.usage.severity !== 'warning' && item.usage.severity !== 'danger'"
+      [class.border-warning-border]="item.usage.severity === 'warning'"
+      [class.bg-warning]="item.usage.severity === 'warning'"
+      [class.border-failure-border]="item.usage.severity === 'danger'"
+      [class.bg-failure]="item.usage.severity === 'danger'"
+    >
+      <h3
+        class="m-0 text-sm font-normal"
+        [class.text-ink-muted]="item.usage.severity !== 'warning' && item.usage.severity !== 'danger'"
+        [class.text-warning-ink]="item.usage.severity === 'warning'"
+        [class.text-failure-ink]="item.usage.severity === 'danger'"
+      >
+        {{ t('organization.usage.items.' + item.key) }}
+      </h3>
+      <p class="m-0 font-mono text-2xl font-semibold tracking-[-0.6px] tabular-nums">
+        {{ item.usage.used }} @if (item.usage.limit !== null) {
+        <span class="text-sm font-normal text-ink-subtle">/ {{ item.usage.limit }}</span> }
+      </p>
       @if (item.usage.percent !== null) {
-      <p-meter-group
-        class="mt-4"
-        [value]="meterValue(item.usage)"
-        [attr.aria-label]="meterAriaLabel(item.label, item.usage)"
+      <p-progressbar
+        [value]="item.usage.percent"
+        [showValue]="false"
+        [dt]="meterTokens(item.usage)"
+        [attr.aria-label]="t('organization.usage.meterLabel', { label: t('organization.usage.items.' + item.key), used: item.usage.used, limit: item.usage.limit })"
       />
       } @else {
-      <p class="m-0 mt-4 text-sm font-medium text-ink">{{ item.usage.used }} used</p>
-      <p class="m-0 mt-2 text-xs text-ink-subtle">No limit enforced in self-hosted mode.</p>
+      <p class="m-0 text-xs text-ink-subtle">{{ t('organization.usage.unlimited') }}</p>
+      }
+      <p class="m-0 text-xs text-ink-subtle">
+        {{ t('organization.usage.descriptions.' + item.key) }}
+      </p>
+      @if (item.usage.severity === 'warning') {
+      <p class="m-0 text-xs text-warning-ink">{{ t('organization.usage.nearLimit') }}</p>
+      } @else if (item.usage.severity === 'danger') {
+      <p class="m-0 text-xs text-failure-ink">{{ t('organization.usage.limitReached') }}</p>
       } @if (shouldShowUpgradeCta(item.usage)) {
       <a
-        class="mt-4 inline-flex w-fit rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-contrast no-underline transition hover:bg-[var(--primary-button-hover)]"
+        pButton
+        severity="secondary"
+        [text]="true"
+        size="small"
         routerLink="/organization/billing"
         [queryParams]="{ reason: item.upgradeReason }"
+        class="min-h-10 justify-self-start text-link [@media(pointer:coarse)]:min-h-11"
+        >{{ t('organization.usage.comparePlans') }}</a
       >
-        Compare plans
-      </a>
       }
     </article>
     }
-  </div>
+  </section>
+  <ri-organization-members-page [preview]="true" [memberCount]="data.usage.members.used" />
   }
 </section>

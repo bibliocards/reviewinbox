@@ -518,6 +518,30 @@
         "cancelFailed": "We could not cancel this invitation yet.",
         "copyFailed": "We could not copy this invitation link.",
         "inviteFailed": "We could not send this invitation yet."
+      },
+      "labels": {
+        "invite": "Invite member",
+        "emailEnabled": "Send an email invitation, or copy the invitation link after creating it.",
+        "emailDisabled": "Email delivery is not configured. Create an invitation, then copy its link.",
+        "shareHint": "Share invitation links only with the invited email owner.",
+        "email": "Email",
+        "role": "Role",
+        "sendInvite": "Send invite",
+        "copyLink": "Copy link",
+        "copied": "Copied",
+        "manage": "Manage members",
+        "loading": "Loading members…",
+        "loadFailed": "Unable to load members.",
+        "empty": "No members found.",
+        "member": "Member",
+        "admin": "Admin",
+        "you": "You",
+        "pendingTitle": "Pending invitations",
+        "pendingDescription": "Invitations created but not accepted yet.",
+        "loadingInvitations": "Loading invitations…",
+        "invitationsFailed": "Unable to load invitations.",
+        "noInvitations": "No pending invitations.",
+        "pending": "Pending"
       }
     },
     "profile": {
@@ -553,6 +577,42 @@
         "nameRequired": "Organization name is required.",
         "saveFailed": "We could not save this Organization profile yet."
       }
+    },
+    "title": "Organization",
+    "description": "Members, plan and usage for this Organization.",
+    "navigation": {
+      "usage": "Plan & usage",
+      "members": "Members",
+      "profile": "Profile",
+      "billing": "Billing"
+    },
+    "usage": {
+      "currentPlan": "Current plan",
+      "selfHosted": "Self-hosted",
+      "noLimits": "Usage is recorded for visibility. Billing limits are not enforced on this deployment.",
+      "resets": "Usage resets on {{date}}. Plans belong to this Organization.",
+      "loading": "Loading Organization usage…",
+      "loadFailed": "We could not load Organization usage. Please try again.",
+      "unlimited": "No limit enforced.",
+      "nearLimit": "Near limit.",
+      "limitReached": "Limit reached.",
+      "comparePlans": "Compare plans",
+      "meterLabel": "{{label}} usage: {{used}} of {{limit}} used",
+      "items": {
+        "members": "Members",
+        "apps": "Apps",
+        "storeConnections": "Store Connections",
+        "monthlyReviewImports": "Review imports",
+        "monthlyManagedAiReplyDrafts": "Managed AI Reply Drafts"
+      },
+      "descriptions": {
+        "members": "People who can access this Organization.",
+        "apps": "Mobile Apps tracked in ReviewInbox.",
+        "storeConnections": "Apple App Store and Google Play connections.",
+        "monthlyReviewImports": "New Reviews imported during this monthly period.",
+        "monthlyManagedAiReplyDrafts": "Reply Drafts generated with Managed AI during this monthly period."
+      },
+      "upgradeToStarter": "Upgrade to Starter"
     }
   },
   "organizations": {

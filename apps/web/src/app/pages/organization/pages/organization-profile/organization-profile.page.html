@@ -1,26 +1,40 @@
-<section class="grid gap-6" *transloco="let t">
+<section class="grid gap-6 min-w-0" *transloco="let t">
   @if (isLoading()) {
-  <div class="rounded-2xl border border-hairline bg-surface-1 p-5">
-    <p class="m-0 text-sm text-ink-subtle">{{ t('organization.profile.loading') }}</p>
+  <div class="rounded-xl border border-border bg-surface-1 p-6">
+    <p class="m-0 text-sm text-ink-muted">{{ t('organization.profile.loading') }}</p>
+  </div>
+  } @else if (!profile()) {
+  <div
+    class="flex flex-wrap items-center gap-3 rounded-xl border border-failure-border bg-failure p-5 text-sm text-failure-ink"
+    role="alert"
+  >
+    <p class="m-0 flex-1">{{ t('organization.profile.errors.loadFailed') }}</p>
+    <p-button
+      severity="secondary"
+      [outlined]="true"
+      [label]="t('shell.states.retry')"
+      (onClick)="loadProfile()"
+      styleClass="min-h-10 [@media(pointer:coarse)]:min-h-11"
+    />
   </div>
   } @else {
   <form
-    class="grid gap-4 rounded-2xl border border-hairline bg-surface-1 p-5"
+    class="grid gap-4 rounded-xl border border-border bg-surface-1 p-6"
     (submit)="saveProfile($event)"
   >
     <div>
-      <h2 class="m-0 text-lg font-semibold text-ink">
+      <h2 class="m-0 text-base font-semibold tracking-[-0.3px] text-ink">
         {{ t('organization.profile.identity.title') }}
       </h2>
-      <p class="m-0 mt-1 text-sm text-ink-subtle">
+      <p class="m-0 mbs-1 text-sm text-ink-muted">
         {{ t('organization.profile.identity.description') }}
       </p>
     </div>
 
-    <div class="grid gap-4 md:grid-cols-[auto_minmax(0,1fr)] md:items-center">
-      <div class="grid gap-3">
+    <div class="flex flex-wrap items-center gap-5">
+      <div class="grid shrink-0 gap-3">
         <div
-          class="grid size-24 place-items-center overflow-hidden rounded-2xl border border-border-strong bg-surface-2 text-2xl font-semibold text-ink"
+          class="grid size-24 place-items-center overflow-clip rounded-2xl border border-border-strong bg-surface-2 text-2xl font-semibold text-ink"
         >
           @if (profile()?.logo; as logo) {
           <img
@@ -35,6 +49,7 @@
         <input
           #logoInput
           class="sr-only"
+          tabindex="-1"
           type="file"
           accept="image/png,image/jpeg,image/webp"
           [attr.aria-label]="t('organization.profile.uploadLogo')"
@@ -49,16 +64,19 @@
           [label]="isUploadingLogo() ? t('organization.profile.uploadingLogo') : t('organization.profile.uploadLogo')"
           [disabled]="isUploadingLogo()"
           (onClick)="logoInput.click()"
+          styleClass="min-h-10 [@media(pointer:coarse)]:min-h-11"
         />
       </div>
 
-      <div class="grid gap-3">
+      <div class="grid min-w-0 flex-1 basis-64 gap-3">
         <div class="grid gap-1.5 text-sm font-medium text-ink">
           <span id="organization-name-label">{{ t('organization.profile.nameLabel') }}</span>
           <input
             pInputText
+            class="min-h-10 [@media(pointer:coarse)]:min-h-11"
             type="text"
             autocomplete="organization"
+            maxlength="120"
             aria-labelledby="organization-name-label"
             [formField]="profileForm.name"
           />
@@ -67,12 +85,16 @@
       </div>
     </div>
     @if (errorMessageKey(); as messageKey) {
-    <p class="m-0 rounded-xl border border-red-400 bg-surface-2 px-3 py-2 text-sm text-ink-muted">
+    <p
+      class="m-0 rounded-xl border border-failure-border bg-failure px-3 py-2 text-sm text-failure-ink"
+      role="alert"
+    >
       {{ t(messageKey) }}
     </p>
     } @if (successMessageKey(); as messageKey) {
     <p
-      class="m-0 rounded-xl border border-green-500/40 bg-surface-2 px-3 py-2 text-sm text-ink-muted"
+      class="m-0 rounded-xl border border-border-strong bg-surface-2 px-3 py-2 text-sm text-ink-muted"
+      role="status"
     >
       {{ t(messageKey) }}
     </p>
@@ -84,31 +106,32 @@
         [label]="t('organization.profile.save')"
         [loading]="isSaving()"
         [disabled]="!hasNameChanges() || profileForm().invalid() || isSaving()"
+        styleClass="min-h-10 [@media(pointer:coarse)]:min-h-11"
       />
     </div>
   </form>
 
-  <div class="grid gap-4 rounded-2xl border border-red-500/40 bg-surface-1 p-5">
+  <div class="grid gap-4 rounded-2xl border border-failure-border bg-surface-1 p-6">
     <div>
-      <h2 class="m-0 text-lg font-semibold text-ink">
+      <h2 class="m-0 text-base font-semibold tracking-[-0.3px] text-ink">
         {{ t('organization.profile.danger.title') }}
       </h2>
       @if (!profile()?.deletionAvailable) {
-      <p class="m-0 mt-1 text-sm text-ink-subtle">
+      <p class="m-0 mbs-1 text-sm text-ink-muted">
         {{ t('organization.profile.danger.selfHostedUnavailable') }}
       </p>
       } @else if (!profile()?.canDelete) {
-      <p class="m-0 mt-1 text-sm text-ink-subtle">
+      <p class="m-0 mbs-1 text-sm text-ink-muted">
         {{ t('organization.profile.danger.ownerOnly') }}
       </p>
       } @else {
-      <p class="m-0 mt-1 text-sm text-ink-subtle">
+      <p class="m-0 mbs-1 text-sm text-ink-muted">
         {{ t('organization.profile.danger.description') }}
       </p>
       }
     </div>
     @if (profile()?.canDelete && profile()?.deletionAvailable) {
-    <div class="grid gap-3">
+    <div class="grid min-w-0 flex-1 basis-64 gap-3">
       <p class="m-0 text-sm text-ink-muted">{{ t('organization.profile.danger.consequences') }}</p>
       <div class="grid gap-1.5 text-sm font-medium text-ink">
         <span id="delete-confirmation-name-label"
@@ -117,6 +140,7 @@
         >
         <input
           pInputText
+          class="min-h-10 [@media(pointer:coarse)]:min-h-11"
           type="text"
           autocomplete="off"
           aria-labelledby="delete-confirmation-name-label"
@@ -127,9 +151,11 @@
         <p-button
           [label]="t('organization.profile.danger.delete')"
           severity="danger"
+          [outlined]="true"
           [loading]="isDeleting()"
           [disabled]="!canSubmitDelete() || isDeleting()"
           (onClick)="deleteOrganization()"
+          styleClass="min-h-10 [@media(pointer:coarse)]:min-h-11"
         />
       </div>
     </div>
