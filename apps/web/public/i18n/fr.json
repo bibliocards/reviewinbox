@@ -13,7 +13,12 @@
       "replySettings": "Paramètres de reply",
       "analysis": "Analyse",
       "catalogue": "Catalogue de sujets",
-      "viewUsage": "Voir l’usage et les limites"
+      "viewUsage": "Voir l’usage et les limites",
+      "openInbox": "Ouvrir le Reply Inbox",
+      "manageConnection": "Gérer la connexion",
+      "more": "Autres actions pour {{name}}",
+      "replySettingsAndContext": "Paramètres de reply & Reply Context",
+      "addAnother": "Ajouter une autre App"
     },
     "stores": { "apple": "Apple App Store", "google": "Google Play" },
     "list": {
@@ -33,8 +38,7 @@
         "title": "Aucune App connectée pour le moment",
         "description": "Créez votre première App maintenant. Les Store Connections peuvent être ajoutées dans le même flux."
       },
-      "table": { "app": "App", "created": "Créée", "actions": "Actions" },
-      "status": { "configured": "Configurée", "missing": "Manquante" },
+      "status": { "configured": "Connectée", "missing": "Non connectée", "disabled": "Désactivée" },
       "sync": {
         "action": "Synchroniser",
         "succeeded": "Sync terminée : {{fetchedCount}} Reviews récupérées, {{storedCount}} stockées.",
@@ -58,6 +62,13 @@
           "monthlyReviewImportCapReached": "La limite mensuelle d’import de Reviews est atteinte.",
           "storeConnectionDisabled": "Cette Store Connection est désactivée.",
           "unsupportedStoreProvider": "Cette Store Connection ne supporte pas cette sync."
+        },
+        "status": {
+          "pending": "En attente",
+          "running": "En cours",
+          "succeeded": "Réussi",
+          "partial": "Partiel",
+          "failed": "Échoué"
         }
       },
       "replyDrafts": {
@@ -70,7 +81,16 @@
       "errors": {
         "loadFailed": "Impossible de charger les Apps pour le moment.",
         "deleteFailed": "Impossible de supprimer cette App pour le moment."
-      }
+      },
+      "created": "Créée {{date}}",
+      "replyLanguage": "Reply Language Policy · défaut : {{language}}",
+      "reviewLanguages": "langue de la Review pour {{languages}}",
+      "lastSyncRun": "Dernier Sync Run",
+      "noSyncRun": "Aucun Sync Run pour le moment",
+      "storeCredential": "Store Credential",
+      "credentialEncrypted": "•••• chiffré",
+      "credentialMissing": "Non enregistré",
+      "appUsage": "Apps utilisées : {{used}} / {{limit}}"
     },
     "replySettings": {
       "saved": "Les paramètres de reply de {{name}} sont enregistrés.",

@@ -99,7 +99,9 @@ export class ReplyInboxPageComponent {
   private readonly transloco = inject(TranslocoService)
   private readonly appIcons = inject(AppIconsService)
 
-  protected readonly selectedAppId = signal<string>('')
+  protected readonly selectedAppId = linkedSignal(
+    () => z.uuid().safeParse(this.queryParams().get('appId')).data ?? '',
+  )
   protected readonly selectedFilter = signal<ReplyInboxFilter>('actionable')
   protected readonly activeReviewId = signal<string | null>(null)
   protected readonly pendingActionKey = signal<string | null>(null)

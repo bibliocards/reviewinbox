@@ -111,6 +111,23 @@ export const syncRunResponseSchema = z.object({
 })
 export type SyncRunResponse = z.infer<typeof syncRunResponseSchema>
 
+export const lastSyncRunSummarySchema = z.object({
+  id: z.uuid(),
+  status: syncRunStatusSchema,
+  startedAt: z.iso.datetime().nullable(),
+  finishedAt: z.iso.datetime().nullable(),
+  createdAt: z.iso.datetime(),
+  fetchedCount: z.number().int().min(0),
+  storedCount: z.number().int().min(0),
+  errorCode: z.string().min(1).nullable(),
+})
+export type LastSyncRunSummary = z.infer<typeof lastSyncRunSummarySchema>
+
+export const appListStoreConnectionResponseSchema = storeConnectionResponseSchema.extend({
+  lastSyncRun: lastSyncRunSummarySchema.nullable(),
+})
+export type AppListStoreConnectionResponse = z.infer<typeof appListStoreConnectionResponseSchema>
+
 export const normalizedReviewSchema = z.object({
   externalReviewId: z.string().min(1),
   authorDisplayName: z.string().min(1).nullable().optional(),

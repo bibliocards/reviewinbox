@@ -1,6 +1,11 @@
 import { z } from 'zod'
 
-import { initialSyncResponseSchema, storeConnectionResponseSchema } from './store'
+import { replyLanguagePolicySchema } from './reply-settings'
+import {
+  appListStoreConnectionResponseSchema,
+  initialSyncResponseSchema,
+  storeConnectionResponseSchema,
+} from './store'
 
 export const appResponseSchema = z.object({
   id: z.uuid(),
@@ -12,7 +17,8 @@ export const appResponseSchema = z.object({
 export type AppResponse = z.infer<typeof appResponseSchema>
 
 export const appListItemResponseSchema = appResponseSchema.extend({
-  storeConnections: z.array(storeConnectionResponseSchema),
+  replyLanguagePolicy: replyLanguagePolicySchema,
+  storeConnections: z.array(appListStoreConnectionResponseSchema),
 })
 export type AppListItemResponse = z.infer<typeof appListItemResponseSchema>
 

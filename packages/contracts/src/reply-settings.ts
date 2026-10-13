@@ -6,11 +6,18 @@ export const maxMappedLanguages = 50
 
 const languageTagSchema = z.string().trim().min(1).max(maxLanguageTagLength)
 
+export const replyLanguagePolicySchema = z
+  .object({
+    defaultLanguage: languageTagSchema,
+    mappedLanguages: z.array(languageTagSchema).max(maxMappedLanguages),
+  })
+  .strict()
+export type ReplyLanguagePolicy = z.infer<typeof replyLanguagePolicySchema>
+
 export const updateReplySettingsRequestSchema = z
   .object({
     replyContext: z.string().trim().max(maxReplyContextLength),
-    defaultLanguage: languageTagSchema,
-    mappedLanguages: z.array(languageTagSchema).max(maxMappedLanguages),
+    ...replyLanguagePolicySchema.shape,
   })
   .strict()
 export type UpdateReplySettingsRequest = z.infer<typeof updateReplySettingsRequestSchema>

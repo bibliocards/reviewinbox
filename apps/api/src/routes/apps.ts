@@ -23,13 +23,14 @@ import {
   organization as organizationTable,
   storeConnections,
   storeCredentials,
+  syncRuns,
 } from '@reviewinbox/db'
 import { selectMissingReplyDraftReviews } from '@reviewinbox/reply-drafts'
 import {
   verifyAppleStoreCredentialForApp,
   verifyGooglePlayStoreCredentialForApp,
 } from '@reviewinbox/sync'
-import { and, count, eq } from 'drizzle-orm'
+import { and, count, desc as orderDesc, eq } from 'drizzle-orm'
 import type { Context } from 'hono'
 import { Hono } from 'hono'
 import { z } from 'zod'
@@ -79,26 +80,48 @@ const defaultAppUpdateRouteDependencies: AppUpdateRouteDependencies = {
 
 export const appsRoutes = new Hono()
 
-appsRoutes.get('/api/apps', async (context) => {
-  const sessionResult = await requireActiveOrganizationSession(context)
+export type AppListRouteDependencies = {
+  database: Pick<typeof database, 'select' | 'selectDistinctOn'>
+  requireSession: typeof requireActiveOrganizationSession
+}
+
+const defaultAppListRouteDependencies: AppListRouteDependencies = {
+  database,
+  requireSession: requireActiveOrganizationSession,
+}
+
+export function createAppsListRoutes(
+  dependencies: AppListRouteDependencies = defaultAppListRouteDependencies,
+): Hono {
+  const routes = new Hono()
+  routes.get('/api/apps', (context) => listApps(context, dependencies))
+  return routes
+}
+
+async function listApps(context: Context, dependencies: AppListRouteDependencies) {
+  const sessionResult = await dependencies.requireSession(context)
   if (!sessionResult.ok) {
     return sessionResult.response
   }
 
-  const rows = await database.query.apps.findMany({
-    where: eq(apps.organizationId, sessionResult.session.organizationId),
-    orderBy: (table, { desc }) => [desc(table.createdAt)],
-  })
-  const connectionRows = await database
-    .select({ connection: storeConnections, credential: credentialMetadataSelection })
-    .from(storeConnections)
-    .leftJoin(storeCredentials, eq(storeCredentials.storeConnectionId, storeConnections.id))
-    .where(eq(storeConnections.organizationId, sessionResult.session.organizationId))
+  const rows = await createOrganizationAppsQuery(
+    dependencies.database,
+    sessionResult.session.organizationId,
+  )
+  const connectionRows = await createAppListStoreConnectionsQuery(
+    dependencies.database,
+    sessionResult.session.organizationId,
+  )
 
-  const connectionsByAppId = new Map<string, ReturnType<typeof toStoreConnectionResponse>[]>()
+  const connectionsByAppId = new Map<
+    string,
+    ReturnType<typeof toAppListStoreConnectionResponse>[]
+  >()
   for (const row of connectionRows) {
     const appConnections = connectionsByAppId.get(row.connection.appId) ?? []
-    appConnections.push(toStoreConnectionResponse(row.connection, row.credential))
+    appConnections.push(
+      toAppListStoreConnectionResponse(row.connection, row.credential, row.lastSyncRun),
+    )
     connectionsByAppId.set(row.connection.appId, appConnections)
   }
 
@@ -107,7 +130,52 @@ appsRoutes.get('/api/apps', async (context) => {
       apps: rows.map((app) => toAppListItemResponse(app, connectionsByAppId.get(app.id) ?? [])),
     }),
   )
-})
+}
+
+export function createOrganizationAppsQuery(
+  databaseClient: Pick<typeof database, 'select'>,
+  organizationId: string,
+) {
+  return databaseClient
+    .select()
+    .from(apps)
+    .where(eq(apps.organizationId, organizationId))
+    .orderBy(orderDesc(apps.createdAt))
+}
+
+export function createAppListStoreConnectionsQuery(
+  databaseClient: Pick<typeof database, 'selectDistinctOn'>,
+  organizationId: string,
+) {
+  return databaseClient
+    .selectDistinctOn([storeConnections.id], {
+      connection: storeConnections,
+      credential: credentialMetadataSelection,
+      lastSyncRun: {
+        id: syncRuns.id,
+        status: syncRuns.status,
+        startedAt: syncRuns.startedAt,
+        finishedAt: syncRuns.finishedAt,
+        createdAt: syncRuns.createdAt,
+        fetchedCount: syncRuns.fetchedCount,
+        storedCount: syncRuns.storedCount,
+        errorCode: syncRuns.errorCode,
+      },
+    })
+    .from(storeConnections)
+    .leftJoin(storeCredentials, eq(storeCredentials.storeConnectionId, storeConnections.id))
+    .leftJoin(
+      syncRuns,
+      and(
+        eq(syncRuns.storeConnectionId, storeConnections.id),
+        eq(syncRuns.organizationId, organizationId),
+      ),
+    )
+    .where(eq(storeConnections.organizationId, organizationId))
+    .orderBy(storeConnections.id, orderDesc(syncRuns.createdAt), orderDesc(syncRuns.id))
+}
+
+appsRoutes.get('/api/apps', (context) => listApps(context, defaultAppListRouteDependencies))
 
 appsRoutes.post('/api/apps', async (context) => {
   const sessionResult = await requireActiveOrganizationOwnerSession(context)
@@ -1012,9 +1080,15 @@ function toAppResponse(app: AppRow) {
 
 function toAppListItemResponse(
   app: AppRow,
-  connections: ReturnType<typeof toStoreConnectionResponse>[],
+  connections: ReturnType<typeof toAppListStoreConnectionResponse>[],
 ) {
-  return Object.assign(toAppResponse(app), { storeConnections: connections })
+  return Object.assign(toAppResponse(app), {
+    replyLanguagePolicy: {
+      defaultLanguage: app.defaultLanguage,
+      mappedLanguages: app.mappedLanguages,
+    },
+    storeConnections: connections,
+  })
 }
 
 function toStoreConnectionResponse(
@@ -1037,6 +1111,49 @@ function toStoreConnectionResponse(
       keyId: credential?.keyId ?? null,
     },
   }
+}
+
+function toAppListStoreConnectionResponse(
+  connection: StoreConnectionRow,
+  credential: StoreCredentialMetadataRow,
+  lastSyncRun: {
+    id: string | null
+    status: (typeof syncRuns.$inferSelect)['status'] | null
+    startedAt: Date | null
+    finishedAt: Date | null
+    createdAt: Date | null
+    fetchedCount: number | null
+    storedCount: number | null
+    errorCode: string | null
+  } | null,
+) {
+  return {
+    ...toStoreConnectionResponse(connection, credential),
+    lastSyncRun: toSyncRunSummary(lastSyncRun),
+  }
+}
+
+function toSyncRunSummary(run: Parameters<typeof toAppListStoreConnectionResponse>[2]) {
+  if (run === null || run.id === null) {
+    return null
+  }
+  return {
+    id: run.id,
+    status: requireSyncRunValue(run.status),
+    startedAt: run.startedAt?.toISOString() ?? null,
+    finishedAt: run.finishedAt?.toISOString() ?? null,
+    createdAt: requireSyncRunValue(run.createdAt).toISOString(),
+    fetchedCount: requireSyncRunValue(run.fetchedCount),
+    storedCount: requireSyncRunValue(run.storedCount),
+    errorCode: run.errorCode,
+  }
+}
+
+function requireSyncRunValue<T>(value: T | null): T {
+  if (value === null) {
+    throw new Error('A persisted Sync Run was missing a required field.')
+  }
+  return value
 }
 
 async function canCreateAppForOrganization(organizationId: string) {

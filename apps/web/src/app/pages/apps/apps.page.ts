@@ -5,9 +5,11 @@ import {
   effect,
   HostListener,
   inject,
+  linkedSignal,
   signal,
   ChangeDetectionStrategy,
 } from '@angular/core'
+import { toSignal } from '@angular/core/rxjs-interop'
 import { RouterLink } from '@angular/router'
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
 import type {
@@ -24,15 +26,16 @@ import { syncRunResponseSchema } from '@reviewinbox/contracts'
 import { formatDistanceToNow } from 'date-fns/formatDistanceToNow'
 import { enUS, fr } from 'date-fns/locale'
 import { OrganizationService } from 'ngx-better-auth'
+import type { MenuItem } from 'primeng/api'
 import { ButtonModule } from 'primeng/button'
+import { CardModule } from 'primeng/card'
 import { DialogService, type DynamicDialogConfig } from 'primeng/dynamicdialog'
-import { TableModule } from 'primeng/table'
+import { MenuModule } from 'primeng/menu'
 import { z } from 'zod'
 
 import { badgeClasses } from '../../shared/badge-classes'
 import { ConnectAppDialogComponent } from '../../shared/components/connect-app-dialog/connect-app-dialog.component'
 import { ReplySettingsDialogComponent } from '../../shared/components/reply-settings-dialog/reply-settings-dialog.component'
-import { TypedTemplateDirective } from '../../shared/directives/typed-template.directive'
 import { AppIconsService } from '../../shared/services/app-icons.service'
 import { AppsService } from '../../shared/services/apps.service'
 import { OrganizationProfileService } from '../../shared/services/organization-profile.service'
@@ -53,7 +56,7 @@ const appNavigationState = appNavigationStateSchema.safeParse(history.state).dat
 
 @Component({
   selector: 'ri-apps-page',
-  imports: [ButtonModule, RouterLink, TableModule, TranslocoDirective, TypedTemplateDirective],
+  imports: [ButtonModule, CardModule, MenuModule, RouterLink, TranslocoDirective],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './apps.page.html',
 })
@@ -64,12 +67,40 @@ export class AppsPageComponent {
   private readonly organizationService = inject(OrganizationService)
   private readonly organizationProfile = inject(OrganizationProfileService)
   private readonly appIcons = inject(AppIconsService)
+  private readonly activeLanguage = toSignal(this.transloco.langChanges$, {
+    initialValue: this.transloco.getActiveLang(),
+  })
 
   protected readonly appsResource = this.appsService.appsResource()
   protected readonly organizationUsageResource = this.organizationProfile.usageResource()
-  protected readonly apps = computed(() =>
-    this.appsResource.hasValue() ? this.appsResource.value().apps : [],
-  )
+  protected readonly apps = linkedSignal<
+    { loading: boolean; apps: AppListItemResponse[] },
+    AppListItemResponse[]
+  >({
+    source: () => ({
+      loading: this.appsResource.isLoading(),
+      apps: this.appsResource.hasValue() ? this.appsResource.value().apps : [],
+    }),
+    computation: (current, previous) => (current.loading ? (previous?.value ?? []) : current.apps),
+  })
+  protected readonly stores = [
+    { provider: 'apple_app_store', labelKey: 'apps.stores.apple', icon: 'pi-apple' },
+    { provider: 'google_play', labelKey: 'apps.stores.google', icon: 'pi-google' },
+  ] as const
+  protected readonly cardTokens = {
+    root: { borderRadius: '16px' },
+    body: { padding: '0', gap: '0' },
+  }
+  protected readonly appMenus = computed(() => {
+    this.activeLanguage()
+    return new Map(this.apps().map((app) => [app.id, this.appMenuItems(app)]))
+  })
+  protected readonly appLimit = computed(() => {
+    const usage = this.organizationUsageResource.hasValue()
+      ? this.organizationUsageResource.value()
+      : null
+    return usage?.limitsEnforced === true ? usage.usage.apps.limit : null
+  })
   protected readonly errorMessage = computed(() => this.appsResource.error())
   protected readonly successAppName = signal<string | null>(appNavigationState?.appCreated ?? null)
   protected readonly successMessageKey = signal<string | null>(null)
@@ -113,6 +144,7 @@ export class AppsPageComponent {
 
   @HostListener('window:reviewinbox:active-organization-changed')
   protected reloadForActiveOrganization(): void {
+    this.apps.set([])
     this.successAppName.set(null)
     this.successMessageKey.set(null)
     this.initialSyncStatus.set(null)
@@ -175,6 +207,7 @@ export class AppsPageComponent {
       this.initialSyncStatus.set(null)
       this.successAppName.set(app.name)
       this.successMessageKey.set('apps.replySettings.saved')
+      this.reloadApps()
     })
   }
 
@@ -200,12 +233,8 @@ export class AppsPageComponent {
     })
   }
 
-  protected syncAppleReviews(app: AppListItemResponse): void {
-    this.syncReviews(this.appleStoreConnection(app))
-  }
-
-  protected syncGoogleReviews(app: AppListItemResponse): void {
-    this.syncReviews(this.googleStoreConnection(app))
+  protected syncStoreReviews(app: AppListItemResponse, provider: StoreProvider): void {
+    this.syncReviews(this.storeConnection(app, provider))
   }
 
   protected queueMissingReplyDrafts(app: AppListItemResponse): void {
@@ -257,20 +286,8 @@ export class AppsPageComponent {
     return this.storeConnection(app, provider) !== null
   }
 
-  protected appleStoreConnection(app: AppListItemResponse): StoreConnectionResponse | null {
-    return this.storeConnection(app, 'apple_app_store')
-  }
-
-  protected googleStoreConnection(app: AppListItemResponse): StoreConnectionResponse | null {
-    return this.storeConnection(app, 'google_play')
-  }
-
-  protected isSyncingApple(app: AppListItemResponse): boolean {
-    return this.isSyncingStore(app, 'apple_app_store')
-  }
-
-  protected isSyncingGoogle(app: AppListItemResponse): boolean {
-    return this.isSyncingStore(app, 'google_play')
+  protected connectionForStore(app: AppListItemResponse, provider: StoreProvider) {
+    return app.storeConnections.find((connection) => connection.provider === provider) ?? null
   }
 
   protected canManuallySync(app: AppListItemResponse, provider: StoreProvider): boolean {
@@ -302,15 +319,7 @@ export class AppsPageComponent {
     return status === 'failed' || status === 'partial'
   }
 
-  protected syncRunForApple(app: AppListItemResponse): SyncRunResponse | null {
-    return this.syncRunForStore(app, 'apple_app_store')
-  }
-
-  protected syncRunForGoogle(app: AppListItemResponse): SyncRunResponse | null {
-    return this.syncRunForStore(app, 'google_play')
-  }
-
-  protected syncRunMessageKey(syncRun: SyncRunResponse): string {
+  protected syncRunMessageKey(syncRun: Pick<SyncRunResponse, 'status' | 'errorCode'>): string {
     if (syncRun.status === 'succeeded') {
       return 'apps.list.sync.succeeded'
     }
@@ -323,6 +332,9 @@ export class AppsPageComponent {
   }
 
   protected storeStatusClass(app: AppListItemResponse, provider: StoreProvider): string {
+    if (this.connectionForStore(app, provider)?.status === 'disabled') {
+      return badgeClasses('ignored')
+    }
     return badgeClasses(this.isStoreConfigured(app, provider) ? 'connected' : 'metadata')
   }
 
@@ -330,6 +342,13 @@ export class AppsPageComponent {
     const activeLang = this.transloco.getActiveLang()
     const distance = formatDistanceToNow(createdAt, { locale: activeLang === 'fr' ? fr : enUS })
     return this.transloco.translate('apps.list.createdAgo', { distance })
+  }
+
+  protected syncRunDate(date: string): string {
+    return new Intl.DateTimeFormat(this.transloco.getActiveLang(), {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(date))
   }
 
   protected appIconUrl(app: AppListItemResponse): string | null {
@@ -360,12 +379,12 @@ export class AppsPageComponent {
     )
   }
 
-  private isSyncingStore(app: AppListItemResponse, provider: StoreProvider): boolean {
+  protected isSyncingStore(app: AppListItemResponse, provider: StoreProvider): boolean {
     const connection = this.storeConnection(app, provider)
     return connection !== null && this.syncingStoreConnectionId() === connection.id
   }
 
-  private syncRunForStore(
+  protected syncRunForStore(
     app: AppListItemResponse,
     provider: StoreProvider,
   ): SyncRunResponse | null {
@@ -410,6 +429,26 @@ export class AppsPageComponent {
       [syncRun.storeConnectionId]: syncRun,
     }))
     this.syncingStoreConnectionId.set(null)
+    this.reloadApps()
+  }
+
+  private appMenuItems(app: AppListItemResponse): MenuItem[] {
+    return [
+      {
+        label: this.transloco.translate('apps.actions.edit'),
+        icon: 'pi pi-pencil',
+        command: () => {
+          this.openEditAppDialog(app)
+        },
+      },
+      {
+        label: this.transloco.translate('apps.actions.delete'),
+        icon: 'pi pi-trash',
+        command: () => {
+          this.deleteApp(app)
+        },
+      },
+    ]
   }
 
   private setReplyDraftQueueMessage(appId: string, message: ReplyDraftQueueMessage): void {
