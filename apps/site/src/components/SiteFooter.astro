@@ -11,7 +11,7 @@ const links = [
   <div class="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-x-8 gap-y-4 px-6 py-10 text-[13px] text-site-subtle">
     <span>ReviewInbox — open-source reply inbox for app store reviews.</span>
     <nav aria-label="Footer navigation" class="flex flex-wrap gap-x-5">
-      {links.map((link) => <a href={link.href} class="inline-flex min-h-11 items-center text-site-muted active:text-site-ink [@media(hover:hover)_and_(pointer:fine)]:hover:text-site-ink">{link.label}</a>)}
+      {links.map((link) => <a href={link.href} target={link.label === 'GitHub' ? '_blank' : undefined} rel={link.label === 'GitHub' ? 'noopener noreferrer' : undefined} class="inline-flex min-h-11 items-center text-site-muted active:text-site-ink [@media(hover:hover)_and_(pointer:fine)]:hover:text-site-ink">{link.label}</a>)}
     </nav>
   </div>
 </footer>

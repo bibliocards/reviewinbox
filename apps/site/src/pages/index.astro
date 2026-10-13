@@ -1,5 +1,6 @@
 ---
 import SiteHeader from '../components/SiteHeader.astro'
+import SiteIcons from '../components/SiteIcons.astro'
 import SiteFooter from '../components/SiteFooter.astro'
 
 import { cloudPlans } from '../lib/pricing'
@@ -35,10 +36,7 @@ const pageKeywords = [
     <meta name="keywords" content={pageKeywords.join(', ')} />
     <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#08090B" />
-    <link rel="icon" href="/favicon.png" type="image/png" />
-    <link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png" />
-    <link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <SiteIcons />
     <link rel="canonical" href={siteUrl} />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={siteUrl} />
@@ -95,7 +93,7 @@ const pageKeywords = [
         </div>
       </section>
 
-      <section id="product" class="max-w-300 mx-auto pbs-0 px-6 pbe-28">
+      <section id="product" class="scroll-mbs-6 max-w-300 mx-auto pbs-0 px-6 pbe-28">
         <div class="border border-site-border rounded-xl bg-site-panel shadow-site-panel overflow-clip">
           <div class="flex items-center gap-2 py-3 px-4 border-be border-site-hairline text-[12px] text-site-subtle font-site-mono">
             <span class="w-[10px] h-[10px] rounded-full bg-site-window-dot"></span><span class="w-[10px] h-[10px] rounded-full bg-site-window-dot"></span><span class="w-[10px] h-[10px] rounded-full bg-site-window-dot"></span>
@@ -181,28 +179,30 @@ const pageKeywords = [
         </div>
       </section>
 
-      <section id="analysis" class="max-w-300 mx-auto py-28 px-6 flex flex-wrap gap-14 items-center">
-        <div class="min-w-0 flex-[1_1_380px] flex flex-col gap-[18px]">
-          <span class="text-[13px] font-medium tracking-[0.04em] text-site-primary-text">Review analysis</span>
-          <h2 class="m-0 text-[length:clamp(32px,_4vw,_48px)] leading-[1.1] tracking-[-0.035em] font-semibold">Turn a queue of Reviews into a product signal.</h2>
-          <p class="m-0 text-site-muted text-[17px]">Jev classifies every Review by topic, intent and reported severity. Luna proposes missing topics. Your team approves the catalogue — then drills from any chart segment to the Reviews behind it.</p>
-          <a href="/docs/review-analysis/" class="text-[15px] font-medium text-site-link inline-flex items-center min-h-11 active:brightness-90 [@media(hover:hover)_and_(pointer:fine)]:hover:brightness-125">Read how analysis works →</a>
-        </div>
-        <div class="min-w-0 flex-[1_1_480px] border border-site-border rounded-xl bg-site-panel p-6 flex flex-col gap-[18px] shadow-site-panel">
-          <div class="flex justify-between items-baseline flex-wrap gap-2">
-            <span class="font-semibold">Top topics · illustrative preview</span>
-            <span class="text-[12px] text-site-subtle font-site-mono">by reported severity</span>
+      <section class="max-w-300 mx-auto py-28 px-6">
+        <div id="analysis" class="scroll-mbs-6 flex flex-wrap gap-14 items-center">
+          <div class="min-w-0 flex-[1_1_380px] flex flex-col gap-[18px]">
+            <span class="text-[13px] font-medium tracking-[0.04em] text-site-primary-text">Review analysis</span>
+            <h2 class="m-0 text-[length:clamp(32px,_4vw,_48px)] leading-[1.1] tracking-[-0.035em] font-semibold">Turn a queue of Reviews into a product signal.</h2>
+            <p class="m-0 text-site-muted text-[17px]">Jev classifies every Review by topic, intent and reported severity. Luna proposes missing topics. Your team approves the catalogue — then drills from any chart segment to the Reviews behind it.</p>
+            <a href="/docs/review-analysis/" class="text-[15px] font-medium text-site-link inline-flex items-center min-h-11 active:brightness-90 [@media(hover:hover)_and_(pointer:fine)]:hover:brightness-125">Read how analysis works →</a>
           </div>
-          <div class="flex flex-col gap-[14px]">
-            <div class="flex flex-col gap-[6px]"><div class="flex justify-between text-[14px]"><span>Sync</span></div><div class="h-[10px] rounded-xs bg-site-track flex overflow-clip"><span class="w-[52%] bg-site-severity-high"></span><span class="w-[26%] bg-site-severity-medium"></span><span class="w-[8%] bg-site-severity-low"></span></div></div>
-            <div class="flex flex-col gap-[6px]"><div class="flex justify-between text-[14px]"><span>Dark mode</span></div><div class="h-[10px] rounded-xs bg-site-track flex overflow-clip"><span class="w-[6%] bg-site-severity-high"></span><span class="w-[18%] bg-site-severity-medium"></span><span class="w-[40%] bg-site-severity-low"></span></div></div>
-            <div class="flex flex-col gap-[6px]"><div class="flex justify-between text-[14px]"><span>Subscription price</span></div><div class="h-[10px] rounded-xs bg-site-track flex overflow-clip"><span class="w-[10%] bg-site-severity-high"></span><span class="w-[22%] bg-site-severity-medium"></span><span class="w-[14%] bg-site-severity-low"></span></div></div>
-            <div class="flex flex-col gap-[6px]"><div class="flex justify-between text-[14px]"><span>Onboarding <span class="text-[11px] text-site-subtle border border-dashed border-site-severity-low rounded-xs py-0 px-[5px] ms-[6px]">pending</span></span></div><div class="h-[10px] rounded-xs bg-site-track flex overflow-clip opacity-60"><span class="w-[4%] bg-site-severity-high"></span><span class="w-[10%] bg-site-severity-medium"></span><span class="w-[16%] bg-site-severity-low"></span></div></div>
-          </div>
-          <div class="flex gap-4 text-[12px] text-site-muted flex-wrap">
-            <span class="flex items-center gap-[6px]"><span class="w-2 h-2 rounded-[2px] bg-site-severity-high"></span>High</span>
-            <span class="flex items-center gap-[6px]"><span class="w-2 h-2 rounded-[2px] bg-site-severity-medium"></span>Medium</span>
-            <span class="flex items-center gap-[6px]"><span class="w-2 h-2 rounded-[2px] bg-site-severity-low"></span>Low</span>
+          <div class="min-w-0 flex-[1_1_480px] border border-site-border rounded-xl bg-site-panel p-6 flex flex-col gap-[18px] shadow-site-panel">
+            <div class="flex justify-between items-baseline flex-wrap gap-2">
+              <span class="font-semibold">Top topics · illustrative preview</span>
+              <span class="text-[12px] text-site-subtle font-site-mono">by reported severity</span>
+            </div>
+            <div class="flex flex-col gap-[14px]">
+              <div class="flex flex-col gap-[6px]"><div class="flex justify-between text-[14px]"><span>Sync</span></div><div class="h-[10px] rounded-xs bg-site-track flex overflow-clip"><span class="w-[52%] bg-site-severity-high"></span><span class="w-[26%] bg-site-severity-medium"></span><span class="w-[8%] bg-site-severity-low"></span></div></div>
+              <div class="flex flex-col gap-[6px]"><div class="flex justify-between text-[14px]"><span>Dark mode</span></div><div class="h-[10px] rounded-xs bg-site-track flex overflow-clip"><span class="w-[6%] bg-site-severity-high"></span><span class="w-[18%] bg-site-severity-medium"></span><span class="w-[40%] bg-site-severity-low"></span></div></div>
+              <div class="flex flex-col gap-[6px]"><div class="flex justify-between text-[14px]"><span>Subscription price</span></div><div class="h-[10px] rounded-xs bg-site-track flex overflow-clip"><span class="w-[10%] bg-site-severity-high"></span><span class="w-[22%] bg-site-severity-medium"></span><span class="w-[14%] bg-site-severity-low"></span></div></div>
+              <div class="flex flex-col gap-[6px]"><div class="flex justify-between text-[14px]"><span>Onboarding <span class="text-[11px] text-site-subtle border border-dashed border-site-severity-low rounded-xs py-0 px-[5px] ms-[6px]">pending</span></span></div><div class="h-[10px] rounded-xs bg-site-track flex overflow-clip opacity-60"><span class="w-[4%] bg-site-severity-high"></span><span class="w-[10%] bg-site-severity-medium"></span><span class="w-[16%] bg-site-severity-low"></span></div></div>
+            </div>
+            <div class="flex gap-4 text-[12px] text-site-muted flex-wrap">
+              <span class="flex items-center gap-[6px]"><span class="w-2 h-2 rounded-[2px] bg-site-severity-high"></span>High</span>
+              <span class="flex items-center gap-[6px]"><span class="w-2 h-2 rounded-[2px] bg-site-severity-medium"></span>Medium</span>
+              <span class="flex items-center gap-[6px]"><span class="w-2 h-2 rounded-[2px] bg-site-severity-low"></span>Low</span>
+            </div>
           </div>
         </div>
       </section>
@@ -290,7 +290,7 @@ const pageKeywords = [
           </div>
           <div class="flex flex-wrap gap-3">
             <a href={signUpUrl} class="bg-site-primary text-white no-underline font-medium py-[13px] px-5 rounded-md text-[15px] inline-flex items-center min-h-11 active:brightness-90 [@media(hover:hover)_and_(pointer:fine)]:hover:bg-site-primary/90">Start free</a>
-            <a href="https://github.com/bibliocards/reviewinbox" class="border border-site-border-strong text-site-ink no-underline font-medium py-[13px] px-5 rounded-md text-[15px] inline-flex items-center min-h-11 active:brightness-90 [@media(hover:hover)_and_(pointer:fine)]:hover:brightness-125">View on GitHub</a>
+            <a href="https://github.com/bibliocards/reviewinbox" target="_blank" rel="noopener noreferrer" class="border border-site-border-strong text-site-ink no-underline font-medium py-[13px] px-5 rounded-md text-[15px] inline-flex items-center min-h-11 active:brightness-90 [@media(hover:hover)_and_(pointer:fine)]:hover:brightness-125">View on GitHub</a>
           </div>
         </div>
       </section>

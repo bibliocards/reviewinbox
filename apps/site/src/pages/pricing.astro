@@ -1,5 +1,6 @@
 ---
 import SiteHeader from '../components/SiteHeader.astro'
+import SiteIcons from '../components/SiteIcons.astro'
 import SiteFooter from '../components/SiteFooter.astro'
 
 import { cloudPlans, comparisonRows } from '../lib/pricing'
@@ -24,7 +25,7 @@ const pageDescription = 'ReviewInbox pricing plans for Cloud and self-hosted dep
     <meta name="description" content={pageDescription} />
     <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#08090B" />
-    <link rel="icon" href="/favicon.png" type="image/png" />
+    <SiteIcons />
     <link rel="canonical" href={siteUrl} />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={siteUrl} />
@@ -81,7 +82,7 @@ const pageDescription = 'ReviewInbox pricing plans for Cloud and self-hosted dep
           </div>
           <div class="flex flex-wrap gap-[10px]">
             <a href="/docs/self-hosting/" class="border border-site-border-strong text-site-ink no-underline font-medium py-3 px-4 rounded-md text-[14px] inline-flex items-center min-h-11 active:brightness-90 [@media(hover:hover)_and_(pointer:fine)]:hover:brightness-125">Self-hosting guide</a>
-            <a href="https://github.com/bibliocards/reviewinbox" class="border border-site-border-strong text-site-ink no-underline font-medium py-3 px-4 rounded-md text-[14px] inline-flex items-center min-h-11 active:brightness-90 [@media(hover:hover)_and_(pointer:fine)]:hover:brightness-125">View on GitHub</a>
+            <a href="https://github.com/bibliocards/reviewinbox" target="_blank" rel="noopener noreferrer" class="border border-site-border-strong text-site-ink no-underline font-medium py-3 px-4 rounded-md text-[14px] inline-flex items-center min-h-11 active:brightness-90 [@media(hover:hover)_and_(pointer:fine)]:hover:brightness-125">View on GitHub</a>
           </div>
         </div>
       </section>

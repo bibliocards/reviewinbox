@@ -61,6 +61,10 @@ pnpm nx run-many -t serve -p api web
 
 Open `http://localhost:4200`. The Angular dev server proxies `/api` paths, including `/api/auth`, to Hono on `http://127.0.0.1:3000`.
 
+## App Icon
+
+The shared brand icon source is `apps/site/public/icon.svg`. After editing it, run `pnpm icons:generate` to regenerate the SVG copies, PNG favicons, Apple touch icon, and installable app icons in both public directories. Maskable and Apple touch exports use an opaque background so the platform can crop the icon.
+
 ## Checks
 
 Before committing, run:

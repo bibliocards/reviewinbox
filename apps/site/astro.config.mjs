@@ -8,9 +8,14 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'ReviewInbox',
-      logo: { src: './public/icons/icon-192x192.png', alt: 'ReviewInbox app icon' },
+      logo: { src: './public/icon.svg', alt: 'ReviewInbox app icon' },
+      favicon: '/favicon.svg',
       customCss: ['./src/styles.css'],
       head: [
+        {
+          tag: 'link',
+          attrs: { rel: 'apple-touch-icon', href: '/apple-touch-icon.png', sizes: '180x180' },
+        },
         {
           tag: 'meta',
           attrs: {
