@@ -5,6 +5,7 @@ import { defineConfig } from 'vitest/config'
 const fromRoot = (path: string) => resolve(process.cwd(), path)
 
 export default defineConfig({
+  oxc: { decorator: { legacy: true } },
   test: {
     environment: 'node',
     include: [

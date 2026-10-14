@@ -67,7 +67,7 @@
   >
     @for (item of usageItems(); track item.key) {
     <article
-      class="grid content-start gap-2.5 rounded-xl border px-5 py-4"
+      class="grid min-w-0 grid-cols-1 content-start gap-2.5 rounded-xl border px-5 py-4 wrap-break-word"
       [class.border-border]="item.usage.severity !== 'warning' && item.usage.severity !== 'danger'"
       [class.bg-surface-1]="item.usage.severity !== 'warning' && item.usage.severity !== 'danger'"
       [class.border-warning-border]="item.usage.severity === 'warning'"
@@ -89,6 +89,7 @@
       </p>
       @if (item.usage.percent !== null) {
       <p-progressbar
+        class="block min-w-0 w-full"
         [value]="item.usage.percent"
         [showValue]="false"
         [dt]="meterTokens(item.usage)"

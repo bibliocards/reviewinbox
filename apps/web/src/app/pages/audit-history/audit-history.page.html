@@ -94,7 +94,7 @@
       [first]="first()"
       [totalRecords]="total()"
       [loading]="auditResource.isLoading()"
-      [tableStyle]="{ 'min-inline-size': '820px', 'table-layout': 'fixed' }"
+      [tableStyle]="{ 'inline-size': '100%', 'min-inline-size': '820px', 'table-layout': 'fixed' }"
       [dt]="tableTokens"
       (onLazyLoad)="onPage($event)"
     >
@@ -119,7 +119,11 @@
       </ng-template>
       <ng-template #groupheader [typedTemplate]="events()" let-event>
         <tr>
-          <th scope="rowgroup" colspan="5" class="bg-sunken text-xs font-medium text-ink-subtle">
+          <th
+            scope="rowgroup"
+            colspan="5"
+            class="bg-sunken px-5 py-2 text-start text-xs font-medium text-ink-subtle"
+          >
             <time [attr.datetime]="event.day">{{ dayLabel(event.createdAt) }}</time>
           </th>
         </tr>
@@ -160,7 +164,7 @@
               >
                 <span>{{ reviewLabel(event) }}</span>
                 @if (event.reviewBody) {
-                <span class="block truncate text-[13px] text-ink-subtle"
+                <span class="line-clamp-2 text-[13px] text-ink-subtle wrap-anywhere"
                   >{{ event.reviewBody }}</span
                 >
                 }

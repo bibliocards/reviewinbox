@@ -7,6 +7,9 @@ export class TranslocoHttpLoader implements TranslocoLoader {
   private http = inject(HttpClient)
 
   getTranslation(lang: string) {
-    return this.http.get<Translation>(`/i18n/${lang}.json`)
+    // Revalidate legacy browser cache entries on the first load after deployment.
+    return this.http.get<Translation>(`/i18n/${lang}.json`, {
+      headers: { 'Cache-Control': 'no-cache' },
+    })
   }
 }
