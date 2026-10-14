@@ -53,7 +53,7 @@
       @for (item of navItems(); track item.route) {
         @if (item.visible !== false) {
           <a
-            class="nav-item"
+            class="nav-item focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-linear-primary"
             [routerLink]="item.route"
             routerLinkActive="is-active"
             ariaCurrentWhenActive="page"
@@ -73,7 +73,7 @@
       <div class="mt-2 flex items-center justify-center gap-3">
         @if (isCloud()) {
           <a
-            class="sidebar-link-icon"
+            class="sidebar-link-icon focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-linear-primary"
             href="https://status.reviewinbox.app"
             target="_blank"
             rel="noreferrer"
@@ -84,7 +84,7 @@
           </a>
         }
         <a
-          class="sidebar-link-icon"
+          class="sidebar-link-icon focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-linear-primary"
           href="https://github.com/bibliocards/reviewinbox"
           target="_blank"
           rel="noreferrer"
@@ -94,7 +94,7 @@
           <i class="pi pi-github text-xl" aria-hidden="true"></i>
         </a>
         <a
-          class="sidebar-link-icon"
+          class="sidebar-link-icon focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-linear-primary"
           href="https://reviewinbox.app"
           target="_blank"
           rel="noreferrer"
