@@ -39,22 +39,8 @@ import {
   type ReviewClassificationDialogResult,
 } from './review-classification-dialog.component'
 
-const severities: readonly AnalysisSeverity[] = [
-  'none',
-  'minor',
-  'degraded',
-  'blocking',
-  'critical',
-  'unknown',
-]
-const intents: readonly AnalysisIntent[] = [
-  'report_problem',
-  'request_feature',
-  'request_help',
-  'request_refund',
-  'express_satisfaction',
-  'express_dissatisfaction',
-]
+const severities: readonly AnalysisSeverity[] = [...reportedSeveritySchema.options, 'unknown']
+const intents: readonly AnalysisIntent[] = reviewIntentSchema.options
 const versionCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
 
 @Component({
