@@ -3,6 +3,8 @@ import { FormsModule } from '@angular/forms'
 import { TranslocoDirective } from '@jsverse/transloco'
 import {
   analysisReviewSchema,
+  reportedSeveritySchema,
+  reviewIntentSchema,
   reviewTopicSchema,
   type ReportedSeverity,
 } from '@reviewinbox/contracts'
@@ -48,21 +50,8 @@ export class ReviewClassificationDialogComponent {
   protected readonly topics = this.data.topics.filter(
     (topic) => topic.status !== 'rejected' && topic.mergedIntoId === null,
   )
-  protected readonly severities: ReportedSeverity[] = [
-    'none',
-    'minor',
-    'degraded',
-    'blocking',
-    'critical',
-  ]
-  protected readonly intents: AnalysisIntent[] = [
-    'report_problem',
-    'request_feature',
-    'request_help',
-    'request_refund',
-    'express_satisfaction',
-    'express_dissatisfaction',
-  ]
+  protected readonly severities: ReportedSeverity[] = reportedSeveritySchema.options
+  protected readonly intents: AnalysisIntent[] = reviewIntentSchema.options
   protected severity = this.review.severity ?? null
   protected selectedIntents = [...this.review.intents]
   protected selectedTopicIds = this.review.topics.map((topic) => topic.id)
