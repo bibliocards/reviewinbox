@@ -109,13 +109,22 @@ export function buildAnalysisTrend(
   return { granularity, buckets, max: Math.max(1, ...buckets.map((bucket) => bucket.count)) }
 }
 
+// Keep only the active locale so chart labels reuse ICU setup without an unbounded cache.
+let periodFormatter: { locale: string; formatter: Intl.DateTimeFormat } | undefined
+
 export function trendPeriodLabel(period: TrendPeriod, locale: string): string {
-  const formatter = new Intl.DateTimeFormat(locale, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    timeZone: 'UTC',
-  })
+  if (periodFormatter?.locale !== locale) {
+    periodFormatter = {
+      locale,
+      formatter: new Intl.DateTimeFormat(locale, {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        timeZone: 'UTC',
+      }),
+    }
+  }
+  const { formatter } = periodFormatter
   return period.from === period.to
     ? formatter.format(utcDate(period.from))
     : formatter.formatRange(utcDate(period.from), utcDate(period.to))
