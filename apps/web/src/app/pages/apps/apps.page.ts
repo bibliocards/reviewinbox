@@ -34,6 +34,7 @@ import { z } from 'zod'
 
 import { badgeClasses } from '../../shared/badge-classes'
 import { ConnectAppDialogComponent } from '../../shared/components/connect-app-dialog/connect-app-dialog.component'
+import { initialsFrom } from '../../shared/initials'
 import { AppIconsService } from '../../shared/services/app-icons.service'
 import { AppsService } from '../../shared/services/apps.service'
 import { OrganizationProfileService } from '../../shared/services/organization-profile.service'
@@ -329,15 +330,7 @@ export class AppsPageComponent {
     return this.appIcons.iconUrl(app.id)
   }
 
-  protected initialsFrom(name: string): string {
-    return name
-      .split(' ')
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0])
-      .join('')
-      .toUpperCase()
-  }
+  protected readonly initialsFrom = initialsFrom
 
   private storeConnection(
     app: AppListItemResponse,
