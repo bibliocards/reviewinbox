@@ -38,6 +38,7 @@ import { billingPlanLabels } from '../shared/billing-plan-display'
 import { ConnectAppDialogComponent } from '../shared/components/connect-app-dialog/connect-app-dialog.component'
 import { ThemeToggleComponent } from '../shared/components/theme-toggle/theme-toggle.component'
 import { TypedTemplateDirective } from '../shared/directives/typed-template.directive'
+import { initialsFrom } from '../shared/initials'
 import { AuthCapabilitiesService } from '../shared/services/auth-capabilities.service'
 import { OrganizationProfileService } from '../shared/services/organization-profile.service'
 
@@ -419,15 +420,7 @@ export class AppShellComponent {
     return parsed.success ? parsed.data.activeOrganizationId : undefined
   }
 
-  protected initialsFrom(name: string | undefined): string {
-    return (name ?? '')
-      .split(' ')
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0])
-      .join('')
-      .toUpperCase()
-  }
+  protected readonly initialsFrom = initialsFrom
 
   private nextWindowAfter(firstWindowStartsAt: string, now: Date): Date | null {
     const next = new Date(firstWindowStartsAt)
