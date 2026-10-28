@@ -30,6 +30,7 @@ import {
   type AppSelectOption,
 } from '../../shared/components/app-select/app-select.component'
 import { TypedTemplateDirective } from '../../shared/directives/typed-template.directive'
+import { initialsFrom } from '../../shared/initials'
 import { AppIconsService } from '../../shared/services/app-icons.service'
 import { AppsService } from '../../shared/services/apps.service'
 import { ReplyInboxService } from '../../shared/services/reply-inbox.service'
@@ -179,15 +180,7 @@ export class AuditHistoryPageComponent {
     return this.appIcons.iconUrl(event.appId)
   }
 
-  protected initialsFrom(name: string): string {
-    return name
-      .split(' ')
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0])
-      .join('')
-      .toUpperCase()
-  }
+  protected readonly initialsFrom = initialsFrom
 
   protected readonly actionClass = badgeClasses
 

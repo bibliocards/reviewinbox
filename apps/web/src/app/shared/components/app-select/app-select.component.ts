@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms'
 import { SelectModule } from 'primeng/select'
 
 import { TypedTemplateDirective } from '../../directives/typed-template.directive'
+import { initialsFrom } from '../../initials'
 
 export type AppSelectOption = { label: string; value: string; imageUrl?: string | null }
 
@@ -18,13 +19,5 @@ export class AppSelectComponent {
   readonly ariaLabel = input.required<string>()
   readonly styleClass = input('w-full sm:w-56')
 
-  protected initialsFrom(name: string): string {
-    return name
-      .split(' ')
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0])
-      .join('')
-      .toUpperCase()
-  }
+  protected readonly initialsFrom = initialsFrom
 }
