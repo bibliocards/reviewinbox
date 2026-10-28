@@ -1,30 +1,34 @@
 ---
 title: Manage App Store and Google Play reviews together
-description: Understand the store differences before connecting App Store and Google Play to one ReviewInbox App.
+description: Connect both stores, prepare replies, and publish from one Reply Inbox.
 ---
 
-ReviewInbox can keep App Store and Google Play reviews in one Reply Inbox for an App. The stores expose different data and permissions, so a connection that succeeds on one store does not imply the other store will return the same history.
+An App can connect to App Store, Google Play, or both. Each Store Connection imports into the same Reply Inbox, with its own credentials, Review history, and store reply limit. Start with the [App Store](/docs/connect-app-store/) or [Google Play](/docs/connect-google-play/) setup guide.
 
-## What is shared
+## Import and triage
 
-For either store, ReviewInbox imports Reviews into the same queue, can create Reply Drafts, and keeps publishing as an explicit action. You can connect one store first and add the other later.
+1. Create an App and connect a store. ReviewInbox validates its Store Credential and queues the initial Sync Run.
+2. Check the Sync Run result in Apps. Google exposes written production Reviews from a limited recent window, so an empty result does not necessarily indicate a failed connection.
+3. Open the Reply Inbox and select a Review. Filter by App or workflow status as needed.
+4. Work from an AI Reply Draft, request generation, or write a reply manually. AI drafting requires operator configuration.
 
-## What differs
+Ignore a Review when it needs no reply; ignoring is reversible. Audit History records drafting actions and publication.
 
-| | App Store | Google Play |
-| --- | --- | --- |
-| Connection values | App Store ID, Issuer ID, Key ID, private `.p8` key | Package name and service account JSON |
-| Review history through the API | Apple exposes paginated customer reviews, up to 200 per list request | Only written production reviews created or modified within the last week |
-| Reply constraint | One public reply per review; Apple may show it as pending for up to 24 hours | 350 characters per reply; API quotas are 200 GET/hour and 2,000 POST/day per app |
-| Setup permission | Account Holder requests API access; Customer Support can respond | Service account needs the Play Console **Reply to reviews** permission |
+## Improve a draft
 
-Read the [App Store setup guide](/docs/connect-app-store/) and [Google Play setup guide](/docs/connect-google-play/) before copying credentials into ReviewInbox.
+Edit the draft directly, or choose **Regenerate**:
 
-## A practical first sync
+1. Optionally select **Shorter**, **Warmer**, **More direct**, or **Less promotional**. Choices can be combined.
+2. Add optional instructions for this Review, such as mentioning a fix or avoiding a support suggestion. These do not change the App's Reply Context.
+3. Generate and preview the proposal. Regeneration uses the current editor text, including unsaved edits.
+4. Choose **Use this proposal** to copy it into the editor, or **Keep current draft** to discard it. You can regenerate again with different instructions.
 
-1. Connect the store with the most recent reviews you need to work on.
-2. Confirm that the connection validates and that the first Sync Run completes.
-3. Treat an empty result carefully: Google may have no eligible Reviews with written text in its one-week API window, while Apple may simply have no Reviews for the selected App.
-4. Edit each Reply Draft and publish only when it is ready for the store's public page.
+Accepting a proposal does not save or publish it. A generation failure preserves the current draft. Each successful Cloud proposal consumes a draft unit even if discarded; see [usage and limits](/docs/usage-limits/).
 
-For Google Play history older than the API window, Google provides a CSV export in Play Console. ReviewInbox does not import that export automatically today. See the [usage and limits](/docs/usage-limits/) page for ReviewInbox plan limits and [self-hosting](/docs/self-hosting/) for operating your own deployment.
+## Publish explicitly
+
+Review the text and language, then save or publish using the editor actions. Only publication sends the reply to the store. The editor displays the applicable store character limit.
+
+If a published Review changes, it returns to the Reply Inbox with its previous Published Reply visible. Prepare and explicitly publish an updated reply. If the Review changes while you are working, reload its latest content before retrying a rejected action.
+
+Use [Review analysis](/docs/review-analysis/) for recurring product problems. Google Play CSV history import is not currently available.

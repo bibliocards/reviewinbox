@@ -1,5 +1,7 @@
 # Billing boundary
 
+> Status: superseded for provider integration. Organization subscriptions now use the Better Auth Stripe plugin; internal usage and limits remain the enforcement boundary. The original decision below is retained as history. See [current billing](../architecture.md#billing-and-measurement).
+
 ReviewInbox V1 records usage events and organization limits internally without integrating a billing provider. The codebase keeps a `packages/billing` boundary so the cloud service can later adopt the better-auth Stripe plugin for organization subscriptions, plans, and limits.
 
 ## Considered Options

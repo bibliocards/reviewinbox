@@ -1,5 +1,7 @@
 # Reply inbox and publishing
 
+> Scope: the publishing invariants below still apply. Guided regeneration now provides a synchronous preview without saving a draft or changing workflow state; see [the current reply workflow](../architecture.md#reply-workflow).
+
 ReviewInbox M4 adds the first end-to-end human workflow for turning imported reviews and Reply Drafts into Published Replies.
 
 ## Decision

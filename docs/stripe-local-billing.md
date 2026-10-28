@@ -1,21 +1,10 @@
-# Stripe Local Billing Setup
+# Local Cloud billing
 
-Use this when testing ReviewInbox cloud billing locally against a Stripe sandbox.
+Test Organization subscriptions against a Stripe sandbox. The [auth configuration](../apps/api/src/auth.ts) defines the integration; [plan limits](../packages/billing/src/plans.ts) remain internal to ReviewInbox.
 
-## Install Stripe CLI
+## Setup
 
-On macOS:
-
-```bash
-brew install stripe/stripe-cli/stripe
-stripe login
-```
-
-## Configure Local Environment
-
-At minimum, local cloud billing needs Stripe secrets and one complete monthly/annual plan pair.
-
-For Starter-only testing:
+Install and authenticate the Stripe CLI, then set these values in `.env`:
 
 ```env
 DEPLOYMENT_MODE=cloud
@@ -25,57 +14,14 @@ STRIPE_STARTER_PRICE_ID=price_...
 STRIPE_STARTER_ANNUAL_PRICE_ID=price_...
 ```
 
-`STRIPE_WEBHOOK_SECRET` comes from the local webhook listener below. Pro and Business price IDs can stay empty until those plans exist in Stripe.
+Configure one complete monthly/annual recurring-price pair to test a plan. Pro and Business have equivalent `STRIPE_PRO_*` and `STRIPE_BUSINESS_*` settings in [.env.example](../.env.example). Only complete pairs are offered. Match prices to the [published pricing configuration](../apps/site/src/lib/pricing.ts).
 
-## Run Webhooks Locally
+Start the API/web stack with `pnpm serve` and webhook forwarding in another terminal:
 
-Start the app stack in one terminal:
-
-```bash
-pnpm serve:cloud
-```
-
-Start Stripe webhook forwarding in another terminal:
-
-```bash
+```sh
 pnpm stripe:listen
 ```
 
-The Stripe CLI prints a webhook signing secret like `whsec_...`. Copy it into `.env` as `STRIPE_WEBHOOK_SECRET`, then restart the API.
+Copy the listener's signing secret to `STRIPE_WEBHOOK_SECRET` and restart the API. Use Stripe's [test cards](https://docs.stripe.com/testing#cards) in Checkout; never use real payment details in a sandbox.
 
-## Test Payments
-
-Use Stripe test cards in Checkout.
-
-Successful payment:
-
-```text
-4242 4242 4242 4242
-```
-
-Use any future expiry date, any three-digit CVC, and any postal code.
-
-Authentication required:
-
-```text
-4000 0025 0000 3155
-```
-
-Declined payment:
-
-```text
-4000 0000 0000 9995
-```
-
-## Required Stripe Prices
-
-Use flat recurring prices:
-
-- Starter monthly: `$9.99/month`
-- Starter annual: `$99.99/year`
-- Pro monthly: `$29.99/month`
-- Pro annual: `$299.99/year`
-- Business monthly: `$99.99/month`
-- Business annual: `$999.99/year`
-
-ReviewInbox enables only plans with both monthly and annual price IDs configured.
+Subscriptions attach to the active Organization. Owners/admins manage billing; subscription callbacks synchronize its internal plan. Verify checkout, updates, and cancellation through the Organization billing screen and webhook listener.

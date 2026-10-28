@@ -1,71 +1,30 @@
 ---
-title: Usage And Limits
-description: How ReviewInbox Cloud usage, limits, and self-hosted deployments work.
+title: Usage and limits
+description: Organization plan limits, usage accounting, and sync availability.
 ---
 
-ReviewInbox uses the same codebase for Cloud and self-hosted deployments. Cloud Organizations have plan limits. Self-hosted deployments record usage for visibility but do not enforce billing limits.
+Cloud plans and limits belong to each Organization. A user may belong to several Organizations with separate plans and usage. Owners/admins manage subscriptions from Organization settings; see [pricing](/pricing/) for prices.
 
-## Billing Unit
+## Cloud limits
 
-Plans attach to an Organization.
+| Plan | Members | Apps | Store Connections | Review imports/month | AI Reply Drafts/month | Auto-sync | Manual sync |
+| --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
+| Free | 1 | 1 | 2 | 30 | 5 | Every 24 hours | No |
+| Starter | 3 | 2 | 4 | 500 | 100 | Every 6 hours | Yes |
+| Pro | 10 | 10 | 20 | 5,000 | 1,000 | Every 6 hours | Yes |
+| Business | 25 | 50 included, 100 limit | 100 included, 200 limit | 50,000 | 10,000 | Every 6 hours | Yes |
 
-- A user can belong to multiple Organizations.
-- Each Organization has its own plan, usage period, and limits.
-- Upgrading later should upgrade one Organization, not a global user account.
+Automatic sync requires an enabled worker and may be spread across its scheduling window. Store Connection verification triggers the initial Sync Run, including on Free.
 
-## Current Cloud Plans
+## What consumes usage
 
-| Plan | Price | Members | Apps | Store Connections | Review imports/month | Managed AI Reply Drafts/month | Automatic sync | Manual sync |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
-| Free | $0/month | 1 | 1 | 2 | 30 | 5 | Every 24 hours | Not available |
-| Starter | $9.99/month | 3 | 2 | 4 | 500 | 100 | Every 6 hours | Available |
-| Pro | $29.99/month | 10 | 10 | 20 | 5,000 | 1,000 | Every 6 hours | Available |
-| Business | $99.99/month | 25 | 50 included, 100 limit | 100 included, 200 limit | 50,000 | 10,000 | Every 6 hours | Available |
+- A Review counts on its first import. Later updates do not consume another import.
+- A successful AI Reply Draft or regeneration proposal consumes one draft unit, even when you discard the proposal. Failed generations and manual writing/editing consume none.
+- Publication is recorded for visibility, without a publication quota.
+- Review analysis is separate from Reply Draft usage. Topic discovery is separately metered in bounded batches; commercial discovery quotas are not implemented.
 
-Prices are listed in USD. Free is available for low-volume evaluation.
+Monthly import and AI draft periods use UTC calendar months. At the import cap, a Sync Run keeps the Reviews it can import and finishes as partial. At the draft cap, generation stops. Creating Apps, Store Connections, and memberships also checks Organization limits. Upgrade the Organization to raise its limits; overage-pack purchasing is not available.
 
-## What Counts Toward Usage
+## Self-hosting
 
-Review imports count only when a Review is imported for the first time.
-
-- Updating an existing Review during a later Sync Run does not consume Review import usage.
-- If a Sync Run reaches the monthly Review import cap, ReviewInbox stores what it can and marks the Sync Run as partial.
-- Published Replies are recorded as usage events but are not directly limited.
-
-Managed AI Reply Draft usage counts only when ReviewInbox managed AI creates a Reply Draft.
-
-- Manual editing does not consume Managed AI usage.
-- Manually created Reply Drafts do not consume Managed AI usage.
-- Failed AI generation does not consume Managed AI usage when no Reply Draft is created.
-- Regeneration through managed AI should consume another Managed AI Reply Draft.
-
-Review analysis is separate from Managed AI Reply Draft usage. Jev classification is included for imported Reviews and the initial history backfill, subject to global cost controls and fair queue scheduling. Luna topic discovery is metered separately per Organization and runs in bounded batches; commercial discovery quotas are deferred while usage is measured. Infrastructure retries and catalogue-maintenance reprocessing do not consume user-facing credits.
-
-## Sync cadence and caps
-
-Automatic review sync follows the interval shown in the plan table when the worker and automatic sync are enabled. The worker may spread a run across its configured scheduling window. Manual sync is available on paid Cloud plans and unavailable on Free.
-
-Review imports and Managed AI Reply Drafts stop at the monthly cap. ReviewInbox does not publish an extra-usage charge from this page; upgrade the Organization before the next capped action.
-
-## Cloud Enforcement
-
-Cloud deployments enforce limits at action boundaries.
-
-- Creating an App is blocked when the App limit is reached.
-- Creating a Store Connection is blocked when the Store Connection limit is reached.
-- Inviting or adding a member is blocked when the member limit is reached.
-- Manual sync is unavailable on Free.
-- Review import stops partially when the monthly Review import cap is reached.
-- Managed AI Reply Draft generation is skipped when the monthly Managed AI cap is reached.
-
-Read, edit, export, and delete operations should remain available even if an Organization is over limit.
-
-## Self-Hosted Deployments
-
-Self-hosted deployments remain billing-free.
-
-- Limits are not enforced.
-- Operators can configure the AI provider for the self-hosted deployment.
-- Operators are responsible for infrastructure, backups, SMTP, storage, and updates.
-
-See [Self-Hosting ReviewInbox](/docs/self-hosting/) for deployment guidance.
+Self-hosted deployments do not enforce Cloud billing limits. Operators configure their own AI provider and run infrastructure, backups, SMTP, and updates. See the [self-hosting guide](/docs/self-hosting/).

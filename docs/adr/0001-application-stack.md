@@ -1,5 +1,7 @@
 # Application stack
 
+> Status: partially superseded. Production uses separate web, API, and worker images; Hono does not serve Angular assets. Weekly Digests are not implemented. See [current runtime boundaries](../architecture.md#runtime-and-package-boundaries).
+
 ReviewInbox uses a TypeScript monorepo with pnpm and Nx, Angular for the authenticated product app, Hono as the only backend HTTP boundary, Astro for the marketing/docs site, Postgres with Drizzle for persistence, better-auth for identity and organizations, ngx-better-auth for the Angular auth client, Zod for shared API contracts, pg-boss for background jobs, and Docker Compose for self-hosted deployment.
 
 The Hono service owns API routes, Better Auth routes, HTTP-only session cookies, runtime validation, and serving the built Angular assets in production. Angular contains no server logic and does not store auth secrets. The worker remains a separate Node service for store sync, AI reply drafts, and weekly digests. Self-hosted Docker deployments run at least Postgres, the public Hono service, and the worker; the Hono and worker services may be built from the same image with different commands.

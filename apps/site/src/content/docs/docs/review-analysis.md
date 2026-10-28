@@ -1,51 +1,36 @@
 ---
 title: Review analysis
-description: Explore recurring topics, reported severity, and trends across imported App Store and Google Play Reviews.
+description: Explore recurring topics and reported severity, then correct classifications and manage topics.
 ---
 
-Review analysis turns imported App Store and Google Play Reviews into a view of recurring product problems. It is scoped to an App, while its topic catalogue is shared by that App's Store Connections.
+Open **Analysis** to explore imported Reviews by App, period, Store, version, severity, intent, and topic. Select a chart segment to inspect the Reviews behind it; open a Review to return to its Reply Inbox workflow.
 
-## What the analysis does
+## Understand the results
 
-Jev classifies every imported Review against the App's catalogue and the fixed analysis vocabulary. Jev does not write Reply Drafts or publish replies. A Review can have multiple intents and topics, or none when the text does not support a classification.
+Jev classifies Reviews into shared intents, reported severity, and topics from the App's catalogue. A Review can have several intents/topics or none. Luna proposes missing English topic labels and definitions for human approval; neither model publishes replies.
 
-The fixed values are stored as stable, language-independent codes and rendered through the product's i18n keys. The initial UI includes English and French translations:
+- Severity describes reported impact, not star rating or a verified incident. Critical means reported data loss or financial harm; a refund request alone is not critical.
+- Unknown severity and unclassified Reviews are distinct from no problem.
+- Pending topics appear provisionally with a visible label; rejected topics are excluded from active analysis.
+- Counts represent unique Reviews in each slice. Topic counts overlap and cannot be added into a Review total.
 
-- intents: `report_problem`, `request_feature`, `request_help`, `request_refund`, `express_satisfaction`, and `express_dissatisfaction`;
-- severity: `none`, `minor`, `degraded`, `blocking`, `critical`, plus a separate indeterminate state.
+The period uses the Store's Review date. Version filtering requires an App and matches the label across both stores unless a Store is selected. Missing versions stay visible as an explicit state.
 
-Critical means reported data loss or financial harm. A low rating or a refund request alone does not make a Review critical.
+## Correct a classification
 
-Luna is used only for topic discovery. When Jev identifies Reviews that the current catalogue does not cover well, Luna proposes an English label and definition in a bounded batch. A proposal starts as `pending` and needs human approval before it is treated as a validated topic. Luna does not automatically add, reject, merge, or assign a topic.
+All Organization members can correct a Review's intents, severity, and topics, or return it to automatic classification. Corrections survive reclassification. When the Review changes, the correction is flagged for rechecking.
 
-Topic labels and definitions are in English initially. If catalogue-language settings are added later, they will belong to the Organization; the topic catalogue and its stable identifiers remain scoped to the App.
+## Manage the topic catalogue
 
-## Dashboard and filters
+Owners and admins can approve, reject, rename, reopen, merge, and create topics for an App. Both of its Store Connections share the catalogue.
 
-The Analysis destination shows severity distribution, leading topics, topic trends, and analysis coverage. Use the filters for App, review period, Store, app version, severity, intent, topic, and topic validation status. Chart selections and the supporting Review list share the same filter state, so selecting a segment drills down to the Reviews behind it. Opening a Review returns to its normal Reply Inbox workflow.
+- Renaming preserves the topic identifier and assignments.
+- Merging requires a surviving topic; its status is retained and source labels become aliases.
+- Rejecting requires confirmation and removes assignments and manual topic corrections. Reopening does not restore them.
+- Rejected topics block equivalent proposals until reopened.
 
-The primary period uses the date supplied by the Store. Apple supplies a creation date; Google Play supplies a last-modified date. Selecting a version requires an App; with no Store selected, that version filters the App's Reviews from both stores by the same label. Selecting a Store narrows the result without clearing the version. The version menu lists the App's distinct labels with the latest versions first, independently of the selected period and other Review filters. Missing versions, unknown severity, and unclassified Reviews remain explicit states.
+## Availability
 
-App, period, Store, and version remain visible in the filter panel. Severity, intent, topic, and topic status are available under additional filters; active selections remain visible as removable badges. Changing App clears Store, version, and topic, while clearing filters keeps the selected App. A URL containing a version without an App silently drops the version filter.
+Analysis covers all imported history in resumable batches; it cannot retrieve history absent from the Store API. Changed Reviews wait for fresh automatic analysis. Catalogue edits do not reclassify all previous Reviews.
 
-Pending topics are included in aggregate metrics and remain clickable, but their marks use an outlined or dashed treatment with a visible pending label. Rejected topics are excluded from active analysis and appear in the catalogue's Rejected topics tab.
-
-Counts represent unique Reviews in each slice. A Review may belong to several topics, so adding topic counts does not produce a Review total. The dashboard also displays how many Reviews were successfully classified and the corresponding proportion.
-
-## Correcting and managing topics
-
-All Organization members can correct the topics, intents, and severity of an individual Review. A correction is retained across reclassification. When the underlying Review changes, the correction is flagged for rechecking; a member can keep the correction or return that field to automatic classification.
-
-Owners and admins manage an App's topic catalogue. They can approve, reject, rename, reopen, and merge topics. Active and rejected topics appear in separate catalogue tabs. Rejection requires confirmation because it removes Review assignments and manual topic corrections; reopening does not restore them. Renaming preserves the topic identifier and its assignments. A merge requires an explicit surviving topic, deduplicates Review assignments, and keeps source labels as aliases to avoid rediscovery. The surviving topic keeps its validation state. Rejected topics block equivalent future proposals until reopened.
-
-## History and recovery
-
-Analysis covers all imported history; it does not stop at a 90-day window. Processing is durable and resumable. Each Review has an analysis state such as `pending`, `processing`, `completed`, `failed`, or `skipped`, with the input and criteria fingerprints needed to reject stale results. `completed` means the classification was saved, even when no topic was found. Reviews without usable text can be skipped with a reason.
-
-The initial backfill processes bounded batches and prioritizes fresh Reviews. An interrupted worker can resume pending or failed work without submitting completed Reviews repeatedly. A changed Review hides its outdated automatic classification until reanalysis. Catalogue edits leave existing completed classifications in place; new or changed Reviews use the current catalogue. Members can merge topics to consolidate existing assignments.
-
-## Configuration and usage
-
-Jev classification and Luna discovery are independent from Managed AI Reply Draft quotas. Classification is included for imported Reviews and the initial history backfill, subject to global cost controls and fair queue scheduling. Luna discovery is metered separately per Organization, runs in bounded daily batches or on a manual request, and reuses cached results when possible. Commercial discovery quotas are intentionally not specified until real usage has been measured.
-
-The installation operator can provide one optional global `TYPESAFE_API_KEY` to the API and worker. Without it, stored analysis remains readable, but new classification and discovery jobs remain unavailable; Review sync and Reply Draft generation continue. Organization owners do not enter this key. Luna reuses the configured generative provider (`AI_PROVIDER`, `AI_MODEL`, `AI_API_KEY`, and, when needed, `AI_BASE_URL`), which the supplied Compose file passes to both services.
+The deployment operator enables Jev with `TYPESAFE_API_KEY` and Luna with the generative provider settings. Missing configuration leaves stored results readable. Classification and discovery are separate from Reply Draft quotas; discovery runs in bounded batches without a published commercial quota. See [self-hosting](/docs/self-hosting/) for configuration.

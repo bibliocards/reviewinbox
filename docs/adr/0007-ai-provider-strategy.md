@@ -1,5 +1,7 @@
 # AI provider strategy
 
+> Implementation scope: provider configuration is installation-wide, using an OpenAI-compatible transport. Organization-owned AI settings are not implemented. See [the current AI boundary](../architecture.md#ai-drafting-boundary).
+
 ReviewInbox cloud includes managed AI by default, while self-hosted deployments use bring-your-own-key or local OpenAI-compatible providers such as Ollama. The V1 implementation uses Vercel AI SDK behind a ReviewInbox-owned `packages/ai` boundary, while domain code remains independent of provider SDKs.
 
 ## Considered Options
