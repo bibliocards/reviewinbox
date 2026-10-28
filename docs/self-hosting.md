@@ -81,7 +81,7 @@ AI_API_KEY=your-provider-key
 AI_BASE_URL=
 ```
 
-Set `REPLY_DRAFT_WORKER_ENABLED=true` on the API service so UI actions can enqueue Reply Draft jobs. For drafting alone, set the `AI_*` values on the worker service. When enabling Review Analysis, configure the same optional `TYPESAFE_API_KEY` and `AI_*` values on the API and worker so the API can report classification and discovery availability; the supplied Compose file maps these values to both services. Set `AI_BASE_URL` only when your provider requires a custom OpenAI-compatible endpoint.
+Set `REPLY_DRAFT_WORKER_ENABLED=true` on the API service so UI actions can enqueue initial Reply Draft jobs. Set the `AI_*` values on both the API and worker services to enable Reply Draft regeneration: the API generates proposals synchronously without replacing the saved draft. When enabling Review Analysis, also configure the optional `TYPESAFE_API_KEY` on both services so the API can report classification and discovery availability. The supplied Compose file maps these values to both services. Set `AI_BASE_URL` only when your provider requires a custom OpenAI-compatible endpoint.
 
 ## Review analysis
 

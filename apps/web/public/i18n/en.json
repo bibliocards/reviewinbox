@@ -477,6 +477,28 @@
       "googleLimit": "Google Play limit",
       "publishReply": "Publish reply",
       "discardChanges": "Discard changes"
+    },
+    "regeneration": {
+      "title": "Regenerate Reply Draft",
+      "description": "Rewrite the current draft, including your unsaved edits. Your instructions apply only to this Review.",
+      "adjustmentLabel": "What would you like to change?",
+      "adjustmentHelp": "Choose any options, add instructions below, or regenerate without either.",
+      "adjustments": {
+        "shorter": "Shorter",
+        "warmer": "Warmer",
+        "moreDirect": "More direct",
+        "lessPromotional": "Less promotional"
+      },
+      "instructionsLabel": "Additional instructions for this Review (optional)",
+      "instructionsPlaceholder": "Mention that version 2.4 fixes this. Do not suggest contacting support.",
+      "quotaHelp": "Each successfully generated proposal uses one draft from your monthly quota, even if you keep the current draft. Failed generations use none.",
+      "generate": "Regenerate",
+      "proposalTitle": "New proposal",
+      "proposalHelp": "Using this proposal replaces the text in the editor. You can edit it before saving or publishing.",
+      "keepCurrent": "Keep current draft",
+      "useProposal": "Use this proposal",
+      "quotaReached": "Your monthly AI draft quota has been reached. Your current draft is unchanged.",
+      "failed": "Could not generate a new proposal. Your current draft is unchanged. Try again later."
     }
   },
   "auditHistory": {
@@ -758,8 +780,6 @@
       "nextWindow": "Next window at {{time}}"
     },
     "links": {
-      "statusAria": "ReviewInbox status page",
-      "statusTitle": "ReviewInbox status",
       "githubAria": "ReviewInbox GitHub repository",
       "githubTitle": "GitHub repository",
       "websiteAria": "ReviewInbox website",

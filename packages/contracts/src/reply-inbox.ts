@@ -129,6 +129,29 @@ export const saveReplyDraftRequestSchema = z
   .strict()
 export type SaveReplyDraftRequest = z.infer<typeof saveReplyDraftRequestSchema>
 
+export const replyDraftAdjustmentSchema = z.enum([
+  'shorter',
+  'warmer',
+  'more_direct',
+  'less_promotional',
+])
+export type ReplyDraftAdjustment = z.infer<typeof replyDraftAdjustmentSchema>
+
+export const regenerateReplyDraftRequestSchema = z
+  .object({
+    draftText: z.string().trim().min(1).max(maxReplyDraftLength),
+    reviewContentToken: z.string().regex(/^[a-f0-9]{64}$/u),
+    adjustments: z.array(replyDraftAdjustmentSchema).max(4),
+    instructions: z.string().trim().max(1500),
+  })
+  .strict()
+export type RegenerateReplyDraftRequest = z.infer<typeof regenerateReplyDraftRequestSchema>
+
+export const regenerateReplyDraftResponseSchema = z.object({
+  draftText: z.string().trim().min(1).max(maxReplyDraftLength),
+})
+export type RegenerateReplyDraftResponse = z.infer<typeof regenerateReplyDraftResponseSchema>
+
 export const updateReviewIgnoredStatusRequestSchema = z
   .object({ reviewContentToken: z.string().regex(/^[a-f0-9]{64}$/u) })
   .strict()

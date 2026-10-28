@@ -1,0 +1,88 @@
+<div class="grid min-w-0 gap-5 text-ink" *transloco="let t" [attr.aria-busy]="isGenerating()">
+  <p class="m-0 text-sm text-ink-muted">{{ t('replyInbox.regeneration.description') }}</p>
+  <fieldset class="m-0 grid min-w-0 gap-2 border-0 p-0" [disabled]="isGenerating()">
+    <legend id="regeneration-adjustments-label" class="p-0 pbe-2 text-sm font-medium">
+      {{ t('replyInbox.regeneration.adjustmentLabel') }}
+    </legend>
+    <p-selectbutton
+      class="flex flex-wrap gap-2"
+      [options]="[
+        { value: 'shorter', label: t('replyInbox.regeneration.adjustments.shorter') },
+        { value: 'warmer', label: t('replyInbox.regeneration.adjustments.warmer') },
+        { value: 'more_direct', label: t('replyInbox.regeneration.adjustments.moreDirect') },
+        {
+          value: 'less_promotional',
+          label: t('replyInbox.regeneration.adjustments.lessPromotional'),
+        },
+      ]"
+      optionValue="value"
+      optionLabel="label"
+      [multiple]="true"
+      [ngModel]="adjustments()"
+      (ngModelChange)="adjustments.set($event ?? [])"
+      [disabled]="isGenerating()"
+      ariaLabelledBy="regeneration-adjustments-label"
+    />
+    <p class="m-0 text-xs text-ink-subtle">{{ t('replyInbox.regeneration.adjustmentHelp') }}</p>
+  </fieldset>
+  <label for="regeneration-instructions" class="grid gap-2 text-sm font-medium">
+    <span>{{ t('replyInbox.regeneration.instructionsLabel') }}</span>
+    <textarea
+      pTextarea
+      id="regeneration-instructions"
+      class="w-full resize-y [min-block-size:3lh] [max-block-size:10lh] [field-sizing:content]"
+      rows="3"
+      maxlength="1500"
+      [ngModel]="instructions()"
+      (ngModelChange)="instructions.set($event)"
+      [disabled]="isGenerating()"
+      [placeholder]="t('replyInbox.regeneration.instructionsPlaceholder')"
+    ></textarea>
+  </label>
+  @if (capabilities.capabilities().isCloud) {
+    <p class="m-0 text-xs text-ink-subtle">{{ t('replyInbox.regeneration.quotaHelp') }}</p>
+  }
+  @if (errorKey(); as key) {
+    <p
+      class="m-0 rounded-lg border border-failure-border bg-failure p-3 text-sm text-failure-ink"
+      role="alert"
+    >
+      {{ t(key) }}
+    </p>
+  }
+  @if (proposal(); as text) {
+    <section
+      class="grid min-w-0 gap-3 rounded-xl border border-border bg-surface-2 p-4"
+      aria-live="polite"
+    >
+      <h3 class="m-0 text-sm font-medium">{{ t('replyInbox.regeneration.proposalTitle') }}</h3>
+      <p class="m-0 whitespace-pre-wrap text-sm leading-6 wrap-break-word">{{ text }}</p>
+      <p class="m-0 text-xs text-ink-subtle">{{ t('replyInbox.regeneration.proposalHelp') }}</p>
+    </section>
+  }
+  <div class="flex flex-wrap justify-end gap-2 border-bs border-hairline pbs-4">
+    <p-button
+      severity="secondary"
+      [text]="true"
+      [label]="t('replyInbox.regeneration.keepCurrent')"
+      (onClick)="cancel()"
+    />
+    <p-button
+      severity="secondary"
+      [outlined]="true"
+      icon="pi pi-refresh"
+      [label]="t('replyInbox.regeneration.generate')"
+      [loading]="isGenerating()"
+      [disabled]="isGenerating()"
+      (onClick)="generate()"
+    />
+    @if (proposal() !== null) {
+      <p-button
+        severity="secondary"
+        [label]="t('replyInbox.regeneration.useProposal')"
+        [disabled]="isGenerating()"
+        (onClick)="useProposal()"
+      />
+    }
+  </div>
+</div>

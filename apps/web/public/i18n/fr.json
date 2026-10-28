@@ -483,6 +483,28 @@
       "googleLimit": "Limite Google Play",
       "publishReply": "Publier la reply",
       "discardChanges": "Annuler les modifications"
+    },
+    "regeneration": {
+      "title": "Régénérer le Reply Draft",
+      "description": "Retravaillez le draft actuel, y compris vos modifications non enregistrées. Vos consignes s’appliquent uniquement à cette Review.",
+      "adjustmentLabel": "Que souhaitez-vous changer ?",
+      "adjustmentHelp": "Choisissez des options, ajoutez des consignes ci-dessous ou régénérez sans précision.",
+      "adjustments": {
+        "shorter": "Plus court",
+        "warmer": "Plus chaleureux",
+        "moreDirect": "Plus direct",
+        "lessPromotional": "Moins commercial"
+      },
+      "instructionsLabel": "Consignes supplémentaires pour cette Review (facultatif)",
+      "instructionsPlaceholder": "Précisez que la version 2.4 corrige ce problème. Ne proposez pas de contacter le support.",
+      "quotaHelp": "Chaque proposition générée avec succès consomme un draft de votre quota mensuel, même si vous conservez le draft actuel. Un échec ne consomme rien.",
+      "generate": "Régénérer",
+      "proposalTitle": "Nouvelle proposition",
+      "proposalHelp": "Cette proposition remplacera le texte dans l’éditeur. Vous pourrez la retoucher avant de l’enregistrer ou de la publier.",
+      "keepCurrent": "Conserver le draft actuel",
+      "useProposal": "Utiliser cette proposition",
+      "quotaReached": "Votre quota mensuel de drafts IA est atteint. Votre draft actuel est conservé.",
+      "failed": "Impossible de générer une nouvelle proposition. Votre draft actuel est conservé. Réessayez plus tard."
     }
   },
   "auditHistory": {
@@ -764,8 +786,6 @@
       "nextWindow": "Prochaine fenêtre à {{time}}"
     },
     "links": {
-      "statusAria": "Page de statut de ReviewInbox",
-      "statusTitle": "Statut de ReviewInbox",
       "githubAria": "Dépôt GitHub de ReviewInbox",
       "githubTitle": "Dépôt GitHub",
       "websiteAria": "Site web de ReviewInbox",

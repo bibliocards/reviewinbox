@@ -20,6 +20,11 @@ export type GenerateReplyDraftForReviewInput = {
   generateDraft: DraftGenerator
   deploymentMode: 'self-hosted' | 'cloud'
   aiProvider: 'managed' | 'openai-compatible'
+  regeneration?: {
+    draftText: string
+    instructions: string
+    reviewContent: { title: string | null; body: string; rating: number }
+  }
 } & (
   | { database: Database; transaction?: never }
   | { transaction: ReplyDraftGenerationTransaction; database?: never }
@@ -27,11 +32,13 @@ export type GenerateReplyDraftForReviewInput = {
 
 export type GenerateReplyDraftForReviewResult =
   | { status: 'drafted'; replyDraftId: string }
+  | { status: 'proposed'; draftText: string }
   | { status: 'failed'; errorCode: string }
   | {
       status: 'skipped'
       reason:
         | 'review_not_found'
+        | 'review_changed'
         | 'auto_draft_disabled'
         | 'review_without_text'
         | 'not_draftable'
@@ -123,7 +130,9 @@ async function processDraftGeneration(
     return { status: 'skipped', reason: 'review_not_found' }
   }
 
-  const skipReason = getSkipReason(draftableReview)
+  const skipReason = input.regeneration
+    ? getProposalSkipReason(draftableReview, input.regeneration)
+    : getSkipReason(draftableReview)
   if (skipReason) {
     return { status: 'skipped', reason: skipReason }
   }
@@ -133,7 +142,62 @@ async function processDraftGeneration(
     return { status: 'skipped', reason: quotaSkipReason }
   }
 
-  return generateAndStoreDraft(transaction, draftableReview, input)
+  return input.regeneration
+    ? generateDraftProposal(transaction, draftableReview, {
+        ...input,
+        regeneration: input.regeneration,
+      })
+    : generateAndStoreDraft(transaction, draftableReview, input)
+}
+
+function getProposalSkipReason(
+  row: DraftableReview,
+  regeneration: NonNullable<GenerateReplyDraftForReviewInput['regeneration']>,
+): Extract<GenerateReplyDraftForReviewResult, { status: 'skipped' }>['reason'] | null {
+  if (!hasSameReviewContent(row, { review: regeneration.reviewContent })) {
+    return 'review_changed'
+  }
+  if (row.storeConnection.status !== 'active') {
+    return 'store_connection_disabled'
+  }
+  if (row.review.replyStatus !== 'drafted' || !row.replyDraft) {
+    return 'not_draftable'
+  }
+  return row.review.body.trim() ? null : 'review_without_text'
+}
+
+async function generateDraftProposal(
+  transaction: ReplyDraftGenerationTransaction,
+  row: DraftableReview,
+  input: GenerateReplyDraftForReviewInput & {
+    regeneration: NonNullable<GenerateReplyDraftForReviewInput['regeneration']>
+  },
+): Promise<GenerateReplyDraftForReviewResult> {
+  let generated: GenerateReplyDraftResult
+  try {
+    generated = await input.generateDraft({
+      ...toGenerateDraftInput(row),
+      revision: {
+        draftText: input.regeneration.draftText,
+        instructions: input.regeneration.instructions,
+      },
+    })
+  } catch (error) {
+    return {
+      status: 'failed',
+      errorCode: error instanceof AiDraftingError ? error.code : 'unknown',
+    }
+  }
+
+  const latest = await transaction.selectLatestDraftableReview(row)
+  const skipReason = latest ? getProposalSkipReason(latest, input.regeneration) : 'review_not_found'
+  if (skipReason) {
+    return { status: 'skipped', reason: skipReason }
+  }
+  if (shouldMeterAiUsage(input)) {
+    await transaction.recordManagedDraftUsage(input.organizationId)
+  }
+  return { status: 'proposed', draftText: generated.draftText }
 }
 
 async function lockUsagePeriod(
@@ -303,7 +367,10 @@ async function storeGeneratedDraft(
   return storeLatestGeneratedDraft(transaction, latest, generated, input)
 }
 
-function hasSameReviewContent(left: DraftableReview, right: DraftableReview): boolean {
+function hasSameReviewContent(
+  left: { review: Pick<DraftReview, 'title' | 'body' | 'rating'> },
+  right: { review: Pick<DraftReview, 'title' | 'body' | 'rating'> },
+): boolean {
   return (
     left.review.title === right.review.title
     && left.review.body === right.review.body

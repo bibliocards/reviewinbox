@@ -5,6 +5,8 @@ import type {
   ListReplyAuditEventsResponse,
   PublishReplyRequest,
   QueueReplyDraftResponse,
+  RegenerateReplyDraftRequest,
+  RegenerateReplyDraftResponse,
   ReplyActionResponse,
   SaveReplyDraftRequest,
   UpdateReviewIgnoredStatusRequest,
@@ -47,6 +49,16 @@ export class ReplyInboxService {
   saveDraft(reviewId: string, input: SaveReplyDraftRequest): Observable<ReplyActionResponse> {
     return this.http.put<ReplyActionResponse>(
       `${this.apiUrl}/api/reply-inbox/${reviewId}/draft`,
+      input,
+    )
+  }
+
+  regenerateDraft(
+    reviewId: string,
+    input: RegenerateReplyDraftRequest,
+  ): Observable<RegenerateReplyDraftResponse> {
+    return this.http.post<RegenerateReplyDraftResponse>(
+      `${this.apiUrl}/api/reply-inbox/${reviewId}/draft/regenerate`,
       input,
     )
   }

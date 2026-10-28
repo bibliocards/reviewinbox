@@ -44,8 +44,14 @@ import { database } from '../db'
 import { parseJsonBody, parseUuidParam } from '../http/validation'
 import { enqueueGenerateReplyDraftJobs } from '../queue'
 import { createReviewContentToken, isReviewContentTokenCurrent } from '../review-content'
+import { createRegenerateReplyDraftHandler } from './reply-draft-regeneration'
 
 export const replyInboxRoutes = new Hono()
+
+replyInboxRoutes.post(
+  '/api/reply-inbox/:reviewId/draft/regenerate',
+  createRegenerateReplyDraftHandler({ database, requireSession: requireActiveOrganizationSession }),
+)
 
 const appIdQuerySchema = z.uuid().optional()
 const defaultLimit = 100

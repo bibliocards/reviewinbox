@@ -43,6 +43,10 @@ import {
   type ReviewClassificationDialogResult,
 } from '../analysis/review-classification-dialog.component'
 import {
+  RegenerateReplyDraftDialogComponent,
+  type RegenerateReplyDraftDialogResult,
+} from './components/regenerate-reply-draft-dialog.component'
+import {
   ReplyDraftDialogComponent,
   type ReplyDraftDialogData,
   type ReplyDraftDialogResult,
@@ -341,6 +345,35 @@ export class ReplyInboxPageComponent {
           : this.replyInboxService.publishReply(review.id, input)
       const successKey = this.draftActionSuccessKey(review, result.action)
       this.runAction(review.id, request, successKey)
+    })
+  }
+
+  protected openRegenerateDraftDialog(review: ReplyInboxReview): void {
+    if (!this.hasCurrentDraft(review) || !this.canSaveDraft(review)) {
+      return
+    }
+    const dialog = this.dialogService.open(RegenerateReplyDraftDialogComponent, {
+      header: this.transloco.translate('replyInbox.regeneration.title'),
+      modal: true,
+      closable: true,
+      dismissableMask: true,
+      width: 'min(640px, 94vw)',
+      data: {
+        reviewId: review.id,
+        reviewContentToken: review.reviewContentToken,
+        draftText: this.draftText(review),
+      },
+    })
+    dialog?.onClose.subscribe((result?: RegenerateReplyDraftDialogResult) => {
+      if (!result) {
+        return
+      }
+      if ('reviewChanged' in result) {
+        this.message.set({ status: 'error', key: 'replyInbox.messages.reviewChanged' })
+        this.reload()
+        return
+      }
+      this.editDraft(review, result.draftText)
     })
   }
 

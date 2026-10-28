@@ -457,6 +457,14 @@
               [disabled]="activeReviewId() !== null || !hasDraftEdit(review) || !canSaveDraft(review)"
               (onClick)="saveDraft(review)"
             />
+            <p-button
+              severity="secondary"
+              [outlined]="true"
+              icon="pi pi-refresh"
+              [label]="t('replyInbox.regeneration.generate')"
+              [disabled]="activeReviewId() !== null || !canSaveDraft(review)"
+              (onClick)="openRegenerateDraftDialog(review)"
+            />
             @if (hasDraftEdit(review)) {
             <p-button
               severity="secondary"

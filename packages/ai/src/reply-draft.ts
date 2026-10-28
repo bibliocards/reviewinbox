@@ -27,6 +27,7 @@ export type GenerateReplyDraftInput = {
   defaultLanguage: string
   mappedLanguages: string[]
   storeLocale?: string | null
+  revision?: { draftText: string; instructions: string }
 }
 
 export type GenerateReplyDraftOptions = { provider: ReplyDraftProvider }
@@ -76,7 +77,7 @@ export async function generateReplyDraft(
         detectedReviewLanguage,
       ),
       model: providerResult.model,
-      promptVersion: replyDraftPromptVersion,
+      promptVersion: input.revision ? 'reply-draft-revision-v1' : replyDraftPromptVersion,
     }
   } catch (error) {
     throw new AiDraftingError(
@@ -90,6 +91,15 @@ export async function generateReplyDraft(
 function validateInputSize(input: GenerateReplyDraftInput): void {
   validateContextLengths(input)
   validateLanguagePolicy(input)
+  if (
+    input.revision
+    && (input.revision.draftText.length > 4000 || input.revision.instructions.length > 2000)
+  ) {
+    throw new AiDraftingError(
+      'context_too_large',
+      'Reply Draft revision exceeds the context limit.',
+    )
+  }
 }
 
 function validateContextLengths(input: GenerateReplyDraftInput): void {
