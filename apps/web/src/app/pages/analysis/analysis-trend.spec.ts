@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { buildAnalysisTrend, trendPeriodLabel } from './analysis-trend'
 
@@ -102,6 +102,39 @@ describe('analysis trend breakdown and labels', () => {
       { from: '2026-02-01', to: '2026-02-14', count: 5, critical: 0, blocking: 2 },
     ])
     expect(trend.max).toBe(11)
+  })
+
+  it('reuses the active locale formatter for dates and ranges and refreshes on language changes', () => {
+    const day = { from: '2024-02-29', to: '2024-02-29' }
+    const range = { from: '2024-02-29', to: '2024-03-04' }
+    const options = { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' } as const
+    const english = new Intl.DateTimeFormat('en-GB', options)
+    const french = new Intl.DateTimeFormat('fr-CA', options)
+    const start = new Date('2024-02-29T00:00:00Z')
+    const end = new Date('2024-03-04T00:00:00Z')
+    const DateTimeFormat = Intl.DateTimeFormat
+    const constructor = vi
+      .spyOn(Intl, 'DateTimeFormat')
+      // Constructor spies must return a real Intl instance, unlike ordinary void callbacks.
+      // oxlint-disable-next-line typescript/strict-void-return
+      .mockImplementation(function (locale, formatOptions): Intl.DateTimeFormat {
+        return new DateTimeFormat(locale, formatOptions)
+      })
+    try {
+      expect(trendPeriodLabel(day, 'en-GB')).toBe(english.format(start))
+      expect(trendPeriodLabel(range, 'en-GB')).toBe(english.formatRange(start, end))
+      expect(trendPeriodLabel(range, 'en-GB')).toBe(english.formatRange(start, end))
+      expect(constructor).toHaveBeenCalledTimes(1)
+
+      expect(trendPeriodLabel(range, 'fr-CA')).toBe(french.formatRange(start, end))
+      expect(trendPeriodLabel(day, 'fr-CA')).toBe(french.format(start))
+      expect(constructor).toHaveBeenCalledTimes(2)
+
+      expect(trendPeriodLabel(day, 'en-GB')).toBe(english.format(start))
+      expect(constructor).toHaveBeenCalledTimes(3)
+    } finally {
+      constructor.mockRestore()
+    }
   })
 
   it('keeps localized date labels stable across time zones', () => {
