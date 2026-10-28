@@ -7,20 +7,23 @@
   <p-stepper
     [value]="activeStep()"
     [linear]="true"
-    class="flex flex-wrap gap-8"
+    class="flex flex-wrap items-start gap-8"
     [dt]="stepperTokens"
   >
-    <p-step-list class="flex-1 basis-52 flex-col items-stretch p-0" aria-orientation="vertical">
-      <p-step class="opacity-100" [value]="1" [disabled]="isSaving()">{{
+    <p-step-list
+      class="flex-1 basis-52 flex-col items-stretch justify-start gap-2 p-0"
+      aria-orientation="vertical"
+    >
+      <p-step class="flex-none opacity-100" [value]="1" [disabled]="isSaving()">{{
         t('apps.connectDialog.steps.details')
       }}</p-step>
-      <p-step class="opacity-100" [value]="2" [disabled]="isSaving()">{{
+      <p-step class="flex-none opacity-100" [value]="2" [disabled]="isSaving()">{{
         t('apps.connectDialog.steps.stores')
       }}</p-step>
-      <p-step class="opacity-100" [value]="3" [disabled]="isSaving()">{{
+      <p-step class="flex-none opacity-100" [value]="3" [disabled]="isSaving()">{{
         t('apps.connectDialog.steps.credential')
       }}</p-step>
-      <p-step class="opacity-100" [value]="4" [disabled]="isSaving()">{{
+      <p-step class="flex-none opacity-100" [value]="4" [disabled]="isSaving()">{{
         t('apps.connectDialog.steps.test')
       }}</p-step>
     </p-step-list>
