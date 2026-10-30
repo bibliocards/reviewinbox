@@ -51,7 +51,11 @@ import {
   type ReplyDraftDialogData,
   type ReplyDraftDialogResult,
 } from './components/reply-draft-dialog.component'
-import { buildPublishRequest, type ReplyDraftEdit } from './reply-draft-edit'
+import {
+  buildPublishRequest,
+  replyCharactersOverLimit,
+  type ReplyDraftEdit,
+} from './reply-draft-edit'
 import { loadReviewDetail } from './review-detail'
 
 const changedReviewErrorSchema = z.object({
@@ -109,6 +113,7 @@ export class ReplyInboxPageComponent {
   protected readonly selectedFilter = signal<ReplyInboxFilter>('actionable')
   protected readonly activeReviewId = signal<string | null>(null)
   protected readonly pendingActionKey = signal<string | null>(null)
+  protected readonly replyCharactersOverLimit = replyCharactersOverLimit
   protected readonly activeClassificationReviewId = signal<string | null>(null)
   protected readonly message = signal<{ status: 'success' | 'error'; key: string } | null>(null)
   protected readonly appsResource = this.appsService.appsResource()

@@ -373,7 +373,8 @@
             </div>
             }
           </section>
-          } @if (hasCurrentDraft(review)) {
+          } @if (hasCurrentDraft(review)) { @let excessCharacters =
+          replyCharactersOverLimit(draftText(review), review.provider);
           <div
             class="grid min-w-0 overflow-clip rounded-lg border border-border-strong bg-surface-2"
           >
@@ -399,7 +400,8 @@
               [ngModel]="draftText(review)"
               (ngModelChange)="editDraft(review, $event)"
               [disabled]="activeReviewId() !== null"
-              aria-describedby="inbox-draft-help"
+              [attr.aria-invalid]="excessCharacters > 0 ? 'true' : null"
+              [attr.aria-describedby]="excessCharacters > 0 ? 'inbox-draft-help inbox-draft-limit-error' : 'inbox-draft-help'"
             ></textarea>
             <div
               id="inbox-draft-help"
@@ -409,11 +411,16 @@
                 >{{ t(isFromAppStore(review) ? 'replyInbox.editor.replyLimit' :
                 'replyInbox.editor.googleLimit') }}</span
               >
-              <span
-                class="font-mono tabular-nums"
-                [class.text-failure-ink]="draftText(review).trim().length > replyLimit(review)"
+              <span class="font-mono tabular-nums" [class.text-failure-ink]="excessCharacters > 0"
                 >{{ draftText(review).trim().length }} / {{ replyLimit(review) }}</span
               >
+            </div>
+            <div aria-live="polite" aria-atomic="true">
+              @if (excessCharacters > 0) {
+              <p id="inbox-draft-limit-error" class="m-0 px-4 pb-3 text-sm text-failure-ink">
+                {{ t('replyInbox.editor.overLimit', { count: excessCharacters }) }}
+              </p>
+              }
             </div>
           </div>
           @if (draftIsStale(review)) {
