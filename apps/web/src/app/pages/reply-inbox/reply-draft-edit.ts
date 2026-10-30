@@ -1,6 +1,14 @@
 import type { PublishReplyRequest, ReplyInboxReview } from '@reviewinbox/contracts'
+import { storeReplyCharacterLimits } from '@reviewinbox/contracts'
 
 export type ReplyDraftEdit = { text: string; reviewContentToken: string }
+
+export function replyCharactersOverLimit(
+  text: string,
+  provider: ReplyInboxReview['provider'],
+): number {
+  return Math.max(0, text.trim().length - storeReplyCharacterLimits[provider])
+}
 
 export function buildPublishRequest(
   review: ReplyInboxReview,

@@ -475,6 +475,7 @@
       "language": "Reply language · {{language}}",
       "replyLimit": "Reply Draft limit",
       "googleLimit": "Google Play limit",
+      "overLimit": "Characters to remove before publishing: {{count}}.",
       "publishReply": "Publish reply",
       "discardChanges": "Discard changes"
     },
