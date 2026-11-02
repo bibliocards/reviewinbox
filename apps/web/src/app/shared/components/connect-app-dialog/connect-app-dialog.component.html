@@ -62,9 +62,14 @@
                 autocomplete="off"
                 maxlength="120"
                 [formField]="connectAppForm.appName"
+                [attr.aria-describedby]="
+                  connectAppForm.appName().touched() && connectAppForm.appName().invalid()
+                    ? 'connect-app-name-error'
+                    : null
+                "
               />
               @if (connectAppForm.appName().touched() && connectAppForm.appName().invalid()) {
-                <span class="text-xs text-failure-ink">{{
+                <span id="connect-app-name-error" class="text-xs text-failure-ink" role="alert">{{
                   t('apps.connectDialog.errors.appNameRequired')
                 }}</span>
               }

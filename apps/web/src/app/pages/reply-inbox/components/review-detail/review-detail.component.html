@@ -1,0 +1,388 @@
+@let review = selectedReview();
+<article
+  *transloco="let t"
+  id="reply-inbox-detail"
+  class="grid min-w-0 content-start gap-5 rounded-xl border border-border bg-surface-1 p-6 [scrollbar-gutter:stable] min-[901px]:h-[70dvh] min-[901px]:overflow-y-auto"
+  aria-labelledby="review-detail-title"
+  [attr.aria-busy]="loading()"
+  [attr.inert]="loading() ? '' : null"
+>
+  <div class="flex min-w-0 flex-wrap items-center gap-2">
+    <span [class]="statusClass(review.replyStatus)">{{
+      t('replyInbox.status.' + review.replyStatus)
+    }}</span>
+    <span [class]="statusClass('metadata')"
+      ><i
+        class="pi me-1"
+        [ngClass]="presentation.isFromAppStore(review) ? 'pi-apple' : 'pi-google'"
+        aria-hidden="true"
+      ></i
+      >{{ presentation.providerLabel(review) }}</span
+    >
+    <span [class]="statusClass('metadata')">
+      @if (appIconUrl(review.appId); as iconUrl) {
+        <img class="size-3.5 shrink-0 rounded-xs object-cover me-1" [src]="iconUrl" alt="" />
+      }
+      {{ review.appName }}
+    </span>
+    @if (review.version) {
+      <span [class]="statusClass('metadata')">v{{ review.version }}</span>
+    } @else if (presentation.isFromAppStore(review)) {
+      <span class="text-xs text-ink-subtle">{{
+        t('reviewVersion.' + review.versionLookupStatus)
+      }}</span>
+    }
+    @if (review.language) {
+      <span [class]="statusClass('metadata')">{{ review.language }}</span>
+    }
+  </div>
+  <div class="grid gap-2">
+    <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+      <h2
+        id="review-detail-title"
+        class="m-0 text-[22px] leading-[1.3] font-semibold tracking-[-0.3px]"
+      >
+        {{ presentation.reviewTitle(review.title) }}
+      </h2>
+      <span class="inline-flex gap-0.5 text-rating">
+        <span class="sr-only">{{ presentation.ratingLabel(review.rating) }}</span>
+        @for (star of [1, 2, 3, 4, 5]; track star) {
+          <i
+            class="pi text-[0.85em]"
+            [ngClass]="star <= review.rating ? 'pi-star-fill' : 'pi-star'"
+            aria-hidden="true"
+          ></i>
+        }
+      </span>
+    </div>
+    <p class="m-0 text-[13px] text-ink-subtle">
+      @if (review.authorDisplayName) {
+        {{ review.authorDisplayName }} <span aria-hidden="true">·</span>
+      }
+      {{ presentation.reviewedAgo(review) }}
+    </p>
+    @if (!review.changedAfterReply) {
+      <p class="m-0 max-w-[72ch] whitespace-pre-wrap text-[15px] leading-relaxed text-ink-muted">
+        {{ review.body }}
+      </p>
+    }
+  </div>
+  @if (review.changedAfterReply) {
+    <span
+      class="inline-flex w-fit items-center gap-1 rounded-xs border border-warning-border bg-warning px-2 py-0.5 text-xs text-warning-ink"
+      ><i class="pi pi-refresh" aria-hidden="true"></i
+      >{{ t('replyInbox.changedAfterReply.badge') }}</span
+    >
+  }
+  <div class="flex flex-wrap items-center gap-2">
+    @if (classification(); as analysis) {
+      @if (analysis.id === review.id) {
+        <span [class]="statusClass(analysis.severity ?? 'unknown')">{{
+          t('analysis.severity.' + (analysis.severity ?? 'unknown'))
+        }}</span>
+        @if (analysis.needsRecheck) {
+          <span class="text-xs text-warning-ink">{{ t('analysis.editor.needsRecheck') }}</span>
+        }
+        @for (topic of analysis.topics; track topic.id) {
+          <span [class]="statusClass('metadata')" [class.border-dashed]="topic.status === 'pending'"
+            >{{ t('analysis.filters.topic') }} · {{ topic.label }}</span
+          >
+        }
+        @for (intent of analysis.intents; track intent) {
+          <span [class]="statusClass('metadata')"
+            >{{ t('analysis.filters.intent') }} · {{ t('analysis.intents.' + intent) }}</span
+          >
+        }
+      }
+    }
+
+    <p-button
+      severity="secondary"
+      [outlined]="true"
+      size="small"
+      [label]="t('analysis.actions.correct')"
+      icon="pi pi-tags"
+      [loading]="actions.activeClassificationReviewId() === review.id"
+      [disabled]="actions.activeClassificationReviewId() !== null"
+      (onClick)="actions.openClassificationEditor(review)"
+    />
+  </div>
+  @if (review.changedAfterReply) {
+    <section
+      class="grid min-w-0 gap-3"
+      [attr.aria-label]="t('replyInbox.changedAfterReply.comparison')"
+    >
+      <div class="grid min-w-0 gap-3 grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))]">
+        <article class="min-w-0 rounded-2xl border border-hairline bg-surface-2 p-4">
+          <div class="flex min-w-0 flex-wrap items-center justify-between gap-3">
+            <h3 class="m-0 text-sm font-semibold text-ink">
+              {{ t('replyInbox.changedAfterReply.previousTitle') }}
+            </h3>
+            <span class="min-w-0 text-xs text-ink-subtle">
+              {{ t('replyInbox.changedAfterReply.previousHint') }}
+            </span>
+          </div>
+          @if (review.replyBaseline; as baseline) {
+            <h4 class="m-0 mbs-3 text-base font-medium text-ink">
+              {{ presentation.reviewTitle(baseline.title) }}
+            </h4>
+            <div class="mbs-1 flex items-center gap-1.5 text-xs text-ink-subtle">
+              <span class="inline-flex items-center gap-0.5 text-rating">
+                @for (star of [1, 2, 3, 4, 5]; track star) {
+                  <i
+                    class="pi text-xs"
+                    [ngClass]="star <= baseline.rating ? 'pi-star-fill' : 'pi-star'"
+                    aria-hidden="true"
+                  ></i>
+                }
+              </span>
+              <span>{{ presentation.ratingLabel(baseline.rating) }}</span>
+            </div>
+            <p class="m-0 mbs-3 whitespace-pre-wrap text-sm leading-6 text-ink-muted">
+              {{ baseline.body }}
+            </p>
+          } @else {
+            <p class="m-0 mbs-3 text-sm leading-6 text-ink-subtle">
+              {{ t('replyInbox.changedAfterReply.previousUnavailable') }}
+            </p>
+          }
+        </article>
+        <article class="min-w-0 rounded-2xl border border-primary-500/20 bg-primary-500/5 p-4">
+          <div class="flex min-w-0 flex-wrap items-center justify-between gap-3">
+            <h3 class="m-0 text-sm font-semibold text-ink">
+              {{ t('replyInbox.changedAfterReply.latestTitle') }}
+            </h3>
+            <span class="min-w-0 text-xs text-primary-700 dark:text-primary-300">
+              {{ t('replyInbox.changedAfterReply.latestHint') }}
+            </span>
+          </div>
+          <h4 class="m-0 mbs-3 text-base font-medium text-ink">
+            {{ presentation.reviewTitle(review.title) }}
+          </h4>
+          <div class="mbs-1 flex items-center gap-1.5 text-xs text-ink-subtle">
+            <span class="inline-flex items-center gap-0.5 text-rating">
+              @for (star of [1, 2, 3, 4, 5]; track star) {
+                <i
+                  class="pi text-xs"
+                  [ngClass]="star <= review.rating ? 'pi-star-fill' : 'pi-star'"
+                  aria-hidden="true"
+                ></i>
+              }
+            </span>
+            <span>{{ presentation.ratingLabel(review.rating) }}</span>
+          </div>
+          <p class="m-0 mbs-3 whitespace-pre-wrap text-sm leading-6 text-ink">
+            {{ review.body }}
+          </p>
+        </article>
+      </div>
+      @if (review.publishedReply; as publishedReply) {
+        <div class="rounded-2xl border border-primary-500/20 bg-primary-500/5 p-4">
+          <p class="m-0 text-sm font-medium text-primary-700 dark:text-primary-300">
+            {{ t('replyInbox.publishedReply') }}
+          </p>
+          <p class="m-0 mbs-2 whitespace-pre-wrap text-sm leading-6 text-ink">
+            {{ publishedReply.replyText }}
+          </p>
+        </div>
+      }
+    </section>
+  }
+  @if (actions.hasCurrentDraft(review)) {
+    <div class="grid min-w-0 overflow-clip rounded-lg border border-control-border bg-surface-2">
+      <div
+        class="flex flex-wrap items-center justify-between gap-2 border-be border-hairline px-4 py-3"
+      >
+        <label
+          for="inbox-draft-text"
+          class="font-mono text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase"
+          >{{ t('replyInbox.replyDraft') }}</label
+        >
+        @if (review.replyDraft?.chosenReplyLanguage; as replyLanguage) {
+          <span class="text-xs text-ink-subtle">{{
+            t('replyInbox.editor.language', { language: replyLanguage })
+          }}</span>
+        }
+      </div>
+      <textarea
+        pTextarea
+        id="inbox-draft-text"
+        rows="4"
+        class="w-full resize-y rounded-none border-0 bg-transparent px-4 py-3.5 text-[15px] leading-relaxed text-ink focus-visible:outline-offset-[-2px]"
+        [ngModel]="actions.draftText(review)"
+        (ngModelChange)="actions.editDraft(review, $event)"
+        [disabled]="actions.activeReviewId() !== null"
+        aria-describedby="inbox-draft-help"
+      ></textarea>
+      <div
+        id="inbox-draft-help"
+        class="flex flex-wrap items-center justify-between gap-2 border-bs border-hairline px-4 py-2.5 text-xs text-ink-subtle"
+      >
+        <span>{{
+          t(
+            presentation.isFromAppStore(review)
+              ? 'replyInbox.editor.replyLimit'
+              : 'replyInbox.editor.googleLimit'
+          )
+        }}</span>
+        <span
+          class="font-mono tabular-nums"
+          [class.text-failure-ink]="
+            actions.draftText(review).trim().length > actions.replyLimit(review)
+          "
+          >{{ actions.draftText(review).trim().length }} / {{ actions.replyLimit(review) }}</span
+        >
+      </div>
+    </div>
+    @if (actions.draftIsStale(review)) {
+      <p class="m-0 text-sm text-failure-ink" role="alert">
+        {{ t('replyInbox.messages.reviewChanged') }}
+      </p>
+    }
+  }
+  @if (review.publishedReply; as publishedReply) {
+    @if (!review.changedAfterReply) {
+      <section class="grid gap-2 rounded-lg border border-border-strong bg-surface-2 p-4">
+        <h3 class="m-0 text-sm font-medium text-ink-muted">
+          {{ t('replyInbox.publishedReply') }}
+        </h3>
+        <p class="m-0 whitespace-pre-wrap text-sm leading-6">
+          {{ publishedReply.replyText }}
+        </p>
+        @if (!review.replyBaseline) {
+          <p class="m-0 text-xs text-ink-subtle">
+            {{ t('replyInbox.changedAfterReply.previousUnavailableForPublished') }}
+          </p>
+        }
+      </section>
+    }
+  }
+  @if (review.lastPublishFailure; as failure) {
+    <p
+      class="m-0 rounded-md border border-failure-border bg-failure px-3 py-2 text-sm text-failure-ink"
+      role="alert"
+    >
+      {{ t('replyInbox.messages.lastPublishFailed') }} {{ failure.errorMessage }}
+    </p>
+  }
+  <div class="flex flex-wrap items-center gap-2">
+    @if (actions.hasCurrentDraft(review)) {
+      <p-button
+        [label]="
+          t(
+            review.changedAfterReply
+              ? 'replyInbox.actions.publishUpdatedReply'
+              : 'replyInbox.editor.publishReply'
+          )
+        "
+        icon="pi pi-send"
+        [loading]="
+          actions.activeReviewId() === review.id
+          && actions.pendingActionKey()
+            === (review.changedAfterReply
+              ? 'replyInbox.messages.updatedReplyPublished'
+              : 'replyInbox.messages.published')
+        "
+        [disabled]="
+          actions.activeReviewId() !== null
+          || !actions.canSaveDraft(review)
+          || actions.draftText(review).trim().length > actions.replyLimit(review)
+        "
+        (onClick)="actions.publish(review)"
+      />
+      <p-button
+        [loading]="
+          actions.activeReviewId() === review.id
+          && actions.pendingActionKey() === 'replyInbox.messages.draftSaved'
+        "
+        severity="secondary"
+        [outlined]="true"
+        [label]="
+          t(
+            review.changedAfterReply
+              ? 'replyInbox.actions.saveUpdatedDraft'
+              : 'replyInbox.actions.saveDraft'
+          )
+        "
+        [disabled]="
+          actions.activeReviewId() !== null
+          || !actions.hasDraftEdit(review)
+          || !actions.canSaveDraft(review)
+        "
+        (onClick)="actions.saveDraft(review)"
+      />
+      <p-button
+        severity="secondary"
+        [outlined]="true"
+        icon="pi pi-refresh"
+        [label]="t('replyInbox.regeneration.generate')"
+        [disabled]="actions.activeReviewId() !== null || !actions.canSaveDraft(review)"
+        (onClick)="actions.openRegenerateDraftDialog(review)"
+      />
+      @if (actions.hasDraftEdit(review)) {
+        <p-button
+          severity="secondary"
+          [text]="true"
+          [label]="t('replyInbox.editor.discardChanges')"
+          [disabled]="actions.activeReviewId() !== null"
+          (onClick)="actions.resetDraft(review)"
+        />
+      }
+    } @else if (review.replyStatus === 'pending' || review.replyStatus === 'failed') {
+      <p-button
+        severity="secondary"
+        [label]="
+          t(
+            review.changedAfterReply
+              ? 'replyInbox.actions.generateUpdatedDraft'
+              : 'replyInbox.actions.generateDraft'
+          )
+        "
+        icon="pi pi-sparkles"
+        [loading]="actions.activeReviewId() === review.id"
+        [disabled]="actions.activeReviewId() !== null"
+        (onClick)="actions.queueDraft(review)"
+      />
+      <p-button
+        severity="secondary"
+        [outlined]="true"
+        [label]="
+          t(
+            review.changedAfterReply
+              ? 'replyInbox.actions.replyToUpdatedReview'
+              : 'replyInbox.actions.replyManually'
+          )
+        "
+        icon="pi pi-pencil"
+        [disabled]="actions.activeReviewId() !== null"
+        (onClick)="actions.openDraftDialog(review)"
+      />
+    } @else if (review.replyStatus === 'ignored') {
+      <p-button
+        severity="secondary"
+        [outlined]="true"
+        [label]="t('replyInbox.actions.unignore')"
+        icon="pi pi-undo"
+        [loading]="actions.activeReviewId() === review.id"
+        [disabled]="actions.activeReviewId() !== null"
+        (onClick)="actions.unactions.ignore(review)"
+      />
+    }
+    @if (review.replyStatus !== 'ignored' && review.replyStatus !== 'published') {
+      <p-button
+        severity="secondary"
+        [outlined]="true"
+        [label]="
+          t(
+            review.changedAfterReply
+              ? 'replyInbox.actions.ignoreChange'
+              : 'replyInbox.actions.ignore'
+          )
+        "
+        icon="pi pi-ban"
+        [disabled]="actions.activeReviewId() !== null"
+        (onClick)="actions.ignore(review)"
+      />
+    }
+  </div>
+</article>

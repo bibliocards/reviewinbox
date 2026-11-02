@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common'
 import {
   ChangeDetectorRef,
   Component,
@@ -31,6 +32,7 @@ import type { MenuItem } from 'primeng/api'
 import { ButtonModule } from 'primeng/button'
 import { DialogService } from 'primeng/dynamicdialog'
 import { MenuModule } from 'primeng/menu'
+import { PopoverModule } from 'primeng/popover'
 import { type SelectChangeEvent, SelectModule } from 'primeng/select'
 import { z } from 'zod'
 
@@ -63,6 +65,8 @@ const activeOrganizationSessionSchema = z.object({ activeOrganizationId: z.strin
     ThemeToggleComponent,
     FormsModule,
     MenuModule,
+    NgTemplateOutlet,
+    PopoverModule,
     TranslocoDirective,
     TypedTemplateDirective,
   ],

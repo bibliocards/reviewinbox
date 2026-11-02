@@ -1,5 +1,5 @@
 <div
-  class="grid min-h-dvh grid-cols-[232px_minmax(0,1fr)] bg-canvas text-ink max-[900px]:grid-cols-1"
+  class="grid min-h-dvh grid-cols-[232px_minmax(0,1fr)] bg-canvas text-ink max-[900px]:grid-cols-[minmax(0,1fr)] max-[900px]:content-start"
   *transloco="let t"
 >
   <a
@@ -10,71 +10,101 @@
     {{ t('shell.navigation.skipToContent') }}
   </a>
   <aside
-    class="sticky inset-bs-0 flex h-dvh min-w-0 flex-col gap-5 self-start overflow-y-auto border-e border-hairline bg-sunken px-3 py-3.5 [overscroll-behavior:contain] max-[900px]:static max-[900px]:h-auto max-[900px]:border-e-0 max-[900px]:border-be max-[900px]:px-4 max-[900px]:py-2"
+    class="sticky inset-bs-0 flex h-dvh min-w-0 flex-col gap-5 self-start overflow-y-auto border-e border-hairline bg-sunken px-3 py-3.5 [overscroll-behavior:contain] max-[900px]:static max-[900px]:h-auto max-[900px]:gap-2 max-[900px]:border-e-0 max-[900px]:border-be max-[900px]:px-4 max-[900px]:py-2"
     [attr.aria-label]="t('shell.navigation.primary')"
   >
-    @let organizationOptions = organizationList();
-    @if (organizationOptions.length > 1) {
-      <div>
-        <p-select
-          [fluid]="true"
-          [options]="organizationOptions"
-          optionLabel="name"
-          optionValue="id"
-          size="small"
-          [ngModel]="organizationSelectValue()"
-          [disabled]="isChangingOrganization()"
-          [ariaLabel]="t('shell.organization.selectAria')"
-          (onChange)="switchOrganization($event)"
-        >
-          <ng-template #item #selectedItem [typedTemplate]="organizationOptions" let-item>
-            <div class="flex min-w-0 items-center gap-2">
-              @if (item.logo) {
-                <img
-                  class="size-7 shrink-0 rounded-md object-cover"
-                  [src]="item.logo"
-                  [alt]="item.name"
-                />
-              } @else if (item.id) {
-                <span
-                  class="grid size-7 shrink-0 place-items-center rounded-md bg-primary text-[13px] font-semibold text-white"
-                >
-                  {{ initialsFrom(item.name) }}
-                </span>
+    <div class="flex min-w-0 items-center gap-2">
+      <div class="min-w-0 flex-1">
+        @let organizationOptions = organizationList();
+        @if (organizationOptions.length > 1) {
+          <div>
+            <p-select
+              [fluid]="true"
+              [options]="organizationOptions"
+              optionLabel="name"
+              optionValue="id"
+              size="small"
+              [ngModel]="organizationSelectValue()"
+              [disabled]="isChangingOrganization()"
+              [ariaLabel]="t('shell.organization.selectAria')"
+              (onChange)="switchOrganization($event)"
+            >
+              <ng-template #item #selectedItem [typedTemplate]="organizationOptions" let-item>
+                <div class="flex min-w-0 items-center gap-2">
+                  @if (item.logo) {
+                    <img
+                      class="size-7 shrink-0 rounded-md object-cover"
+                      [src]="item.logo"
+                      [alt]="item.name"
+                    />
+                  } @else if (item.id) {
+                    <span
+                      class="grid size-7 shrink-0 place-items-center rounded-md bg-primary text-[13px] font-semibold text-white"
+                    >
+                      {{ initialsFrom(item.name) }}
+                    </span>
+                  }
+                  <span class="truncate">{{ item.name }}</span>
+                </div>
+              </ng-template>
+            </p-select>
+          </div>
+        } @else if (organizationOptions.length == 1) {
+          @let organization = organizationOptions[0]!;
+          <div class="flex min-h-11 min-w-0 items-center gap-2.5 px-2 py-1.5">
+            @if (organization.logo) {
+              <img
+                class="size-8 shrink-0 rounded-[10px] border border-border-strong object-cover"
+                [src]="organization.logo"
+                [alt]="organization.name"
+              />
+            } @else {
+              <span
+                class="grid size-7 shrink-0 place-items-center rounded-md bg-primary text-[13px] font-semibold text-white"
+                >{{ initialsFrom(organization.name) }}</span
+              >
+            }
+            <span class="grid min-w-0 gap-0.5 leading-tight">
+              <span
+                class="overflow-clip text-sm font-semibold text-ellipsis whitespace-nowrap text-ink"
+                >{{ organization.name }}</span
+              >
+              @if (organizationPlanLabel(); as plan) {
+                <span class="text-xs text-ink-subtle">{{
+                  t('shell.organization.plan', { name: plan })
+                }}</span>
               }
-              <span class="truncate">{{ item.name }}</span>
-            </div>
-          </ng-template>
-        </p-select>
-      </div>
-    } @else if (organizationOptions.length == 1) {
-      @let organization = organizationOptions[0]!;
-      <div class="inline-flex min-h-11 min-w-0 items-center gap-2.5 px-2 py-1.5">
-        @if (organization.logo) {
-          <img
-            class="size-8 shrink-0 rounded-[10px] border border-border-strong object-cover"
-            [src]="organization.logo"
-            [alt]="organization.name"
-          />
-        } @else {
-          <span
-            class="grid size-7 shrink-0 place-items-center rounded-md bg-primary text-[13px] font-semibold text-white"
-            >{{ initialsFrom(organization.name) }}</span
-          >
+            </span>
+          </div>
         }
-        <span class="grid min-w-0 gap-0.5 leading-tight">
-          <span
-            class="overflow-clip text-sm font-semibold text-ellipsis whitespace-nowrap text-ink"
-            >{{ organization.name }}</span
-          >
-          @if (organizationPlanLabel(); as plan) {
-            <span class="text-xs text-ink-subtle">{{
-              t('shell.organization.plan', { name: plan })
-            }}</span>
-          }
-        </span>
       </div>
-    }
+      <button
+        pButton
+        type="button"
+        severity="secondary"
+        [text]="true"
+        class="shrink-0 min-[901px]:hidden"
+        [attr.aria-label]="t('shell.navigation.information')"
+        aria-haspopup="dialog"
+        [attr.aria-expanded]="shellInfo.overlayVisible()"
+        [attr.aria-controls]="shellInfo.overlayVisible() ? 'shell-info' : null"
+        (click)="shellInfo.toggle($event)"
+      >
+        <i class="pi pi-ellipsis-h" aria-hidden="true"></i>
+      </button>
+      <p-popover
+        #shellInfo
+        appendTo="body"
+        [ariaLabel]="t('shell.navigation.information')"
+        [pt]="{ root: { id: 'shell-info' } }"
+      >
+        <ng-template #content>
+          <div class="w-[min(18rem,calc(100vw-4rem))]">
+            <ng-container [ngTemplateOutlet]="shellDetails" />
+          </div>
+        </ng-template>
+      </p-popover>
+    </div>
 
     <nav
       class="flex flex-col gap-1 max-[900px]:flex-row max-[900px]:overflow-x-auto max-[900px]:pbe-1"
@@ -94,7 +124,13 @@
         }
       }
     </nav>
-    <div class="mbs-auto grid gap-3">
+    <div class="mbs-auto hidden min-[901px]:block">
+      <ng-container [ngTemplateOutlet]="shellDetails" />
+    </div>
+  </aside>
+
+  <ng-template #shellDetails>
+    <div class="grid gap-3">
       @if (autoSyncStatus(); as autoSync) {
         <div class="grid gap-2 rounded-lg border border-hairline bg-surface-1 p-3 text-xs">
           <span class="flex items-center gap-2 font-medium text-ink"
@@ -127,14 +163,14 @@
         </a>
       </div>
     </div>
-  </aside>
+  </ng-template>
 
-  <div class="grid min-h-dvh min-w-0 grid-rows-[auto_minmax(0,1fr)]">
+  <div class="grid min-w-0 grid-rows-[auto_minmax(0,1fr)] min-[901px]:min-h-dvh">
     <header
       class="sticky inset-bs-0 z-10 flex min-h-[62px] flex-wrap items-center justify-between gap-3 border-be border-hairline bg-canvas px-6 py-2.5 max-[900px]:px-4"
     >
       <nav
-        class="flex min-w-0 items-center gap-2 text-sm text-ink-muted"
+        class="flex min-w-0 items-center gap-2 text-sm text-ink-muted max-[900px]:hidden"
         [attr.aria-label]="t('shell.navigation.currentPage')"
       >
         <span>ReviewInbox</span

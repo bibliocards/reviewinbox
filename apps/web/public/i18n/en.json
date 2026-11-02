@@ -464,6 +464,15 @@
       "description": "No eligible Reviews are available yet. Google Play exposes written Reviews created or changed during the last week. Check your Store Connections in Apps.",
       "openApps": "Open Apps"
     },
+    "navigation": {
+      "label": "Review navigation",
+      "detail": "Review detail",
+      "back": "Back to Reviews",
+      "previous": "Previous",
+      "next": "Next",
+      "position": "{{current}} / {{total}}",
+      "unavailable": "This Review is no longer in this view. Return to the list to choose another Review."
+    },
     "focus": {
       "back": "Back to Reply Inbox",
       "description": "Showing the selected Review, regardless of its reply status.",
@@ -751,12 +760,15 @@
     "replySettings": "Reply settings"
   },
   "common": {
+    "previousTabs": "Show previous tabs",
+    "nextTabs": "Show next tabs",
     "useLightTheme": "Use light theme",
     "useDarkTheme": "Use dark theme",
     "cancel": "Cancel"
   },
   "shell": {
     "navigation": {
+      "information": "Organization information and links",
       "primary": "Primary navigation",
       "skipToContent": "Skip to content",
       "currentPage": "Current page",

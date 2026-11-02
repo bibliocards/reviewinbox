@@ -1,0 +1,50 @@
+<nav
+  *transloco="let t"
+  #detailNavigation
+  class="grid gap-3 scroll-mbs-20"
+  [ngClass]="{ hidden: !navigation.mobileDetailOpen() }"
+  [attr.aria-label]="t('replyInbox.navigation.label')"
+  tabindex="-1"
+>
+  <h1 class="sr-only">{{ t('replyInbox.navigation.detail') }}</h1>
+  <button
+    pButton
+    type="button"
+    severity="secondary"
+    [text]="true"
+    class="w-fit"
+    (click)="navigation.backToList()"
+  >
+    <i class="pi pi-arrow-left" aria-hidden="true"></i>
+    <span>{{ t('replyInbox.navigation.back') }}</span>
+  </button>
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <p-button
+      severity="secondary"
+      [outlined]="true"
+      icon="pi pi-chevron-left"
+      [label]="t('replyInbox.navigation.previous')"
+      [disabled]="!previousReview() || disabled()"
+      (onClick)="showAdjacentReview(previousReview())"
+    />
+    @if (reviewIndex() >= 0) {
+      <span class="font-mono text-xs text-ink-muted tabular-nums" role="status">
+        {{
+          t('replyInbox.navigation.position', {
+            current: reviewIndex() + 1,
+            total: reviews().length,
+          })
+        }}
+      </span>
+    }
+    <p-button
+      severity="secondary"
+      [outlined]="true"
+      icon="pi pi-chevron-right"
+      iconPos="right"
+      [label]="t('replyInbox.navigation.next')"
+      [disabled]="!nextReview() || disabled()"
+      (onClick)="showAdjacentReview(nextReview())"
+    />
+  </div>
+</nav>

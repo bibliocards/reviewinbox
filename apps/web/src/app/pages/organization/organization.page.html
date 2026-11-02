@@ -1,17 +1,27 @@
-<div class="grid max-w-[1040px] min-w-0 gap-6 text-ink" *transloco="let t">
+<div
+  class="grid grid-cols-[minmax(0,1fr)] max-w-[1040px] min-w-0 gap-6 text-ink"
+  *transloco="let t"
+>
   <header class="grid gap-1">
     <h1 class="m-0 text-[26px] leading-[1.2] font-semibold tracking-[-0.6px]">
       {{ t('organization.title') }}
     </h1>
     <p class="m-0 text-sm text-ink-muted">{{ t('organization.description') }}</p>
   </header>
-  <p-tabs [value]="section()" (valueChange)="selectSection($event)">
-    <p-tablist [attr.aria-label]="t('organization.title')">
+  <p-tabs
+    class="min-w-0"
+    [scrollable]="true"
+    [value]="section()"
+    (valueChange)="selectSection($event)"
+  >
+    <p-tablist
+      [pt]="{ content: { 'aria-label': t('organization.title') }, prevButton: { 'aria-label': t('common.previousTabs') }, nextButton: { 'aria-label': t('common.nextTabs') } }"
+    >
       @for (tab of tabs(); track tab.route) { @if (tab.visible !== false) {
       <p-tab [value]="tab.route">{{ t(tab.labelKey) }}</p-tab> } }
     </p-tablist>
-    <p-tabpanels>
-      <p-tabpanel [value]="section()">
+    <p-tabpanels class="min-w-0">
+      <p-tabpanel class="min-w-0" [value]="section()">
         <router-outlet />
       </p-tabpanel>
     </p-tabpanels>

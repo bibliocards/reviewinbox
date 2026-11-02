@@ -1,5 +1,5 @@
 <div
-  class="grid min-w-0 gap-5 text-ink"
+  class="grid grid-cols-[minmax(0,1fr)] min-w-0 gap-5 text-ink"
   *transloco="let t"
   [attr.aria-busy]="catalogueResource.isLoading()"
 >
@@ -128,8 +128,15 @@
     <span class="text-xs text-ink-subtle">{{ t('analysis.catalogue.discoveryUnavailable') }}</span>
     } }
   </div>
-  <p-tabs [value]="selectedView()" (valueChange)="changeView($event)">
-    <p-tablist>
+  <p-tabs
+    class="min-w-0"
+    [scrollable]="true"
+    [value]="selectedView()"
+    (valueChange)="changeView($event)"
+  >
+    <p-tablist
+      [pt]="{ content: { 'aria-label': t('analysis.catalogue.title') }, prevButton: { 'aria-label': t('common.previousTabs') }, nextButton: { 'aria-label': t('common.nextTabs') } }"
+    >
       <p-tab value="active"
         >{{ t('analysis.catalogue.activeTopics') }}
         <span class="font-mono text-xs tabular-nums">{{ activeTopics().length }}</span></p-tab
@@ -139,8 +146,8 @@
         <span class="font-mono text-xs tabular-nums">{{ rejectedTopics().length }}</span></p-tab
       >
     </p-tablist>
-    <p-tabpanels>
-      <p-tabpanel [value]="selectedView()">
+    <p-tabpanels class="min-w-0">
+      <p-tabpanel class="min-w-0" [value]="selectedView()">
         <div class="relative grid gap-5">
           @if (catalogueResource.isLoading()) {
           <p

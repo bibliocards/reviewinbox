@@ -26,11 +26,13 @@
           [placeholder]="t('accountSettings.profile.namePlaceholder')"
           [attr.aria-label]="t('accountSettings.profile.nameLabel')"
           [formField]="profileForm.name"
+          [attr.aria-describedby]="profileError() ? 'settings-profile-error' : null"
         />
       </label>
       @if (profileError()) {
       <p
         class="m-0 rounded-lg border border-red-400/60 px-3 py-2 text-sm text-ink-muted"
+        id="settings-profile-error"
         role="alert"
       >
         {{ t(profileError()!) }}
@@ -71,6 +73,7 @@
           class="[&:not(.settings-password-field-invalid)]:[--p-inputtext-invalid-border-color:var(--p-inputtext-border-color)]"
           inputId="settings-current-password"
           [formField]="passwordForm.currentPassword"
+          [pt]="{ pcInputText: { root: { 'aria-describedby': passwordForm.currentPassword().touched() && passwordForm.currentPassword().invalid() ? 'settings-current-password-error' : null } } }"
           [class.settings-password-field-invalid]="passwordForm.currentPassword().touched() && passwordForm.currentPassword().invalid()"
           autocomplete="current-password"
           [promptLabel]="t('auth.password.prompt')"
@@ -84,7 +87,11 @@
           inputStyleClass="w-full"
         />
         @if (passwordForm.currentPassword().touched() && passwordForm.currentPassword().invalid()) {
-        <p class="m-0 text-sm font-normal text-red-600">
+        <p
+          id="settings-current-password-error"
+          class="m-0 text-sm font-normal text-failure-ink"
+          role="alert"
+        >
           {{ t('accountSettings.password.validation.currentRequired') }}
         </p>
         }
@@ -95,6 +102,7 @@
           class="[&:not(.settings-password-field-invalid)]:[--p-inputtext-invalid-border-color:var(--p-inputtext-border-color)]"
           inputId="settings-new-password"
           [formField]="passwordForm.newPassword"
+          [pt]="{ pcInputText: { root: { 'aria-describedby': passwordForm.newPassword().touched() && passwordForm.newPassword().invalid() ? 'settings-new-password-error' : null } } }"
           [class.settings-password-field-invalid]="passwordForm.newPassword().touched() && passwordForm.newPassword().invalid()"
           autocomplete="new-password"
           [promptLabel]="t('auth.password.prompt')"
@@ -107,7 +115,13 @@
           inputStyleClass="w-full"
         />
         @if (passwordForm.newPassword().touched() && passwordForm.newPassword().invalid()) {
-        <p class="m-0 text-sm font-normal text-red-600">{{ t('auth.validation.newPassword') }}</p>
+        <p
+          id="settings-new-password-error"
+          class="m-0 text-sm font-normal text-failure-ink"
+          role="alert"
+        >
+          {{ t('auth.validation.newPassword') }}
+        </p>
         }
       </div>
       <div class="grid gap-1.5 text-sm font-medium text-ink">
@@ -118,6 +132,7 @@
           class="[&:not(.settings-password-field-invalid)]:[--p-inputtext-invalid-border-color:var(--p-inputtext-border-color)]"
           inputId="settings-confirm-password"
           [formField]="passwordForm.confirmPassword"
+          [pt]="{ pcInputText: { root: { 'aria-describedby': 'settings-confirm-password-errors' } } }"
           [class.settings-password-field-invalid]="passwordForm.confirmPassword().touched() && passwordForm.confirmPassword().invalid()"
           autocomplete="new-password"
           [ariaLabel]="t('accountSettings.password.confirmLabel')"
@@ -126,16 +141,19 @@
           [fluid]="true"
           inputStyleClass="w-full"
         />
-        @if (passwordForm.confirmPassword().touched() && passwordForm.confirmPassword().invalid()) {
-        <p class="m-0 text-sm font-normal text-red-600">
-          {{ t('auth.validation.confirmPasswordRequired') }}
-        </p>
-        } @if (passwordForm.confirmPassword().touched() && passwordForm().value().newPassword !==
-        passwordForm().value().confirmPassword) {
-        <p class="m-0 text-sm font-normal text-red-600">
-          {{ t('auth.validation.passwordsDoNotMatch') }}
-        </p>
-        }
+        <div id="settings-confirm-password-errors">
+          @if (passwordForm.confirmPassword().touched() && passwordForm.confirmPassword().invalid())
+          {
+          <p class="m-0 text-sm font-normal text-failure-ink" role="alert">
+            {{ t('auth.validation.confirmPasswordRequired') }}
+          </p>
+          } @if (passwordForm.confirmPassword().touched() && passwordForm().value().newPassword !==
+          passwordForm().value().confirmPassword) {
+          <p class="m-0 text-sm font-normal text-failure-ink" role="alert">
+            {{ t('auth.validation.passwordsDoNotMatch') }}
+          </p>
+          }
+        </div>
       </div>
       @if (passwordError()) {
       <p
