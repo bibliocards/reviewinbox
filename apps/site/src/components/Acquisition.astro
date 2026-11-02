@@ -1,0 +1,25 @@
+<script>
+  import {
+    acquisitionFromVisit,
+    acquisitionStorageKey,
+    parseStoredAcquisition,
+    withAcquisition,
+  } from '../../../../packages/contracts/src/acquisition'
+
+  const current = acquisitionFromVisit(new URL(window.location.href), document.referrer)
+  let acquisition = current
+  try {
+    acquisition = parseStoredAcquisition(sessionStorage.getItem(acquisitionStorageKey)) ?? current
+    sessionStorage.setItem(acquisitionStorageKey, JSON.stringify(acquisition))
+  } catch {
+    // Attribution must not prevent navigation when browser storage is unavailable.
+  }
+
+  const appOrigin = new URL(import.meta.env.PUBLIC_APP_URL ?? 'http://localhost:4200').origin
+  for (const anchor of document.querySelectorAll<HTMLAnchorElement>('a[href]')) {
+    const url = new URL(anchor.href)
+    if (url.origin === appOrigin && ['/sign-up', '/login'].includes(url.pathname)) {
+      anchor.href = withAcquisition(url, acquisition).toString()
+    }
+  }
+</script>

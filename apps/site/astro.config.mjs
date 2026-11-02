@@ -11,18 +11,11 @@ export default defineConfig({
       logo: { src: './public/icon.svg', alt: 'ReviewInbox app icon' },
       favicon: '/favicon.svg',
       customCss: ['./src/styles.css'],
+      components: { Head: './src/components/DocsHead.astro' },
       head: [
         {
           tag: 'link',
           attrs: { rel: 'apple-touch-icon', href: '/apple-touch-icon.png', sizes: '180x180' },
-        },
-        {
-          tag: 'meta',
-          attrs: {
-            name: 'keywords',
-            content:
-              'ReviewInbox, app review management, app store reviews, Google Play reviews, App Store reviews, reply inbox, AI reply drafts, review response tool, mobile app support, self-hosted review management',
-          },
         },
       ],
       defaultLocale: 'root',

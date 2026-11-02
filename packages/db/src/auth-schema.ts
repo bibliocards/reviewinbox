@@ -1,3 +1,4 @@
+import type { Acquisition } from '@reviewinbox/contracts'
 import { relations } from 'drizzle-orm'
 import {
   bigint,
@@ -32,6 +33,7 @@ export const user = pgTable('user', {
   emailVerified: boolean('email_verified').default(false).notNull(),
   image: text('image'),
   stripeCustomerId: text('stripe_customer_id'),
+  acquisition: jsonb('acquisition').$type<Acquisition>(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at')
     .defaultNow()

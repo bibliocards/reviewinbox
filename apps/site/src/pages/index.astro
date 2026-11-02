@@ -2,6 +2,7 @@
 import SiteHeader from '../components/SiteHeader.astro'
 import SiteIcons from '../components/SiteIcons.astro'
 import SiteFooter from '../components/SiteFooter.astro'
+import Acquisition from '../components/Acquisition.astro'
 
 import { cloudPlans } from '../lib/pricing'
 import '../styles.css'
@@ -10,30 +11,16 @@ const appUrl = import.meta.env.PUBLIC_APP_URL ?? 'http://localhost:4200'
 const signUpUrl = new URL('/sign-up', appUrl).toString()
 const siteUrl = 'https://reviewinbox.app/'
 const ogImageUrl = new URL('/screenshots/reply-inbox-hero.png', siteUrl).toString()
-const pageTitle = 'ReviewInbox | App Store & Google Play review inbox'
-const pageDescription = 'Bring App Store and Google Play reviews into one inbox. Draft replies with AI, edit them, and publish when ready.'
-const pageKeywords = [
-  'ReviewInbox',
-  'app review management',
-  'app store reviews',
-  'Google Play reviews',
-  'App Store reviews',
-  'reply inbox',
-  'AI reply drafts',
-  'app review reply tool',
-  'mobile app support',
-  'app review analysis',
-  'review topics and severity',
-  'self-hosted review management',
-]
+const pageTitle = 'App Store & Google Play Review Management | ReviewInbox'
+const pageDescription = 'Manage App Store and Google Play reviews in one inbox. Draft replies with AI, review every reply before publishing, and start free with one app.'
 
 ---
 <html lang="en">
   <head>
+    <Acquisition />
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <meta name="description" content={pageDescription} />
-    <meta name="keywords" content={pageKeywords.join(', ')} />
     <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#08090B" />
     <SiteIcons />
@@ -55,19 +42,34 @@ const pageKeywords = [
     <meta name="twitter:image:alt" content="ReviewInbox Reply Inbox with app reviews and reply drafts" />
     <script is:inline type="application/ld+json" set:html={JSON.stringify({
       '@context': 'https://schema.org',
-      '@type': 'SoftwareApplication',
-      name: 'ReviewInbox',
-      applicationCategory: 'BusinessApplication',
-      operatingSystem: 'Web',
-      url: siteUrl,
-      description: pageDescription,
-      keywords: pageKeywords,
-      offers: {
-        '@type': 'Offer',
-        price: '0',
-        priceCurrency: 'USD',
-        availability: 'https://schema.org/InStock',
-      },
+      '@graph': [
+        {
+          '@type': 'WebSite',
+          '@id': `${siteUrl}#website`,
+          name: 'ReviewInbox',
+          url: siteUrl,
+        },
+        {
+          '@type': 'SoftwareApplication',
+          '@id': `${siteUrl}#software`,
+          name: 'ReviewInbox',
+          applicationCategory: 'BusinessApplication',
+          operatingSystem: 'Web',
+          url: siteUrl,
+          description: pageDescription,
+          image: ogImageUrl,
+          sameAs: 'https://github.com/bibliocards/reviewinbox',
+          license: 'https://www.apache.org/licenses/LICENSE-2.0',
+          offers: {
+            '@type': 'Offer',
+            price: '0',
+            priceCurrency: 'USD',
+            name: 'Free Cloud plan',
+            url: 'https://reviewinbox.app/pricing/',
+            availability: 'https://schema.org/InStock',
+          },
+        },
+      ],
     })}></script>
     <title>{pageTitle}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -82,8 +84,8 @@ const pageKeywords = [
           <span class="bg-site-success-bg text-site-success rounded-full py-[2px] px-2 text-[12px] font-medium">Open source</span>
           Self-host with Docker Compose, or use the Cloud →
         </a>
-        <h1 class="m-0 text-[length:clamp(40px,_6.4vw,_84px)] leading-[1.02] tracking-[-0.045em] font-semibold max-w-245">Every store review answered.<br><span class="text-site-heading-muted">Nothing published without you.</span></h1>
-        <p class="m-0 text-[19px] leading-[1.55] text-site-muted max-w-160">ReviewInbox brings App Store and Google Play reviews into one Reply Inbox, drafts replies with AI, and shows the recurring pain behind them. Your team edits and approves every reply.</p>
+        <h1 class="m-0 text-[length:clamp(40px,_6.4vw,_84px)] leading-[1.02] tracking-[-0.045em] font-semibold max-w-245">App Store and Google Play reviews.<br><span class="text-site-heading-muted">One inbox. Replies you control.</span></h1>
+        <p class="m-0 text-[19px] leading-[1.55] text-site-muted max-w-160">ReviewInbox is open-source app review management software for mobile developers. Bring both stores into one Reply Inbox, draft replies with AI, and find recurring product problems. You review and publish every reply. Start with one App on the free Cloud plan.</p>
         <div class="flex flex-wrap gap-3">
           <a href={signUpUrl} class="bg-site-primary text-white no-underline font-medium py-[13px] px-5 rounded-md text-[15px] inline-flex items-center min-h-11 active:brightness-90 [@media(hover:hover)_and_(pointer:fine)]:hover:bg-site-primary/90">Start free — 1 App included</a>
           <a href="/docs/self-hosting/" class="border border-site-border-strong text-site-ink no-underline font-medium py-[13px] px-5 rounded-md text-[15px] bg-site-surface inline-flex items-center min-h-11 active:brightness-90 [@media(hover:hover)_and_(pointer:fine)]:hover:brightness-125">Self-host it</a>
@@ -260,9 +262,13 @@ const pageKeywords = [
 
       <section class="border-bs border-site-hairline">
         <div class="max-w-300 mx-auto py-28 px-6 flex flex-wrap gap-12">
-          <h2 class="min-w-0 flex-[1_1_320px] m-0 text-[length:clamp(32px,_4vw,_48px)] leading-[1.1] tracking-[-0.035em] font-semibold">Questions</h2>
+          <h2 class="min-w-0 flex-[1_1_320px] m-0 text-[length:clamp(32px,_4vw,_48px)] leading-[1.1] tracking-[-0.035em] font-semibold">App review management questions</h2>
           <div class="min-w-0 flex-[999_1_560px] flex flex-col">
             <details open class="border-bs border-site-border py-[22px] px-0">
+              <summary class="min-h-11 active:text-site-muted [@media(hover:hover)_and_(pointer:fine)]:hover:text-site-body cursor-pointer text-[18px] font-medium tracking-[-0.2px]">Can I manage app reviews for free without self-hosting?</summary>
+              <p class="mbs-3 text-site-muted max-w-160">Yes. The free Cloud plan includes {cloudPlans[0].summary}, with hosting managed for you. Connect App Store, Google Play, or both for the same App. See <a href="/pricing/">all plans and limits</a> or <a href="/docs/manage-both-stores/">how to manage both stores</a>.</p>
+            </details>
+            <details class="border-bs border-site-border py-[22px] px-0">
               <summary class="min-h-11 active:text-site-muted [@media(hover:hover)_and_(pointer:fine)]:hover:text-site-body cursor-pointer text-[18px] font-medium tracking-[-0.2px]">Does AI publish replies automatically?</summary>
               <p class="mbs-3 text-site-muted max-w-160">No. AI drafting creates Reply Drafts only. Publishing remains an explicit action controlled by your team.</p>
             </details>

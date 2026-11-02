@@ -14,6 +14,7 @@ import { and, eq } from 'drizzle-orm'
 import { Stripe as StripeClient } from 'stripe'
 import { z } from 'zod'
 
+import { acquisitionAuthOptions } from './auth/acquisition'
 import { database, serverConfig } from './db'
 import {
   dispatchPasswordResetEmail,
@@ -81,6 +82,7 @@ const authOptions: ReviewInboxAuthOptions = {
   basePath: '/api/auth',
   baseURL: serverConfig.betterAuthUrl,
   database: authDatabase,
+  ...acquisitionAuthOptions(serverConfig.deploymentMode),
   emailAndPassword: createEmailAndPasswordConfig(),
   plugins: authPlugins,
   rateLimit: { enabled: true, storage: rateLimitStorage },

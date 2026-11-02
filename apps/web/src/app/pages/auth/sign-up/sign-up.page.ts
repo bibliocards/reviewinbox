@@ -8,6 +8,7 @@ import { PasswordModule } from 'primeng/password'
 import { firstValueFrom } from 'rxjs'
 
 import { ThemeToggleComponent } from '../../../shared/components/theme-toggle/theme-toggle.component'
+import { AcquisitionService } from '../../../shared/services/acquisition.service'
 import { AuthCapabilitiesService } from '../../../shared/services/auth-capabilities.service'
 
 type SignUpFormValue = { name: string; email: string; password: string; organizationName: string }
@@ -27,6 +28,7 @@ type SignUpFormValue = { name: string; email: string; password: string; organiza
 })
 export class SignUpPageComponent {
   private readonly auth = inject(AuthService)
+  private readonly acquisition = inject(AcquisitionService)
   private readonly authCapabilities = inject(AuthCapabilitiesService)
   private readonly organizations = inject(OrganizationService)
   private readonly route = inject(ActivatedRoute)
@@ -109,12 +111,14 @@ export class SignUpPageComponent {
       email: value.email,
       password: value.password,
       username: this.slugify(value.email.split('@')[0] ?? value.name),
+      acquisitionAtSignUp: this.capabilities().isCloud ? this.acquisition.attribution : null,
     }
 
     // SAFETY: the invitation endpoint accepts this additional id alongside the Better Auth sign-up fields.
     const invitationRequest =
       this.invitationId === null ? request : { ...request, invitationId: this.invitationId }
     await firstValueFrom(this.auth.signUpEmail(invitationRequest))
+    this.acquisition.clear()
   }
 
   private async createOrganization(name: string): Promise<void> {
