@@ -6,7 +6,9 @@
 
 An open-source Reply Inbox for App Store and Google Play Reviews. Import Reviews, prepare replies with AI, publish them yourself, and explore recurring product problems.
 
-[Website](https://reviewinbox.app) · [User guides](https://reviewinbox.app/docs/)
+[Start free on Cloud](https://cloud.reviewinbox.app/sign-up) · [Website](https://reviewinbox.app) · [User guides](https://reviewinbox.app/docs/)
+
+Manage your iOS and Android app reviews without running a server: the [free Cloud plan](https://reviewinbox.app/pricing/) includes one App, 30 Review imports and 5 AI Reply Drafts per month. You review and publish every reply. Prefer your own infrastructure? [Self-host with Docker Compose](https://reviewinbox.app/docs/self-hosting/).
 
 ![Reply Inbox](docs/screenshots/reply-inbox.png)
 

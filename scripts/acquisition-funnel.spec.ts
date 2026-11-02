@@ -22,6 +22,45 @@ import {
   parseDateRange,
 } from './acquisition-funnel'
 
+describe('registration source aggregation', () => {
+  it('counts each registered user once by source and campaign, keeping historical users unknown', () => {
+    const report = buildFunnelReport(parseDateRange('2026-09-01', '2026-10-01'), {
+      userIds: ['old', 'google', 'github', 'github'],
+      registrations: [
+        {
+          userId: 'google',
+          acquisition: { source: 'google', medium: 'organic', landingPath: '/' },
+        },
+        {
+          userId: 'github',
+          acquisition: {
+            source: 'github',
+            medium: 'referral',
+            campaign: 'readme',
+            landingPath: '/',
+          },
+        },
+        {
+          userId: 'excluded',
+          acquisition: { source: 'internal', medium: 'test', landingPath: '/' },
+        },
+      ],
+      organizationIds: [],
+      storeValidatedOrganizationIds: [],
+      importedOrganizationIds: [],
+      draftedOrganizationIds: [],
+      publishedOrganizationIds: [],
+      billingActiveOrganizationIds: [],
+    })
+    expect(report.registrationsBySource).toEqual([
+      { source: 'unknown', medium: 'unknown', campaign: null, registrations: 1 },
+      { source: 'google', medium: 'organic', campaign: null, registrations: 1 },
+      { source: 'github', medium: 'referral', campaign: 'readme', registrations: 1 },
+    ])
+    expect(report.counts.user_registered).toBe(3)
+  })
+})
+
 describe('acquisition funnel report shape', () => {
   it('keeps User volume separate and uses one Organization denominator for every rate', () => {
     const report = buildFunnelReport(parseDateRange('2026-09-01', '2026-10-01'), {

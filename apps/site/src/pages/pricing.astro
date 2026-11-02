@@ -2,6 +2,7 @@
 import SiteHeader from '../components/SiteHeader.astro'
 import SiteIcons from '../components/SiteIcons.astro'
 import SiteFooter from '../components/SiteFooter.astro'
+import Acquisition from '../components/Acquisition.astro'
 
 import { cloudPlans, comparisonRows } from '../lib/pricing'
 import '../styles.css'
@@ -14,12 +15,13 @@ const planSignUpUrl = (plan: string) => {
 }
 const siteUrl = 'https://reviewinbox.app/pricing/'
 const ogImageUrl = new URL('/screenshots/reply-inbox-hero.png', 'https://reviewinbox.app/').toString()
-const pageTitle = 'ReviewInbox Pricing | App Store & Google Play review workflows'
-const pageDescription = 'ReviewInbox pricing plans for Cloud and self-hosted deployments, including Review imports, Managed AI Reply Drafts, Apps, Store Connections, and members.'
+const pageTitle = 'App Review Management Pricing: Free Cloud Plan | ReviewInbox'
+const pageDescription = 'Start managing App Store and Google Play reviews with a free ReviewInbox Cloud plan. Compare app, review import, and AI draft limits, or self-host for free.'
 
 ---
 <html lang="en">
   <head>
+    <Acquisition />
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <meta name="description" content={pageDescription} />

@@ -1,6 +1,6 @@
 {
-  "id": "7313ce63-8b7a-4b78-8cd0-b7af78fb59f8",
-  "prevId": "612728b8-ef88-4293-8c4c-708fd99c6241",
+  "id": "47472c78-94a9-4973-81e8-8eb4a46bb38e",
+  "prevId": "7313ce63-8b7a-4b78-8cd0-b7af78fb59f8",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -910,6 +910,12 @@
         "stripe_customer_id": {
           "name": "stripe_customer_id",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "acquisition": {
+          "name": "acquisition",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },

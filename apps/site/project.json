@@ -3,9 +3,11 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "sourceRoot": "apps/site/src",
+  "implicitDependencies": ["contracts"],
   "targets": {
     "build": {
       "executor": "nx:run-commands",
+      "inputs": ["production", "^production", { "env": "PUBLIC_APP_URL" }],
       "options": { "command": "astro build --root apps/site" },
       "outputs": ["{workspaceRoot}/dist/apps/site"]
     },

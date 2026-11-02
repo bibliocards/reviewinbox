@@ -78,6 +78,13 @@
       "when": 1790158755295,
       "tag": "0010_remove_analysis_catalog_version",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793650834578,
+      "tag": "0011_signup_acquisition",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,6 @@
 import { pathToFileURL } from 'node:url'
 
+import { acquisitionSchema, type Acquisition } from '@reviewinbox/contracts'
 import type { Database } from '@reviewinbox/db'
 import {
   closeDatabase,
@@ -34,6 +35,7 @@ export type DateRange = { from: Date; to: Date; fromDate: string; toDate: string
 export type AcquisitionFunnelReport = {
   period: { from: string; toExclusive: string }
   excludedOrganizationCount: number
+  registrationsBySource: RegistrationSource[]
   counts: Record<FunnelStage, number | null>
   rates: {
     storeValidatedFromOrganization: Rate
@@ -53,6 +55,7 @@ export type Rate = {
 
 export type FunnelFacts = {
   userIds: Iterable<string>
+  registrations?: readonly { userId: string; acquisition?: Acquisition | null }[]
   organizationIds: Iterable<string>
   storeValidatedOrganizationIds: Iterable<string>
   importedOrganizationIds: Iterable<string>
@@ -60,6 +63,13 @@ export type FunnelFacts = {
   publishedOrganizationIds: Iterable<string>
   billingActiveOrganizationIds: Iterable<string>
   excludedOrganizationCount?: number
+}
+
+type RegistrationSource = {
+  source: string
+  medium: string
+  campaign: string | null
+  registrations: number
 }
 
 type CliOptions = { dateRange: DateRange; excludedOrganizationIds: string[] }
@@ -182,6 +192,7 @@ export function buildFunnelReport(
   return {
     period: { from: dateRange.fromDate, toExclusive: dateRange.toDate },
     excludedOrganizationCount: facts.excludedOrganizationCount ?? 0,
+    registrationsBySource: groupRegistrations(facts.userIds, facts.registrations ?? []),
     counts: {
       user_registered: countDistinct(facts.userIds),
       organization_created: organizationCount,
@@ -194,6 +205,28 @@ export function buildFunnelReport(
     },
     rates: buildRates(stageCounts, organizationCount),
   }
+}
+
+function groupRegistrations(
+  userIds: Iterable<string>,
+  registrations: NonNullable<FunnelFacts['registrations']>,
+): RegistrationSource[] {
+  const attributionByUser = new Map(registrations.map((row) => [row.userId, row.acquisition]))
+  const groups = new Map<string, RegistrationSource>()
+  for (const userId of new Set(userIds)) {
+    const parsed = acquisitionSchema.safeParse(attributionByUser.get(userId))
+    const attribution = parsed.success ? parsed.data : null
+    const dimensions = {
+      source: attribution?.source ?? 'unknown',
+      medium: attribution?.medium ?? 'unknown',
+      campaign: attribution?.campaign ?? null,
+    }
+    const key = JSON.stringify(dimensions)
+    const group = groups.get(key) ?? { ...dimensions, registrations: 0 }
+    group.registrations += 1
+    groups.set(key, group)
+  }
+  return [...groups.values()]
 }
 
 type StageCounts = {
@@ -273,9 +306,10 @@ async function collectFunnelReportFromSnapshot(
   excludedOrganizationIds: readonly string[],
 ): Promise<AcquisitionFunnelReport> {
   const cohort = await loadOrganizationCohort(database, dateRange, excludedOrganizationIds)
-  const userIds = await loadCohortUserIds(database, dateRange, excludedOrganizationIds)
+  const registrations = await loadCohortUsers(database, dateRange, excludedOrganizationIds)
   const facts: FunnelFacts = {
-    userIds,
+    userIds: registrations.map((row) => row.userId),
+    registrations,
     organizationIds: cohort.organizationIds,
     storeValidatedOrganizationIds: [],
     importedOrganizationIds: [],
@@ -326,14 +360,14 @@ async function loadOrganizationCohort(
   }
 }
 
-async function loadCohortUserIds(
+async function loadCohortUsers(
   database: ReadDatabase,
   dateRange: DateRange,
   excludedOrganizationIds: readonly string[],
-): Promise<string[]> {
+): Promise<{ userId: string; acquisition: Acquisition | null }[]> {
   const [users, excludedMembers] = await Promise.all([
     database
-      .select({ userId: user.id })
+      .select({ userId: user.id, acquisition: user.acquisition })
       .from(user)
       .where(and(gte(user.createdAt, dateRange.from), lt(user.createdAt, dateRange.to))),
     excludedOrganizationIds.length > 0
@@ -344,7 +378,7 @@ async function loadCohortUserIds(
       : Promise.resolve([]),
   ])
   const excludedUserIds = new Set(excludedMembers.map(({ userId }) => userId))
-  return users.map(({ userId }) => userId).filter((userId) => !excludedUserIds.has(userId))
+  return users.filter(({ userId }) => !excludedUserIds.has(userId))
 }
 
 type StageOrganizations = {

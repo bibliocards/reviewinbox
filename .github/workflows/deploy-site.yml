@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'apps/site/**'
+      - 'packages/contracts/**'
   workflow_dispatch:
 
 concurrency:

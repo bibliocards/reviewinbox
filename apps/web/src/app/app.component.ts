@@ -3,6 +3,8 @@ import { toSignal } from '@angular/core/rxjs-interop'
 import { RouterOutlet } from '@angular/router'
 import { TranslocoService } from '@jsverse/transloco'
 
+import { AcquisitionService } from './shared/services/acquisition.service'
+
 @Component({
   selector: 'ri-root',
   imports: [RouterOutlet],
@@ -10,6 +12,7 @@ import { TranslocoService } from '@jsverse/transloco'
   templateUrl: './app.component.html',
 })
 export class AppComponent {
+  private readonly acquisition = inject(AcquisitionService)
   private readonly document = inject(DOCUMENT)
   private readonly transloco = inject(TranslocoService)
   private readonly language = toSignal(this.transloco.langChanges$, {
