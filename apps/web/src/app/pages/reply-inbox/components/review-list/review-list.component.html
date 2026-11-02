@@ -1,0 +1,67 @@
+<ul
+  *transloco="let t"
+  class="m-0 grid min-w-0 list-none gap-1.5 p-1 min-[901px]:[max-block-size:70dvh] min-[901px]:overflow-y-auto min-[901px]:[overscroll-behavior:contain] min-[901px]:[scrollbar-gutter:stable]"
+  [attr.aria-label]="t('replyInbox.editor.reviews')"
+>
+  @for (item of reviews(); track item.id) {
+    <li class="min-w-0">
+      <button
+        #reviewButton
+        type="button"
+        class="grid w-full min-w-0 gap-1.5 rounded-lg border border-border bg-surface-1 px-3.5 py-3 text-start text-ink hover:border-border-strong hover:bg-surface-2 active:bg-surface-3"
+        [class.bg-selected]="selectedId() === item.id"
+        [class.border-selected-border]="selectedId() === item.id"
+        [attr.aria-pressed]="selectedId() === item.id"
+        aria-controls="reply-inbox-detail"
+        (click)="navigation.openReview(item.id, reviewButton)"
+      >
+        <span class="flex min-w-0 flex-wrap items-center gap-2 text-xs text-ink-muted">
+          <span class="inline-flex gap-0.5 text-rating">
+            <span class="sr-only">{{ presentation.ratingLabel(item.rating) }}</span>
+            @for (star of [1, 2, 3, 4, 5]; track star) {
+              <i
+                class="pi text-[0.75em]"
+                [ngClass]="star <= item.rating ? 'pi-star-fill' : 'pi-star'"
+                aria-hidden="true"
+              ></i>
+            }
+          </span>
+          <span>{{ presentation.providerLabel(item) }}</span>
+          @if (classification(); as analysis) {
+            @if (analysis.id === item.id) {
+              <span
+                class="size-1.5 shrink-0 rounded-full"
+                [class]="statusClass(analysis.severity ?? 'unknown', 'indicator')"
+                aria-hidden="true"
+              ></span>
+              <span class="sr-only">{{
+                t('analysis.severity.' + (analysis.severity ?? 'unknown'))
+              }}</span>
+            }
+          }
+          <span class="ms-auto text-ink-subtle">{{ presentation.reviewedAgo(item) }}</span>
+        </span>
+        <span class="min-w-0 overflow-clip text-ellipsis whitespace-nowrap text-sm font-medium">{{
+          presentation.reviewTitle(item.title)
+        }}</span>
+        <span
+          class="min-w-0 overflow-clip text-[13px] text-ellipsis whitespace-nowrap text-ink-muted"
+          >{{ item.body }}</span
+        >
+        <span class="flex min-w-0 flex-wrap items-center gap-2">
+          <span [class]="statusClass(item.replyStatus)">{{
+            t('replyInbox.status.' + item.replyStatus)
+          }}</span>
+          <span
+            class="min-w-0 overflow-clip text-xs text-ellipsis whitespace-nowrap text-ink-subtle"
+            >{{ item.appName }}</span
+          >
+          @if (item.changedAfterReply) {
+            <i class="pi pi-refresh text-xs text-warning-ink" aria-hidden="true"></i>
+            <span class="sr-only">{{ t('replyInbox.changedAfterReply.badge') }}</span>
+          }
+        </span>
+      </button>
+    </li>
+  }
+</ul>
