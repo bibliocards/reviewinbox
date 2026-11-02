@@ -751,12 +751,15 @@
     "replySettings": "Reply settings"
   },
   "common": {
+    "previousTabs": "Show previous tabs",
+    "nextTabs": "Show next tabs",
     "useLightTheme": "Use light theme",
     "useDarkTheme": "Use dark theme",
     "cancel": "Cancel"
   },
   "shell": {
     "navigation": {
+      "information": "Organization information and links",
       "primary": "Primary navigation",
       "skipToContent": "Skip to content",
       "currentPage": "Current page",

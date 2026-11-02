@@ -5,7 +5,7 @@ const color = (name: string): string => `var(--color-${name})`
 const focusRing = {
   width: '2px',
   style: 'solid',
-  color: `color-mix(in oklch, ${color('primary')} 50%, transparent)`,
+  color: color('primary'),
   offset: '2px',
   shadow: 'none',
 }
@@ -76,8 +76,8 @@ export const reviewInboxTheme = definePreset(Aura, {
       filledBackground: color('surface-1'),
       filledHoverBackground: color('surface-2'),
       filledFocusBackground: color('surface-1'),
-      borderColor: color('border'),
-      hoverBorderColor: color('border-strong'),
+      borderColor: color('control-border'),
+      hoverBorderColor: color('ink-subtle'),
       focusBorderColor: color('primary'),
       invalidBorderColor: color('failure-ink'),
       color: color('ink'),
@@ -142,6 +142,7 @@ export const reviewInboxTheme = definePreset(Aura, {
   components: {
     tabs: {
       tablist: { background: 'transparent', borderColor: color('hairline') },
+      navButton: { width: 'var(--control-min-size)' },
       tab: {
         color: color('ink-muted'),
         hoverColor: color('ink'),

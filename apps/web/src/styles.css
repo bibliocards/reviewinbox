@@ -26,6 +26,7 @@
   --color-hairline: #e6e8ec;
   --color-border: #dcdfe5;
   --color-border-strong: #c4c8d1;
+  --color-control-border: oklch(60% 0.015 265);
   --color-ink: #16171b;
   --color-ink-muted: #4b5160;
   --color-ink-subtle: #666c7a;
@@ -80,6 +81,7 @@
     scrollbar-gutter: stable;
     overflow-wrap: break-word;
     --primary-button-hover: var(--color-primary-hover);
+    --control-min-size: 2.5rem;
   }
 
   html.dark {
@@ -135,5 +137,31 @@
   :focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
+  }
+
+  @media (any-pointer: coarse) {
+    html {
+      --control-min-size: 2.75rem;
+    }
+  }
+}
+
+/* PrimeNG has no minimum target-size token; share the same floor across sizes. */
+@layer primeng {
+  :where(
+    .p-button,
+    .p-inputtext,
+    .p-select,
+    .p-multiselect,
+    .p-tab,
+    .p-togglebutton,
+    .p-menu-item-link,
+    .p-dialog-close-button
+  ) {
+    min-block-size: var(--control-min-size);
+  }
+
+  :where(.p-button, .p-dialog-close-button) {
+    min-inline-size: var(--control-min-size);
   }
 }

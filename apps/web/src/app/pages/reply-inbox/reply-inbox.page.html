@@ -1,4 +1,4 @@
-<div class="grid gap-5 text-ink" *transloco="let t">
+<div class="grid grid-cols-[minmax(0,1fr)] gap-5 text-ink" *transloco="let t">
   <header class="flex flex-wrap items-end justify-between gap-4">
     <div class="min-w-0 flex-1 basis-72">
       <h1
@@ -9,17 +9,18 @@
       </h1>
       <p class="m-0 mbs-1 text-sm text-ink-muted">{{ t('replyInbox.description') }}</p>
     </div>
-    <div class="flex flex-wrap items-center gap-2">
+    <div class="flex min-w-0 max-w-full flex-wrap items-center gap-2">
       @if (selectedReviewId()) {
       <a pButton severity="secondary" [outlined]="true" routerLink="/"
         >{{ t('replyInbox.focus.back') }}</a
       >
       } @else {
       <ri-app-select
+        class="min-w-0 max-w-full flex-1 basis-44"
         [options]="appOptions()"
         [(selectedAppId)]="selectedAppId"
         [ariaLabel]="t('replyInbox.filters.allApps')"
-        styleClass="w-full min-w-44"
+        styleClass="w-full min-w-0"
       />
       }
       <a pButton severity="secondary" [text]="true" routerLink="/apps"
@@ -31,8 +32,15 @@
   <p class="m-0 text-sm text-ink-muted">{{ t('replyInbox.focus.description') }}</p>
   <ng-container [ngTemplateOutlet]="inboxContent" />
   } @else {
-  <p-tabs [value]="selectedFilter()" (valueChange)="selectFilter($event)">
-    <p-tablist [attr.aria-label]="t('replyInbox.editor.statusTabs')">
+  <p-tabs
+    class="min-w-0"
+    [scrollable]="true"
+    [value]="selectedFilter()"
+    (valueChange)="selectFilter($event)"
+  >
+    <p-tablist
+      [pt]="{ content: { 'aria-label': t('replyInbox.editor.statusTabs') }, prevButton: { 'aria-label': t('common.previousTabs') }, nextButton: { 'aria-label': t('common.nextTabs') } }"
+    >
       @for (option of filterOptions(); track option.value) {
       <p-tab [value]="option.value">
         {{ option.label }}
@@ -43,8 +51,8 @@
       </p-tab>
       }
     </p-tablist>
-    <p-tabpanels>
-      <p-tabpanel [value]="selectedFilter()">
+    <p-tabpanels class="min-w-0">
+      <p-tabpanel class="min-w-0" [value]="selectedFilter()">
         <ng-container [ngTemplateOutlet]="inboxContent" />
       </p-tabpanel>
     </p-tabpanels>
@@ -52,7 +60,7 @@
   }
   <ng-template #inboxContent>
     <div
-      class="relative grid min-h-[70dvh] content-start gap-4"
+      class="relative grid min-[901px]:min-h-[70dvh] content-start gap-4"
       [attr.aria-busy]="inboxResource.isLoading()"
     >
       @if (inboxResource.isLoading() && reviews().length > 0 || detailLoading()) {
@@ -74,14 +82,14 @@
       </p>
       } @if (inboxResource.isLoading() && reviews().length === 0) {
       <div
-        class="flex min-h-[70dvh] items-center justify-center gap-2 rounded-xl border border-border bg-surface-1 p-5 text-sm text-ink-muted"
+        class="flex min-h-48 min-[901px]:min-h-[70dvh] items-center justify-center gap-2 rounded-xl border border-border bg-surface-1 p-5 text-sm text-ink-muted"
         role="status"
       >
         <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>{{ t('replyInbox.loading') }}
       </div>
       } @else if (inboxResource.error()) {
       <div
-        class="grid min-h-[70dvh] content-center justify-items-start gap-3 rounded-xl border border-failure-border bg-failure p-5 text-failure-ink"
+        class="grid min-h-48 min-[901px]:min-h-[70dvh] content-center justify-items-start gap-3 rounded-xl border border-failure-border bg-failure p-5 text-failure-ink"
         role="alert"
       >
         <p class="m-0">
@@ -97,7 +105,7 @@
       </div>
       } @else if (reviews().length === 0) {
       <div
-        class="grid min-h-[70dvh] content-center justify-items-center gap-3 rounded-xl border border-dashed border-border-strong bg-surface-1 p-8 text-center"
+        class="grid min-h-48 min-[901px]:min-h-[70dvh] content-center justify-items-center gap-3 rounded-xl border border-dashed border-border-strong bg-surface-1 p-8 text-center"
       >
         <i class="pi pi-inbox text-2xl text-ink-muted" aria-hidden="true"></i>
         <h2 class="m-0 text-lg font-semibold">{{ t('replyInbox.empty.title') }}</h2>
@@ -130,10 +138,8 @@
               (click)="focusedReviewId.set(item.id)"
             >
               <span class="flex min-w-0 flex-wrap items-center gap-2 text-xs text-ink-muted">
-                <span
-                  class="inline-flex gap-0.5 text-rating"
-                  [attr.aria-label]="ratingLabel(item.rating)"
-                >
+                <span class="inline-flex gap-0.5 text-rating">
+                  <span class="sr-only">{{ ratingLabel(item.rating) }}</span>
                   @for (star of [1,2,3,4,5]; track star) {
                   <i
                     class="pi text-[0.75em]"
@@ -147,8 +153,11 @@
                 <span
                   class="size-1.5 shrink-0 rounded-full"
                   [class]="statusClass(analysis.severity ?? 'unknown', 'indicator')"
-                  [attr.aria-label]="t('analysis.severity.' + (analysis.severity ?? 'unknown'))"
+                  aria-hidden="true"
                 ></span>
+                <span class="sr-only"
+                  >{{ t('analysis.severity.' + (analysis.severity ?? 'unknown')) }}</span
+                >
                 } }
                 <span class="ms-auto text-ink-subtle">{{ reviewedAgo(item) }}</span>
               </span>
@@ -169,10 +178,8 @@
                   >{{ item.appName }}</span
                 >
                 @if (item.changedAfterReply) {
-                <i
-                  class="pi pi-refresh text-xs text-warning-ink"
-                  [attr.aria-label]="t('replyInbox.changedAfterReply.badge')"
-                ></i>
+                <i class="pi pi-refresh text-xs text-warning-ink" aria-hidden="true"></i>
+                <span class="sr-only">{{ t('replyInbox.changedAfterReply.badge') }}</span>
                 }
               </span>
             </button>
@@ -221,10 +228,8 @@
               >
                 {{ reviewTitle(review.title) }}
               </h2>
-              <span
-                class="inline-flex gap-0.5 text-rating"
-                [attr.aria-label]="ratingLabel(review.rating)"
-              >
+              <span class="inline-flex gap-0.5 text-rating">
+                <span class="sr-only">{{ ratingLabel(review.rating) }}</span>
                 @for (star of [1,2,3,4,5]; track star) {
                 <i
                   class="pi text-[0.85em]"
@@ -305,10 +310,7 @@
                   {{ reviewTitle(baseline.title) }}
                 </h4>
                 <div class="mbs-1 flex items-center gap-1.5 text-xs text-ink-subtle">
-                  <span
-                    class="inline-flex items-center gap-0.5 text-rating"
-                    [attr.aria-label]="ratingLabel(baseline.rating)"
-                  >
+                  <span class="inline-flex items-center gap-0.5 text-rating">
                     @for (star of [1, 2, 3, 4, 5]; track star) {
                     <i
                       class="pi text-xs"
@@ -343,10 +345,7 @@
                   {{ reviewTitle(review.title) }}
                 </h4>
                 <div class="mbs-1 flex items-center gap-1.5 text-xs text-ink-subtle">
-                  <span
-                    class="inline-flex items-center gap-0.5 text-rating"
-                    [attr.aria-label]="ratingLabel(review.rating)"
-                  >
+                  <span class="inline-flex items-center gap-0.5 text-rating">
                     @for (star of [1, 2, 3, 4, 5]; track star) {
                     <i
                       class="pi text-xs"
@@ -375,7 +374,7 @@
           </section>
           } @if (hasCurrentDraft(review)) {
           <div
-            class="grid min-w-0 overflow-clip rounded-lg border border-border-strong bg-surface-2"
+            class="grid min-w-0 overflow-clip rounded-lg border border-control-border bg-surface-2"
           >
             <div
               class="flex flex-wrap items-center justify-between gap-2 border-be border-hairline px-4 py-3"

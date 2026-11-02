@@ -757,12 +757,15 @@
     "replySettings": "Paramètres de reply"
   },
   "common": {
+    "previousTabs": "Afficher les onglets précédents",
+    "nextTabs": "Afficher les onglets suivants",
     "useLightTheme": "Utiliser le thème clair",
     "useDarkTheme": "Utiliser le thème sombre",
     "cancel": "Annuler"
   },
   "shell": {
     "navigation": {
+      "information": "Informations et liens de l’Organization",
       "primary": "Navigation principale",
       "skipToContent": "Aller au contenu",
       "currentPage": "Page actuelle",
