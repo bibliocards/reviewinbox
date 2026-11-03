@@ -189,6 +189,9 @@
     </section>
   }
   @if (actions.hasCurrentDraft(review)) {
+    @let draftLength = actions.draftText(review).trim().length;
+    @let replyLimit = actions.replyLimit(review);
+    @let exceedsReplyLimit = draftLength > replyLimit;
     <div class="grid min-w-0 overflow-clip rounded-lg border border-control-border bg-surface-2">
       <div
         class="flex flex-wrap items-center justify-between gap-2 border-be border-hairline px-4 py-3"
@@ -212,7 +215,10 @@
         [ngModel]="actions.draftText(review)"
         (ngModelChange)="actions.editDraft(review, $event)"
         [disabled]="actions.activeReviewId() !== null"
-        aria-describedby="inbox-draft-help"
+        [attr.aria-invalid]="exceedsReplyLimit"
+        [attr.aria-describedby]="
+          exceedsReplyLimit ? 'inbox-draft-help inbox-draft-limit-error' : 'inbox-draft-help'
+        "
       ></textarea>
       <div
         id="inbox-draft-help"
@@ -225,13 +231,16 @@
               : 'replyInbox.editor.googleLimit'
           )
         }}</span>
-        <span
-          class="font-mono tabular-nums"
-          [class.text-failure-ink]="
-            actions.draftText(review).trim().length > actions.replyLimit(review)
-          "
-          >{{ actions.draftText(review).trim().length }} / {{ actions.replyLimit(review) }}</span
+        <span class="font-mono tabular-nums" [class.text-failure-ink]="exceedsReplyLimit"
+          >{{ draftLength }} / {{ replyLimit }}</span
         >
+      </div>
+      <div aria-live="polite" aria-atomic="true">
+        @if (exceedsReplyLimit) {
+          <p id="inbox-draft-limit-error" class="m-0 px-4 pbe-3 text-sm text-failure-ink">
+            {{ t('replyInbox.editor.overLimit', { limit: replyLimit }) }}
+          </p>
+        }
       </div>
     </div>
     @if (actions.draftIsStale(review)) {

@@ -484,6 +484,7 @@
       "language": "Reply language · {{language}}",
       "replyLimit": "Reply Draft limit",
       "googleLimit": "Google Play limit",
+      "overLimit": "Shorten this reply to {{limit}} characters or fewer before publishing.",
       "publishReply": "Publish reply",
       "discardChanges": "Discard changes"
     },
