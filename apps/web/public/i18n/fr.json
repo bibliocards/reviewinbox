@@ -490,6 +490,7 @@
       "language": "Langue de la reply · {{language}}",
       "replyLimit": "Limite du Reply Draft",
       "googleLimit": "Limite Google Play",
+      "overLimit": "Raccourcissez cette reply à {{limit}} caractères maximum avant de la publier.",
       "publishReply": "Publier la reply",
       "discardChanges": "Annuler les modifications"
     },
