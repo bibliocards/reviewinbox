@@ -1,11 +1,13 @@
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core'
 import { FormField, form, required } from '@angular/forms/signals'
 import { TranslocoDirective } from '@jsverse/transloco'
+import { storeReplyCharacterLimits, type StoreProvider } from '@reviewinbox/contracts'
 import { ButtonModule } from 'primeng/button'
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog'
 
 export type ReplyDraftDialogData = {
   draftText: string
+  provider: StoreProvider
   mode: 'manual' | 'edit' | 'update' | 'update-manual'
 }
 
@@ -23,11 +25,13 @@ export class ReplyDraftDialogComponent {
 
   protected readonly data: ReplyDraftDialogData = this.config.data ?? {
     draftText: '',
+    provider: 'apple_app_store',
     mode: 'manual',
   }
-  protected readonly canSubmit = computed(
-    () => this.draftForm().valid() && this.draftForm().value().draftText.trim().length > 0,
-  )
+  protected readonly replyLimit = storeReplyCharacterLimits[this.data.provider]
+  protected readonly draftLength = computed(() => this.draftForm().value().draftText.trim().length)
+  protected readonly exceedsReplyLimit = computed(() => this.draftLength() > this.replyLimit)
+  protected readonly canSubmit = computed(() => this.draftForm().valid() && this.draftLength() > 0)
 
   private readonly model = signal({ draftText: this.data.draftText })
 
@@ -40,7 +44,7 @@ export class ReplyDraftDialogComponent {
   }
 
   protected submit(action: ReplyDraftDialogResult['action']): void {
-    if (!this.canSubmit()) {
+    if (!this.canSubmit() || (action === 'publish' && this.exceedsReplyLimit())) {
       this.draftForm().markAsTouched()
       return
     }
