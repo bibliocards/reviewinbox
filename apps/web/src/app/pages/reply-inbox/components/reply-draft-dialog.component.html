@@ -18,13 +18,40 @@
       id="reply-draft-text"
       class="min-h-48 w-full rounded-2xl border border-control-border bg-surface-1 p-3 text-sm font-normal leading-6 text-ink transition focus:border-primary focus:ring-2 focus:ring-primary/20"
       [formField]="draftForm.draftText"
-      [attr.aria-describedby]="'reply-draft-help'"
+      [attr.aria-invalid]="exceedsReplyLimit()"
+      [attr.aria-describedby]="
+        exceedsReplyLimit()
+          ? 'reply-draft-help reply-draft-limit reply-draft-limit-error'
+          : 'reply-draft-help reply-draft-limit'
+      "
       [placeholder]="t('replyInbox.dialog.placeholder')"
     ></textarea>
   </label>
   <p id="reply-draft-help" class="m-0 text-xs leading-5 text-ink-subtle">
     {{ t('replyInbox.dialog.help') }}
   </p>
+  <div
+    id="reply-draft-limit"
+    class="flex flex-wrap items-center justify-between gap-2 text-xs text-ink-subtle"
+  >
+    <span>{{
+      t(
+        data.provider === 'apple_app_store'
+          ? 'replyInbox.editor.replyLimit'
+          : 'replyInbox.editor.googleLimit'
+      )
+    }}</span>
+    <span class="font-mono tabular-nums" [class.text-failure-ink]="exceedsReplyLimit()"
+      >{{ draftLength() }} / {{ replyLimit }}</span
+    >
+  </div>
+  <div aria-live="polite" aria-atomic="true">
+    @if (exceedsReplyLimit()) {
+      <p id="reply-draft-limit-error" class="m-0 text-sm text-failure-ink">
+        {{ t('replyInbox.editor.overLimit', { limit: replyLimit }) }}
+      </p>
+    }
+  </div>
   <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
     <p-button
       severity="secondary"
@@ -48,8 +75,8 @@
             : 'replyInbox.actions.saveAndPublish'
         )
       "
-      [disabled]="!canSubmit()"
       icon="pi pi-send"
+      [disabled]="!canSubmit() || exceedsReplyLimit()"
       (onClick)="submit('publish')"
     />
   </div>
