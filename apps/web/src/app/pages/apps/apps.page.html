@@ -115,11 +115,21 @@
             <p class="m-0 text-[13px] text-ink-subtle">
               {{ t('apps.list.created', { date: createdAgo(app.createdAt) }) }}
             </p>
-            <p class="m-0 text-[13px] text-ink-muted wrap-break-word">
-              {{ t('apps.list.replyLanguage', { language: app.replyLanguagePolicy.defaultLanguage })
-              }} @if (app.replyLanguagePolicy.mappedLanguages.length) { · {{
-              t('apps.list.reviewLanguages', { languages:
-              app.replyLanguagePolicy.mappedLanguages.join(', ') }) }} }
+            <p
+              class="m-0 flex flex-wrap gap-x-3 gap-y-1 text-[13px] text-ink-muted wrap-break-word"
+            >
+              <span class="inline-flex min-w-0 flex-wrap items-center gap-x-1.5">
+                <span>{{ t('apps.list.replyLanguage') }}</span>
+                <ri-language-flag [language]="app.replyLanguagePolicy.defaultLanguage" />
+              </span>
+              @if (app.replyLanguagePolicy.mappedLanguages.length) {
+              <span class="inline-flex min-w-0 flex-wrap items-center gap-x-1.5">
+                <span>{{ t('apps.list.reviewLanguages') }}</span>
+                @for (language of app.replyLanguagePolicy.mappedLanguages; track $index) {
+                <ri-language-flag [language]="language" />
+                }
+              </span>
+              }
             </p>
           </div>
           <div class="flex flex-wrap items-center gap-2">

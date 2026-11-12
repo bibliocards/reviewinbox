@@ -13,7 +13,7 @@
       "name": "assets",
       "installMode": "lazy",
       "updateMode": "prefetch",
-      "resources": { "files": ["/icons/**", "/*.(png|jpg|jpeg|svg|webp|avif)"] }
+      "resources": { "files": ["/icons/**", "/flags/*.svg", "/*.(png|jpg|jpeg|svg|webp|avif)"] }
     }
   ]
 }

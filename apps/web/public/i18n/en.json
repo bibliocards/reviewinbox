@@ -81,8 +81,8 @@
         "deleteFailed": "We could not delete this App yet."
       },
       "created": "Created {{date}}",
-      "replyLanguage": "Reply Language Policy · default: {{language}}",
-      "reviewLanguages": "same as Review for {{languages}}",
+      "replyLanguage": "Reply Language Policy · default:",
+      "reviewLanguages": "same as Review for",
       "lastSyncRun": "Last Sync Run",
       "noSyncRun": "No Sync Run yet",
       "storeCredential": "Store Credential",
@@ -481,7 +481,7 @@
     "editor": {
       "statusTabs": "Reply status",
       "reviews": "Reviews",
-      "language": "Reply language · {{language}}",
+      "language": "Reply language ·",
       "replyLimit": "Reply Draft limit",
       "googleLimit": "Google Play limit",
       "overLimit": "Shorten this reply to {{limit}} characters or fewer before publishing.",

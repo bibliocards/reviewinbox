@@ -76,6 +76,7 @@
     "astro": "^7.3.3",
     "drizzle-kit": "^0.31.10",
     "eslint-plugin-sonarjs": "4.2.1",
+    "flag-icons": "7.6.0",
     "nx": "23.2.1",
     "oxfmt": "0.68.0",
     "oxlint": "1.83.0",

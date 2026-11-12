@@ -314,6 +314,9 @@ importers:
       eslint-plugin-sonarjs:
         specifier: 4.2.1
         version: 4.2.1(eslint@9.39.4(jiti@2.7.0)(supports-color@8.1.1))
+      flag-icons:
+        specifier: 7.6.0
+        version: 7.6.0
       nx:
         specifier: 23.2.1
         version: 23.2.1(@swc/core@1.16.2(@swc/helpers@0.5.23))
@@ -6658,6 +6661,9 @@ packages:
   find-versions@6.0.0:
     resolution: {integrity: sha512-2kCCtc+JvcZ86IGAz3Z2Y0A1baIz9fL31pH/0S1IqZr9Iwnjq8izfPtrCyQKO6TLMPELLsQMre7VDqeIKCsHkA==}
     engines: {node: '>=18'}
+
+  flag-icons@7.6.0:
+    resolution: {integrity: sha512-hir/PsXwr0EESyizKrXJzmkzpLIMf+1vlNKLqAfvdh+bsU94a7LYWTiubkHKqptGoCPzOUGcm6c4PfC9/BaGSQ==}
 
   flat-cache@4.0.1:
     resolution: {integrity: sha512-f7ccFPK3SXFHpx15UIGyRJ/FJQctuKZ0zVuN3frBo4HnK3cay9VEW0R6yPYFHC0AgqhukPzKjq22t5DmAyqGyw==}
@@ -16389,6 +16395,8 @@ snapshots:
     dependencies:
       semver-regex: 4.0.5
       super-regex: 1.1.0
+
+  flag-icons@7.6.0: {}
 
   flat-cache@4.0.1:
     dependencies:
