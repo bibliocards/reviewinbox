@@ -27,6 +27,7 @@ import { TextareaModule } from 'primeng/textarea'
 import { finalize, Subject, takeUntil } from 'rxjs'
 import { z } from 'zod'
 
+import { LanguageFlagComponent } from '../../shared/components/language-flag/language-flag.component'
 import { AppsService } from '../../shared/services/apps.service'
 import { ReplySettingsService } from '../../shared/services/reply-settings.service'
 
@@ -37,6 +38,7 @@ import { ReplySettingsService } from '../../shared/services/reply-settings.servi
     FormField,
     FormsModule,
     InputTextModule,
+    LanguageFlagComponent,
     TranslocoDirective,
     RouterLink,
     SelectModule,

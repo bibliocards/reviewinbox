@@ -33,7 +33,7 @@
       }}</span>
     }
     @if (review.language) {
-      <span [class]="statusClass('metadata')">{{ review.language }}</span>
+      <ri-language-flag [class]="statusClass('metadata')" [language]="review.language" />
     }
   </div>
   <div class="grid gap-2">
@@ -199,9 +199,9 @@
           >{{ t('replyInbox.replyDraft') }}</label
         >
         @if (review.replyDraft?.chosenReplyLanguage; as replyLanguage) {
-          <span class="text-xs text-ink-subtle">{{
-            t('replyInbox.editor.language', { language: replyLanguage })
-          }}</span>
+          <span class="text-xs text-ink-subtle">
+            {{ t('replyInbox.editor.language') }} <ri-language-flag [language]="replyLanguage" />
+          </span>
         }
       </div>
       <textarea

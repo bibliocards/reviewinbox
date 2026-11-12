@@ -7,13 +7,21 @@ import { ButtonModule } from 'primeng/button'
 import { TextareaModule } from 'primeng/textarea'
 
 import { badgeClasses } from '../../../../shared/badge-classes'
+import { LanguageFlagComponent } from '../../../../shared/components/language-flag/language-flag.component'
 import { AppIconsService } from '../../../../shared/services/app-icons.service'
 import { ReviewActionsService } from '../../review-actions.service'
 import { ReviewPresentationService } from '../review-presentation.service'
 
 @Component({
   selector: 'ri-review-detail',
-  imports: [NgClass, FormsModule, TranslocoDirective, ButtonModule, TextareaModule],
+  imports: [
+    NgClass,
+    FormsModule,
+    TranslocoDirective,
+    ButtonModule,
+    TextareaModule,
+    LanguageFlagComponent,
+  ],
   templateUrl: './review-detail.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   host: { class: 'block min-w-0' },

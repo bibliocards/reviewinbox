@@ -34,6 +34,7 @@ import { z } from 'zod'
 
 import { badgeClasses } from '../../shared/badge-classes'
 import { ConnectAppDialogComponent } from '../../shared/components/connect-app-dialog/connect-app-dialog.component'
+import { LanguageFlagComponent } from '../../shared/components/language-flag/language-flag.component'
 import { initialsFrom } from '../../shared/initials'
 import { AppIconsService } from '../../shared/services/app-icons.service'
 import { AppsService } from '../../shared/services/apps.service'
@@ -55,7 +56,14 @@ const appNavigationState = appNavigationStateSchema.safeParse(history.state).dat
 
 @Component({
   selector: 'ri-apps-page',
-  imports: [ButtonModule, CardModule, MenuModule, RouterLink, TranslocoDirective],
+  imports: [
+    ButtonModule,
+    CardModule,
+    MenuModule,
+    RouterLink,
+    TranslocoDirective,
+    LanguageFlagComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './apps.page.html',
 })
