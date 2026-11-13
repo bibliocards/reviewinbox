@@ -467,7 +467,15 @@
     },
     "empty": {
       "title": "Aucune Review dans cette vue",
-      "description": "Aucune Review éligible n’est disponible pour le moment. Google Play expose les Reviews écrites créées ou modifiées durant la dernière semaine. Vérifiez vos Store Connections dans Apps.",
+      "description": {
+        "actionable": "Aucune Review ne nécessite de reply dans cette vue. Consultez les autres onglets de statut pour retrouver les Reviews publiées ou ignorées. Si vous attendiez de nouvelles Reviews, vérifiez vos Store Connections dans Apps.",
+        "drafted": "Aucune Review ne dispose d’un Reply Draft prêt dans cette vue. Ouvrez À traiter pour rédiger une reply ou générer un draft.",
+        "published": "Aucune Review ne dispose d’une Published Reply dans cette vue. Les replies apparaîtront ici après leur publication.",
+        "ignored": "Aucune Review n’est ignorée dans cette vue. Les Reviews que vous choisissez d’ignorer apparaîtront ici.",
+        "failed": "Aucune Review ne présente d’échec de génération ou de publication de reply dans cette vue. Consultez À traiter pour retrouver les Reviews qui attendent encore une reply.",
+        "pending": "Aucune Review n’attend de Reply Draft dans cette vue. Consultez les autres onglets de statut pour retrouver les Reviews déjà rédigées, publiées ou ignorées."
+      },
+      "showAllApps": "Afficher toutes les Apps",
       "openApps": "Ouvrir les Apps"
     },
     "navigation": {

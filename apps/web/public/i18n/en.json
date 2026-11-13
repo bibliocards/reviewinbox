@@ -461,7 +461,15 @@
     },
     "empty": {
       "title": "No Reviews in this view",
-      "description": "No eligible Reviews are available yet. Google Play exposes written Reviews created or changed during the last week. Check your Store Connections in Apps.",
+      "description": {
+        "actionable": "No Reviews need a reply in this view. Check the other status tabs for published or ignored Reviews. If you expected new Reviews, check your Store Connections in Apps.",
+        "drafted": "No Reviews have a Reply Draft ready in this view. Open Actionable to write a reply or generate a draft.",
+        "published": "No Reviews have a Published Reply in this view. Published replies will appear here after you publish them.",
+        "ignored": "No Reviews are ignored in this view. Reviews you choose to ignore will appear here.",
+        "failed": "No Reviews have a drafting or publication failure in this view. Check Actionable for Reviews that still need a reply.",
+        "pending": "No Reviews are awaiting a Reply Draft in this view. Check the other status tabs for Reviews already drafted, published, or ignored."
+      },
+      "showAllApps": "Show all Apps",
       "openApps": "Open Apps"
     },
     "navigation": {
