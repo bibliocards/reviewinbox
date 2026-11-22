@@ -122,8 +122,17 @@
         <i class="pi pi-inbox text-2xl text-ink-muted" aria-hidden="true"></i>
         <h2 class="m-0 text-lg font-semibold">{{ t('replyInbox.empty.title') }}</h2>
         <p class="m-0 max-w-[60ch] text-sm text-ink-muted">
-          {{ t('replyInbox.empty.description') }}
+          {{ t(selectedReviewId() ? 'replyInbox.focus.unavailable' : 'replyInbox.empty.description.'
+          + selectedFilter()) }}
         </p>
+        @if (selectedAppId() && !selectedReviewId()) {
+        <p-button
+          severity="secondary"
+          [outlined]="true"
+          [label]="t('replyInbox.empty.showAllApps')"
+          (onClick)="navigation.selectApp('')"
+        />
+        }
         <a pButton severity="secondary" [outlined]="true" routerLink="/apps"
           >{{ t('replyInbox.empty.openApps') }}</a
         >

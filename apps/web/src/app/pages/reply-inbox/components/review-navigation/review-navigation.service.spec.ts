@@ -101,6 +101,26 @@ it('keeps desktop selection in the split view without adding browser history', (
   session.injector.destroy()
 })
 
+it('shows all Apps without losing the selected status when an App-filtered view is empty', () => {
+  const session = navigationSession()
+  session.navigation.focusedReviewId.set(firstId)
+
+  session.navigation.selectApp('')
+
+  expect(session.navigation.selectedAppId()).toBe('')
+  expect(session.navigation.selectedFilter()).toBe('published')
+  expect(session.navigation.focusedReviewId()).toBeNull()
+  expect(session.router.navigate).toHaveBeenLastCalledWith(
+    [],
+    expect.objectContaining({
+      queryParams: { filter: 'published', appId: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    }),
+  )
+  session.injector.destroy()
+})
+
 it.each([{ reviewId: firstId }, { fragment: `review/${firstId}` }])(
   'returns a directly opened Review to the Inbox instead of leaving the app: %o',
   (options) => {
