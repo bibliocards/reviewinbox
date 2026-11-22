@@ -1,4 +1,4 @@
-import { canCreateApp, canCreateStoreConnection } from '@reviewinbox/billing'
+import { canCreateApp } from '@reviewinbox/billing'
 import { loadEncryptionConfig } from '@reviewinbox/config'
 import {
   appResponseSchema,
@@ -258,24 +258,6 @@ async function validateConnectRequest(
       { error: 'Organization app limit reached.', errorCode: appLimitDecision.reason },
       403,
     )
-  }
-
-  const requestedCount =
-    Number(connections.apple !== undefined) + Number(connections.google !== undefined)
-  if (requestedCount > 0) {
-    const storeLimitDecision = await canCreateStoreConnectionsForOrganization(
-      organizationId,
-      requestedCount,
-    )
-    if (!storeLimitDecision.allowed) {
-      return context.json(
-        {
-          error: 'Organization Store Connection limit reached.',
-          errorCode: storeLimitDecision.reason,
-        },
-        403,
-      )
-    }
   }
 
   return validateConnectCredentials(context, connections)
@@ -1169,34 +1151,6 @@ async function canCreateAppForOrganization(organizationId: string) {
       overrides: organization.billingOverrides,
     },
     appCount?.count ?? 0,
-  )
-}
-
-async function canCreateStoreConnectionsForOrganization(
-  organizationId: string,
-  requestedCount: number,
-) {
-  const organization = await selectBillingOrganization(organizationId)
-  if (!organization) {
-    return {
-      allowed: false as const,
-      reason: 'store_connection_limit_reached' as const,
-      remaining: 0 as const,
-    }
-  }
-
-  const [storeConnectionCount] = await database
-    .select({ count: count() })
-    .from(storeConnections)
-    .where(eq(storeConnections.organizationId, organizationId))
-
-  return canCreateStoreConnection(
-    {
-      deploymentMode: serverConfig.deploymentMode,
-      planName: organization.planName,
-      overrides: organization.billingOverrides,
-    },
-    (storeConnectionCount?.count ?? 0) + requestedCount - 1,
   )
 }
 

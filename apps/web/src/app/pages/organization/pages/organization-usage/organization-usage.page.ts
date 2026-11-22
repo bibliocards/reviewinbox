@@ -51,11 +51,6 @@ export class OrganizationUsagePageComponent {
       { key: 'members', upgradeReason: 'members-limit', usage: usage.usage.members },
       { key: 'apps', upgradeReason: 'apps-limit', usage: usage.usage.apps },
       {
-        key: 'storeConnections',
-        upgradeReason: 'store-connections-limit',
-        usage: usage.usage.storeConnections,
-      },
-      {
         key: 'monthlyReviewImports',
         upgradeReason: 'review-imports-limit',
         usage: usage.usage.monthlyReviewImports,

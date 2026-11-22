@@ -7,8 +7,6 @@ export type PlanLimits = {
   memberLimit: number
   includedApps: number
   appLimit: number
-  includedStoreConnections: number
-  storeConnectionLimit: number
   includedMonthlyReviewImports: number
   monthlyReviewImportCap: number
   includedMonthlyManagedAiReplyDrafts: number
@@ -35,8 +33,6 @@ export const planDefinitions = {
     memberLimit: 1,
     includedApps: 1,
     appLimit: 1,
-    includedStoreConnections: 2,
-    storeConnectionLimit: 2,
     includedMonthlyReviewImports: 30,
     monthlyReviewImportCap: 30,
     includedMonthlyManagedAiReplyDrafts: 5,
@@ -51,8 +47,6 @@ export const planDefinitions = {
     memberLimit: 3,
     includedApps: 2,
     appLimit: 2,
-    includedStoreConnections: 4,
-    storeConnectionLimit: 4,
     includedMonthlyReviewImports: 500,
     monthlyReviewImportCap: 500,
     includedMonthlyManagedAiReplyDrafts: 100,
@@ -67,8 +61,6 @@ export const planDefinitions = {
     memberLimit: 10,
     includedApps: 10,
     appLimit: 10,
-    includedStoreConnections: 20,
-    storeConnectionLimit: 20,
     includedMonthlyReviewImports: 5_000,
     monthlyReviewImportCap: 5_000,
     includedMonthlyManagedAiReplyDrafts: 1_000,
@@ -83,8 +75,6 @@ export const planDefinitions = {
     memberLimit: 25,
     includedApps: 50,
     appLimit: 100,
-    includedStoreConnections: 100,
-    storeConnectionLimit: 200,
     includedMonthlyReviewImports: 50_000,
     monthlyReviewImportCap: 50_000,
     includedMonthlyManagedAiReplyDrafts: 10_000,

@@ -15,7 +15,6 @@ import {
   apps,
   member,
   organization as organizationTable,
-  storeConnections,
   subscription,
   usageEvents,
 } from '@reviewinbox/db'
@@ -154,7 +153,6 @@ async function selectOrganizationUsage(organizationId: string, startsAt: Date, e
   const [
     [memberCount],
     [appCount],
-    [storeConnectionCount],
     [monthlyReviewImports],
     [monthlyManagedAiReplyDrafts],
   ] = await Promise.all([
@@ -163,17 +161,12 @@ async function selectOrganizationUsage(organizationId: string, startsAt: Date, e
       .from(member)
       .where(eq(member.organizationId, organizationId)),
     database.select({ count: count() }).from(apps).where(eq(apps.organizationId, organizationId)),
-    database
-      .select({ count: count() })
-      .from(storeConnections)
-      .where(eq(storeConnections.organizationId, organizationId)),
     selectUsageQuantity(organizationId, 'review_imported', startsAt, endsAt),
     selectUsageQuantity(organizationId, 'managed_ai_reply_draft_generated', startsAt, endsAt),
   ])
   return {
     memberCount,
     appCount,
-    storeConnectionCount,
     monthlyReviewImports,
     monthlyManagedAiReplyDrafts,
   }
@@ -229,12 +222,6 @@ function buildUsageDetails(
       usageCount(usage.appCount),
       limits.includedApps,
       limits.appLimit,
-      limitsEnforced,
-    ),
-    storeConnections: toUsageItem(
-      usageCount(usage.storeConnectionCount),
-      limits.includedStoreConnections,
-      limits.storeConnectionLimit,
       limitsEnforced,
     ),
     monthlyReviewImports: toUsageItem(

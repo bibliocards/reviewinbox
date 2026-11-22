@@ -14,8 +14,6 @@ describe('plan definitions', () => {
       memberLimit: 1,
       includedApps: 1,
       appLimit: 1,
-      includedStoreConnections: 2,
-      storeConnectionLimit: 2,
       includedMonthlyReviewImports: 30,
       monthlyReviewImportCap: 30,
       includedMonthlyManagedAiReplyDrafts: 5,
@@ -30,14 +28,12 @@ describe('plan definitions', () => {
     expect(getPlanDefinition('starter')).toMatchObject({
       includedMembers: 3,
       includedApps: 2,
-      includedStoreConnections: 4,
       includedMonthlyReviewImports: 500,
       includedMonthlyManagedAiReplyDrafts: 100,
     })
     expect(getPlanDefinition('pro')).toMatchObject({
       includedMembers: 10,
       includedApps: 10,
-      includedStoreConnections: 20,
       includedMonthlyReviewImports: 5_000,
       includedMonthlyManagedAiReplyDrafts: 1_000,
       autoSyncIntervalHours: 6,
@@ -45,7 +41,6 @@ describe('plan definitions', () => {
     expect(getPlanDefinition('business')).toMatchObject({
       includedMembers: 25,
       includedApps: 50,
-      includedStoreConnections: 100,
       includedMonthlyReviewImports: 50_000,
       includedMonthlyManagedAiReplyDrafts: 10_000,
     })

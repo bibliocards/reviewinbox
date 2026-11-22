@@ -15,8 +15,6 @@ export function getEffectiveOrganizationLimits(
     memberLimit: resolveLimit(overrides, plan, 'memberLimit'),
     includedApps: resolveLimit(overrides, plan, 'includedApps'),
     appLimit: resolveLimit(overrides, plan, 'appLimit'),
-    includedStoreConnections: resolveLimit(overrides, plan, 'includedStoreConnections'),
-    storeConnectionLimit: resolveLimit(overrides, plan, 'storeConnectionLimit'),
     includedMonthlyReviewImports: resolveLimit(overrides, plan, 'includedMonthlyReviewImports'),
     monthlyReviewImportCap: resolveLimit(overrides, plan, 'monthlyReviewImportCap'),
     includedMonthlyManagedAiReplyDrafts: resolveLimit(

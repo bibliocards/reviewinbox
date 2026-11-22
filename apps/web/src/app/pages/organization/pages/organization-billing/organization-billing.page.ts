@@ -91,8 +91,6 @@ export class OrganizationBillingPageComponent {
         return 'Your Organization is close to its member limit. Compare plans to add room for the team.'
       case 'apps-limit':
         return 'Your Organization is close to its App limit. Compare plans to track more Apps.'
-      case 'store-connections-limit':
-        return 'Your Organization is close to its Store Connection limit. Compare plans to connect more stores.'
       case 'review-imports-limit':
         return 'Your Organization is close to its monthly Review import limit. Compare plans to keep imports running.'
       case 'reply-drafts-limit':

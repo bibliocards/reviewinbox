@@ -18,8 +18,6 @@ type OrganizationBillingOverrides = Partial<{
   memberLimit: number
   includedApps: number
   appLimit: number
-  includedStoreConnections: number
-  storeConnectionLimit: number
   includedMonthlyReviewImports: number
   monthlyReviewImportCap: number
   includedMonthlyManagedAiReplyDrafts: number

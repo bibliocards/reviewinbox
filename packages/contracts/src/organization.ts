@@ -52,7 +52,6 @@ export const organizationUsageResponseSchema = z.object({
   usage: z.object({
     members: organizationUsageItemSchema,
     apps: organizationUsageItemSchema,
-    storeConnections: organizationUsageItemSchema,
     monthlyReviewImports: organizationUsageItemSchema,
     monthlyManagedAiReplyDrafts: organizationUsageItemSchema,
   }),

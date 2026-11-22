@@ -1,4 +1,4 @@
-import { canCreateStoreConnection, getPlanDefinition } from '@reviewinbox/billing'
+import { getPlanDefinition } from '@reviewinbox/billing'
 import { loadEncryptionConfig } from '@reviewinbox/config'
 import type { ServerConfig } from '@reviewinbox/config'
 import {
@@ -499,17 +499,6 @@ async function createStoreConnection(
     return bodyResult.response
   }
 
-  const limitDecision = await canCreateStoreConnectionForOrganization(
-    appResult.organizationId,
-    dependencies,
-  )
-  if (!limitDecision.allowed) {
-    return context.json(
-      { error: 'Organization Store Connection limit reached.', errorCode: limitDecision.reason },
-      403,
-    )
-  }
-
   const created = await insertStoreConnection(
     { appId: appResult.appId, organizationId: appResult.organizationId, data: bodyResult.data },
     dependencies,
@@ -894,37 +883,6 @@ function toStoreConnectionResponse(row: {
       keyId: row.credential?.keyId ?? null,
     },
   }
-}
-
-async function canCreateStoreConnectionForOrganization(
-  organizationId: string,
-  dependencies: StoreConnectionRouteDependencies,
-) {
-  const organization = await dependencies.database.query.organization.findFirst({
-    columns: { planName: true, billingOverrides: true },
-    where: eq(organizationTable.id, organizationId),
-  })
-  if (!organization) {
-    return {
-      allowed: false as const,
-      reason: 'store_connection_limit_reached' as const,
-      remaining: 0 as const,
-    }
-  }
-
-  const [storeConnectionCount] = await dependencies.database
-    .select({ count: count() })
-    .from(storeConnections)
-    .where(eq(storeConnections.organizationId, organizationId))
-
-  return canCreateStoreConnection(
-    {
-      deploymentMode: dependencies.serverConfig.deploymentMode,
-      planName: organization.planName,
-      overrides: organization.billingOverrides,
-    },
-    storeConnectionCount?.count ?? 0,
-  )
 }
 
 function serializeErrorForLog(error: Error | null) {

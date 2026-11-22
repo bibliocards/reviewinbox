@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 
 import {
   canCreateApp,
-  canCreateStoreConnection,
   canGenerateManagedAiReplyDraft,
   canImportNewReview,
   canInviteMember,
@@ -18,11 +17,6 @@ describe('cloud enforcement', () => {
       reason: 'app_limit_reached',
       remaining: 0,
     })
-    expect(canCreateStoreConnection(freeCloudContext, 2)).toEqual({
-      allowed: false,
-      reason: 'store_connection_limit_reached',
-      remaining: 0,
-    })
     expect(canInviteMember(freeCloudContext, 1)).toEqual({
       allowed: false,
       reason: 'member_limit_reached',
@@ -32,7 +26,6 @@ describe('cloud enforcement', () => {
 
   it('allows structural actions while under free tier limits', () => {
     expect(canCreateApp(freeCloudContext, 0)).toEqual({ allowed: true, remaining: 1 })
-    expect(canCreateStoreConnection(freeCloudContext, 1)).toEqual({ allowed: true, remaining: 1 })
     expect(canInviteMember(freeCloudContext, 0)).toEqual({ allowed: true, remaining: 1 })
   })
 

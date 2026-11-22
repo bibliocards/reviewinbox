@@ -5,7 +5,6 @@ export type LimitDeploymentMode = 'self-hosted' | 'cloud'
 
 export type EnforcementReason =
   | 'app_limit_reached'
-  | 'store_connection_limit_reached'
   | 'member_limit_reached'
   | 'monthly_review_import_cap_reached'
   | 'monthly_managed_ai_reply_draft_cap_reached'
@@ -25,18 +24,6 @@ export function canCreateApp(
   currentAppCount: number,
 ): EnforcementDecision {
   return enforceCountLimit(context, currentAppCount, 'appLimit', 'app_limit_reached')
-}
-
-export function canCreateStoreConnection(
-  context: OrganizationLimitContext,
-  currentStoreConnectionCount: number,
-): EnforcementDecision {
-  return enforceCountLimit(
-    context,
-    currentStoreConnectionCount,
-    'storeConnectionLimit',
-    'store_connection_limit_reached',
-  )
 }
 
 export function canInviteMember(
