@@ -23,6 +23,7 @@ import {
   SyncRunFailureError,
   SyncStoreConnectionNotFoundError,
 } from './sync-errors'
+import { lockSyncNotifications, recordSyncHealth } from './sync-incidents'
 import { type SyncRunResult, toSyncRunResult } from './sync-run-result'
 
 export type { SyncRunResult } from './sync-run-result'
@@ -57,7 +58,7 @@ export async function syncReviewsForStoreConnection(
       || error instanceof SyncRunFailureError
         ? error.code
         : 'sync_failed'
-    return failSyncRun(input.database, createdRun.id, code)
+    return failSyncRun(input.database, createdRun, code)
   }
 }
 
@@ -109,17 +110,17 @@ async function runSync(
 ): Promise<SyncRunResult> {
   const validationError = getSyncValidationError(scoped)
   if (validationError !== null) {
-    return failSyncRun(input.database, createdRun.id, validationError)
+    return failSyncRun(input.database, createdRun, validationError)
   }
 
   const result = await getProviderSyncResult(input, scoped)
   const billing = await loadBillingUsage(input.database, scoped.connection.organizationId)
   if (billing === null) {
-    return failSyncRun(input.database, createdRun.id, 'organization_not_found')
+    return failSyncRun(input.database, createdRun, 'organization_not_found')
   }
 
   const storedReviews = await storeReviewsForSync(input, scoped, result, billing)
-  return completeSyncRun(input.database, createdRun.id, result, storedReviews)
+  return completeSyncRun(input.database, createdRun, result, storedReviews)
 }
 
 function getSyncValidationError(scoped: ScopedStoreConnection): string | null {
@@ -243,48 +244,50 @@ async function loadBillingUsage(database: Database, organizationId: string) {
 
 async function completeSyncRun(
   database: Database,
-  syncRunId: string,
+  createdRun: CreatedSyncRun,
   result: Awaited<ReturnType<typeof syncAppleReviews>>,
   storedReviews: Awaited<ReturnType<typeof storeSyncedReviews>>,
 ): Promise<SyncRunResult> {
-  const [updatedRun] = await database
-    .update(syncRuns)
-    .set({
-      status: storedReviews.limitReached ? 'partial' : 'succeeded',
-      finishedAt: new Date(),
-      fetchedCount: result.reviews.length,
-      storedCount: storedReviews.storedCount,
-      errorCode: storedReviews.limitReached ? 'monthly_review_import_cap_reached' : null,
-      errorMessage: storedReviews.limitReached
-        ? getSafeSyncErrorMessage('monthly_review_import_cap_reached')
-        : null,
-      checkpoint: result.checkpoint,
-    })
-    .where(eq(syncRuns.id, syncRunId))
-    .returning()
-  if (updatedRun === undefined) {
-    throw new Error('Sync Run update did not return a row.')
-  }
+  const updatedRun = await settleSyncRun(database, createdRun, {
+    status: storedReviews.limitReached ? 'partial' : 'succeeded',
+    finishedAt: new Date(),
+    fetchedCount: result.reviews.length,
+    storedCount: storedReviews.storedCount,
+    errorCode: storedReviews.limitReached ? 'monthly_review_import_cap_reached' : null,
+    errorMessage: storedReviews.limitReached
+      ? getSafeSyncErrorMessage('monthly_review_import_cap_reached')
+      : null,
+    checkpoint: result.checkpoint,
+  })
   return { ...toSyncRunResult(updatedRun), newReviewIds: storedReviews.newReviewIds }
 }
 
 async function failSyncRun(
   database: Database,
-  syncRunId: string,
+  createdRun: CreatedSyncRun,
   errorCode: string,
 ): Promise<SyncRunResult> {
-  const [updatedRun] = await database
-    .update(syncRuns)
-    .set({
-      status: 'failed',
-      finishedAt: new Date(),
-      errorCode,
-      errorMessage: getSafeSyncErrorMessage(errorCode),
-    })
-    .where(eq(syncRuns.id, syncRunId))
-    .returning()
-  if (updatedRun === undefined) {
-    throw new Error('Sync Run failure update did not return a row.')
-  }
+  const updatedRun = await settleSyncRun(database, createdRun, {
+    status: 'failed',
+    finishedAt: new Date(),
+    errorCode,
+    errorMessage: getSafeSyncErrorMessage(errorCode),
+  })
   return toSyncRunResult(updatedRun)
+}
+
+function settleSyncRun(database: Database, run: CreatedSyncRun, update: Partial<CreatedSyncRun>) {
+  return database.transaction(async (transaction) => {
+    await lockSyncNotifications(transaction, run.organizationId)
+    const [updated] = await transaction
+      .update(syncRuns)
+      .set(update)
+      .where(eq(syncRuns.id, run.id))
+      .returning()
+    if (!updated) {
+      throw new Error('Sync Run update did not return a row.')
+    }
+    await recordSyncHealth(transaction, updated)
+    return updated
+  })
 }

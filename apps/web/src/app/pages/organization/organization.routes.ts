@@ -5,6 +5,7 @@ import { OrganizationBillingPageComponent } from './pages/organization-billing/o
 import { OrganizationMembersPageComponent } from './pages/organization-members/organization-members.page'
 import { OrganizationProfilePageComponent } from './pages/organization-profile/organization-profile.page'
 import { OrganizationUsagePageComponent } from './pages/organization-usage/organization-usage.page'
+import { SyncWebhookPageComponent } from './pages/sync-webhook/sync-webhook.page'
 
 export const organizationRoutes: Routes = [
   {
@@ -33,6 +34,11 @@ export const organizationRoutes: Routes = [
         path: 'billing',
         title: 'Organization billing | ReviewInbox',
         component: OrganizationBillingPageComponent,
+      },
+      {
+        path: 'webhooks',
+        title: 'Sync webhooks | ReviewInbox',
+        component: SyncWebhookPageComponent,
       },
     ],
   },

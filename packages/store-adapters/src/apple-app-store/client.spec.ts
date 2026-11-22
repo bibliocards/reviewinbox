@@ -3,7 +3,7 @@ import { generateKeyPairSync } from 'node:crypto'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { appleAppStoreReviewAdapter } from './adapter'
-import { syncAppleAppStoreReviews } from './client'
+import { syncAppleAppStoreReviews, verifyAppleCredentialForApp } from './client'
 
 describe('publishing Apple App Store replies', () => {
   afterEach(() => vi.restoreAllMocks())
@@ -51,10 +51,55 @@ describe('publishing Apple App Store replies', () => {
   })
 })
 
-describe('syncAppleAppStoreReviews', () => {
+describe('Apple agreement refusal', () => {
   afterEach(() => {
     vi.restoreAllMocks()
   })
+
+  it('distinguishes a required agreement from an unexplained refusal when verifying access or syncing', async () => {
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(requiredAgreementResponse())
+      .mockResolvedValueOnce(requiredAgreementResponse())
+      .mockResolvedValueOnce(new Response('not JSON', { status: 403 }))
+    const request = {
+      appStoreAppId: '123456789',
+      credential: {
+        issuerId: '00000000-0000-0000-0000-000000000000',
+        keyId: 'ABC123DEFG',
+        privateKey: createTestPrivateKey(),
+      },
+    }
+
+    await expect(verifyAppleCredentialForApp(request)).resolves.toEqual({
+      ok: false,
+      status: 403,
+      errorCode: 'apple_agreement_required',
+    })
+    await expect(syncAppleAppStoreReviews({ ...request, checkpoint: null })).rejects.toMatchObject({
+      code: 'apple_agreement_required',
+      message: 'A required Apple agreement is not in effect.',
+    })
+    await expect(verifyAppleCredentialForApp(request)).resolves.toEqual({
+      ok: false,
+      status: 403,
+      errorCode: 'apple_forbidden',
+    })
+  })
+})
+
+function requiredAgreementResponse() {
+  return Response.json(
+    {
+      errors: [
+        { code: 'FORBIDDEN.REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED', detail: 'Provider detail' },
+      ],
+    },
+    { status: 403 },
+  )
+}
+
+describe('syncAppleAppStoreReviews', () => {
+  afterEach(() => vi.restoreAllMocks())
 
   it('requests customer reviews from the official App Store Connect API host', async () => {
     const fetchMock = vi

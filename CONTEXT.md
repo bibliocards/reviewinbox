@@ -36,6 +36,8 @@ ReviewInbox turns public store Reviews into human-controlled replies and product
 
 **Sync Run**: One recorded attempt to retrieve Reviews from a Store Connection.
 
+**Sync Incident**: A disruption in retrieving Reviews from a Store Connection that is still open until a complete Sync Run succeeds. Consecutive failures may belong to the same incident.
+
 **Managed AI**: Draft generation funded by the Cloud operator and subject to the Organization's monthly quota.
 
 **Usage Event**: A recorded action used for usage accounting, such as a Review import or successful AI draft generation.

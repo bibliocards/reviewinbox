@@ -38,6 +38,14 @@ Create an App, choose App Store, and enter:
 
 ReviewInbox validates the connection when you save it. If validation fails, check that the App Store ID and key belong to the same App Store Connect team, that the key has customer review access, and that the private key is copied without extra characters.
 
+If ReviewInbox says a required Apple agreement is not in effect, do not replace the key. Ask the Apple Account Holder to check **Business → Agreements** for the App's team in App Store Connect, and **Show Agreements** in their Apple Developer account. When the required agreement is in effect, retry the connection. See Apple's [agreement statuses](https://developer.apple.com/help/app-store-connect/manage-agreements/view-agreements-status/).
+
+To replace a lost or withdrawn Team Key, create and download a new key, then open the existing App's **Manage connection** action. Enter the new **Key ID** and the full matching `.p8` together. ReviewInbox checks that it can read Reviews before saving the replacement and queues a Sync Run when the credential changes. You do not need to delete the App or the connection.
+
+In **Organization → Sync webhooks**, Owners and Admins can choose one Slack, Discord, or signed JSON destination for Apple App Store and Google Play sync incidents. Send a test message before enabling it. ReviewInbox sends an opening notification with the safe error reason and a second notification when a full Sync Run succeeds. Rate limits and temporary provider failures require two failed scheduled runs. An incident still open when you activate a destination is reported once; resolved incidents are not replayed.
+
+Signed JSON delivery includes `x-reviewinbox-event-id`, `x-reviewinbox-timestamp`, and `x-reviewinbox-signature`. Verify the signature as `sha256=` followed by the hex HMAC-SHA256 of `<timestamp>.<raw body>`, using your configured signing secret. Check timestamp freshness and deduplicate by event ID: a timed-out delivery may be retried with the same ID and a new timestamp.
+
 ## Data and publishing limits
 
 The App Store Connect API provides paginated customer reviews, with a maximum of 200 reviews per list request. ReviewInbox follows the API's pagination links and stores the app version when Apple includes it in the response. Apple lets you respond to reviews regardless of when they were written, and each review can have one public reply.

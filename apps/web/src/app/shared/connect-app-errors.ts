@@ -12,6 +12,7 @@ const connectAppErrorKeys = {
   apple_credential_required_for_verification:
     'apps.connectDialog.errors.appleCredentialRequiredForVerification',
   apple_forbidden: 'apps.connectDialog.errors.appleForbidden',
+  apple_agreement_required: 'apps.connectDialog.errors.appleAgreementRequired',
   apple_invalid_response: 'apps.connectDialog.errors.appleUnavailable',
   apple_issuer_change_requires_credential_replacement:
     'apps.connectDialog.errors.appleIssuerChangeRequiresCredentialReplacement',

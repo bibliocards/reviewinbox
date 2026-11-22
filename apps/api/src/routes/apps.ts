@@ -23,6 +23,7 @@ import {
   organization as organizationTable,
   storeConnections,
   storeCredentials,
+  storeSyncHealth,
   syncRuns,
 } from '@reviewinbox/db'
 import { selectMissingReplyDraftReviews } from '@reviewinbox/reply-drafts'
@@ -30,7 +31,7 @@ import {
   verifyAppleStoreCredentialForApp,
   verifyGooglePlayStoreCredentialForApp,
 } from '@reviewinbox/sync'
-import { and, count, desc as orderDesc, eq } from 'drizzle-orm'
+import { and, count, desc as orderDesc, eq, sql } from 'drizzle-orm'
 import type { Context } from 'hono'
 import { Hono } from 'hono'
 import { z } from 'zod'
@@ -119,9 +120,7 @@ async function listApps(context: Context, dependencies: AppListRouteDependencies
   >()
   for (const row of connectionRows) {
     const appConnections = connectionsByAppId.get(row.connection.appId) ?? []
-    appConnections.push(
-      toAppListStoreConnectionResponse(row.connection, row.credential, row.lastSyncRun),
-    )
+    appConnections.push(toAppListStoreConnectionResponse(row))
     connectionsByAppId.set(row.connection.appId, appConnections)
   }
 
@@ -151,6 +150,10 @@ export function createAppListStoreConnectionsQuery(
     .selectDistinctOn([storeConnections.id], {
       connection: storeConnections,
       credential: credentialMetadataSelection,
+      syncIncidentErrorCode: storeSyncHealth.errorCode,
+      lastSuccessfulSyncAt:
+        sql`max(case when ${syncRuns.status} = 'succeeded' then ${syncRuns.finishedAt} end)
+        over (partition by ${storeConnections.id})`.mapWith(syncRuns.finishedAt),
       lastSyncRun: {
         id: syncRuns.id,
         status: syncRuns.status,
@@ -164,6 +167,7 @@ export function createAppListStoreConnectionsQuery(
     })
     .from(storeConnections)
     .leftJoin(storeCredentials, eq(storeCredentials.storeConnectionId, storeConnections.id))
+    .leftJoin(storeSyncHealth, eq(storeSyncHealth.storeConnectionId, storeConnections.id))
     .leftJoin(
       syncRuns,
       and(
@@ -1113,27 +1117,18 @@ function toStoreConnectionResponse(
   }
 }
 
-function toAppListStoreConnectionResponse(
-  connection: StoreConnectionRow,
-  credential: StoreCredentialMetadataRow,
-  lastSyncRun: {
-    id: string | null
-    status: (typeof syncRuns.$inferSelect)['status'] | null
-    startedAt: Date | null
-    finishedAt: Date | null
-    createdAt: Date | null
-    fetchedCount: number | null
-    storedCount: number | null
-    errorCode: string | null
-  } | null,
-) {
+type AppListConnectionRow = Awaited<ReturnType<typeof createAppListStoreConnectionsQuery>>[number]
+
+function toAppListStoreConnectionResponse(row: AppListConnectionRow) {
   return {
-    ...toStoreConnectionResponse(connection, credential),
-    lastSyncRun: toSyncRunSummary(lastSyncRun),
+    ...toStoreConnectionResponse(row.connection, row.credential),
+    lastSyncRun: toSyncRunSummary(row.lastSyncRun),
+    lastSuccessfulSyncAt: row.lastSuccessfulSyncAt?.toISOString() ?? null,
+    syncIncidentErrorCode: row.syncIncidentErrorCode,
   }
 }
 
-function toSyncRunSummary(run: Parameters<typeof toAppListStoreConnectionResponse>[2]) {
+function toSyncRunSummary(run: AppListConnectionRow['lastSyncRun']) {
   if (run === null || run.id === null) {
     return null
   }

@@ -1,16 +1,18 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import {
+  afterNextRender,
   Component,
   computed,
   effect,
   HostListener,
   inject,
+  Injector,
   linkedSignal,
   signal,
   ChangeDetectionStrategy,
 } from '@angular/core'
 import { toSignal } from '@angular/core/rxjs-interop'
-import { RouterLink } from '@angular/router'
+import { ActivatedRoute, RouterLink } from '@angular/router'
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco'
 import type {
   AppListItemResponse,
@@ -74,6 +76,9 @@ export class AppsPageComponent {
   private readonly organizationService = inject(OrganizationService)
   private readonly organizationProfile = inject(OrganizationProfileService)
   private readonly appIcons = inject(AppIconsService)
+  private readonly route = inject(ActivatedRoute)
+  private readonly injector = inject(Injector)
+  private readonly fragment = toSignal(this.route.fragment)
   private readonly activeLanguage = toSignal(this.transloco.langChanges$, {
     initialValue: this.transloco.getActiveLang(),
   })
@@ -141,6 +146,21 @@ export class AppsPageComponent {
 
     effect(() => {
       this.appIcons.loadIcons(this.apps())
+    })
+    effect(() => {
+      const fragment = this.fragment()
+      if (
+        fragment !== null
+        && fragment !== undefined
+        && this.apps().some((app) =>
+          app.storeConnections.some((connection) => fragment === `store-${connection.id}`),
+        )
+      ) {
+        afterNextRender(
+          () => document.querySelector(`#${fragment}`)?.scrollIntoView({ block: 'nearest' }),
+          { injector: this.injector },
+        )
+      }
     })
   }
 
@@ -318,7 +338,25 @@ export class AppsPageComponent {
     if (this.connectionForStore(app, provider)?.status === 'disabled') {
       return badgeClasses('ignored')
     }
+    if (this.storeNeedsAttention(app, provider)) {
+      return badgeClasses('failed')
+    }
     return badgeClasses(this.isStoreConfigured(app, provider) ? 'connected' : 'metadata')
+  }
+
+  protected storeNeedsAttention(app: AppListItemResponse, provider: StoreProvider): boolean {
+    const connection = this.connectionForStore(app, provider)
+    if (connection?.status !== 'active' || !connection.credential.hasCredential) {
+      return false
+    }
+    const attempted = this.syncRunForStore(app, provider)
+    if (attempted?.status === 'succeeded') {
+      return false
+    }
+    return (
+      connection.syncIncidentErrorCode !== null
+      || isActionRequiredRun(attempted ?? connection.lastSyncRun)
+    )
   }
 
   protected createdAgo(createdAt: string): string {
@@ -363,8 +401,13 @@ export class AppsPageComponent {
     app: AppListItemResponse,
     provider: StoreProvider,
   ): SyncRunResponse | null {
-    const connection = this.storeConnection(app, provider)
-    return connection ? (this.syncRunByStoreConnectionId()[connection.id] ?? null) : null
+    const connection = this.connectionForStore(app, provider)
+    const manualRun = connection ? this.syncRunByStoreConnectionId()[connection.id] : undefined
+    const recorded = connection?.lastSyncRun
+    return manualRun
+      && (!recorded || Date.parse(recorded.createdAt) <= Date.parse(manualRun.createdAt))
+      ? manualRun
+      : null
   }
 
   private roleLabel(role: string | string[] | null): string {
@@ -442,6 +485,7 @@ function isManualSyncAvailable(usage: OrganizationUsageResponse | undefined): bo
 
 const syncRunErrorMessageKeys = new Map<string, string>(
   Object.entries({
+    apple_agreement_required: 'apps.list.sync.errors.appleAgreementRequired',
     apple_auth_failed: 'apps.list.sync.errors.appleAuthFailed',
     apple_forbidden: 'apps.list.sync.errors.appleForbidden',
     apple_invalid_response: 'apps.list.sync.errors.appleUnavailable',
@@ -463,6 +507,24 @@ const syncRunErrorMessageKeys = new Map<string, string>(
     unsupported_store_provider: 'apps.list.sync.errors.unsupportedStoreProvider',
   }),
 )
+
+const actionRequiredErrorCodes = new Set([
+  'apple_agreement_required',
+  'apple_auth_failed',
+  'apple_forbidden',
+  'apple_not_found',
+  'google_auth_failed',
+  'google_forbidden',
+  'google_not_found',
+  'invalid_credential_format',
+  'invalid_google_credential_format',
+  'missing_credential',
+  'missing_external_app_id',
+])
+
+function isActionRequiredRun(run: Pick<SyncRunResponse, 'status' | 'errorCode'> | null): boolean {
+  return run?.status === 'failed' && actionRequiredErrorCodes.has(run.errorCode ?? '')
+}
 
 function syncRunFromError(error: HttpErrorResponse, storeConnectionId: string): SyncRunResponse {
   const parsed = syncRunResponseSchema.safeParse(error.error)

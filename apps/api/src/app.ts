@@ -18,6 +18,7 @@ import { organizationProfileRoutes } from './routes/organization-profile'
 import { replyInboxRoutes } from './routes/reply-inbox'
 import { replySettingsRoutes } from './routes/reply-settings'
 import { storeConnectionsRoutes } from './routes/store-connections'
+import { syncWebhookRoutes } from './routes/sync-webhooks'
 
 export function createApp() {
   const app = new Hono()
@@ -107,6 +108,7 @@ function registerRoutes(app: ApiApp): void {
   app.use('/api/auth/sign-up/email', requireInvitationForSelfHostedSignUp)
   app.on(['GET', 'POST'], '/api/auth/*', (context) => auth.handler(context.req.raw))
   app.route('/', organizationProfileRoutes)
+  app.route('/', syncWebhookRoutes)
   app.route('/', appsRoutes)
   app.route('/', replyInboxRoutes)
   app.route('/', replySettingsRoutes)

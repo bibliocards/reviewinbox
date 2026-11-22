@@ -31,6 +31,7 @@ import {
 import { createQueueClient, type QueueClient } from '@reviewinbox/queue'
 import { generateReplyDraftForReview } from '@reviewinbox/reply-drafts'
 import {
+  deliverNextSyncWebhook,
   syncReviewsForStoreConnection,
   type SyncReviewsForStoreConnectionInput,
 } from '@reviewinbox/sync'
@@ -62,6 +63,7 @@ type WorkerRuntime = {
   analysisScanTimer: ReturnType<typeof setTimeout> | null
   autoSyncTimer: ReturnType<typeof setTimeout> | null
   appleVersionScanner: ReturnType<typeof startAppleVersionScanner> | null
+  webhookScanner: ReturnType<typeof startWebhookScanner> | null
 }
 
 type LogDetails = Readonly<Record<string, boolean | number | string | null>>
@@ -84,9 +86,38 @@ async function main(): Promise<void> {
 
 function startWorkerScanners(runtime: WorkerRuntime): void {
   runtime.autoSyncTimer = startAutoSyncScheduler(runtime)
+  runtime.webhookScanner = startWebhookScanner(runtime.database)
   runtime.appleVersionScanner = startAppleVersionScanner(runtime.database, () => {
     logWarn('Apple Review version lookup deferred; pending Reviews will be retried')
   })
+}
+
+function startWebhookScanner(database: Database) {
+  let stopped = false
+  let timer: ReturnType<typeof setTimeout> | undefined
+  async function scan() {
+    let delay = 5000
+    try {
+      if (await deliverNextSyncWebhook(database)) {
+        delay = 50
+      }
+    } catch {
+      logWarn('Sync webhook delivery queue unavailable; will retry')
+    }
+    if (!stopped) {
+      timer = setTimeout(() => {
+        inFlight = scan()
+      }, delay)
+    }
+  }
+  let inFlight = scan()
+  return {
+    async stop() {
+      stopped = true
+      clearTimeout(timer)
+      await inFlight
+    },
+  }
 }
 
 async function createWorkerRuntime(): Promise<WorkerRuntime> {
@@ -112,6 +143,7 @@ async function createWorkerRuntime(): Promise<WorkerRuntime> {
     analysisScanTimer: null,
     autoSyncTimer: null,
     appleVersionScanner: null,
+    webhookScanner: null,
   }
 }
 
@@ -601,7 +633,7 @@ async function waitForShutdown(runtime: WorkerRuntime): Promise<void> {
     clearTimeout(runtime.topicDiscoveryScanTimer)
   }
   try {
-    await runtime.appleVersionScanner?.stop()
+    await Promise.all([runtime.appleVersionScanner?.stop(), runtime.webhookScanner?.stop()])
     await runtime.queue.stop()
   } finally {
     await closeDatabase(runtime.database)

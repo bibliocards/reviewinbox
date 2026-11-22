@@ -23,6 +23,7 @@ export type AppleReplyPublishRequest = {
 
 export type AppleStoreAdapterErrorCode =
   | 'apple_auth_failed'
+  | 'apple_agreement_required'
   | 'apple_forbidden'
   | 'apple_not_found'
   | 'apple_rate_limited'

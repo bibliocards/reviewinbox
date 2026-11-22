@@ -6,7 +6,7 @@ import type {
   StoreReplyPublishResult,
   StoreReviewSyncResult,
 } from '../index'
-import { AppleStoreAdapterError, toAppleStoreAdapterError } from './errors'
+import { AppleStoreAdapterError, toAppleReviewReadError, toAppleStoreAdapterError } from './errors'
 import { createAppleAppStoreConnectJwt } from './jwt'
 import { normalizeAppleReview } from './normalize'
 import { recordAppleRateLimit, withAppleIngestionPriority } from './rate-limit'
@@ -215,7 +215,7 @@ async function fetchAppleCustomerReviewsPage(input: {
     )
     recordAppleRateLimit(input.credential, response)
     if (!response.ok) {
-      throw toAppleStoreAdapterError(response.status)
+      throw await toAppleReviewReadError(response)
     }
 
     return appleCustomerReviewsResponseSchema.parse(await response.json())
@@ -246,18 +246,10 @@ function assertAppleApiUrl(value: string) {
   }
 }
 
-async function fetchWithTimeout(
+function fetchWithTimeout(
   input: string | URL,
   init: RequestInit,
   timeoutMs: number | undefined,
 ): Promise<Response> {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => {
-    controller.abort()
-  }, timeoutMs ?? defaultTimeoutMs)
-  try {
-    return await fetch(input, { ...init, signal: controller.signal })
-  } finally {
-    clearTimeout(timeout)
-  }
+  return fetch(input, { ...init, signal: AbortSignal.timeout(timeoutMs ?? defaultTimeoutMs) })
 }

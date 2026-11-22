@@ -125,6 +125,8 @@ export type LastSyncRunSummary = z.infer<typeof lastSyncRunSummarySchema>
 
 export const appListStoreConnectionResponseSchema = storeConnectionResponseSchema.extend({
   lastSyncRun: lastSyncRunSummarySchema.nullable(),
+  lastSuccessfulSyncAt: z.iso.datetime().nullable(),
+  syncIncidentErrorCode: z.string().min(1).nullable(),
 })
 export type AppListStoreConnectionResponse = z.infer<typeof appListStoreConnectionResponseSchema>
 

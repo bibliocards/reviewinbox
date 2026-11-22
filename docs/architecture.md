@@ -34,6 +34,8 @@ Store Credentials use authenticated encryption per Store Connection with `APP_EN
 
 Verification triggers an initial Sync Run. Automatic cadence and manual-sync availability depend on configuration and Cloud plan. New imports consume Cloud quota; Review updates do not. A capped Sync Run is partial.
 
+Store sync tracks open incidents independently of credential presence. A full success closes the incident; a partial run does not. An Organization can configure one encrypted Slack, Discord, or signed JSON destination. Sync completion and notification creation commit together; the worker delivers from a separate outbox with bounded retries and stable event IDs. Delivery does not call the store or block the next Sync Run. Outbound connections are HTTPS only, pin DNS results to checked public addresses, and never follow redirects.
+
 Apple version enrichment follows version-scoped pages with a persisted cursor. Completed pages and matches commit together. Calls sharing a credential are serialized and rate-limited, with ingestion taking priority; enrichment does not block Review/reply use.
 
 ## Reply workflow

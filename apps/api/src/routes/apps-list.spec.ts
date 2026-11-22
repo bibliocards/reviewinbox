@@ -24,6 +24,8 @@ type SessionResult = Awaited<ReturnType<typeof requireActiveOrganizationSession>
 type QueryRow = {
   connection: ConnectionRow
   credential: { updatedAt: Date | null; keyId: string | null } | null
+  lastSuccessfulSyncAt: Date | null
+  syncIncidentErrorCode: string | null
   lastSyncRun: {
     id: string | null
     status: (typeof syncRuns.$inferSelect)['status'] | null
@@ -76,9 +78,16 @@ const connectionRow: ConnectionRow = {
   updatedAt: new Date('2026-10-01T10:00:00.000Z'),
 }
 
-const noRunRow: QueryRow = { connection: connectionRow, credential: null, lastSyncRun: null }
+const noRunRow: QueryRow = {
+  connection: connectionRow,
+  credential: null,
+  lastSyncRun: null,
+  lastSuccessfulSyncAt: null,
+  syncIncidentErrorCode: null,
+}
 const latestRunRow: QueryRow = {
   ...noRunRow,
+  lastSuccessfulSyncAt: new Date('2026-10-01T11:02:00.000Z'),
   lastSyncRun: {
     id: runIds[1],
     status: 'failed',
@@ -166,10 +175,11 @@ describe('GET /api/apps Store Connection Sync Run summary', () => {
       storedCount: 0,
       errorCode: 'invalid_credential',
     })
+    expect(body.apps[0]?.storeConnections[0]?.lastSuccessfulSyncAt).toBe('2026-10-01T11:02:00.000Z')
     expect(JSON.stringify(body)).not.toContain('checkpoint')
     expect(JSON.stringify(body)).not.toContain('errorMessage')
     expect(JSON.stringify(body)).not.toContain('ciphertext')
-    expect(builder.leftJoin).toHaveBeenCalledTimes(2)
+    expect(builder.leftJoin).toHaveBeenCalledTimes(3)
     expect(builder.orderBy).toHaveBeenCalledTimes(1)
   })
 

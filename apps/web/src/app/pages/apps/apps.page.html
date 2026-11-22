@@ -180,6 +180,7 @@
           store.provider);
           <section
             class="grid min-w-0 content-start gap-3 bg-surface-1 px-6 py-5"
+            [id]="connection ? 'store-' + connection.id : null"
             [attr.aria-labelledby]="app.id + '-' + store.provider"
           >
             <header class="flex flex-wrap items-center gap-2.5">
@@ -191,6 +192,7 @@
               </h3>
               <span [class]="storeStatusClass(app, store.provider)"
                 >{{ t(connection?.status === 'disabled' ? 'apps.list.status.disabled' :
+                storeNeedsAttention(app, store.provider) ? 'apps.list.status.actionRequired' :
                 isStoreConfigured(app, store.provider) ? 'apps.list.status.configured' :
                 'apps.list.status.missing') }}</span
               >
@@ -212,6 +214,14 @@
                 >
                 } @else { {{ t('apps.list.noSyncRun') }} }
               </dd>
+              <dt class="text-ink-subtle">{{ t('apps.list.lastSuccessfulSync') }}</dt>
+              <dd class="m-0 min-w-0 text-ink-muted">
+                @if (connection?.lastSuccessfulSyncAt; as lastSuccessfulSyncAt) {
+                <time [attr.datetime]="lastSuccessfulSyncAt" class="font-mono text-xs tabular-nums"
+                  >{{ syncRunDate(lastSuccessfulSyncAt) }}</time
+                >
+                } @else { {{ t('apps.list.noSuccessfulSync') }} }
+              </dd>
               <dt class="text-ink-subtle">{{ t('apps.list.storeCredential') }}</dt>
               <dd class="m-0 min-w-0 font-mono text-xs text-ink-muted">
                 @if (connection?.credential?.hasCredential) { {{ t('apps.list.credentialEncrypted')
@@ -226,6 +236,11 @@
             >
               {{ t(syncRunMessageKey(recordedRun), { fetchedCount: recordedRun.fetchedCount,
               storedCount: recordedRun.storedCount }) }}
+            </p>
+            } } @if (connection?.syncIncidentErrorCode; as incidentReason) { @if (incidentReason !==
+            (syncRunForStore(app, store.provider) ?? connection?.lastSyncRun)?.errorCode) {
+            <p class="m-0 text-xs text-failure-ink">
+              {{ t(syncRunMessageKey({ status: 'failed', errorCode: incidentReason })) }}
             </p>
             } }
             <div class="flex flex-wrap items-center gap-2">

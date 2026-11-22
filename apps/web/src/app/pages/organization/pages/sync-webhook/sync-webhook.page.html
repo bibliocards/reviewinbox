@@ -1,0 +1,123 @@
+<section *transloco="let t" class="grid max-w-2xl gap-5" aria-labelledby="sync-webhook-title">
+  <header class="grid gap-1">
+    <h2 id="sync-webhook-title" class="m-0 text-lg font-semibold">
+      {{ t('organization.webhooks.title') }}
+    </h2>
+    <p class="m-0 text-sm text-ink-muted">{{ t('organization.webhooks.description') }}</p>
+  </header>
+  @if (settings(); as current) { @if (current.destination; as destination) {
+  <section class="grid gap-3 rounded-lg border border-border bg-surface-1 p-4">
+    <h3 class="m-0 text-sm font-semibold">
+      {{ t('organization.webhooks.active') }} · {{ t('organization.webhooks.kinds.' +
+      destination.kind) }}
+    </h3>
+    <p class="m-0 text-sm text-ink-muted">
+      {{ t('organization.webhooks.lastDelivery') }}: {{ t('organization.webhooks.delivery.' +
+      (destination.lastDeliveryStatus ?? 'none')) }} @if (destination.lastDeliveryAt; as
+      deliveredAt) {
+      <time [attr.datetime]="deliveredAt">{{ formatDate(deliveredAt) }}</time>
+      }
+    </p>
+    <div class="flex flex-wrap gap-2">
+      <button
+        pButton
+        type="button"
+        severity="secondary"
+        [outlined]="true"
+        [disabled]="busy()"
+        (click)="test(true)"
+      >
+        {{ t('organization.webhooks.testSaved') }}
+      </button>
+      <button
+        pButton
+        type="button"
+        severity="danger"
+        [text]="true"
+        [disabled]="busy()"
+        (click)="remove()"
+      >
+        {{ t('organization.webhooks.remove') }}
+      </button>
+    </div>
+  </section>
+  }
+  <form class="grid gap-4 rounded-lg border border-border bg-surface-1 p-4" (submit)="save($event)">
+    <label class="grid gap-1.5 text-sm font-medium" for="sync-webhook-kind">
+      {{ t('organization.webhooks.destination') }}
+      <p-select
+        inputId="sync-webhook-kind"
+        name="kind"
+        [options]="kinds"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="kind()"
+        (ngModelChange)="kind.set($event)"
+        [disabled]="busy()"
+      />
+    </label>
+    <label class="grid gap-1.5 text-sm font-medium" for="sync-webhook-url">
+      {{ t('organization.webhooks.url') }}
+      <input
+        pInputText
+        id="sync-webhook-url"
+        name="url"
+        type="password"
+        autocomplete="off"
+        [ngModel]="url()"
+        (ngModelChange)="changeUrl($event)"
+        [disabled]="busy()"
+        [attr.aria-invalid]="urlInvalid()"
+        [attr.aria-describedby]="urlInvalid() ? 'sync-webhook-hint sync-webhook-invalid' : 'sync-webhook-hint'"
+      />
+    </label>
+    <p id="sync-webhook-hint" class="m-0 text-xs text-ink-muted">
+      {{ t('organization.webhooks.urlHint') }}
+    </p>
+    @if (urlInvalid()) {
+    <p id="sync-webhook-invalid" class="m-0 text-sm text-failure-ink" role="alert">
+      {{ t('organization.webhooks.invalidUrl') }}
+    </p>
+    } @if (kind() === 'json') {
+    <label class="grid gap-1.5 text-sm font-medium" for="sync-webhook-secret">
+      {{ t('organization.webhooks.signingSecret') }}
+      <input
+        pInputText
+        id="sync-webhook-secret"
+        name="secret"
+        type="password"
+        autocomplete="new-password"
+        [ngModel]="signingSecret()"
+        (ngModelChange)="signingSecret.set($event)"
+        [disabled]="busy()"
+      />
+    </label>
+    }
+    <div class="flex flex-wrap gap-2">
+      <button pButton type="submit" [disabled]="busy() || !validInput()">
+        {{ t('organization.webhooks.save') }}
+      </button>
+      <button
+        pButton
+        type="button"
+        severity="secondary"
+        [outlined]="true"
+        [disabled]="busy() || !validInput()"
+        (click)="test(false)"
+      >
+        {{ t('organization.webhooks.test') }}
+      </button>
+    </div>
+  </form>
+  } @else if (busy()) {
+  <p class="m-0 text-sm text-ink-muted" role="status">{{ t('organization.webhooks.loading') }}</p>
+  } @if (message(); as result) {
+  <p
+    class="m-0 text-sm text-ink-muted"
+    [class.text-failure-ink]="result.error"
+    [attr.role]="result.error ? 'alert' : 'status'"
+  >
+    {{ t('organization.webhooks.' + result.key) }}
+  </p>
+  }
+</section>

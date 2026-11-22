@@ -30,6 +30,7 @@ export class OrganizationPageComponent {
     { labelKey: 'organization.navigation.usage', route: 'usage' },
     { labelKey: 'organization.navigation.members', route: 'members' },
     { labelKey: 'organization.navigation.profile', route: 'profile' },
+    { labelKey: 'organization.webhooks.title', route: 'webhooks' },
     {
       labelKey: 'organization.navigation.billing',
       route: 'billing',
