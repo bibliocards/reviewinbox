@@ -173,7 +173,11 @@ export class ReviewActionsService {
       closable: true,
       dismissableMask: true,
       width: 'min(760px, 94vw)',
-      data: { mode: this.draftDialogMode(review), draftText: this.initialDraftText(review) },
+      data: {
+        mode: this.draftDialogMode(review),
+        draftText: this.initialDraftText(review),
+        provider: review.provider,
+      } satisfies ReplyDraftDialogData,
     })
 
     dialog?.onClose.subscribe((result?: ReplyDraftDialogResult) => {
