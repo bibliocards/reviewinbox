@@ -150,26 +150,17 @@ async function getOrganizationUsage(context: Context, organizationId: string) {
 }
 
 async function selectOrganizationUsage(organizationId: string, startsAt: Date, endsAt: Date) {
-  const [
-    [memberCount],
-    [appCount],
-    [monthlyReviewImports],
-    [monthlyManagedAiReplyDrafts],
-  ] = await Promise.all([
-    database
-      .select({ count: count() })
-      .from(member)
-      .where(eq(member.organizationId, organizationId)),
-    database.select({ count: count() }).from(apps).where(eq(apps.organizationId, organizationId)),
-    selectUsageQuantity(organizationId, 'review_imported', startsAt, endsAt),
-    selectUsageQuantity(organizationId, 'managed_ai_reply_draft_generated', startsAt, endsAt),
-  ])
-  return {
-    memberCount,
-    appCount,
-    monthlyReviewImports,
-    monthlyManagedAiReplyDrafts,
-  }
+  const [[memberCount], [appCount], [monthlyReviewImports], [monthlyManagedAiReplyDrafts]] =
+    await Promise.all([
+      database
+        .select({ count: count() })
+        .from(member)
+        .where(eq(member.organizationId, organizationId)),
+      database.select({ count: count() }).from(apps).where(eq(apps.organizationId, organizationId)),
+      selectUsageQuantity(organizationId, 'review_imported', startsAt, endsAt),
+      selectUsageQuantity(organizationId, 'managed_ai_reply_draft_generated', startsAt, endsAt),
+    ])
+  return { memberCount, appCount, monthlyReviewImports, monthlyManagedAiReplyDrafts }
 }
 
 function buildOrganizationUsageResponse(

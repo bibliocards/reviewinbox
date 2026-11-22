@@ -29,7 +29,7 @@ import {
   verifyAppleStoreCredentialForApp,
   verifyGooglePlayStoreCredentialForApp,
 } from '@reviewinbox/sync'
-import { and, count, eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import type { Context } from 'hono'
 import { Hono } from 'hono'
 
