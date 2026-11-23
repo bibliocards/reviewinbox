@@ -165,3 +165,10 @@
     min-inline-size: var(--control-min-size);
   }
 }
+
+/* PrimeNG injects its SVG icon animation at runtime without a reduced-motion rule. */
+@media (prefers-reduced-motion: reduce) {
+  .p-icon.p-icon-spin {
+    animation: none;
+  }
+}
