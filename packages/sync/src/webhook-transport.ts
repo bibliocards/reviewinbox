@@ -11,6 +11,7 @@ import type { SyncWebhookEvent } from '@reviewinbox/db'
 type TestEvent = { eventId: string; type: 'sync.test'; occurredAt: string; message: string }
 type DeliveryStatus = 'delivered' | 'retrying' | 'failed'
 type Payload = { body: string; headers?: Record<string, string> }
+type Address = { address: string; family: number }
 
 const providerEndpoints = {
   slack: {
@@ -77,8 +78,7 @@ for (const [base, bits] of [
 const globalIpv6 = new BlockList()
 globalIpv6.addSubnet('2000::', 3, 'ipv6')
 
-async function publicAddress(hostname: string) {
-  const addresses = await lookup(hostname, { all: true })
+function publicAddress(addresses: Address[]) {
   if (
     addresses.some(({ address, family }) =>
       family === 4
@@ -91,33 +91,65 @@ async function publicAddress(hostname: string) {
   return addresses[0] ?? null
 }
 
-export async function deliverSyncWebhook(
-  destination: SyncWebhookInput,
-  event: SyncWebhookEvent | TestEvent,
-  appOrigin: string,
-): Promise<DeliveryStatus> {
-  const url = webhookUrl(destination)
-  if (!url) {
-    return 'failed'
+export const deliverSyncWebhook = createSyncWebhookDeliverer(
+  (hostname) => lookup(hostname, { all: true }),
+  () => AbortSignal.timeout(8000),
+)
+
+export function createSyncWebhookDeliverer(
+  resolveAddresses: (hostname: string) => Promise<Address[]>,
+  createDeadline: () => AbortSignal,
+) {
+  // dns.lookup uses libuv's shared worker pool and cannot be cancelled by the delivery timeout.
+  // Bound outstanding work across Organizations, including lookups whose caller has timed out.
+  const maxPendingLookups = 4
+  let pendingLookups = 0
+
+  return async function deliver(
+    destination: SyncWebhookInput,
+    event: SyncWebhookEvent | TestEvent,
+    appOrigin: string,
+  ): Promise<DeliveryStatus> {
+    const url = webhookUrl(destination)
+    if (!url) {
+      return 'failed'
+    }
+    if (pendingLookups >= maxPendingLookups) {
+      return 'retrying'
+    }
+    const signal = createDeadline()
+    try {
+      const address = await Promise.race([
+        resolvePublicAddress(url.hostname),
+        once(signal, 'abort').then(() => null),
+      ])
+      signal.throwIfAborted()
+      return address
+        ? await postWebhook(
+            url,
+            address,
+            buildWebhookPayload(destination, event, appOrigin),
+            signal,
+          )
+        : 'failed'
+    } catch {
+      return 'retrying'
+    }
   }
-  const signal = AbortSignal.timeout(8000)
-  try {
-    const address = await Promise.race([
-      publicAddress(url.hostname),
-      once(signal, 'abort').then(() => null),
-    ])
-    signal.throwIfAborted()
-    return address
-      ? await postWebhook(url, address, buildWebhookPayload(destination, event, appOrigin), signal)
-      : 'failed'
-  } catch {
-    return 'retrying'
+
+  async function resolvePublicAddress(hostname: string) {
+    pendingLookups += 1
+    try {
+      return publicAddress(await resolveAddresses(hostname))
+    } finally {
+      pendingLookups -= 1
+    }
   }
 }
 
 function postWebhook(
   url: URL,
-  address: { address: string; family: number },
+  address: Address,
   payload: Payload,
   signal: AbortSignal,
 ): Promise<DeliveryStatus> {
