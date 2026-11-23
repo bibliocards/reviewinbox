@@ -1,7 +1,11 @@
 import type { HttpErrorResponse } from '@angular/common/http'
 import { Injectable, inject, signal } from '@angular/core'
 import { TranslocoService } from '@jsverse/transloco'
-import type { QueueReplyDraftResponse, ReplyInboxReview } from '@reviewinbox/contracts'
+import type {
+  PublishReplyRequest,
+  QueueReplyDraftResponse,
+  ReplyInboxReview,
+} from '@reviewinbox/contracts'
 import { saveReplyDraftRequestSchema, storeReplyCharacterLimits } from '@reviewinbox/contracts'
 import { DialogService } from 'primeng/dynamicdialog'
 import { finalize, forkJoin, Subject, type Observable } from 'rxjs'
@@ -92,6 +96,14 @@ export class ReviewActionsService {
     return storeReplyCharacterLimits[review.provider]
   }
 
+  draftLength(review: ReplyInboxReview): number {
+    return this.draftText(review).trim().length
+  }
+
+  canPublishDraft(review: ReplyInboxReview): boolean {
+    return this.publishRequest(review) !== null
+  }
+
   saveDraft(review: ReplyInboxReview): void {
     if (!this.hasCurrentDraft(review) || !this.canSaveDraft(review)) {
       return
@@ -124,12 +136,8 @@ export class ReviewActionsService {
   }
 
   publish(review: ReplyInboxReview): void {
-    const input = buildPublishRequest(review, this.draftEdits()[review.id])
-    if (
-      input === null
-      || !this.canSaveDraft(review)
-      || this.draftText(review).trim().length > this.replyLimit(review)
-    ) {
+    const input = this.publishRequest(review)
+    if (input === null) {
       return
     }
     const successKey = review.changedAfterReply
@@ -144,6 +152,13 @@ export class ReviewActionsService {
         return { status: 'success', key: successKey }
       },
     )
+  }
+
+  private publishRequest(review: ReplyInboxReview): PublishReplyRequest | null {
+    if (!this.canSaveDraft(review) || this.draftLength(review) > this.replyLimit(review)) {
+      return null
+    }
+    return buildPublishRequest(review, this.draftEdits()[review.id])
   }
 
   ignore(review: ReplyInboxReview): void {
