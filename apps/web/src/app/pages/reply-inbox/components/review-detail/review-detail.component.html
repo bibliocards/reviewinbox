@@ -189,7 +189,7 @@
     </section>
   }
   @if (actions.hasCurrentDraft(review)) {
-    @let draftLength = actions.draftText(review).trim().length;
+    @let draftLength = actions.draftLength(review);
     @let replyLimit = actions.replyLimit(review);
     @let exceedsReplyLimit = draftLength > replyLimit;
     <div class="grid min-w-0 overflow-clip rounded-lg border border-control-border bg-surface-2">
@@ -292,11 +292,7 @@
               ? 'replyInbox.messages.updatedReplyPublished'
               : 'replyInbox.messages.published')
         "
-        [disabled]="
-          actions.activeReviewId() !== null
-          || !actions.canSaveDraft(review)
-          || actions.draftText(review).trim().length > actions.replyLimit(review)
-        "
+        [disabled]="actions.activeReviewId() !== null || !actions.canPublishDraft(review)"
         (onClick)="actions.publish(review)"
       />
       <p-button
