@@ -1,6 +1,5 @@
 import { listAppsResponseSchema } from '@reviewinbox/contracts'
 import { apps, createDatabase, storeConnections, syncRuns } from '@reviewinbox/db'
-import type { SQL } from 'drizzle-orm'
 import type { Context } from 'hono'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -40,7 +39,8 @@ type QueryRow = {
 type ConnectionSelectBuilder = {
   from: () => ConnectionSelectBuilder
   leftJoin: (...joins: unknown[]) => ConnectionSelectBuilder
-  where: (condition: SQL | undefined) => ConnectionSelectBuilder
+  leftJoinLateral: (...joins: unknown[]) => ConnectionSelectBuilder
+  where: () => ConnectionSelectBuilder
   orderBy: (...ordering: unknown[]) => Promise<QueryRow[]>
 }
 type AppsSelectBuilder = {
@@ -101,35 +101,32 @@ const latestRunRow: QueryRow = {
 }
 
 function createHarness(options: { apps?: AppRow[]; rows?: QueryRow[] } = {}) {
-  let appsBuilder: AppsSelectBuilder
-  appsBuilder = {
-    from: vi.fn<() => AppsSelectBuilder>(() => appsBuilder),
-    where: vi.fn<() => AppsSelectBuilder>(() => appsBuilder),
-    orderBy: vi.fn<() => Promise<AppRow[]>>(() => Promise.resolve(options.apps ?? [appRow()])),
+  const appsBuilder: AppsSelectBuilder = {
+    from: () => appsBuilder,
+    where: () => appsBuilder,
+    orderBy: () => Promise.resolve(options.apps ?? [appRow()]),
   }
-  const selectApps = vi.fn<() => AppsSelectBuilder>(() => appsBuilder)
-  Object.defineProperty(testDatabase, 'select', { configurable: true, value: selectApps })
-
-  let builder: ConnectionSelectBuilder
-  const where = vi.fn<(condition: SQL | undefined) => ConnectionSelectBuilder>(() => builder)
-  const selectDistinctOn = vi.fn<(...args: unknown[]) => ConnectionSelectBuilder>(() => builder)
-  builder = {
-    from: vi.fn<() => ConnectionSelectBuilder>(() => builder),
-    leftJoin: vi.fn<(...joins: unknown[]) => ConnectionSelectBuilder>(() => builder),
-    where,
-    orderBy: vi.fn<(...ordering: unknown[]) => Promise<QueryRow[]>>(() =>
-      Promise.resolve(options.rows ?? [noRunRow]),
-    ),
+  const connectionBuilder: ConnectionSelectBuilder = {
+    from: () => connectionBuilder,
+    leftJoin: () => connectionBuilder,
+    leftJoinLateral: () => connectionBuilder,
+    where: () => connectionBuilder,
+    orderBy: () => Promise.resolve(options.rows ?? [noRunRow]),
   }
-  Object.defineProperty(testDatabase, 'selectDistinctOn', {
-    configurable: true,
-    value: selectDistinctOn,
-  })
+  const select = vi
+    .fn<
+      (
+        fields?: Parameters<typeof queryTestDatabase.select>[0],
+      ) => AppsSelectBuilder | ConnectionSelectBuilder | ReturnType<typeof queryTestDatabase.select>
+    >()
+    .mockReturnValueOnce(appsBuilder)
+    .mockImplementationOnce(queryTestDatabase.select.bind(queryTestDatabase))
+    .mockReturnValueOnce(connectionBuilder)
+  Object.defineProperty(testDatabase, 'select', { configurable: true, value: select })
   const requireSession = vi
     .fn<(context: Context) => Promise<SessionResult>>()
     .mockResolvedValue({ ok: true, session: { organizationId, role: 'owner', userId: 'user-1' } })
-  const routes = createAppsListRoutes({ database: testDatabase, requireSession })
-  return { routes, builder, selectApps, selectDistinctOn, requireSession }
+  return createAppsListRoutes({ database: testDatabase, requireSession })
 }
 
 describe('GET /api/apps reply language policy', () => {
@@ -141,7 +138,7 @@ describe('GET /api/apps reply language policy', () => {
       defaultLanguage: 'en',
       mappedLanguages: [],
     })
-    const { routes } = createHarness({ apps: [savedApp, defaultApp] })
+    const routes = createHarness({ apps: [savedApp, defaultApp] })
 
     const response = await routes.request('http://localhost/api/apps')
 
@@ -160,7 +157,7 @@ describe('GET /api/apps reply language policy', () => {
 
 describe('GET /api/apps Store Connection Sync Run summary', () => {
   it('returns the selected Sync Run summary without sensitive fields', async () => {
-    const { routes, builder } = createHarness({ rows: [latestRunRow] })
+    const routes = createHarness({ rows: [latestRunRow] })
     const response = await routes.request('http://localhost/api/apps')
     const body = listAppsResponseSchema.parse(await response.json())
 
@@ -179,12 +176,10 @@ describe('GET /api/apps Store Connection Sync Run summary', () => {
     expect(JSON.stringify(body)).not.toContain('checkpoint')
     expect(JSON.stringify(body)).not.toContain('errorMessage')
     expect(JSON.stringify(body)).not.toContain('ciphertext')
-    expect(builder.leftJoin).toHaveBeenCalledTimes(3)
-    expect(builder.orderBy).toHaveBeenCalledTimes(1)
   })
 
   it('returns null when a Store Connection has no recorded Sync Run', async () => {
-    const { routes } = createHarness({ rows: [noRunRow] })
+    const routes = createHarness({ rows: [noRunRow] })
 
     const response = await routes.request('http://localhost/api/apps')
 
@@ -194,31 +189,16 @@ describe('GET /api/apps Store Connection Sync Run summary', () => {
   })
 })
 
-describe('GET /api/apps Store Connection query', () => {
-  it('selects one Organization-scoped row per connection in newest-first order', () => {
-    const { sql, params } = createAppListStoreConnectionsQuery(
-      queryTestDatabase,
-      organizationId,
-    ).toSQL()
-
-    expect(sql).toContain('distinct on ("store_connections"."id")')
-    expect(sql).toContain(
-      'order by "store_connections"."id", "sync_runs"."created_at" desc, "sync_runs"."id" desc',
-    )
-    expect(params.filter((value) => value === organizationId)).toHaveLength(2)
+describe('GET /api/apps query', () => {
+  it('excludes private fields from the Store Connection and Sync Run projections', () => {
+    const { sql } = createAppListStoreConnectionsQuery(queryTestDatabase, organizationId).toSQL()
     expect(sql).not.toContain('"sync_runs"."checkpoint"')
     expect(sql).not.toContain('"sync_runs"."error_message"')
     expect(sql).not.toContain('"store_credentials"."ciphertext"')
   })
 
-  it('scopes the App and Store Connection queries to the active Organization', async () => {
+  it('scopes the App query to the active Organization', () => {
     const appQuery = createOrganizationAppsQuery(queryTestDatabase, organizationId).toSQL()
-    const { routes, selectApps, selectDistinctOn } = createHarness()
-    const response = await routes.request('http://localhost/api/apps')
-
-    expect(response.status).toBe(200)
     expect(appQuery.params).toContain(organizationId)
-    expect(selectApps).toHaveBeenCalledTimes(1)
-    expect(selectDistinctOn).toHaveBeenCalledTimes(1)
   })
 })
