@@ -82,7 +82,7 @@ const defaultAppUpdateRouteDependencies: AppUpdateRouteDependencies = {
 export const appsRoutes = new Hono()
 
 export type AppListRouteDependencies = {
-  database: Pick<typeof database, 'select' | 'selectDistinctOn'>
+  database: Pick<typeof database, 'select'>
   requireSession: typeof requireActiveOrganizationSession
 }
 
@@ -143,40 +143,66 @@ export function createOrganizationAppsQuery(
 }
 
 export function createAppListStoreConnectionsQuery(
-  databaseClient: Pick<typeof database, 'selectDistinctOn'>,
+  databaseClient: Pick<typeof database, 'select'>,
   organizationId: string,
 ) {
+  // Reduce each connection's history to one row before joining its metadata.
+  const latestRun = createLatestRunSummary(databaseClient, organizationId)
   return databaseClient
-    .selectDistinctOn([storeConnections.id], {
+    .select({
       connection: storeConnections,
       credential: credentialMetadataSelection,
       syncIncidentErrorCode: storeSyncHealth.errorCode,
-      lastSuccessfulSyncAt:
-        sql`max(case when ${syncRuns.status} = 'succeeded' then ${syncRuns.finishedAt} end)
-        over (partition by ${storeConnections.id})`.mapWith(syncRuns.finishedAt),
+      lastSuccessfulSyncAt: latestRun.lastSuccessfulSyncAt,
       lastSyncRun: {
-        id: syncRuns.id,
-        status: syncRuns.status,
-        startedAt: syncRuns.startedAt,
-        finishedAt: syncRuns.finishedAt,
-        createdAt: syncRuns.createdAt,
-        fetchedCount: syncRuns.fetchedCount,
-        storedCount: syncRuns.storedCount,
-        errorCode: syncRuns.errorCode,
+        id: latestRun.id,
+        status: latestRun.status,
+        startedAt: latestRun.startedAt,
+        finishedAt: latestRun.finishedAt,
+        createdAt: latestRun.createdAt,
+        fetchedCount: latestRun.fetchedCount,
+        storedCount: latestRun.storedCount,
+        errorCode: latestRun.errorCode,
       },
     })
     .from(storeConnections)
     .leftJoin(storeCredentials, eq(storeCredentials.storeConnectionId, storeConnections.id))
     .leftJoin(storeSyncHealth, eq(storeSyncHealth.storeConnectionId, storeConnections.id))
-    .leftJoin(
-      syncRuns,
+    .leftJoinLateral(latestRun, sql`true`)
+    .where(eq(storeConnections.organizationId, organizationId))
+    .orderBy(storeConnections.id)
+}
+
+function createLatestRunSummary(
+  databaseClient: Pick<typeof database, 'select'>,
+  organizationId: string,
+) {
+  return databaseClient
+    .select({
+      id: syncRuns.id,
+      status: syncRuns.status,
+      startedAt: syncRuns.startedAt,
+      finishedAt: syncRuns.finishedAt,
+      createdAt: syncRuns.createdAt,
+      fetchedCount: syncRuns.fetchedCount,
+      storedCount: syncRuns.storedCount,
+      errorCode: syncRuns.errorCode,
+      // The window sees every scoped run before LIMIT selects the latest one.
+      lastSuccessfulSyncAt: sql`max(${syncRuns.finishedAt})
+        filter (where ${syncRuns.status} = 'succeeded') over ()`
+        .mapWith(syncRuns.finishedAt)
+        .as('last_successful_sync_at'),
+    })
+    .from(syncRuns)
+    .where(
       and(
         eq(syncRuns.storeConnectionId, storeConnections.id),
         eq(syncRuns.organizationId, organizationId),
       ),
     )
-    .where(eq(storeConnections.organizationId, organizationId))
-    .orderBy(storeConnections.id, orderDesc(syncRuns.createdAt), orderDesc(syncRuns.id))
+    .orderBy(orderDesc(syncRuns.createdAt), orderDesc(syncRuns.id))
+    .limit(1)
+    .as('latest_run')
 }
 
 appsRoutes.get('/api/apps', (context) => listApps(context, defaultAppListRouteDependencies))
